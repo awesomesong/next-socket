@@ -1,7 +1,6 @@
 "use client";
 import { BASE_URL } from '@/config';
 import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
-import type { AppProps } from 'next/app';
 
 type Props = {
     title: String
@@ -12,7 +11,7 @@ const client = new ApolloClient({
     cache: new InMemoryCache(),
 })
 
-function MyApp({Component, pageProps}: AppProps ){
+function MyApp({Component, pageProps}: { Component: React.ElementType; pageProps: any } ){
     return (
         <ApolloProvider client={client}>
             <Component {...pageProps} />
