@@ -1,6 +1,8 @@
+import { BASE_URL } from "@/config";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL),
   title: {
     default: "GraphQL 기반의 게시판",
     template: "게시판",

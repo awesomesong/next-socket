@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import UserList from "@/components/UserList";
 import Sidebar from "@/components/sidebar/Sidebar";
+import { BASE_URL } from "@/config";
 
 export const metadata: Metadata = {
+    metadataBase: new URL(BASE_URL),
     title: {
       default: "채팅 멤버",
       template: "%s | 채팅 멤버",

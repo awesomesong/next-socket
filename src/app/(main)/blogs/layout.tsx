@@ -1,7 +1,8 @@
-// app/posts/layout.tsx 또는 page.tsx
+import { BASE_URL } from "@/config";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL),
   title: {
     default: "React Query 기반의 블로그",
     template: "블로그",

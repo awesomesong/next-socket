@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import ConversationList from '@/components/ConversationList';
 import Sidebar from '@/components/sidebar/Sidebar';
+import { BASE_URL } from "@/config";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL),
   title: {
     default: "대화방",
     template: "%s | 대화방",

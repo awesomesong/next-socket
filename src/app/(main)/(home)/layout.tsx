@@ -1,6 +1,8 @@
+import { BASE_URL } from "@/config";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+    metadataBase: new URL(BASE_URL),
     title: {
       default: "Framer Motion 기반 인터랙티브 포트폴리오",
       template: "%s | Framer Motion 포트폴리오",

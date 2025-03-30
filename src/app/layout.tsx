@@ -11,6 +11,7 @@ import SocketComponents from "@/components/SocketComponents";
 import { SocketProvider } from "./context/socketContext";
 import SocketState from "@/components/SocketState";
 import UserActiveStatus from "@/components/ActiveStatus";
+import { BASE_URL } from "@/config";
 
 const nanumGothic = Nanum_Gothic({
   weight: ['400', '700', '800'],
@@ -19,6 +20,7 @@ const nanumGothic = Nanum_Gothic({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(BASE_URL),
   title: "강송희 포트폴리오 | 프론트엔드 개발자",
   description: `프론트엔드 개발자 강송희의 포트폴리오입니다. 
     Next.js 14, React 18, Prisma, GraphQL, Pusher, Next-Auth 등을 활용하여 
