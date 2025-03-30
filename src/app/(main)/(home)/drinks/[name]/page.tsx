@@ -7,10 +7,7 @@ import Image from 'next/image';
 import {  motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
 
-const DrinksPage = ({params } : {
-  children: React.ReactNode;
-  params: { name: string }
-}) => { 
+const DrinksPage = ({params } : { params: { name: string } }) => { 
     const router = useRouter();
 
     const { name } = params;
