@@ -15,6 +15,7 @@ export interface FormPostData {
     published: boolean;
     image: string;
     imageName: string;
+    files?: File[]; 
 }
 
 export type FormPostFilesData = {
