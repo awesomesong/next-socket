@@ -155,7 +155,6 @@ model Post {
   imageName String?
   writer    User  @relation(fields: [writerEmail], references: [email])
   writerEmail String
-  // files     Files[]   
 }
 
 model PostComment {
@@ -167,17 +166,3 @@ model PostComment {
   writer    User?  @relation(fields: [writerEmail], references: [email])
   createdAt DateTime @default(now())
 }
-
-// model Files {
-//   id  String  @id   @map("_id")  @default(auto())  @db.ObjectId
-//   filesId           String       @db.ObjectId
-//   Post             Post?       @relation(fields: [filesId], references: [id], onDelete: Cascade)
-//   lastModified      Int?
-//   file              String
-//   name              String
-//   lastModifiedDate  DateTime?
-//   size              Int?
-//   type              String?
-// }
-
-
