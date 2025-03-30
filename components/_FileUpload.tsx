@@ -4,6 +4,7 @@ import { useRef, useState, ChangeEvent } from "react";
 const FileUpload = () => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [previewURL, setPreviewURL] = useState<string[]>([]);
+  const [formData, setFormData] = useState<any>({}); // ✅ 이 부분 추가됨
 
   const handleChangeFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const { files, name } = e.target;
