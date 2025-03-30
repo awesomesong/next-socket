@@ -1,0 +1,10 @@
+.next
+.env
+.env.local
+node_modules
+
+# OS
+.DS_Store
+Thumbs.db
+
+prisma/migrations/
