@@ -4,7 +4,7 @@ import getUnReadCount from "@/src/app/lib/getUnReadCount";
 import { useQuery } from "@tanstack/react-query";
 import useUnreadStore from "@/src/app/hooks/useUnReadStore";
 import { useEffect } from "react";
-import { useSocket } from "@/src/app/context/socketContext";
+import { useSocket } from "../context/socketContext";
 import { useQueryClient } from "@tanstack/react-query";
 import useConversationUserList from "@/src/app/hooks/useConversationUserList";
 
