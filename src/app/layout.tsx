@@ -1,17 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { ApolloProviders } from '@/src/app/context/ApolloProviders'; 
-import NextAuthProvider from "@/src/app/context/NextAuthProvider";
-import ToasterContext from "@/src/app/context/ToasterContext";
-import ThemeProvider from "@/src/app/context/ThemeProvider";
-import { NextUIProvider } from "@nextui-org/react";
 import { Nanum_Gothic } from 'next/font/google';
-import RQProviders from "@/src/app/context/RQProvider";
-import SocketComponents from "@/src/app/components/SocketComponents";
-import SocketState from "@/src/app/components/SocketState";
-import UserActiveStatus from "@/src/app/components/ActiveStatus";
-import { BASE_URL } from "@/config";
-import { SocketProvider } from "./context/socketContext";
+import ClientLayout from "./components/ClientLayout";
 
 const nanumGothic = Nanum_Gothic({
   weight: ['400', '700', '800'],
@@ -79,28 +69,7 @@ export default async function RootLayout({
         break-all
         ${nanumGothic.variable}
       `}>
-        <NextAuthProvider>
-          <ApolloProviders>
-            <RQProviders>
-              <ToasterContext />
-              <NextUIProvider 
-                className="
-                  flex 
-                  flex-col 
-                  flex-1
-              ">
-                <ThemeProvider>
-                  <SocketProvider>
-                    <SocketComponents />
-                    <UserActiveStatus />
-                    <SocketState />
-                    {children}
-                  </SocketProvider>
-                </ThemeProvider>
-              </NextUIProvider>
-            </RQProviders>
-          </ApolloProviders>
-        </NextAuthProvider>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );
