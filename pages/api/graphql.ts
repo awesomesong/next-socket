@@ -26,5 +26,13 @@ const apolloServer = new ApolloServer<Context>({
 // GraphQL Playground 연결 (GUI) 
 // web framework
 export default startServerAndCreateNextHandler(apolloServer, {
-    context : async (req, res) => ({ req, res , prisma}),
+    context : async (req, res) => { 
+        // CORS 수동 설정
+        res.setHeader('Access-Control-Allow-Origin', 'https://www.devsonghee.com');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+        return { req, res , prisma }
+    },
 });
