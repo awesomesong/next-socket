@@ -1,6 +1,6 @@
 {
-    "name": "graphql-next",
-    "version": "0.1.0",
+    "name": "next-server",
+    "version": "1.0.0",
     "private": true,
     "scripts": {
         "dev": "node server.js",

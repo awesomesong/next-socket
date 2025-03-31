@@ -1,11 +1,15 @@
 .next
-.env
-.env.local
-.env.production
-node_modules
+next-server/.next
+next-server/.env
+next-server/.env.local
+next-server/.env.production
+next-server/node_modules
+next-server/prisma/migrations
+
+socket-server/node_modules
+socket-server/.env
+
 
 # OS
 .DS_Store
 Thumbs.db
-
-prisma/migrations/
