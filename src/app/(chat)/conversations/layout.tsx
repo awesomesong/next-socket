@@ -4,7 +4,7 @@ import Sidebar from '@/src/app/components/sidebar/Sidebar';
 import { BASE_URL } from "@/config";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(BASE_URL),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://devsonghee.com"),
   title: {
     default: "대화방",
     template: "%s | 대화방",

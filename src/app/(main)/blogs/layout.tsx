@@ -2,7 +2,7 @@ import { BASE_URL } from "@/config";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(BASE_URL),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://devsonghee.com"),
   title: {
     default: "React Query 기반의 블로그",
     template: "블로그",

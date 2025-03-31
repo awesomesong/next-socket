@@ -2,7 +2,7 @@ import { BASE_URL } from "@/config";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(BASE_URL),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://devsonghee.com"),
   title: {
     default: "GraphQL 기반의 게시판",
     template: "게시판",
