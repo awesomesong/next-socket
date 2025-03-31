@@ -1,11 +1,13 @@
 "use client";
-import { BASE_URL } from "@/config";
-import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
+import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 
-export const ApolloProviders = ({ children }: { children: React.ReactNode }) => {
-	const client = new ApolloClient({
-	uri: `${BASE_URL}/api/graphql`,
-		cache: new InMemoryCache(),
-	});
-	return <ApolloProvider client={client}>{children}</ApolloProvider>;
-};
+const client = new ApolloClient({
+    uri: `${process.env.NEXT_PUBLIC_URL}/api/graphql`,
+    cache: new InMemoryCache(),
+})
+
+const ApolloProviders = ({ children }: { children: React.ReactNode } ) => {
+    return <ApolloProvider client={client}>{children}</ApolloProvider>;
+}
+
+export default ApolloProviders;

@@ -1,5 +1,4 @@
 'use client';
-import { ApolloProviders } from '@/src/app/context/ApolloProviders'; 
 import NextAuthProvider from "@/src/app/context/NextAuthProvider";
 import ToasterContext from "@/src/app/context/ToasterContext";
 import ThemeProvider from "@/src/app/context/ThemeProvider";
@@ -9,6 +8,7 @@ import SocketComponents from "@/src/app/components/SocketComponents";
 import SocketState from "@/src/app/components/SocketState";
 import UserActiveStatus from "@/src/app/components/ActiveStatus";
 import { SocketProvider } from "@/src/app/context/socketContext";
+import ApolloProviders from "../context/ApolloProviders";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
