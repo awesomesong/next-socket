@@ -10,6 +10,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const socketIo = io(process.env.NEXT_PUBLIC_SOCKET_URL!, { 
         withCredentials: true,
+        transports: ["websocket"],
     });
     setSocket(socketIo);
 
