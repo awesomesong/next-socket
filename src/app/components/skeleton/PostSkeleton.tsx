@@ -6,10 +6,6 @@ const PostSkeleton = () => {
             flex 
             flex-col
             gap-2
-            fixed
-            inset-x-0
-            px-4 
-            sm:px-8
         " >
             <div className="flex flex-row justify-end gap-3 mb-2">
                 <Skeleton className="w-[60px] h-10 rounded-md" />

@@ -5,12 +5,6 @@ const BlogCardSkeleton = () => {
   return (
     <div className="
       layout-card
-      fixed
-      left-0
-      w-full  
-      mt-12
-      px-4 
-      md:px-8
     ">
       {Array(2).fill(
         <div className="block">

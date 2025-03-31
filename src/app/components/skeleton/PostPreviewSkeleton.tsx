@@ -5,12 +5,6 @@ const PostPreviewSkeleton = () => {
     return (
         <div className="
             layout-card--post
-            fixed 
-            left-0
-            w-full
-            mt-12
-            px-2
-            md:px-8
         ">
             {Array(2).fill(
                 <div className="block">
