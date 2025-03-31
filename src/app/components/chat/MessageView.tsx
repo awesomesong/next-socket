@@ -6,12 +6,12 @@ import ImageModal from "@/src/app/components/ImageModal";
 import { FullMessageType } from "@/src/app/types/conversation";
 import clsx from "clsx";
 import { DefaultSession } from "next-auth";
-import { useSocket } from "../context/socketContext";
 import { arraysEqualUnordered } from "@/src/app/utils/arraysEqualUnordered";
 import { useMutation } from "@tanstack/react-query";
 import { seenMessages } from "@/src/app/lib/seenMessages";
 import FallbackNextImage from "@/src/app/components/FallbackNextImage";
 import DOMPurify from "dompurify";
+import { useSocket } from "../../context/socketContext";
 
 interface MessageBoxProps {
   data: FullMessageType;

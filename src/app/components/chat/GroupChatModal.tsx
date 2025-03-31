@@ -4,7 +4,6 @@ import Input from "@/src/app/components/Input";
 import Modal from "@/src/app/components/Modal";
 import SelectBox from "@/src/app/components/SelectBox";
 import { IUserList } from "@/src/app/types/common";
-import { useSocket } from "../context/socketContext";
 import { User } from "@prisma/client";
 import { DefaultSession } from "next-auth";
 import { useRouter } from "next/navigation";
@@ -16,6 +15,7 @@ import getUsers from "@/src/app/lib/getUsers";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import ShapesSkeleton from "@/src/app/components/skeleton/ShapesSkeleton";
 import { createChatConversation } from "@/src/app/lib/createChatConversation";
+import { useSocket } from "../../context/socketContext";
 
 interface GroupChatModalProps {
     isOpen?: boolean;
