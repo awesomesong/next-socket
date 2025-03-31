@@ -7,6 +7,7 @@ import CategoryBadge from '@/src/app/components/CategoryBadge';
 import AvatarWithName from '@/src/app/components/AvatarWithName';
 import FallbackNextImage from '@/src/app/components/FallbackNextImage';
 import PostDeleteButton from './PostDeleteButton';
+import { useSession } from 'next-auth/react';
 import DOMPurify from 'dompurify';
 
 type Props = {
@@ -17,6 +18,7 @@ type Props = {
 
 export const Post = ({ post, HandlerCheckItem, isChecked }: Props) => {
     const router = useRouter();
+    const { data:session } = useSession();
 
     return (
         <article className='
@@ -47,7 +49,8 @@ export const Post = ({ post, HandlerCheckItem, isChecked }: Props) => {
                     isSelected={isChecked} 
                     onValueChange={() => HandlerCheckItem(post.id, !isChecked)} 
                 />
-                <PostDeleteButton postId={post.id} postTitle={post.title} />
+                {session?.user?.email && session?.user?.email === post.writer?.email 
+                    && <PostDeleteButton postId={post.id} postTitle={post.title} />}
             </div>
             {post.image && (
                 <div className='relative h-60 max-[320px]:h-48 w-full'>

@@ -6,6 +6,8 @@ import { PrismaClient } from "@prisma/client";
 import prisma from "../../prisma/db";
 import { typeDefs } from "@/graphql/schema";
 import { resolvers } from "@/graphql/resolvers";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/src/app/lib/auth";
 
 
 // DB 연동을 위한 설정
@@ -26,5 +28,14 @@ const apolloServer = new ApolloServer<Context>({
 // GraphQL Playground 연결 (GUI) 
 // web framework
 export default startServerAndCreateNextHandler(apolloServer, {
-    context : async (req, res) => ({ req, res , prisma }),
+    context : async (req, res) => { 
+        const session = await getServerSession(req, res, authOptions);
+
+        return {
+            req,
+            res,
+            prisma,
+            user: session?.user,
+        };
+    },
 });
