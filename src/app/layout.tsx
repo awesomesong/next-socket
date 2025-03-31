@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     title: "강송희 포트폴리오 | 프론트엔드 개발자",
     description:
       "Next.js 14, React, GraphQL, Prisma 등을 사용하여 구현한 웹 개발 포트폴리오입니다.",
-    url: "https://yourdomain.com", // 본인의 도메인으로 교체
+    url: "https://devsonghee.com",
     siteName: "강송희 포트폴리오",
     images: [
       {

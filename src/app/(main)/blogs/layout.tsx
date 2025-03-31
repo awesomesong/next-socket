@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "React Query 블로그",
     description: "React Query로 구현된 빠르고 유연한 블로그 시스템",
-    url: "https://yourdomain.com/posts",
+    url: "https://devsonghee.com/posts",
     images: [
       {
         url: "/image/posts_og.png",

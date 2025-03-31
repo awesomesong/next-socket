@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "GraphQL 게시판",
     description: "Apollo 기반으로 구현된 실시간 게시판 시스템",
-    url: "https://yourdomain.com/blogs",
+    url: "https://devsonghee.com/blogs",
     images: [
       {
         url: "/image/blog_og.png", // 📸 게시판 대표 이미지
