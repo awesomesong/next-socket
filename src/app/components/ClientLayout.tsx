@@ -7,7 +7,7 @@ import RQProviders from "@/src/app/context/RQProvider";
 import SocketComponents from "@/src/app/components/SocketComponents";
 import SocketState from "@/src/app/components/SocketState";
 import UserActiveStatus from "@/src/app/components/ActiveStatus";
-import { SocketProvider } from "@/src/app/context/socketContext";
+import { SocketProvider } from "../context/socketContext";
 import ApolloProviders from "../context/ApolloProviders";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {

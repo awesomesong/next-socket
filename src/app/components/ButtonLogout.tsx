@@ -1,5 +1,4 @@
 'use client';
-import { BASE_URL } from '@/config';
 import { signOut } from 'next-auth/react'
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/router';

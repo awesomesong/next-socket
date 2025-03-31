@@ -1,6 +1,5 @@
 'use client';
 import { useSession } from "next-auth/react";
-import { useSocket } from "@/src/app/context/socketContext";
 import { ConversationProps, FullConversationType, FullMessageType } from "@/src/app/types/conversation";
 import { memo, useEffect, useState, useMemo } from 'react';
 import { MdOutlineGroupAdd } from 'react-icons/md'
@@ -12,6 +11,7 @@ import ChatConversationSkeleton from "./skeleton/ChatConversationSkeleton";
 import clsx from "clsx";
 import useConversation from "@/src/app/hooks/useConversation";
 import GroupChatModal from "./chat/GroupChatModal";
+import { useSocket } from "../context/socketContext";
 
 const ConversationList = () => {
     const socket = useSocket();

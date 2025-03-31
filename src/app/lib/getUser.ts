@@ -1,7 +1,5 @@
-import { BASE_URL } from "@/config";
-
 const getUser = async () => {
-    const res = await fetch(`${BASE_URL}/api/user`,{
+    const res = await fetch(`/api/user`,{
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

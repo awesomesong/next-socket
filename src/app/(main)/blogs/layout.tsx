@@ -1,4 +1,3 @@
-import { BASE_URL } from "@/config";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

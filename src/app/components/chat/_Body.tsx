@@ -1,13 +1,12 @@
 'use client';
-import { useSocket } from "@/src/app/context/socketContext";
 import useConversation from '@/src/app/hooks/useConversation';
 import { useEffect, useRef, useState } from 'react';
 import MessageView from './MessageView';
 import { FullMessageType } from '@/src/app/types/conversation';
 import { DefaultSession } from 'next-auth';
-import { BASE_URL } from '@/config';
 import { pusherClient } from '@/src/app/lib/_pusher';
 import { find } from 'lodash';
+import { useSocket } from '../../context/socketContext';
 
 interface BodyProps {
     initialMessages: FullMessageType[];
@@ -20,7 +19,7 @@ const Body:React.FC<BodyProps> = ({ initialMessages, currentUser }) => {
     const bottomRef = useRef<HTMLDivElement>(null);
     const { conversationId } = useConversation();
 
-    const seenMessage = fetch(`${BASE_URL}/api/conversations/${conversationId}/seen`, {
+    const seenMessage = fetch(`/api/conversations/${conversationId}/seen`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

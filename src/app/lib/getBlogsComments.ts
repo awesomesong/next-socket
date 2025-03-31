@@ -1,4 +1,3 @@
-import { BASE_URL } from "@/config";
 import toast from "react-hot-toast";
 
 type QueryKeyProps = {
@@ -17,7 +16,7 @@ export const getBlogsComments = async (
     const cursor = pageParam ?? null;
 
     try {   
-        const res = await fetch(`${BASE_URL}/api/blogs/comments/${blogId}?cursor=${cursor}`,{
+        const res = await fetch(`/api/blogs/comments/${blogId}?cursor=${cursor}`,{
             next: {
                 tags: [_key]
             },

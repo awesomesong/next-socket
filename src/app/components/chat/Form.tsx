@@ -5,7 +5,7 @@ import { HiPaperAirplane, HiPhoto } from "react-icons/hi2";
 import { CldUploadButton } from 'next-cloudinary';
 import MessageTextarea from "./MessageTextarea";
 import TextareaAutosize from 'react-textarea-autosize';
-import { useSocket } from "@/src/app/context/socketContext";
+import { useSocket } from "../context/socketContext";
 import { useMutation } from "@tanstack/react-query";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";

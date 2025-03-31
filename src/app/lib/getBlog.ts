@@ -1,9 +1,8 @@
-import { BASE_URL } from '@/config';
 import { redirect } from 'next/navigation';
 import toast from "react-hot-toast";
 
 const getBlog = async ( id : string) => {
-    const res = await fetch(`${BASE_URL}/api/blogs/${id}`,{
+    const res = await fetch(`/api/blogs/${id}`,{
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import getUsers from "@/src/app/lib/getUsers";
 import UserBox from "./UserBox";
 import ChatMemberSkeleton from "./skeleton/ChatMemberSkeleton";
-import { useSocket } from "@/src/app/context/socketContext";
+import { useSocket } from "../context/socketContext";
 
 const UserList = () => {
     const socket = useSocket();

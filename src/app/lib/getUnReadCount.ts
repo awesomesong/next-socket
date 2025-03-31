@@ -1,8 +1,6 @@
-import { BASE_URL } from '@/config';
-
 const getUnReadCount = async () => {
 
-    const res = await fetch(`${BASE_URL}/api/messages/unReadCount`,{
+    const res = await fetch(`/api/messages/unReadCount`,{
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

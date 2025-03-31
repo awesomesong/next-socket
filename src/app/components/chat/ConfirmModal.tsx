@@ -1,8 +1,6 @@
 "use client";
 import Button from "@/src/app/components/Button";
 import Modal from "@/src/app/components/Modal";
-import { BASE_URL } from "@/config";
-import { useSocket } from "@/src/app/context/socketContext";
 import useConversation from "@/src/app/hooks/useConversation";
 import useConversationUserList from "@/src/app/hooks/useConversationUserList";
 import { ModalProps } from "@/src/app/types/common";
@@ -10,6 +8,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { FiAlertTriangle } from 'react-icons/fi'
+import { useSocket } from "../../context/socketContext";
 
 const ConfirmModal:React.FC<ModalProps> = ({
     isOpen,
@@ -26,7 +25,7 @@ const ConfirmModal:React.FC<ModalProps> = ({
     const onDelete = useCallback(() => {
         setIsLoading(true);
 
-        fetch(`${BASE_URL}/api/conversations/${conversationId}`, {
+        fetch(`/api/conversations/${conversationId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',

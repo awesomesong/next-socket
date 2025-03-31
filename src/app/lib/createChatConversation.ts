@@ -1,4 +1,3 @@
-import { BASE_URL } from "@/config";
 import { FieldValues } from "react-hook-form";
 
 type createChatProps = {
@@ -9,7 +8,7 @@ type createChatProps = {
 
 export const createChatConversation = async ({data, isGroup, userId}: createChatProps) => {
 
-    const res = await fetch(`${BASE_URL}/api/conversations`, {
+    const res = await fetch(`/api/conversations`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -1,5 +1,4 @@
 'use client';
-import { BASE_URL } from '@/config';
 import { useRouter } from 'next/navigation';
 import { BlogIdProps } from '@/src/app/types/blog';
 import LargeButton from './LargeButton';
@@ -16,7 +15,7 @@ const BlogDelete = ({ blogId, blogTitle } : BlogIdProps & BlogTitleProps) => {
         const result = confirm(`"${blogTitle}" 글을 삭제하겠습니까?`);
         if(!result) return; 
 
-        const res = await fetch(`${BASE_URL}/api/blogs/${blogId}`, {
+        const res = await fetch(`/api/blogs/${blogId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',

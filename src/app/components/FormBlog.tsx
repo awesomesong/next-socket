@@ -2,7 +2,6 @@
 import { FormEvent, useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { FormBlogData } from "@/src/app/types/blog";
 import { useSession } from "next-auth/react";
-import { BASE_URL } from "@/config";
 import { useRouter } from "next/navigation";
 import { BlogProps } from "@/src/app/types/blog";
 import toast from "react-hot-toast";
@@ -161,7 +160,7 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
     setloadingMessage(isEdit ? '수정한 글을 저장하고 있습니다.' : '작성한 글을 저장하고 있습니다.');
   
     try {
-      const apiUrl = isEdit ? `${BASE_URL}/api/blogs/${id}` : `${BASE_URL}/api/blogs`;
+      const apiUrl = isEdit ? `/api/blogs/${id}` : `/api/blogs`;
       const method = isEdit ? 'PUT' : 'POST';
       const requestBody = { title, content, image: JSON.stringify(images) };
   

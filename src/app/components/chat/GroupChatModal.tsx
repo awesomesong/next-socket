@@ -4,7 +4,7 @@ import Input from "@/src/app/components/Input";
 import Modal from "@/src/app/components/Modal";
 import SelectBox from "@/src/app/components/SelectBox";
 import { IUserList } from "@/src/app/types/common";
-import { useSocket } from "@/src/app/context/socketContext";
+import { useSocket } from "../context/socketContext";
 import { User } from "@prisma/client";
 import { DefaultSession } from "next-auth";
 import { useRouter } from "next/navigation";

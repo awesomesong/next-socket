@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { memo, useCallback, useMemo, useState } from "react";
 import Avatar from "./Avatar";
 import { IUserList } from "@/src/app/types/common";
-import { useSocket } from "@/src/app/context/socketContext";
+import { useSocket } from "../context/socketContext";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { createChatConversation } from "@/src/app/lib/createChatConversation";

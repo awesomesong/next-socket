@@ -5,7 +5,7 @@ import MessageView from './MessageView';
 import { FullMessageType } from '@/src/app/types/conversation';
 import { InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
-import { useSocket } from "@/src/app/context/socketContext";
+import { useSocket } from "../context/socketContext";
 import getMessages from '@/src/app/lib/getMessages';
 import { readMessages } from '@/src/app/lib/readMessages';
 import ChatSkeleton from '@/src/app/components/skeleton/ChatSkeleton';

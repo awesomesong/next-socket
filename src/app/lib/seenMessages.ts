@@ -1,5 +1,3 @@
-import { BASE_URL } from "@/config";
-
 type seenMessagesProps = {
     conversationId: string;
     messageId: string;
@@ -7,7 +5,7 @@ type seenMessagesProps = {
 
 export const seenMessages = async ({ conversationId, messageId }: seenMessagesProps) => {
 
-    const res = await fetch(`${BASE_URL}/api/conversations/${conversationId}/seen/${messageId}`, {
+    const res = await fetch(`/api/conversations/${conversationId}/seen/${messageId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

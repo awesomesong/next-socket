@@ -1,8 +1,7 @@
-import { BASE_URL } from '@/config';
 
 const getConversationById = async ( conversationId: string) => {
     
-    const res = await fetch(`${BASE_URL}/api/conversations/${conversationId}`,{
+    const res = await fetch(`/api/conversations/${conversationId}`,{
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

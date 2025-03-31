@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import UserList from "@/src/app/components/UserList";
 import Sidebar from "@/src/app/components/sidebar/Sidebar";
-import { BASE_URL } from "@/config";
 
 export const metadata: Metadata = {
     metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://devsonghee.com"),

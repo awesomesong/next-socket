@@ -47,7 +47,7 @@ const Registerpage = () => {
             );
             return;
         }
-        const res = await fetch(`${BASE_URL}/api/register`, {
+        const res = await fetch(`/api/register`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -66,7 +66,7 @@ const Registerpage = () => {
             toast.success(message);
             clearErrors();
             reset();
-            router.push(`/auth/signin?callbackUrl=${BASE_URL}`);
+            router.push(`/auth/signin?callbackUrl=`);
         }
     };
 
@@ -169,7 +169,7 @@ const Registerpage = () => {
             <Suspense>
                 <AuthSocial onClick={() => setIsLoading(!isLoading)} disabled={isLoading}/>
             </Suspense>
-            
+
             <div
                 className="
                 flex

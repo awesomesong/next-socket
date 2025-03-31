@@ -1,5 +1,5 @@
 "use client";
-import { useSocket } from "@/src/app/context/socketContext";
+import { useSocket } from "../context/socketContext";
 import { IUserList } from "@/src/app/types/common";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";

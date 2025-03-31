@@ -1,9 +1,7 @@
-import { BASE_URL } from "@/config";
 import toast from "react-hot-toast";
 
-
 const getUsers = async () => {
-    const res = await fetch(`${BASE_URL}/api/chatMember`,{
+    const res = await fetch(`/api/chatMember`,{
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

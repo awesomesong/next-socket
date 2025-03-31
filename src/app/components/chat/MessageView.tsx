@@ -6,7 +6,7 @@ import ImageModal from "@/src/app/components/ImageModal";
 import { FullMessageType } from "@/src/app/types/conversation";
 import clsx from "clsx";
 import { DefaultSession } from "next-auth";
-import { useSocket } from "@/src/app/context/socketContext";
+import { useSocket } from "../context/socketContext";
 import { arraysEqualUnordered } from "@/src/app/utils/arraysEqualUnordered";
 import { useMutation } from "@tanstack/react-query";
 import { seenMessages } from "@/src/app/lib/seenMessages";

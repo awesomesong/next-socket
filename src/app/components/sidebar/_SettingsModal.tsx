@@ -1,5 +1,4 @@
 'use client';
-import { BASE_URL } from "@/config";
 import { DefaultSession } from "next-auth";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -54,7 +53,7 @@ const SettingsModal:React.FC<SettingsModalProps> = ({
     const onSubmit: SubmitHandler<FieldValues> = async (data) => {
         setIsLoading(true);
 
-        await fetch(`${BASE_URL}/api/settings`, {
+        await fetch(`/api/settings`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

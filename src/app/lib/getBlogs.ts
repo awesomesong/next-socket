@@ -1,4 +1,3 @@
-import { BASE_URL } from "@/config";
 import toast from "react-hot-toast";
 
 type ParamProps = {
@@ -10,7 +9,7 @@ export const getBlogs = async (
 ) => {
 
     const searchParams =  pageParam !== '' ? '?cursor='+pageParam : '';
-    const res = await fetch(`${BASE_URL}/api/blogs${searchParams}`, {
+    const res = await fetch(`/api/blogs${searchParams}`, {
         next: {
             tags: ['blogs', 'recommends']
         },

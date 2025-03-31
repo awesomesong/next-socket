@@ -1,5 +1,3 @@
-
-import { BASE_URL } from "@/config";
 import { FieldValues } from "react-hook-form";
 
 type sendMessageProps = {
@@ -9,7 +7,7 @@ type sendMessageProps = {
 }
 
 export const sendMessage = async ({ conversationId, data, image }: sendMessageProps) => {
-    const res = await fetch(`${BASE_URL}/api/messages`, {
+    const res = await fetch(`/api/messages`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

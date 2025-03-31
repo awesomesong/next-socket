@@ -1,5 +1,4 @@
 'use client';
-import { BASE_URL } from "@/config";
 import { DefaultSession } from "next-auth";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -47,7 +46,7 @@ const AvatarProfile:React.FC<AvatarProfileProps> = ({
 
     const onSubmit: SubmitHandler<FieldValues> = async (data) => {
 
-        await fetch(`${BASE_URL}/api/settings`, {
+        await fetch(`/api/settings`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
