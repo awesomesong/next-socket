@@ -1,8 +1,8 @@
 "use client";
-import Button from "@/components/Button";
-import Input from "@/components/Input";
-import Modal from "@/components/Modal";
-import SelectBox from "@/components/SelectBox";
+import Button from "@/src/app/components/Button";
+import Input from "@/src/app/components/Input";
+import Modal from "@/src/app/components/Modal";
+import SelectBox from "@/src/app/components/SelectBox";
 import { IUserList } from "@/src/app/types/common";
 import { useSocket } from "@/src/app/context/socketContext";
 import { User } from "@prisma/client";
@@ -14,7 +14,7 @@ import toast from "react-hot-toast";
 import { SelectInstance, GroupBase } from "react-select";
 import getUsers from "@/src/app/lib/getUsers";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import ShapesSkeleton from "@/components/skeleton/ShapesSkeleton";
+import ShapesSkeleton from "@/src/app/components/skeleton/ShapesSkeleton";
 import { createChatConversation } from "@/src/app/lib/createChatConversation";
 
 interface GroupChatModalProps {

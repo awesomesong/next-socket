@@ -1,5 +1,5 @@
-import ChatMenu from "@/components/ChatMenu";
-import { Header } from "@/components/Header";
+import ChatMenu from "@/src/app/components/ChatMenu";
+import { Header } from "@/src/app/components/Header";
 
 export default function Layout({ children } : {
     children: React.ReactNode;

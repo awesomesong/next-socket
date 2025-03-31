@@ -1,7 +1,7 @@
 "use client"
 import { GET_POST } from '@/graphql/queries';
 import { useQuery } from '@apollo/client';
-import FormPost from '@/components/FormPost';
+import FormPost from '@/src/app/components/FormPost';
 
 type ParamsProps = {
     params: {

@@ -1,4 +1,4 @@
-import EmptyState from "@/components/EmptyState";
+import EmptyState from "@/src/app/components/EmptyState";
 
 export default async function ChatPage() {
   return (

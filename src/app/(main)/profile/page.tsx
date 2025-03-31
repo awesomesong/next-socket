@@ -1,4 +1,4 @@
-import AvatarProfile from "@/components/AvatarProfile";
+import AvatarProfile from "@/src/app/components/AvatarProfile";
 import { getCurrentUser } from "@/src/app/lib/session";
 
 const Profile = async () => {

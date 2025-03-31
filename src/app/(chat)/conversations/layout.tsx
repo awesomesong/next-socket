@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import ConversationList from '@/components/ConversationList';
-import Sidebar from '@/components/sidebar/Sidebar';
+import ConversationList from '@/src/app/components/ConversationList';
+import Sidebar from '@/src/app/components/sidebar/Sidebar';
 import { BASE_URL } from "@/config";
 
 export const metadata: Metadata = {

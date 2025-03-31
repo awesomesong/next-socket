@@ -1,4 +1,4 @@
-import FormPost from '@/components/FormPost';
+import FormPost from '@/src/app/components/FormPost';
 
 const PostsCreatePage = () => {
 

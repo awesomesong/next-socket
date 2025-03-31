@@ -8,9 +8,9 @@ import { useSession } from 'next-auth/react';
 import { useSocket } from "@/src/app/context/socketContext";
 import getMessages from '@/src/app/lib/getMessages';
 import { readMessages } from '@/src/app/lib/readMessages';
-import ChatSkeleton from '@/components/skeleton/ChatSkeleton';
+import ChatSkeleton from '@/src/app/components/skeleton/ChatSkeleton';
 import { PiArrowFatDownFill } from "react-icons/pi";
-import CircularProgress from '@/components/CircularProgress';
+import CircularProgress from '@/src/app/components/CircularProgress';
 
 const Body = () => {
     const socket = useSocket();

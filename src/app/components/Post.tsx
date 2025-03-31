@@ -3,9 +3,9 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Checkbox } from "@nextui-org/react";
 import dayjs from '@/src/app/lib/day';
-import CategoryBadge from '@/components/CategoryBadge';
-import AvatarWithName from '@/components/AvatarWithName';
-import FallbackNextImage from '@/components/FallbackNextImage';
+import CategoryBadge from '@/src/app/components/CategoryBadge';
+import AvatarWithName from '@/src/app/components/AvatarWithName';
+import FallbackNextImage from '@/src/app/components/FallbackNextImage';
 import PostDeleteButton from './PostDeleteButton';
 import DOMPurify from 'dompurify';
 

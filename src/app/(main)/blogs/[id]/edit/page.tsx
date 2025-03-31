@@ -1,5 +1,5 @@
 'use client';
-import { FormBlog } from '@/components/FormBlog';
+import { FormBlog } from '@/src/app/components/FormBlog';
 import getBlog from '@/src/app/lib/getBlog';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';

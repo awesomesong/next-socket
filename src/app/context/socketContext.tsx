@@ -1,6 +1,4 @@
 "use client";
-
-import { BASE_URL } from "@/config";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
@@ -10,7 +8,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const socketIo = io(BASE_URL, { withCredentials: true });
+    const socketIo = io(process.env.NEXT_PUBLIC_SOCKET_URL!, { 
+        withCredentials: true,
+    });
     setSocket(socketIo);
 
     return () => {

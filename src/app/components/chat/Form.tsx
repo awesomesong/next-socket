@@ -10,7 +10,7 @@ import { useMutation } from "@tanstack/react-query";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
-import ImageUploadButton from "@/components/ImageUploadButton";
+import ImageUploadButton from "@/src/app/components/ImageUploadButton";
 
 const Form = () => {
     const socket = useSocket();

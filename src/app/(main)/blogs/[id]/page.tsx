@@ -1,19 +1,19 @@
 'use client'
-import Comments from '@/components/Comments';
-import FormComment from '@/components/FormComment';
-import BlogDelete from '@/components/BlogDelete';
-import BlogEdit from '@/components/BlogEdit';
+import Comments from '@/src/app/components/Comments';
+import FormComment from '@/src/app/components/FormComment';
+import BlogDelete from '@/src/app/components/BlogDelete';
+import BlogEdit from '@/src/app/components/BlogEdit';
 import getBlog from '@/src/app/lib/getBlog';
 import 'highlight.js/styles/vs2015.css';
-import BlogList from '@/components/BlogList';
+import BlogList from '@/src/app/components/BlogList';
 import dayjs from '@/src/app/lib/day';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { addBlogViewCount } from '@/src/app/lib/addBlogViewCount';
 import { PiUserCircleFill } from 'react-icons/pi';
-import { BlogSkeleton } from '@/components/skeleton/BlogSkeleton';
-import FallbackNextImage from '@/components/FallbackNextImage';
+import { BlogSkeleton } from '@/src/app/components/skeleton/BlogSkeleton';
+import FallbackNextImage from '@/src/app/components/FallbackNextImage';
 import DOMPurify from 'dompurify';
 
 const BlogDetailPage = ({ params } : {

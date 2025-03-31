@@ -1,12 +1,12 @@
 'use client';
-import EmptyState from "@/components/EmptyState";
+import EmptyState from "@/src/app/components/EmptyState";
 import getConversationById from "@/src/app/lib/getConversationById";
-import UnavailableChatForm from "@/components/UnavailableChatForm";
+import UnavailableChatForm from "@/src/app/components/UnavailableChatForm";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import Header from "@/components/chat/Header";
-import Body from "@/components/chat/Body";
-import Form from "@/components/chat/Form";
+import Header from "@/src/app/components/chat/Header";
+import Body from "@/src/app/components/chat/Body";
+import Form from "@/src/app/components/chat/Form";
 
 interface IParams {
     conversationId: string;

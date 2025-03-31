@@ -4,8 +4,8 @@ const http = require("http");
 const { Server } = require("socket.io");
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = "localhost";
-const port = 3000;
+const hostname = process.env.HOST || "localhost";
+const port = parseInt(process.env.PORT, 10) || 3001;
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
@@ -31,9 +31,20 @@ const removeUser = (socketId) => {
 app.prepare().then(() => {
   const server = express();
   const httpServer = http.createServer(server);
+  const allowedOrigins = process.env.NODE_ENV === "production"
+    ? ["https://devsonghee.com"]
+    : ["http://localhost:3001"];
+
   const io = new Server(httpServer, {
     cors: {
-      origin: `http://${hostname}:${port}`, // Next.js의 주소 허용
+        origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          console.log("Blocked origin:", origin); 
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       methods: ["GET", "POST"],
     },
   });
@@ -125,13 +136,14 @@ app.prepare().then(() => {
     return handle(req, res);
   });
 
-  const PORT = 3001;
+
+  const PORT = process.env.PORT || 3001;
   httpServer
   .once("error", (err) => {
     console.error(err);
     process.exit(1);
   })
   .listen(PORT, () => {
-    console.log(`> Ready on http://${hostname}:${PORT}`);
+    console.log(`> Server running on PORT ${PORT}`);
   });
 });

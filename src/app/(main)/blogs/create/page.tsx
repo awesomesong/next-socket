@@ -1,5 +1,5 @@
 
-import { FormBlog } from '@/components/FormBlog';
+import { FormBlog } from '@/src/app/components/FormBlog';
 
 const BlogCreatePage = () => {
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import UserList from "@/components/UserList";
-import Sidebar from "@/components/sidebar/Sidebar";
+import UserList from "@/src/app/components/UserList";
+import Sidebar from "@/src/app/components/sidebar/Sidebar";
 import { BASE_URL } from "@/config";
 
 export const metadata: Metadata = {

@@ -1,8 +1,8 @@
-import ProductBeer from "@/components/main/ProductBeer";
-import ProductSoju from "@/components/main/ProductSoju";
-import ProductDrink from "@/components/main/ProductDrink";
-import ProductInternational from "@/components/main/ProductInternational";
-import ProductWhiskey from "@/components/main/ProductWhiskey";
+import ProductBeer from "@/src/app/components/main/ProductBeer";
+import ProductSoju from "@/src/app/components/main/ProductSoju";
+import ProductDrink from "@/src/app/components/main/ProductDrink";
+import ProductInternational from "@/src/app/components/main/ProductInternational";
+import ProductWhiskey from "@/src/app/components/main/ProductWhiskey";
 
 export default async function Home() {
   

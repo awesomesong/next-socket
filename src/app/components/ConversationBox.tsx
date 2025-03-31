@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { FullConversationType } from "@/src/app/types/conversation";
 import useOtherUser from "@/src/app/hooks/useOtherUser";
-import Avatar from "../components/Avatar";
+import Avatar from "./Avatar";
 import AvatarGroup from "./AvatarGroup";
 import useConversation from "@/src/app/hooks/useConversation";
 import { formatDate } from "@/src/app/utils/formatDate";

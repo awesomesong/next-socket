@@ -1,5 +1,5 @@
 'use client';
-import Avatar from "@/components/Avatar";
+import Avatar from "@/src/app/components/Avatar";
 import useOtherUser from "@/src/app/hooks/useOtherUser";
 import { Conversation, User } from "@prisma/client";
 import Link from "next/link";
@@ -7,7 +7,7 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { HiChevronLeft, HiEllipsisHorizontal } from "react-icons/hi2";
 import { DefaultSession } from "next-auth";
 import ProfileDrawer from "./ProfileDrawer";
-import AvatarGroup from "@/components/AvatarGroup";
+import AvatarGroup from "@/src/app/components/AvatarGroup";
 import useActiveList from "@/src/app/hooks/useActiveList";
 import useConversationUserList from "@/src/app/hooks/useConversationUserList";
 

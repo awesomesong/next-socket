@@ -1,17 +1,17 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { ApolloProviders } from '@/context/ApolloProviders'; 
-import NextAuthProvider from "@/context/NextAuthProvider";
-import ToasterContext from "@/context/ToasterContext";
-import ThemeProvider from "@/context/ThemeProvider";
+import { ApolloProviders } from '@/src/app/context/ApolloProviders'; 
+import NextAuthProvider from "@/src/app/context/NextAuthProvider";
+import ToasterContext from "@/src/app/context/ToasterContext";
+import ThemeProvider from "@/src/app/context/ThemeProvider";
 import { NextUIProvider } from "@nextui-org/react";
 import { Nanum_Gothic } from 'next/font/google';
-import RQProviders from "@/context/RQProvider";
-import SocketComponents from "@/components/SocketComponents";
-import { SocketProvider } from "./context/socketContext";
-import SocketState from "@/components/SocketState";
-import UserActiveStatus from "@/components/ActiveStatus";
+import RQProviders from "@/src/app/context/RQProvider";
+import SocketComponents from "@/src/app/components/SocketComponents";
+import SocketState from "@/src/app/components/SocketState";
+import UserActiveStatus from "@/src/app/components/ActiveStatus";
 import { BASE_URL } from "@/config";
+import { SocketProvider } from "./context/socketContext";
 
 const nanumGothic = Nanum_Gothic({
   weight: ['400', '700', '800'],

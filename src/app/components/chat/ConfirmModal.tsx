@@ -1,6 +1,6 @@
 "use client";
-import Button from "@/components/Button";
-import Modal from "@/components/Modal";
+import Button from "@/src/app/components/Button";
+import Modal from "@/src/app/components/Modal";
 import { BASE_URL } from "@/config";
 import { useSocket } from "@/src/app/context/socketContext";
 import useConversation from "@/src/app/hooks/useConversation";

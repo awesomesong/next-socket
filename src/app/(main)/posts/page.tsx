@@ -5,10 +5,10 @@ import { useQuery } from '@apollo/client';
 import { useRouter } from 'next/navigation';
 import { ChangeEvent, useRef, useState } from 'react';
 import { Button } from '@nextui-org/react';
-import StatusMessage from '@/components/StatusMessage';
-import PostDeleteButton from '@/components/PostDeleteButton';
-import { Post } from '@/components/Post';
-import PostPreviewSkeleton from '@/components/skeleton/PostPreviewSkeleton';
+import StatusMessage from '@/src/app/components/StatusMessage';
+import PostDeleteButton from '@/src/app/components/PostDeleteButton';
+import { Post } from '@/src/app/components/Post';
+import PostPreviewSkeleton from '@/src/app/components/skeleton/PostPreviewSkeleton';
 import { useSession } from 'next-auth/react';
 
 const PostsDetailpage = () => {

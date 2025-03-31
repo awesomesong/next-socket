@@ -1,5 +1,5 @@
-import Blogs from '@/components/Blogs';
-import CreateBlogBtn from "@/components/CreateBlogBtn";
+import Blogs from '@/src/app/components/Blogs';
+import CreateBlogBtn from "@/src/app/components/CreateBlogBtn";
 import { getCurrentUser } from "@/src/app/lib/session";
 
 const BlogsPage = async () => {

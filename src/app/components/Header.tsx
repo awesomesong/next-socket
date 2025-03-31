@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { getCurrentUser } from '../src/app/lib/session'
+import { getCurrentUser } from '../lib/session'
 import ButtonLogout from './ButtonLogout';
 import ThemeSwitch from './ThemeSwitch';
 import Navigation from './navigation/Navigation';

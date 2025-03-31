@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useForm, FieldValues, SubmitHandler } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import AuthForm from "@/components/AuthForm";
-import Input from "@/components/Input";
-import Button from "@/components/Button";
-import AuthSocial from "@/components/AuthSocail";
+import AuthForm from "@/src/app/components/AuthForm";
+import Input from "@/src/app/components/Input";
+import Button from "@/src/app/components/Button";
+import AuthSocial from "@/src/app/components/AuthSocail";
 import clsx from "clsx";
 import Link from "next/link";
 

@@ -11,13 +11,13 @@ import { FormEvent, useState } from "react";
 import { AiFillMinusCircle } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import { Button, Tooltip } from "@nextui-org/react";
-import PostDeleteButton from "@/components/PostDeleteButton";
-import CategoryBadge from "@/components/CategoryBadge";
-import AvatarWithName from "@/components/AvatarWithName";
-import FallbackNextImage from "@/components/FallbackNextImage";
+import PostDeleteButton from "@/src/app/components/PostDeleteButton";
+import CategoryBadge from "@/src/app/components/CategoryBadge";
+import AvatarWithName from "@/src/app/components/AvatarWithName";
+import FallbackNextImage from "@/src/app/components/FallbackNextImage";
 import { useSession } from "next-auth/react";
-import PostSkeleton from "@/components/skeleton/PostSkeleton";
-import StatusMessage from "@/components/StatusMessage";
+import PostSkeleton from "@/src/app/components/skeleton/PostSkeleton";
+import StatusMessage from "@/src/app/components/StatusMessage";
 import DOMPurify from "dompurify";
 
 type Props = {

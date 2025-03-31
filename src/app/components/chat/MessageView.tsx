@@ -1,8 +1,8 @@
 'use client';
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import Avatar from "@/components/Avatar";
-import ImageModal from "@/components/ImageModal";
+import Avatar from "@/src/app/components/Avatar";
+import ImageModal from "@/src/app/components/ImageModal";
 import { FullMessageType } from "@/src/app/types/conversation";
 import clsx from "clsx";
 import { DefaultSession } from "next-auth";
@@ -10,7 +10,7 @@ import { useSocket } from "@/src/app/context/socketContext";
 import { arraysEqualUnordered } from "@/src/app/utils/arraysEqualUnordered";
 import { useMutation } from "@tanstack/react-query";
 import { seenMessages } from "@/src/app/lib/seenMessages";
-import FallbackNextImage from "@/components/FallbackNextImage";
+import FallbackNextImage from "@/src/app/components/FallbackNextImage";
 import DOMPurify from "dompurify";
 
 interface MessageBoxProps {
