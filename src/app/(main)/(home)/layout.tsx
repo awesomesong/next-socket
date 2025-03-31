@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://devsonghee.com"),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://www.devsonghee.com"),
     title: {
       default: "Framer Motion 기반 인터랙티브 포트폴리오",
       template: "%s | Framer Motion 포트폴리오",
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
       title: "Framer Motion 기반 인터랙티브 포트폴리오",
       description:
         "Framer Motion으로 구현된 하이트 맥주 애니메이션과 포트폴리오 콘텐츠를 만나보세요.",
-      url: "https://devsonghee.com",
+      url: "https://www.devsonghee.com",
       images: [
         {
           url: "/image/interactive_portfolio_og.png",

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://devsonghee.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://www.devsonghee.com"),
   title: {
     default: "채팅",
     template: "%s | 채팅",
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "채팅",
     description: "Socket.io 기반의 실시간 채팅",
-    url: "https://devsonghee.com/chat",
+    url: "https://www.devsonghee.com/chat",
     images: [
       {
         url: "/image/chat_og.png",

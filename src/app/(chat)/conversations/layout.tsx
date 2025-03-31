@@ -3,7 +3,7 @@ import ConversationList from '@/src/app/components/ConversationList';
 import Sidebar from '@/src/app/components/sidebar/Sidebar';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://devsonghee.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://www.devsonghee.com"),
   title: {
     default: "대화방",
     template: "%s | 대화방",

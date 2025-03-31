@@ -32,7 +32,7 @@ app.prepare().then(() => {
   const server = express();
   const httpServer = http.createServer(server);
   const allowedOrigins = process.env.NODE_ENV === "production"
-    ? ["https://devsonghee.com"]
+    ? ["https://www.devsonghee.com"]
     : ["http://localhost:3001"];
 
   const io = new Server(httpServer, {

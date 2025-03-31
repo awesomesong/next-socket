@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://devsonghee.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://www.devsonghee.com"),
   title: {
     default: "React Query 기반의 블로그",
     template: "블로그",
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "React Query 블로그",
     description: "React Query로 구현된 빠르고 유연한 블로그 시스템",
-    url: "https://devsonghee.com/posts",
+    url: "https://www.devsonghee.com/posts",
     images: [
       {
         url: "/image/posts_og.png",

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://devsonghee.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://www.devsonghee.com"),
   title: {
     default: "GraphQL 기반의 게시판",
     template: "게시판",
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "GraphQL 게시판",
     description: "Apollo 기반으로 구현된 실시간 게시판 시스템",
-    url: "https://devsonghee.com/blogs",
+    url: "https://www.devsonghee.com/blogs",
     images: [
       {
         url: "/image/blog_og.png", // 📸 게시판 대표 이미지
