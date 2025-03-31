@@ -8,7 +8,7 @@ const ButtonLogin = () => {
     const searchParams = useSearchParams();
 
     return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense>
         <button
             className='hover:underline'
             onClick={() => signIn(undefined, { callbackUrl: `${pathname}${searchParams?.toString() && '?'+searchParams.toString()}` })}

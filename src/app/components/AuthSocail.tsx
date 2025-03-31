@@ -6,7 +6,6 @@ import { RiKakaoTalkFill } from "react-icons/ri";
 import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthSocialProps } from "@/src/app/types/common";
-import { Suspense } from "react";
 
 const AuthSocial:React.FC<AuthSocialProps> = ({
     onClick,
@@ -37,7 +36,6 @@ const AuthSocial:React.FC<AuthSocialProps> = ({
     };
 
     return (
-    <Suspense fallback={<div>Loading...</div>}>
         <div className="mt-6">
             <div className="relative">
                 <div 
@@ -74,7 +72,6 @@ const AuthSocial:React.FC<AuthSocialProps> = ({
                 </AuthSocialButton>
             </div>
         </div>
-    </Suspense>
     )
 }
 

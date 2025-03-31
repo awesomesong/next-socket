@@ -1,6 +1,6 @@
 'use client';
 import { BASE_URL } from "@/config";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm, FieldValues, SubmitHandler } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -166,8 +166,10 @@ const Registerpage = () => {
                 </div>
             </form>
 
-            <AuthSocial onClick={() => setIsLoading(!isLoading)} disabled={isLoading}/>
-
+            <Suspense>
+                <AuthSocial onClick={() => setIsLoading(!isLoading)} disabled={isLoading}/>
+            </Suspense>
+            
             <div
                 className="
                 flex

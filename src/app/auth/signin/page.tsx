@@ -1,5 +1,5 @@
 'use client';
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm, FieldValues, SubmitHandler } from "react-hook-form";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -112,10 +112,12 @@ const SignInPage = () => {
         </div>
       </form>
 
-      <AuthSocial 
-        onClick={() => setIsLoading(!isLoading)} 
-        disabled={isLoading}
-      />
+      <Suspense>
+        <AuthSocial 
+          onClick={() => setIsLoading(!isLoading)} 
+          disabled={isLoading}
+        />
+      </Suspense>
 
       <div
         className="
