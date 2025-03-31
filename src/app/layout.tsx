@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { ApolloProviders } from '@/context/ApolloProviders'; 
 import NextAuthProvider from "@/context/NextAuthProvider";
 import ToasterContext from "@/context/ToasterContext";
-import { ThemeProvider } from "@/context/ThemeProvider";
+import ThemeProvider from "@/context/ThemeProvider";
 import { NextUIProvider } from "@nextui-org/react";
 import { Nanum_Gothic } from 'next/font/google';
 import RQProviders from "@/context/RQProvider";
