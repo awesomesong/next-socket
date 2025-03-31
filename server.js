@@ -45,6 +45,7 @@ app.prepare().then(() => {
           callback(new Error("Not allowed by CORS"));
         }
       },
+      credentials: true,
       methods: ["GET", "POST"],
     },
   });
