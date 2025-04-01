@@ -53,7 +53,10 @@ const Form = () => {
     });
 
     useEffect(() => {
-        setFocus("message");
+        // setFocus("message");
+        if (textareaRef.current) {
+            textareaRef.current.focus(); // 포커스 유지
+        }
     }, [isSuccess]);
 
     const { ref: inputRef, ...rest } = register('message', { required: true });
@@ -66,8 +69,9 @@ const Form = () => {
         mutate({conversationId, data});
         if(socket) socket.emit('join:room', conversationId);
 
-        // ✅ 모바일 키보드가 계속 유지되도록 다시 포커스
-        setTimeout(() => setFocus("message"), 100); // 약간의 딜레이로 안정성 ↑
+        setTimeout(() => {
+            textareaRef.current?.focus(); // 모바일 키보드 유지
+        }, 100);
     };
 
     const handleUpload = async (result: any) => {
@@ -91,6 +95,8 @@ const Form = () => {
             
             const value = getValues('message'); // get user input value
             if (value.trim().length === 0) return; // 빈 메시지 방지
+
+            if (!(await trigger('message'))) return; // ✅ 유효성 체크
 
             setIsDisabled(true);
             await await onSubmit({ message: value }, e);
@@ -137,6 +143,10 @@ const Form = () => {
                     onCompositionStart={handleCompositionStart}
                     onCompositionEnd={handleCompositionEnd}
                     disabled={isDisabled}
+                    ref={(e) => {
+                        inputRef(e);         // react-hook-form 연결
+                        textareaRef.current = e; // 로컬 ref에도 저장
+                    }}
                     className='
                         w-full 
                         bg-default
@@ -150,7 +160,12 @@ const Form = () => {
                 />
                 <button 
                     type="button"
-                    onClick={handleSubmit(onSubmit)}
+                    onClick={() => {
+                        handleSubmit(onSubmit)();
+                        setTimeout(() => {
+                          textareaRef.current?.focus();
+                        }, 100);
+                    }}
                     className="
                         rounded-full
                         p-2
