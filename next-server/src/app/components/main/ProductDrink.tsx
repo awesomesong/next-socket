@@ -43,7 +43,6 @@ const ProductDrink = () => {
           md:grid-cols-4 
           gap-y-10
           items-baseline
-          md:w-fit
           w-full
           my-24
         "
