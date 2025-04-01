@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import ImageUploadButton from "@/src/app/components/ImageUploadButton";
 import { useSocket } from "../../context/socketContext";
+import useComposition from "@/src/app/hooks/useComposition";
 
 const Form = () => {
     const socket = useSocket();
@@ -66,19 +67,26 @@ const Form = () => {
         mutate({conversationId, image: result?.info?.secure_url});
     };
 
-    const handleKeyPress = async (e: any) => {
-        if (e.isComposing || e.keyCode === 229) return; 
-        if( e.key == 'Enter' && e.shiftKey) return; 
-        if(e.key === 'Enter' && !e.shiftKey ) {
+    // ✅ 조합 입력 훅 적용
+    const {
+        isComposing,
+        handleCompositionStart,
+        handleCompositionEnd
+    } = useComposition();
+
+    const handleKeyPress = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (isComposing()) return;
+        if (e.key === 'Enter' && !e.shiftKey ) {
             e.preventDefault(); 
+            if (isDisabled) return;
             // trigger(); // execute react-hook-form submit programmatically 
-            setIsDisabled(true);
-          
-            const value = getValues('message'); // get user input value
             
-            if(value.length > 0){
-                await onSubmit({ ['message']: value }, e); // fire onSubmit() by key press
-            }        
+            const value = getValues('message'); // get user input value
+            if (value.trim().length === 0) return; // 빈 메시지 방지
+
+            setIsDisabled(true);
+            await await onSubmit({ message: value }, e);
+
         }
     };
 
@@ -118,6 +126,8 @@ const Form = () => {
                     {...register('message', { required: true })}
                     placeholder="메시지를 작성해주세요."
                     onKeyDown={handleKeyPress}
+                    onCompositionStart={handleCompositionStart}
+                    onCompositionEnd={handleCompositionEnd}
                     disabled={isDisabled}
                     className='
                         w-full 
