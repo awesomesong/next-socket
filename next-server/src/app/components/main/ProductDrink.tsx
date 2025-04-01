@@ -54,7 +54,7 @@ const ProductDrink = () => {
             whileInView={{ x: 0, opacity: 1 }}
             viewport={{ amount: 0.3, once: true }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="relative border-2"
+            className="relative"
           >
             <Link
               href={drink.link}
@@ -73,7 +73,7 @@ const ProductDrink = () => {
                 width={0}
                 height={0}
                 sizes="100vw"
-                className="w-auto md:max-w-[236px] lg:h-[265px] min-[940px]:h-[220px] h-[180px]"
+                className="w-auto md:w-full lg:h-[265px] min-[940px]:h-[220px] h-[180px]"
               />
               <DrinksName name={drink.name} scrollRef={scrollRef} />
             </Link>
