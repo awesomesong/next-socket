@@ -202,7 +202,8 @@ const Body = () => {
                     type='button'
                     className="
                         absolute 
-                        bottom-24 
+                        md:bottom-24 
+                        bottom-36
                         right-1/2
                         p-2 
                         bg-default-reverse 
