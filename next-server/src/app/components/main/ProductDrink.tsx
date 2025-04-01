@@ -17,7 +17,7 @@ const ProductDrink = () => {
   useEffect(() => {
     if (isPC !== null) {
       setInitialXGroup1(isPC ? [-60, -200, -340, -480] : [-50, -70, -50, -70]);
-      setInitialXGroup2(isPC ? [480, 340, 200, 60] : [50, 70, 50, 70]);
+      setInitialXGroup2(isPC ? [480, 340, 200, 60] : [0, 0, 0, 0]);
     }
   }, [isPC]);
 
