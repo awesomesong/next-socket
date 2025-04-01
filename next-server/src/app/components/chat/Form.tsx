@@ -104,9 +104,6 @@ const Form = () => {
                 flex
                 items-start
                 gap-2
-                max-md:sticky 
-                max-md:bottom-[55px] 
-                max-md:z-10
                 w-full
                 px-4
                 py-2
