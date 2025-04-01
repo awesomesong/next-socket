@@ -6,6 +6,7 @@ import Link from "next/link";
 import { PiUserCircleDuotone } from "react-icons/pi";
 import ShapesSkeleton from "./skeleton/ShapesSkeleton";
 import clsx from "clsx";
+import FallbackNextImage from "./FallbackNextImage";
 
 const ButtonProfile = () => {
     const { data: session, status }= useSession();
@@ -39,7 +40,7 @@ const ButtonProfile = () => {
                         radius="lg" 
                     />) 
                     : session?.user.image ?
-                        (<Image
+                        (<FallbackNextImage
                             src={session?.user.image}
                             alt={session?.user.name +' 이미지'}
                             fill
