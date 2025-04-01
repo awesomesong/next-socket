@@ -12,6 +12,9 @@ module.exports = {
             screens: {
                 'xs': '320px', // min-width
             },
+            height: {
+                'screen-dynamic': 'calc(var(--vh, 1vh) * 100)',
+            }
         },
         container: {
             center: true,
