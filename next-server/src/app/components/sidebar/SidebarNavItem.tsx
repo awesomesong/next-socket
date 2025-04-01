@@ -61,7 +61,7 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
         <Icon className="h-6 w-6 shrink-0" />
         <span className="sr-only">{label}</span>
         {label === '채팅' && 
-          <ChatUnReadCount />
+          <ChatUnReadCount size="mobile-small" />
         }
       </Link>
     </li>
