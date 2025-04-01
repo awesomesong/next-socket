@@ -18,10 +18,6 @@ const ChatUnReadCount = () => {
                     absolute 
                     md:-left-[2px]
                     md:-top-[3px]
-                    max-md:top-[6px]
-                    max-md:left-[37%]
-                    max-md:text-[11px]
-                    max-[420px]:left-[21%]
                     inline-flex 
                     justify-center 
                     items-center
