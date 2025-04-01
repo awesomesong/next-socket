@@ -127,6 +127,9 @@ h6 {
 .page-container {
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* 하단 bounce 스크롤 방지 */
+  overscroll-behavior: none;
+  touch-action: manipulation;
   width: 100%;
   height: calc(var(--vh, 1dvh) * 100);
 }
