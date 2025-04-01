@@ -43,7 +43,8 @@ const ProductDrink = () => {
           md:grid-cols-4 
           gap-y-10
           items-baseline
-          w-fit
+          md:w-fit
+          w-full
           my-24
         "
       >
@@ -73,7 +74,7 @@ const ProductDrink = () => {
                 width={0}
                 height={0}
                 sizes="100vw"
-                className="w-auto md:w-full lg:h-[265px] min-[940px]:h-[220px] h-[180px]"
+                className="w-auto lg:h-[265px] min-[940px]:h-[220px] h-[180px]"
               />
               <DrinksName name={drink.name} scrollRef={scrollRef} />
             </Link>
