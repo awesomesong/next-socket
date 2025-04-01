@@ -56,7 +56,7 @@ const SocketState = () => {
           socket.off("read:message");
           socket.off("exit:user");
         }
-    }, [socket]);
+    }, [socket, set, queryClient]);
 
     return null;
 }
