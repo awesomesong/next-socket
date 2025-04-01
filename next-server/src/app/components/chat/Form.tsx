@@ -65,7 +65,7 @@ const Form = () => {
         if(socket) socket.emit('join:room', conversationId);
 
         // ✅ 모바일 키보드가 계속 유지되도록 다시 포커스
-        setTimeout(() => setFocus("message"), 0); // 약간의 딜레이로 안정성 ↑
+        setTimeout(() => setFocus("message"), 100); // 약간의 딜레이로 안정성 ↑
     };
 
     const handleUpload = async (result: any) => {
@@ -147,7 +147,8 @@ const Form = () => {
                     '
                 />
                 <button 
-                    type="submit"
+                    type="button"
+                    onClick={handleSubmit(onSubmit)}
                     className="
                         rounded-full
                         p-2
