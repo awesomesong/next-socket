@@ -57,7 +57,10 @@ const Form = () => {
     }, [isSuccess]);
 
     const onSubmit:SubmitHandler<FieldValues> = async (data) => {
-        if(!data) return;
+        if(!data || isDisabled) return;
+
+        setIsDisabled(true);
+
         mutate({conversationId, data});
         if(socket) socket.emit('join:room', conversationId);
     };
