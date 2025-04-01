@@ -69,6 +69,20 @@ const ConversationList = () => {
 
     const memoizedConversations = useMemo(() => {
         if (status !== 'success') return null;
+        if(data.conversations.length === 0) {
+            return (
+                <div className="
+                    flex
+                    justify-center
+                    h-full
+                    text-neutral-500
+                    dark:text-neutral-400
+                    text-sm
+                ">
+                    대화방이 없습니다.
+                </div>
+            )
+        }
         return data.conversations.map((conversation: FullConversationType) => (
             <ConversationBox
                 key={conversation.id}
