@@ -125,9 +125,10 @@ h6 {
 }
 
 .page-container {
-  height: calc(var(--vh, 1vh) * 100);
   display: flex;
   flex-direction: column;
+  width: 100%;
+  height: calc(var(--vh, 1vh) * 100);
 }
 
 /* hamburger-menu */
