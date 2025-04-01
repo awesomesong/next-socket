@@ -52,7 +52,7 @@ const ProductDrink = () => {
             key={drink.name}
             initial={{ x: initialXGroup1[index], opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
-            viewport={{ amount: 0.3, once: true }}
+            viewport={{ amount: isPC ? 0.3 : 0.5, once: true }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
             className="relative"
           >
