@@ -17,7 +17,7 @@ const ProductDrink = () => {
   useEffect(() => {
     if (isPC !== null) {
       setInitialXGroup1(isPC ? [-60, -200, -340, -480] : [-50, -70, -50, -70]);
-      setInitialXGroup2(isPC ? [480, 340, 200, 60] : [0, 0, 0, 0]);
+      setInitialXGroup2(isPC ? [480, 340, 200, 60] : [50, 70, 50, 70]);
     }
   }, [isPC]);
 
@@ -52,9 +52,9 @@ const ProductDrink = () => {
             key={drink.name}
             initial={{ x: initialXGroup1[index], opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
-            viewport={{ amount: isPC ? 0.3 : 0.5, once: true }}
+            viewport={{ amount: 0.3, once: true }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="relative"
+            className="relative border-2"
           >
             <Link
               href={drink.link}
@@ -73,7 +73,7 @@ const ProductDrink = () => {
                 width={0}
                 height={0}
                 sizes="100vw"
-                className="w-auto lg:h-[265px] min-[940px]:h-[220px] h-[180px]"
+                className="w-auto md:max-w-[236px] lg:h-[265px] min-[940px]:h-[220px] h-[180px]"
               />
               <DrinksName name={drink.name} scrollRef={scrollRef} />
             </Link>
