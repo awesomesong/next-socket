@@ -26,10 +26,8 @@ const app = express();
 const httpServer = http.createServer(app);
 require("dotenv").config();
 
-const allowedOrigins =
-  process.env.NODE_ENV === "production"
-    ? [process.env.CLIENT_ORIGIN]
-    : ["http://localhost:3001"];
+const allowedOrigins = process.env.CLIENT_ORIGIN?.split(",") ?? [];
+console.log("✅ allowedOrigins:", allowedOrigins);
 
 const io = new Server(httpServer, {
   cors: {

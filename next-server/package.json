@@ -28,6 +28,7 @@
         "clsx": "^2.1.1",
         "dayjs": "^1.11.13",
         "dompurify": "^3.2.4",
+        "dotenv": "^16.4.7",
         "express": "^4.21.2",
         "framer-motion": "^12.5.0",
         "graphql": "^16.8.1",

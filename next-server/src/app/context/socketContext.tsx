@@ -8,7 +8,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const socketIo = io(process.env.NEXT_PUBLIC_SOCKET_URL!, { 
+    const socketIo = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL!, { 
+        transports: ['websocket'],
         withCredentials: true,
     });
     setSocket(socketIo);
