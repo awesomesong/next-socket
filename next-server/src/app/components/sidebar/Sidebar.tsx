@@ -9,7 +9,7 @@ const Sidebar = ({children}: {
     return (
         <div className="flex flex-row flex-1">
             <SidebarNav />
-            <main className="grow">
+            <main className="grow h-dvh">
                 {children}
             </main>
         </div>
