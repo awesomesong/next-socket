@@ -1,14 +1,13 @@
 'use client';
 import useConversation from "@/src/app/hooks/useConversation";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
-import { HiPaperAirplane, HiPhoto } from "react-icons/hi2";
-import { CldUploadButton } from 'next-cloudinary';
+import { HiPaperAirplane } from "react-icons/hi2";
 import MessageTextarea from "./MessageTextarea";
 import TextareaAutosize from 'react-textarea-autosize';
 import { useMutation } from "@tanstack/react-query";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ImageUploadButton from "@/src/app/components/ImageUploadButton";
 import { useSocket } from "../../context/socketContext";
 import useComposition from "@/src/app/hooks/useComposition";
@@ -17,6 +16,7 @@ const Form = () => {
     const socket = useSocket();
     const [ isDisabled, setIsDisabled ] = useState(false);
     const { conversationId } = useConversation();
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
     const { 
         mutate, 
@@ -55,6 +55,8 @@ const Form = () => {
     useEffect(() => {
         setFocus("message");
     }, [isSuccess]);
+
+    const { ref: inputRef, ...rest } = register('message', { required: true });
 
     const onSubmit:SubmitHandler<FieldValues> = async (data) => {
         if(!data || isDisabled) return;
