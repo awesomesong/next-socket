@@ -21,7 +21,6 @@ const SocketState = () => {
     } = useQuery({
         queryKey: ['unReadCount'],
         queryFn: getUnReadCount,
-        enabled: !!session?.user?.email,
         staleTime: 0,
         gcTime: 0,
     });

@@ -69,7 +69,7 @@ const ConversationList = () => {
 
     const memoizedConversations = useMemo(() => {
         if (status !== 'success') return null;
-        if(data.conversations.length === 0) {
+        if (data.conversations && data.conversations.length === 0) {
             return (
                 <div className="
                     flex
