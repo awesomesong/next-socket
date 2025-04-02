@@ -10,8 +10,6 @@ import SocketComponents from "@/src/app/components/SocketComponents";
 import UserActiveStatus from "@/src/app/components/ActiveStatus";
 import ApolloProviders from "./context/ApolloProviders";
 import { SocketProvider } from "./context/socketContext";
-import useWindowSize from "./hooks/useWindowSize";
-import clsx from "clsx";
 
 
 const nanumGothic = Nanum_Gothic({
@@ -65,24 +63,21 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const windowSize = useWindowSize();
 
   return (
     <html 
       lang="ko" 
       suppressHydrationWarning
     >
-      <body className={clsx(`
-          flex
-          flex-col
-          relative 
-          text-default
-          bg-default
-          break-all
-          ${nanumGothic.variable}
-        `,
-        windowSize.height && `h-[${windowSize.height}px]`
-      )}>
+      <body className={`
+        flex
+        flex-col
+        relative 
+        text-default
+        bg-default
+        break-all
+        ${nanumGothic.variable}
+      `}>
         <NextAuthProvider>
           <ApolloProviders>
             <RQProviders>
