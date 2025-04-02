@@ -1,7 +1,7 @@
 import { DELETE_POST } from '@/graphql/mutations';
 import { GET_POSTS } from '@/graphql/queries';
 import { useMutation } from '@apollo/client';
-import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
+import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
 import { PiDotsThreeVerticalBold } from "react-icons/pi";
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';

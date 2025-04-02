@@ -10,7 +10,7 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { FormEvent, useState } from "react";
 import { AiFillMinusCircle } from "react-icons/ai";
 import { useRouter } from "next/navigation";
-import { Button, Tooltip } from "@nextui-org/react";
+import { Button, Tooltip } from "@heroui/react";
 import PostDeleteButton from "@/src/app/components/PostDeleteButton";
 import CategoryBadge from "@/src/app/components/CategoryBadge";
 import AvatarWithName from "@/src/app/components/AvatarWithName";

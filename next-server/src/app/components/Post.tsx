@@ -1,7 +1,7 @@
 import { IPost } from '@/typings';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Checkbox } from "@nextui-org/react";
+import { Checkbox } from "@heroui/react";
 import dayjs from '@/src/app/lib/day';
 import CategoryBadge from '@/src/app/components/CategoryBadge';
 import AvatarWithName from '@/src/app/components/AvatarWithName';

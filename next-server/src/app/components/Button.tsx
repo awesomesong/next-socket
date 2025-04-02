@@ -1,6 +1,6 @@
 'use client';
 import clsx from "clsx";
-import { Button as Btn } from "@nextui-org/react";
+import { Button as Btn } from "@heroui/react";
 
 interface ButtonProps {
     type?: 'button' | 'submit' | 'reset' | undefined;

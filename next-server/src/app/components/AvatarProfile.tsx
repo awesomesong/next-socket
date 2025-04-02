@@ -9,7 +9,7 @@ import { PiUserCircleFill } from "react-icons/pi";
 import { IoCamera } from "react-icons/io5";
 import { RiSave3Fill } from "react-icons/ri";
 import toast from "react-hot-toast";
-import { Button } from "@nextui-org/react";
+import { Button } from "@heroui/react";
 
 interface AvatarProfileProps {
     user?: DefaultSession["user"];

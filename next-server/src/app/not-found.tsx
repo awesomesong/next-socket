@@ -1,5 +1,5 @@
 'use client';
-import { Button } from '@nextui-org/react'
+import { Button } from '@heroui/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation';
  
@@ -26,7 +26,7 @@ export default function NotFound() {
             </div>
 
             <Button 
-                onClick={() => router.back()}
+                onPress={() => router.back()}
                 radius="full" 
                 className="
                     mt-5

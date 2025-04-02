@@ -4,7 +4,7 @@ import { Nanum_Gothic } from 'next/font/google';
 import NextAuthProvider from "@/src/app/context/NextAuthProvider";
 import ToasterContext from "@/src/app/context/ToasterContext";
 import ThemeProvider from "@/src/app/context/ThemeProvider";
-import { NextUIProvider } from "@nextui-org/react";
+import { HeroUIProvider } from "@heroui/react";
 import RQProviders from "@/src/app/context/RQProvider";
 import SocketComponents from "@/src/app/components/SocketComponents";
 import UserActiveStatus from "@/src/app/components/ActiveStatus";
@@ -82,7 +82,7 @@ export default async function RootLayout({
           <ApolloProviders>
             <RQProviders>
               <ToasterContext />
-              <NextUIProvider className="flex flex-col flex-1">
+              <HeroUIProvider className="flex flex-col flex-1">
                 <ThemeProvider>
                   <SocketProvider>
                     <SocketComponents />
@@ -90,7 +90,7 @@ export default async function RootLayout({
                     {children}
                   </SocketProvider>
                 </ThemeProvider>
-              </NextUIProvider>
+              </HeroUIProvider>
             </RQProviders>
           </ApolloProviders>
         </NextAuthProvider>

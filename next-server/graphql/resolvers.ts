@@ -1,5 +1,5 @@
 // import { Context } from "@/pages/api/graphql";
-import { image } from "@nextui-org/react";
+import { image } from "@heroui/react";
 import { PrismaClient } from "@prisma/client";
 
 export type Context = {

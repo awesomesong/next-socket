@@ -1,4 +1,4 @@
-import {Card, Skeleton} from "@nextui-org/react";
+import {Card, Skeleton} from "@heroui/react";
 import { Fragment } from "react";
 
 const ProfileModalSkeleton = () => {

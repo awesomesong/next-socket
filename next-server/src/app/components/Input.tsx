@@ -1,7 +1,7 @@
 'use client';
 import clsx from 'clsx';
 import { FieldErrors, FieldValues, UseFormRegister, RegisterOptions } from 'react-hook-form';
-import { Input as Inputs } from "@nextui-org/react";
+import { Input as Inputs } from "@heroui/react";
 import { AiFillEye } from "react-icons/ai";
 import { AiFillEyeInvisible } from "react-icons/ai";
 import { useState } from 'react';

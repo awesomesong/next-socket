@@ -1,5 +1,5 @@
-import { Skeleton } from "@nextui-org/skeleton";
-import { Card } from "@nextui-org/react";
+import { Skeleton } from "@heroui/skeleton";
+import { Card } from "@heroui/react";
 import clsx from "clsx";
 
 type ShapesSkeletonProps  = {

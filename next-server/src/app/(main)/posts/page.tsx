@@ -4,7 +4,7 @@ import { IPost } from '@/typings';
 import { useQuery } from '@apollo/client';
 import { useRouter } from 'next/navigation';
 import { ChangeEvent, useRef, useState } from 'react';
-import { Button } from '@nextui-org/react';
+import { Button } from '@heroui/react';
 import StatusMessage from '@/src/app/components/StatusMessage';
 import PostDeleteButton from '@/src/app/components/PostDeleteButton';
 import { Post } from '@/src/app/components/Post';

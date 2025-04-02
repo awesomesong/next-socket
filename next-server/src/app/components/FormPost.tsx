@@ -3,7 +3,7 @@ import { useState, ChangeEvent, FormEvent, useEffect, useCallback, useMemo, useR
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useQuery, useMutation } from "@apollo/client";
-import { Checkbox, Input, Textarea, Button, Select, SelectItem } from "@nextui-org/react";
+import { Checkbox, Input, Textarea, Button, Select, SelectItem } from "@heroui/react";
 import { ImFilesEmpty } from "react-icons/im";
 import { FaTrashAlt } from "react-icons/fa";
 import toast from "react-hot-toast";

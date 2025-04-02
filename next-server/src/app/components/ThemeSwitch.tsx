@@ -2,8 +2,8 @@
 import { FiSun, FiMoon } from "react-icons/fi";
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { Skeleton } from "@nextui-org/skeleton";
-import { Card } from "@nextui-org/react";
+import { Skeleton } from "@heroui/skeleton";
+import { Card } from "@heroui/react";
 import ShapesSkeleton from "./skeleton/ShapesSkeleton";
 
 export default function ThemeSwitch() {
