@@ -32,10 +32,8 @@ export default async function conversationsLayout({
 
   return (
     <Sidebar>
-      <div className='flex flex-row h-dvh min-h-[18rem] max-md:pb-14'>
-        <ConversationList />
-        {children}
-      </div>
+      <ConversationList />
+      {children}
     </Sidebar>
   )
 }

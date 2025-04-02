@@ -9,7 +9,6 @@ import Body from "@/src/app/components/chat/Body";
 import Form from "@/src/app/components/chat/Form";
 import { useEffect } from "react";
 import useWindowSize from "@/src/app/hooks/useWindowSize";
-import clsx from "clsx";
 
 interface IParams {
     conversationId: string;
@@ -17,8 +16,8 @@ interface IParams {
 
 const Conversation = ({ params }: { params : IParams }) => {    
     const { data: session } = useSession();
-    const windowSize = useWindowSize();
     const conversationId = params.conversationId;
+    const windowSize = useWindowSize();
 
     const { 
         data, 
@@ -53,10 +52,28 @@ const Conversation = ({ params }: { params : IParams }) => {
     // }, []);
 
     return (
-        <div className={clsx(`page-container`,
-             windowSize.height && `md:h-[${windowSize.height}px] h-[calc(var(${windowSize.height}, 1dvh) * 100 - 55px)]`
-        )}>
-            <div className="flex flex-col h-full">
+        <div 
+            className="page-container"
+            style={{
+                height:
+                    windowSize.height && windowSize.width
+                    ? windowSize.width >= 768
+                      ? `${windowSize.height}px` // 👈 폭이 넓을 때
+                      : `calc(${windowSize.height}px - 55px)` // 👈 폭이 좁을 때
+                    : undefined,
+            }}
+        >
+            <div 
+                className="flex flex-col"
+                style={{
+                    height:
+                        windowSize.height && windowSize.width
+                        ? windowSize.width >= 768
+                          ? `${windowSize.height}px` // 👈 폭이 넓을 때
+                          : `calc(${windowSize.height}px - 55px)` // 👈 폭이 좁을 때
+                        : undefined,
+                }}
+            >
             {status === 'success' 
                 ? (<>
                     <Header conversation={data?.conversation} currentUser={session?.user}/>

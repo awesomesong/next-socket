@@ -38,10 +38,8 @@ export default async function ChatMemberLayout({
 
     return (
         <Sidebar>
-            <div className="flex flex-row h-full max-md:pb-14">
-                <UserList />
-                {children}
-            </div>
+          <UserList />
+          {children}
         </Sidebar>
     )
 }
