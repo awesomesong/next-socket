@@ -1,5 +1,5 @@
-import Image from "next/image";
 import { PiUserCircleFill } from "react-icons/pi";
+import FallbackNextImage from "./FallbackNextImage";
 
 type Props = {
     image: string;
@@ -18,7 +18,7 @@ const AvatarWithName = ({image, name}: Props) => {
                                         h-full
                                         rounded-full
                                     ">
-                        <Image
+                        <FallbackNextImage
                             src={image}
                             alt={name +' 이미지'}
                             fill

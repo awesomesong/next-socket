@@ -1,42 +1,45 @@
 {
-    "compilerOptions": {
-      "baseUrl":".",
-      "paths": {
-        "@/*": ["*"]
-      },
-      "lib": [
-        "dom",
-        "dom.iterable",
-        "esnext"
-      ],
-      "target": "ES2016", 
-      "downlevelIteration": true,
-      "allowJs": true,
-      "skipLibCheck": true,
-      "strict": false,
-      "noEmit": true,
-      "incremental": true,
-      "esModuleInterop": true,
-      "module": "esnext",
-      "moduleResolution": "node",
-      "resolveJsonModule": true,
-      "isolatedModules": true,
-      "jsx": "preserve",
-      "plugins": [
-        {
-          "name": "next"
-        }
-      ],
-      "strictNullChecks": true
+  "compilerOptions": {
+    "composite": true, // reference된 서브 프로젝트에서는 필수!
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
     },
-    "include": [
-      "next-server/next-env.d.ts",
-      ".next/types/**/*.ts",
-      "**/*.ts",
-      "**/*.tsx"
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
     ],
-    "exclude": [
-      "node_modules"
-    ]
-  }
-  
+    "target": "ES2021",
+    "downlevelIteration": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "strictNullChecks": true
+  },
+  "include": [
+    "src",
+    "next-server/next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

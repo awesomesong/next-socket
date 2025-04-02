@@ -200,19 +200,35 @@ const Body = () => {
                 <CircularProgress aria-label="로딩중"/>
             )}
             {status === 'success' 
-                ? data?.pages.map((page, i) => (
-                    <Fragment key={i}>
-                        {page.messages.slice().reverse().map((message: FullMessageType, idx: number) => (
-                            <MessageView
+                ? data?.pages.map((page, i) => {
+                    const messages = page.messages.slice().reverse();
+
+                    return (<Fragment key={i}>
+                        {messages.map((message: FullMessageType, idx: number) => {
+                            // 날짜 구분선 계산
+                            const prevMessageInPage = idx > 0 ? messages[idx - 1] : null;
+                            const prevMessageInPrevPage =
+                                idx === 0 && i > 0
+                                    ? data.pages[i - 1].messages.slice().reverse().at(-1)
+                                    : null;
+
+                            const prevMessage = prevMessageInPage ?? prevMessageInPrevPage;
+
+                            const currentDate = new Date(message.createdAt).toDateString();
+                            const prevDate = prevMessage ? new Date(prevMessage.createdAt).toDateString() : null;
+                            const showDateDivider = currentDate !== prevDate;
+
+                            return (<MessageView
                                 key={message.id}
                                 data={message}
                                 isLast={idx === Object.keys(page.messages).length - 1}
                                 currentUser={session?.user}
                                 conversationId={conversationId}
-                            />
-                        ))}
-                    </Fragment>
-                ))
+                                showDateDivider={showDateDivider}
+                            />)
+                        })}
+                    </Fragment>)
+                })
                 : (<ChatSkeleton />)
             }
 

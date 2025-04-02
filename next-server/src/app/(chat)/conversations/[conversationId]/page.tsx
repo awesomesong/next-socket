@@ -57,7 +57,7 @@ const Conversation = ({ params }: { params : IParams }) => {
                     {isForm ? <Form /> : <UnavailableChatForm />}
                 </div>)
                 : (<div className="flex-1 flex justify-center items-center">
-                    <progress className="pure-material-progress-circular max-md:-mt-[55px]"/>
+                    <progress className="pure-material-progress-circular"/>
                 </div>)
             }
         </div>

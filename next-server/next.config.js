@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
+    webpack: (config) => {
+      config.resolve.alias['@'] = path.resolve(__dirname);
+      return config;
+    },
     images: {
         remotePatterns: [
           {
@@ -53,4 +59,4 @@ const nextConfig = {
     generateEtags: false,
 };
 
-export default nextConfig;
+module.exports = nextConfig;

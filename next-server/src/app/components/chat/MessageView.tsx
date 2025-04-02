@@ -18,6 +18,7 @@ interface MessageBoxProps {
   isLast?: boolean;
   currentUser: DefaultSession["user"];
   conversationId: string;
+  showDateDivider?: boolean;
 }
 
 const noUserType = {
@@ -31,7 +32,8 @@ const MessageView:React.FC<MessageBoxProps> = ({
   data,
   isLast,
   currentUser,
-  conversationId
+  conversationId,
+  showDateDivider
 }) => {
   const socket = useSocket();
   const [imageModalOpen, setImageModalOpen] = useState(false);
@@ -127,6 +129,18 @@ const MessageView:React.FC<MessageBoxProps> = ({
       </div>)
       : (
       <>
+        {showDateDivider && (
+          <div className="flex justify-center items-center my-4">
+            <div className="px-4 py-1 bg-gray-200 dark:bg-neutral-700 text-gray-700 dark:text-gray-200 rounded-full">
+              {new Date(data.createdAt).toLocaleDateString("ko-KR", {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long',
+              })}
+            </div>
+          </div>
+        )}
         <div className={clsx(
           "flex gap-3 p-4",
           isOwn && "justify-end"
