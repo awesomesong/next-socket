@@ -25,7 +25,7 @@ const Form = () => {
     }  = useMutation({
         mutationFn: sendMessage,
         onSuccess: (data) => {
-            setValue('message', '', { shouldValidate : true});
+            // setValue('message', '', { shouldValidate : true});
             if(socket) socket.emit('send:message', data);
         },
         onError: (error) => {
@@ -51,17 +51,6 @@ const Form = () => {
             message: ''
         }
     });
-
-    useEffect(() => {
-        // setFocus("message");
-        setTimeout(() => {
-            if (textareaRef.current) {
-                textareaRef.current.focus();
-            } else {
-                setFocus('message');
-            }
-        }, 10);
-    }, [isSuccess]);
 
     const { ref: inputRef, ...rest } = register('message', { required: true });
 
@@ -94,21 +83,28 @@ const Form = () => {
         handleCompositionEnd
     } = useComposition();
 
+    const handleSend = async () => {
+        const value = getValues('message');
+        if (!value.trim()) return;
+
+        setIsDisabled(true);
+        mutate({ conversationId, data: { message: value } });
+
+        // ✅ 메시지 초기화하지 않음
+        // setValue('message', '');
+
+        // 키보드 유지 위해 포커스 유지
+        requestAnimationFrame(() => {
+            textareaRef.current?.focus();
+        });
+    };
+
     const handleKeyPress = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (isComposing()) return;
         if (e.key === 'Enter' && !e.shiftKey ) {
             e.preventDefault(); 
             if (isDisabled) return;
-            // trigger(); // execute react-hook-form submit programmatically 
-            
-            const value = getValues('message'); // get user input value
-            if (value.trim().length === 0) return; // 빈 메시지 방지
-
-            if (!(await trigger('message'))) return; // ✅ 유효성 체크
-
-            setIsDisabled(true);
-            await onSubmit({ message: value }, e);
-
+            await handleSend();
         }
     };
 

@@ -19,6 +19,7 @@ body {
   overflow: auto;
   overflow-x: hidden;
   font-family: var(--font-nanum-gothic);
+  overscroll-behavior: none;
 }
 
 a {
@@ -129,17 +130,16 @@ h6 {
   flex-direction: column;
   position: relative;
   overflow: hidden; /* 하단 bounce 스크롤 방지 */
-  overscroll-behavior: none;
   touch-action: manipulation;
   width: 100%;
-  height: calc(var(--vh, 1dvh) * 100);
+  /* height: calc(var(--vh, 1dvh) * 100); */
 }
 
-@media (max-width: 767px) {
+/* @media (max-width: 767px) {
   .page-container {
     height: calc(var(--vh, 1dvh) * 100 - 55px);
   }
-}
+} */
 
 /* hamburger-menu */
 .hamburger-menu {
