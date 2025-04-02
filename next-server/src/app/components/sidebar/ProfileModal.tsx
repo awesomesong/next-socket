@@ -1,15 +1,13 @@
 'use client';
-import { DefaultSession } from "next-auth";
 import { memo, useCallback } from "react";
 import Modal from "../Modal";
-import Image from "next/image";
 import Button from "../Button";
 import { PiUserCircleDuotone } from "react-icons/pi";
 import clsx from "clsx";
 import getUser from "@/src/app/lib/getUser";
 import { useQuery } from "@tanstack/react-query";
-import { User } from "@prisma/client";
 import ProfileModalSkeleton from "../skeleton/ProfileModalSkeleton";
+import FallbackNextImage from "../FallbackNextImage";
 
 interface ProfileModalProps {
     isOpen?: boolean;
@@ -75,7 +73,7 @@ const ProfileModal:React.FC<ProfileModalProps> = ({
                                     !!data.userInfo.image ? 'rounded-full' : ''
                                 )}>
                                     {data.userInfo.image ? (
-                                        <Image
+                                        <FallbackNextImage
                                             src={data.userInfo.image}
                                             alt={data.userInfo.name +'이미지'}
                                             fill
