@@ -54,9 +54,13 @@ const Form = () => {
 
     useEffect(() => {
         // setFocus("message");
-        if (textareaRef.current) {
-            textareaRef.current.focus(); // 포커스 유지
-        }
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.focus();
+            } else {
+                setFocus('message');
+            }
+        }, 10);
     }, [isSuccess]);
 
     const { ref: inputRef, ...rest } = register('message', { required: true });
@@ -70,7 +74,11 @@ const Form = () => {
         if(socket) socket.emit('join:room', conversationId);
 
         setTimeout(() => {
-            textareaRef.current?.focus(); // 모바일 키보드 유지
+            if (textareaRef.current) {
+                textareaRef.current.focus();
+            } else {
+                setFocus('message');
+            }
         }, 100);
     };
 
@@ -99,7 +107,7 @@ const Form = () => {
             if (!(await trigger('message'))) return; // ✅ 유효성 체크
 
             setIsDisabled(true);
-            await await onSubmit({ message: value }, e);
+            await onSubmit({ message: value }, e);
 
         }
     };
