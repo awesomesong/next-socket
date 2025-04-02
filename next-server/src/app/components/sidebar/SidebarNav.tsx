@@ -32,7 +32,8 @@ const SidebarNav= () => {
                     flex-col
                     shrink-0
                     justify-between
-                    overflow-y-auto
+                    md:overflow-y-auto
+                    overflow-y-hidden
                     left-0
                     w-20
                     h-dvh
