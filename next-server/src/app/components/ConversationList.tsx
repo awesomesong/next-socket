@@ -12,6 +12,7 @@ import clsx from "clsx";
 import useConversation from "@/src/app/hooks/useConversation";
 import GroupChatModal from "./chat/GroupChatModal";
 import { useSocket } from "../context/socketContext";
+import SocketState from "./SocketState";
 
 const ConversationList = () => {
     const socket = useSocket();
@@ -95,6 +96,7 @@ const ConversationList = () => {
 
     return (
         <>
+            <SocketState/>
             <GroupChatModal
                 isOpen={isModalOpen}
                 onCloseModal={() => setIsModaOpen(false)}

@@ -1,9 +1,7 @@
 'use client';
 import useUnreadStore from "@/src/app/hooks/useUnReadStore";
 import { formatMessageCount } from "@/src/app/utils/formatMessageCount";
-import { socket } from "@/src/socket";
 import clsx from "clsx";
-import { useEffect } from "react";
 
 type Props = {
     size?: 'mobile-small';
@@ -11,10 +9,6 @@ type Props = {
 
 const ChatUnReadCount = ({ size }: Props) => {
     const { unreadCount }= useUnreadStore();
-
-    useEffect(() => {
-
-    }, [ socket ]);
 
     return (
         <>

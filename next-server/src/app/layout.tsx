@@ -1,7 +1,16 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Nanum_Gothic } from 'next/font/google';
-import ClientLayout from "./components/ClientLayout";
+import NextAuthProvider from "@/src/app/context/NextAuthProvider";
+import ToasterContext from "@/src/app/context/ToasterContext";
+import ThemeProvider from "@/src/app/context/ThemeProvider";
+import { NextUIProvider } from "@nextui-org/react";
+import RQProviders from "@/src/app/context/RQProvider";
+import SocketComponents from "@/src/app/components/SocketComponents";
+import UserActiveStatus from "@/src/app/components/ActiveStatus";
+import ApolloProviders from "./context/ApolloProviders";
+import { SocketProvider } from "./context/socketContext";
+
 
 const nanumGothic = Nanum_Gothic({
   weight: ['400', '700', '800'],
@@ -69,7 +78,22 @@ export default async function RootLayout({
         break-all
         ${nanumGothic.variable}
       `}>
-        <ClientLayout>{children}</ClientLayout>
+        <NextAuthProvider>
+          <ApolloProviders>
+            <RQProviders>
+              <ToasterContext />
+              <NextUIProvider className="flex flex-col flex-1">
+                <ThemeProvider>
+                  <SocketProvider>
+                    <SocketComponents />
+                    <UserActiveStatus />
+                    {children}
+                  </SocketProvider>
+                </ThemeProvider>
+              </NextUIProvider>
+            </RQProviders>
+          </ApolloProviders>
+        </NextAuthProvider>
       </body>
     </html>
   );

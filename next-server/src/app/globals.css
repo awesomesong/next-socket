@@ -127,6 +127,7 @@ h6 {
 .page-container {
   display: flex;
   flex-direction: column;
+  position: relative;
   overflow: hidden; /* 하단 bounce 스크롤 방지 */
   overscroll-behavior: none;
   touch-action: manipulation;

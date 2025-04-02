@@ -3,7 +3,7 @@ import { useSession } from "next-auth/react";
 import getUnReadCount from "@/src/app/lib/getUnReadCount";
 import { useQuery } from "@tanstack/react-query";
 import useUnreadStore from "@/src/app/hooks/useUnReadStore";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useSocket } from "../context/socketContext";
 import { useQueryClient } from "@tanstack/react-query";
 import useConversationUserList from "@/src/app/hooks/useConversationUserList";
@@ -29,31 +29,17 @@ const SocketState = () => {
         setUnreadCount(data?.unReadCount);
     }, [data, setUnreadCount]);
 
+    const handleReceive = useCallback(() => {
+        queryClient.invalidateQueries({ queryKey: ['unReadCount'] });
+    }, [queryClient]);
+
     useEffect(() => {
         if(!socket) return;
-
-        socket.on("receive:conversation", () => {
-            queryClient.invalidateQueries({queryKey: ['unReadCount']});
-        });
         
-        socket.on("read:message", () => {
-            queryClient.invalidateQueries({queryKey: ['unReadCount']});
-            queryClient.invalidateQueries({queryKey: ['conversationList']});
-        });
+        socket.on("receive:conversation", handleReceive);
 
-        socket.on("exit:user", (data) => {
-            const { conversationId, userId } = data;
-            set({ conversationId, userIds: userId });
-            queryClient.invalidateQueries({queryKey: ['unReadCount']});
-            queryClient.invalidateQueries({queryKey: ['conversationList']});
-            queryClient.invalidateQueries({queryKey: ['messages', conversationId]});
-            queryClient.invalidateQueries({queryKey: ['conversation', conversationId]});
-        });
-    
         return() => {
           socket.off("receive:conversation");
-          socket.off("read:message");
-          socket.off("exit:user");
         }
     }, [socket, set, queryClient]);
 

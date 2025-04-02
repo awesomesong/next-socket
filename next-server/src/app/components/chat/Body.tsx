@@ -11,6 +11,7 @@ import ChatSkeleton from '@/src/app/components/skeleton/ChatSkeleton';
 import { PiArrowFatDownFill } from "react-icons/pi";
 import CircularProgress from '@/src/app/components/CircularProgress';
 import { useSocket } from '../../context/socketContext';
+import useConversationUserList from '../../hooks/useConversationUserList';
 
 const Body = () => {
     const socket = useSocket();
@@ -22,6 +23,7 @@ const Body = () => {
     const [isFirstLoad, setIsFirstLoad] = useState(true); // 처음 로딩 여부
     const [isScrolledUp, setIsScrolledUp] = useState(false); // 스크롤이 위에 있을 때 true
     const [prevScrollHeight, setPrevScrollHeight] = useState(0); // 기존의 스크롤 높이 저장
+    const { set, conversationUsers, remove } = useConversationUserList();
 
     // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
     const {
@@ -79,6 +81,20 @@ const Body = () => {
         }
     }, [status, data]);
 
+    const handleRead = useCallback(() => {
+        queryClient.invalidateQueries({ queryKey: ['unReadCount'] });
+        queryClient.invalidateQueries({ queryKey: ['conversationList'] });
+    }, [queryClient]);
+    
+    const handleExit = useCallback((data: { conversationId: string; userId: string[] }) => {
+        const { conversationId, userId } = data;
+        set({ conversationId, userIds: userId });
+        queryClient.invalidateQueries({ queryKey: ['unReadCount'] });
+        queryClient.invalidateQueries({ queryKey: ['conversationList'] });
+        queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+        queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
+    }, [queryClient, set]);
+
     // ✅ 소켓 메시지 수신 시 최신 메시지를 리스트의 가장 아래에 추가
     useEffect(() => {
         if (!socket) return;
@@ -109,10 +125,14 @@ const Body = () => {
 
             readMessageMutaion(conversationId);
         });
+        socket.on("read:message", handleRead);
+        socket.on("exit:user", handleExit);
 
         return () => {
             socket.off("join:room");
             socket.off("receive:message");
+            socket.off("read:message");
+            socket.off("exit:user");
         };
     }, [socket, conversationId]);
 
