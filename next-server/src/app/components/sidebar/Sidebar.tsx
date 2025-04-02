@@ -1,17 +1,24 @@
 'use client';
-import { useResponsiveSafeHeight } from "../../hooks/useResponsiveSafeHeight";
 import SidebarNav from "./SidebarNav";
 import { useRef } from "react";
+import useWindowSize from "@/src/app/hooks/useWindowSize";
 
 const Sidebar = ({children}: {
     children: React.ReactNode
 }) => {
-    const divRef = useRef<HTMLDivElement>(null);  
-    useResponsiveSafeHeight(divRef);
+    const windowSize = useWindowSize();
 
     return (
-        <div ref={divRef} 
+        <div 
             className="flex flex-row"
+            style={{
+                height:
+                    windowSize.height && windowSize.width
+                    ? windowSize.width >= 768
+                    ? `${windowSize.height}px`
+                    : `calc(${windowSize.height}px - 55px)`
+                    : undefined,
+            }}
         >
             <SidebarNav />
             <main className="
