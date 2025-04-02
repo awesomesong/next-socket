@@ -32,7 +32,7 @@ const Button: React.FC<ButtonProps> = ({
   return (
     <>
       <Btn
-        onClick={onClick}
+        onPress={onClick}
         type={type}
         isDisabled={disabled}
         fullWidth={fullWidth}
