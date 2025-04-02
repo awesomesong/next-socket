@@ -53,8 +53,8 @@ const Conversation = ({ params }: { params : IParams }) => {
     // }, []);
 
     return (
-        <div className={clsx(`page-container`
-            , windowSize.height && `md:h-[${windowSize.height}px] h-[calc(var(${windowSize.height}, 1dvh) * 100 - 55px)]`
+        <div className={clsx(`page-container`,
+             windowSize.height && `md:h-[${windowSize.height}px] h-[calc(var(${windowSize.height}, 1dvh) * 100 - 55px)]`
         )}>
             <div className="flex flex-col h-full">
             {status === 'success' 

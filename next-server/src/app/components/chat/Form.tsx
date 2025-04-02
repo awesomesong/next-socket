@@ -25,7 +25,7 @@ const Form = () => {
     }  = useMutation({
         mutationFn: sendMessage,
         onSuccess: (data) => {
-            // setValue('message', '', { shouldValidate : true});
+            setValue('message', '', { shouldValidate : true});
             if(socket) socket.emit('send:message', data);
         },
         onError: (error) => {
@@ -52,6 +52,10 @@ const Form = () => {
         }
     });
 
+    useEffect(() => {
+        setFocus("message");
+    }, [isSuccess]);
+
     const { ref: inputRef, ...rest } = register('message', { required: true });
 
     const onSubmit:SubmitHandler<FieldValues> = async (data) => {
@@ -62,13 +66,8 @@ const Form = () => {
         mutate({conversationId, data});
         if(socket) socket.emit('join:room', conversationId);
 
-        setTimeout(() => {
-            if (textareaRef.current) {
-                textareaRef.current.focus();
-            } else {
-                setFocus('message');
-            }
-        }, 100);
+        // ✅ 모바일 키보드가 계속 유지되도록 다시 포커스
+        setTimeout(() => setFocus("message"), 100); // 약간의 딜레이로 안정성 ↑
     };
 
     const handleUpload = async (result: any) => {
@@ -83,28 +82,19 @@ const Form = () => {
         handleCompositionEnd
     } = useComposition();
 
-    const handleSend = async () => {
-        const value = getValues('message');
-        if (!value.trim()) return;
-
-        setIsDisabled(true);
-        mutate({ conversationId, data: { message: value } });
-
-        // ✅ 메시지 초기화하지 않음
-        // setValue('message', '');
-
-        // 키보드 유지 위해 포커스 유지
-        requestAnimationFrame(() => {
-            textareaRef.current?.focus();
-        });
-    };
-
     const handleKeyPress = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (isComposing()) return;
         if (e.key === 'Enter' && !e.shiftKey ) {
             e.preventDefault(); 
             if (isDisabled) return;
-            await handleSend();
+            // trigger(); // execute react-hook-form submit programmatically 
+            
+            const value = getValues('message'); // get user input value
+            if (value.trim().length === 0) return; // 빈 메시지 방지
+
+            setIsDisabled(true);
+            await await onSubmit({ message: value }, e);
+
         }
     };
 
@@ -147,10 +137,6 @@ const Form = () => {
                     onCompositionStart={handleCompositionStart}
                     onCompositionEnd={handleCompositionEnd}
                     disabled={isDisabled}
-                    ref={(e) => {
-                        inputRef(e);         // react-hook-form 연결
-                        textareaRef.current = e; // 로컬 ref에도 저장
-                    }}
                     className='
                         w-full 
                         bg-default
@@ -164,12 +150,7 @@ const Form = () => {
                 />
                 <button 
                     type="button"
-                    onClick={() => {
-                        handleSubmit(onSubmit)();
-                        setTimeout(() => {
-                          textareaRef.current?.focus();
-                        }, 100);
-                    }}
+                    onClick={handleSubmit(onSubmit)}
                     className="
                         rounded-full
                         p-2
