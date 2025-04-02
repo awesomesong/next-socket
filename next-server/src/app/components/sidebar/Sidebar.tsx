@@ -11,7 +11,7 @@ const Sidebar = ({children}: {
 
     return (
         <div ref={divRef} 
-            className="flex flex-row flex-1"
+            className="flex flex-row"
         >
             <SidebarNav />
             <main className="
