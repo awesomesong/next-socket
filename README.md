@@ -5,7 +5,7 @@
 - **Next.js 14 (App Router 기반)**
 - **React 18**
 - **TypeScript**
-- **NextAuth** - 소셜 및 이메일 인증
+- **NextAuth** - 소셜 로그인 및 계정등록
 - **Apollo Client / Server**
 - **React Query** - 데이터 fetching & 캐싱
 - **Zustand** - 전역 상태 관리
