@@ -13,8 +13,9 @@
 }
 
 html, body, #__next {
-  height: 100%;
+  position: fixed;
   overflow: hidden;
+  height: 100%;
   overscroll-behavior: none;
   touch-action: manipulation;
 }
