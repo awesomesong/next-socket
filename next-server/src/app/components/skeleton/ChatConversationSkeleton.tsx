@@ -19,7 +19,7 @@ const ChatConversationSkeleton = () => {
     ));
     
     return (
-        <div className="fixed top-[63px]">
+        <div className="fixed top-[63px] -z-10">
             {userList}
         </div>
     )

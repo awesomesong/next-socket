@@ -18,6 +18,7 @@ const Sidebar = ({children}: {
                 md:flex-row 
                 flex-col-reverse
                 overflow-hidden 
+                h-dvh
             "
         >
             <SidebarNav />
