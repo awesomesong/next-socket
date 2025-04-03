@@ -19,7 +19,7 @@ export const useLayoutHeight = (ref: React.RefObject<HTMLElement>) => {
 
       // ✅ 스크롤을 맨 위로 이동시킴
       requestAnimationFrame(() => {
-        el.scrollTop = 0;
+        el.scrollIntoView({ block: 'start', behavior: 'instant' });
       });
     };
 
