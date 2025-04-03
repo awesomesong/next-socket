@@ -76,6 +76,7 @@ export default async function RootLayout({
         text-default
         bg-default
         break-all
+        h-44
         ${nanumGothic.variable}
       `}>
         <NextAuthProvider>
