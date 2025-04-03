@@ -20,6 +20,14 @@ body {
   overflow-x: hidden;
   font-family: var(--font-nanum-gothic);
   overscroll-behavior: none;
+  height: calc(var(--vh, 1dvh) * 100);
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  html, body {
+    height: calc(var(--vh, 1dvh) * 100 - 55px);
+  }
 }
 
 a {

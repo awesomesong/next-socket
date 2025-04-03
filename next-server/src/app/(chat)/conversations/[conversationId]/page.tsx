@@ -8,6 +8,7 @@ import Header from "@/src/app/components/chat/Header";
 import Body from "@/src/app/components/chat/Body";
 import Form from "@/src/app/components/chat/Form";
 import useWindowHeight from "@/src/app/hooks/useWindowHeight";
+import { useViewportHeight } from "@/src/app/hooks/useViewportHeight";
 
 interface IParams {
     conversationId: string;
@@ -37,6 +38,7 @@ const Conversation = ({ params }: { params : IParams }) => {
     }
     
     const isForm = data?.conversation?.userIds.length > 1;
+    useViewportHeight();
     
     return (
         <div className="page-container">
