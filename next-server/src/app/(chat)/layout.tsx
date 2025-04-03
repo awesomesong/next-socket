@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_URL ?? "https://www.devsonghee.com"),
+  metadataBase: new URL("https://www.devsonghee.com/chatMember"),
   title: {
     default: "채팅",
     template: "%s | 채팅",
