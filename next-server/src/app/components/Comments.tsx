@@ -5,7 +5,7 @@ import { PiUserCircleFill } from 'react-icons/pi';
 import { getBlogsComments } from '@/src/app/lib/getBlogsComments';
 import { Fragment, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { BlogCommentsProps } from '@/src/app/types/blog';
+import { BlogCommentsProps, CommentType } from '@/src/app/types/blog';
 import CommentSkeleton from './skeleton/CommentSkeleton';
 import CircularProgress from './CircularProgress';
 import FallbackNextImage from './FallbackNextImage';
@@ -53,7 +53,7 @@ const Comments = ({ blogId } : CommentsProps) => {
     
     return (
         <>
-            {data?.pages[0]?.flat().map((page: any, i) => (
+            {data?.pages[0]?.flat().map((page, i) => (
                 <Fragment key={i}>
                     {Object.keys(page)[0] === 'commentsCount' && 
                         <h4>댓글 {page.commentsCount}개</h4>
@@ -70,10 +70,10 @@ const Comments = ({ blogId } : CommentsProps) => {
                 : (
                     <>  
                         <ul className='mt-2'>
-                            {data?.pages?.flat().map((page: BlogCommentsProps, i) => (
+                            {data?.pages?.flat().map((page, i) => (
                                 <li key={i}>
-                                    {Object.keys(page)[0] === 'comments' &&
-                                        page.comments?.map((comment) => (
+                                    {page?.comments && page.comments.length > 0 && Object.keys(page)[0] === 'comments' &&
+                                        page.comments?.map((comment: CommentType) => (
                                             <div key={comment.id}
                                                 className='flex flex-row gap-3 py-1'
                                             >
