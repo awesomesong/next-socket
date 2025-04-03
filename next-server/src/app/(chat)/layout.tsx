@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.devsonghee.com/chatMember"),
+  metadataBase: new URL("https://www.devsonghee.com"),
   title: {
     default: "채팅",
     template: "%s | 채팅",

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.devsonghee.com/blogs"),
+  metadataBase: new URL("https://www.devsonghee.com"),
   title: {
     default: "React Query 기반의 블로그",
     template: "블로그",

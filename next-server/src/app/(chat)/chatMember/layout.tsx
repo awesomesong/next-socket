@@ -3,7 +3,7 @@ import UserList from "@/src/app/components/UserList";
 import Sidebar from "@/src/app/components/sidebar/Sidebar";
 
 export const metadata: Metadata = {
-    metadataBase: new URL("https://www.devsonghee.com/chatMember"),
+    metadataBase: new URL("https://www.devsonghee.com"),
     title: {
       default: "채팅 멤버",
       template: "%s | 채팅 멤버",
