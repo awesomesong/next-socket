@@ -9,12 +9,18 @@ export const useLayoutHeight = (ref: React.RefObject<HTMLElement>) => {
     const update = () => {
       if (window.innerWidth >= 768 || !window.visualViewport) {
         el.style.height = ""; // desktop이거나 지원 안되면 초기화
+        el.scrollTop = 0; // 스크롤 초기화
         return;
       }
 
       const { height } = window.visualViewport;
       el.style.height = `${height}px`;
-      el.style.overflow = 'hidden'; // 중요한 포인트!
+      el.style.overflow = 'hidden'; 
+
+      // ✅ 스크롤을 맨 위로 이동시킴
+      requestAnimationFrame(() => {
+        el.scrollTop = 0;
+      });
     };
 
     // 초기 적용
@@ -23,7 +29,7 @@ export const useLayoutHeight = (ref: React.RefObject<HTMLElement>) => {
     // 옵셔버 등록
     window.visualViewport?.addEventListener("resize", update);
     window.visualViewport?.addEventListener("scroll", update);
-    window.addEventListener("orientationchange", update); // 회전 대응
+    window.addEventListener("orientationchange", update); 
 
     return () => {
       window.visualViewport?.removeEventListener("resize", update);
