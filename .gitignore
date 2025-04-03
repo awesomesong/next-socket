@@ -5,12 +5,15 @@ next-server/.env.local
 next-server/.env.production
 next-server/node_modules
 next-server/dist
+next-server/build/
+next-server/.turbo/
 next-server/prisma/migrations
 
 socket-server/node_modules
 socket-server/.env
 
-dist
+dist/
+.turbo/
 
 # OS
 .DS_Store
