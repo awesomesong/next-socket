@@ -43,13 +43,17 @@ const Conversation = ({ params }: { params : IParams }) => {
     return (
         <div className="flex flex-col w-full h-screen">
             {status === 'success' 
-                ? (<>
+                ? (<div className="fixed inset-0 flex flex-col">
                     <Header conversation={data?.conversation} currentUser={session?.user}/>
-                    <div className="flex-1 overflow-y-auto">
-                        <Body />
+                    <div className="flex flex-col flex-1 overflow-hidden">
+                        <div className="flex-1 overflow-y-auto">
+                            <Body />
+                        </div>
                     </div>
-                    {isForm ? <Form /> : <UnavailableChatForm />}
-                </>)
+                    <div className="shrink-0">
+                        {isForm ? <Form /> : <UnavailableChatForm />}
+                    </div>
+                </div>)
                 : (<div className="flex-1 flex justify-center items-center">
                     <progress className="pure-material-progress-circular"/>
                 </div>)
