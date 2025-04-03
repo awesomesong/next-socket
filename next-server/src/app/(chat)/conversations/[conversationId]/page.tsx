@@ -7,8 +7,7 @@ import { useSession } from "next-auth/react";
 import Header from "@/src/app/components/chat/Header";
 import Body from "@/src/app/components/chat/Body";
 import Form from "@/src/app/components/chat/Form";
-import useWindowHeight from "@/src/app/hooks/useWindowHeight";
-import { useViewportHeight } from "@/src/app/hooks/useViewportHeight";
+import { useEffect, useState } from "react";
 
 interface IParams {
     conversationId: string;
@@ -17,7 +16,7 @@ interface IParams {
 const Conversation = ({ params }: { params : IParams }) => {    
     const { data: session } = useSession();
     const conversationId = params.conversationId;
-    const windowHeight = useWindowHeight(); // 👈 요거로 바꿈
+    const [keyboardOffset, setKeyboardOffset] = useState(0);
 
     const { 
         data, 
@@ -38,22 +37,41 @@ const Conversation = ({ params }: { params : IParams }) => {
     }
     
     const isForm = data?.conversation?.userIds.length > 1;
-    useViewportHeight();
+    
+    useEffect(() => {
+        const vv = window.visualViewport;
+        if (!vv) return;
+
+        const updateOffset = () => {
+            const keyboardHeight = window.innerHeight - vv.height;
+            setKeyboardOffset(keyboardHeight > 0 ? keyboardHeight : 0);
+        };
+
+        vv.addEventListener('resize', updateOffset);
+        vv.addEventListener('scroll', updateOffset);
+        updateOffset();
+
+        return () => {
+            vv.removeEventListener('resize', updateOffset);
+            vv.removeEventListener('scroll', updateOffset);
+        };
+    }, []);
 
     return (
-        <div className="flex flex-col w-full h-screen">
+        <div className="fixed inset-0 flex flex-col">
             {status === 'success' 
-                ? (<div className="fixed inset-0 flex flex-col">
+                ? (<>
                     <Header conversation={data?.conversation} currentUser={session?.user}/>
-                    <div className="flex flex-col flex-1 overflow-hidden">
-                        <div className="flex-1 overflow-y-auto">
-                            <Body />
-                        </div>
+                    <div className="flex-1 overflow-y-auto">
+                        <Body />
                     </div>
-                    <div className="shrink-0">
+                    <div
+                        className="shrink-0 bg-white border-t border-gray-200 transition-transform duration-200"
+                        style={{ transform: `translateY(-${keyboardOffset}px)` }}
+                    >
                         {isForm ? <Form /> : <UnavailableChatForm />}
                     </div>
-                </div>)
+                </>)
                 : (<div className="flex-1 flex justify-center items-center">
                     <progress className="pure-material-progress-circular"/>
                 </div>)
