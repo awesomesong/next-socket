@@ -39,20 +39,18 @@ const Conversation = ({ params }: { params : IParams }) => {
     
     const isForm = data?.conversation?.userIds.length > 1;
     useViewportHeight();
-    
-    return (
-        <div className="page-container">
-            {status === 'success' 
-                ? (<div className="flex flex-col w-full">
-                    <Header conversation={data?.conversation} currentUser={session?.user}/>
-                    <div className="flex-1 overflow-y-auto">
-                        <Body />
-                    </div>
 
-                    <div className="flex-shrink-0">
+    return (
+        <div className="page-container relative w-full">
+            {status === 'success' 
+                ? (<>
+                    <div className="flex flex-col w-full overflow-y-auto">
+                        <Header conversation={data?.conversation} currentUser={session?.user}/>
+                        <Body />
                         {isForm ? <Form /> : <UnavailableChatForm />}
                     </div>
-                </div>)
+
+                </>)
                 : (<div className="flex-1 flex justify-center items-center">
                     <progress className="pure-material-progress-circular"/>
                 </div>)

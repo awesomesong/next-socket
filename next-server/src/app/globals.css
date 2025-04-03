@@ -19,6 +19,7 @@ body {
   overflow-y: auto;
   font-family: var(--font-nanum-gothic);
   overscroll-behavior: none;
+  touch-action: manipulation;
   margin: 0;
   height: calc(var(--vh, 1vh) * 100);
 }
@@ -141,16 +142,17 @@ h6 {
   flex-direction: column;
   position: relative;
   overflow: hidden; /* 하단 bounce 스크롤 방지 */
-  touch-action: manipulation;
   width: 100%;
-  /* height: calc(var(--vh, 1dvh) * 100); */
+  height: auto; /* 또는 auto */
+  max-height: 100dvh; /* Safari 15.4+ */
+  height: calc(var(--vh, 1dvh) * 100) !important;
 }
 
-/* @media (max-width: 767px) {
-  .page-container {
-    height: calc(var(--vh, 1dvh) * 100 - 55px);
+@media (max-width: 767px) {
+  html, .page-container {
+    height: calc(var(--vh, 1dvh) * 100 - 55px) !important;
   }
-} */
+}
 
 /* hamburger-menu */
 .hamburger-menu {
