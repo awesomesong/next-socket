@@ -12,18 +12,15 @@
   margin: 0;
 }
 
-html, body, #__next {
-  position: fixed;
-  overflow: hidden;
-  height: 100%;
-  overscroll-behavior: none;
-  touch-action: manipulation;
-}
-
 html,
 body {
+  overflow-x: hidden;
+  overflow-y: auto;
   max-width: 100vw;
+  height: 100%;
   font-family: var(--font-nanum-gothic);
+  overscroll-behavior: none;
+  touch-action: manipulation;
 }
 
 a {

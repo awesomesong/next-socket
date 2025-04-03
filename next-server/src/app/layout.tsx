@@ -81,7 +81,7 @@ export default async function RootLayout({
           <ApolloProviders>
             <RQProviders>
               <ToasterContext />
-              <HeroUIProvider className="flex flex-col flex-1 overflow-hidden">
+              <HeroUIProvider className="flex flex-col flex-1">
                 <ThemeProvider>
                   <SocketProvider>
                     <SocketComponents />

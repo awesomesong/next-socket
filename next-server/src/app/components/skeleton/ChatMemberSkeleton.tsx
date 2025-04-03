@@ -18,7 +18,7 @@ const ChatMemberSkeleton = () => {
     ));
     
     return (
-        <div className="fixed">
+        <div className="fixed -z-10">
             {userList}
         </div>
     )
