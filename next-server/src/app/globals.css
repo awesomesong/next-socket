@@ -24,8 +24,13 @@ body {
   margin: 0;
 }
 
+.chat-message, .page-container {
+  height: calc(var(--vh, 1dvh) * 100);
+  margin: 0;
+}
+
 @media (max-width: 767px) {
-  html, body {
+  html, body, .chat-message, .page-container {
     height: calc(var(--vh, 1dvh) * 100 - 55px);
   }
 }

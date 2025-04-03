@@ -43,11 +43,7 @@ const Conversation = ({ params }: { params : IParams }) => {
     return (
         <div className="page-container">
             {status === 'success' 
-                ? (<div className="flex flex-col w-full"
-                    style={{
-                        height: windowHeight ? `${windowHeight}px` : undefined,
-                    }}
-                >
+                ? (<div className="flex flex-col w-full chat-message">
                     <Header conversation={data?.conversation} currentUser={session?.user}/>
                     <div className="flex-1 overflow-y-auto">
                         <Body />
