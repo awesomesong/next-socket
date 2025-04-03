@@ -12,15 +12,8 @@ export const metadata: Metadata = {
   openGraph: {
     title: "대화방",
     description: "지금 유저와 실시간으로 대화를 나눠보세요.",
-    url: "https://songhee.dev/chat/conversation",
-    images: [
-      {
-        url: "/image/conversation_og.png", // og 이미지 경로 (필요 시 공통 chat 이미지 재사용 가능)
-        width: 1200,
-        height: 630,
-        alt: "대화방 미리보기",
-      },
-    ],
+    url: "https://devsonghee.com/conversations",
+    type: "website",
   },
 };
 

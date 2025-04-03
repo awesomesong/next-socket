@@ -10,15 +10,8 @@ export const metadata: Metadata = {
   openGraph: {
     title: "채팅",
     description: "Socket.io 기반의 실시간 채팅",
-    url: "https://www.devsonghee.com/chat",
-    images: [
-      {
-        url: "/image/chat_og.png",
-        width: 1200,
-        height: 630,
-        alt: "채팅 미리보기",
-      },
-    ],
+    url: "https://www.devsonghee.com/chatMember",
+    type: "website",
   },
 };
 

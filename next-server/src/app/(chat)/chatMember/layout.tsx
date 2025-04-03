@@ -12,21 +12,8 @@ export const metadata: Metadata = {
     openGraph: {
       title: "채팅 멤버",
       description: "참여 중인 유저 목록을 확인하세요.",
-      url: "https://songhee.dev/chat/chatMember",
-      images: [
-        {
-          url: "/image/chat_member_og.png", // 원하는 og 이미지
-          width: 1200,
-          height: 630,
-          alt: "채팅 멤버 미리보기",
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: "채팅 멤버",
-      description: "참여 중인 유저와의 대화 목록을 확인하세요.",
-      images: ["/image/chat_member_og.png"],
+      url: "https://devsonghee.com/chatMember",
+      type: "website",
     },
 };
 

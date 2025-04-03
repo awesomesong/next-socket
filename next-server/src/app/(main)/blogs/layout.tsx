@@ -10,15 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "React Query 블로그",
     description: "React Query로 구현된 빠르고 유연한 블로그 시스템",
-    url: "https://www.devsonghee.com/posts",
-    images: [
-      {
-        url: "/image/posts_og.png",
-        width: 1200,
-        height: 630,
-        alt: "블로그 대표 이미지",
-      },
-    ],
+    url: "https://www.devsonghee.com/blogs",
     type: "website",
   },
   keywords: [
