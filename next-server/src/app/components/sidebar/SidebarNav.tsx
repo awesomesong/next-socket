@@ -6,11 +6,9 @@ import Avatar from "../Avatar";
 import ProfileModal from "./ProfileModal";
 import { useSession } from "next-auth/react";
 import ShapesSkeleton from "../skeleton/ShapesSkeleton";
-import { useKeyboardVisible } from "../../hooks/useKeyboardVisible";
 import clsx from "clsx";
 
 const SidebarNav= () => {
-    const keyboardVisible = useKeyboardVisible();
     const routerChat = useRouterChat();
     const { data: session } = useSession();
     const [isOpen, setIsOpen] = useState(false);
@@ -44,12 +42,9 @@ const SidebarNav= () => {
                     bg-default
                     border-r-default
                     md:h-full
-                    max-md:fixed
-                    max-md:z-40
                     max-md:flex-row
                     max-md:items-center
                     max-md:w-full
-                    max-md:bottom-0
                     max-md:h-14
                     max-md:p-0
                     max-md:border-t-[1px]
