@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "composite": true, // reference된 서브 프로젝트에서는 필수!
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -15,7 +14,7 @@
     "target": "ES2021",
     "downlevelIteration": true,
     "allowJs": true,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "strict": true,
     "noEmit": true,
     "incremental": true,
