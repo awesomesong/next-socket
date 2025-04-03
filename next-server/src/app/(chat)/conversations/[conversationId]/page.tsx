@@ -44,12 +44,13 @@ const Conversation = ({ params }: { params : IParams }) => {
         <div className="page-container relative w-full">
             {status === 'success' 
                 ? (<>
-                    <div className="flex flex-col w-full overflow-y-auto">
+                    <div className="flex flex-col w-full overflow-y-auto pb-[60px] h-full">
                         <Header conversation={data?.conversation} currentUser={session?.user}/>
                         <Body />
+                    </div>
+                    <div className="fixed bottom-0 left-0 right-0 z-10 bg-white border-t border-gray-200">
                         {isForm ? <Form /> : <UnavailableChatForm />}
                     </div>
-
                 </>)
                 : (<div className="flex-1 flex justify-center items-center">
                     <progress className="pure-material-progress-circular"/>
