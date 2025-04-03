@@ -20,18 +20,18 @@ body {
   overflow-x: hidden;
   font-family: var(--font-nanum-gothic);
   overscroll-behavior: none;
-  height: calc(var(--vh, 1dvh) * 100);
+  height: calc(var(--vh, 1vh) * 100);
   margin: 0;
 }
 
 .chat-message, .page-container {
-  height: calc(var(--vh, 1dvh) * 100);
+  height: calc(var(--vh, 1vh) * 100);
   margin: 0;
 }
 
 @media (max-width: 767px) {
   html, body, .chat-message, .page-container {
-    height: calc(var(--vh, 1dvh) * 100 - 55px);
+    height: calc(var(--vh, 1vh) * 100 - 55px);
   }
 }
 
