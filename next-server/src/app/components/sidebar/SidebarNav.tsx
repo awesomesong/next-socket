@@ -6,8 +6,11 @@ import Avatar from "../Avatar";
 import ProfileModal from "./ProfileModal";
 import { useSession } from "next-auth/react";
 import ShapesSkeleton from "../skeleton/ShapesSkeleton";
+import { useKeyboardVisible } from "../../hooks/useKeyboardVisible";
+import clsx from "clsx";
 
 const SidebarNav= () => {
+    const keyboardVisible = useKeyboardVisible();
     const routerChat = useRouterChat();
     const { data: session } = useSession();
     const [isOpen, setIsOpen] = useState(false);
@@ -27,7 +30,7 @@ const SidebarNav= () => {
                 onCloseModal={handleCloseModal}
             />
             <div
-                className="
+                className={clsx(`
                     flex
                     flex-col
                     shrink-0
@@ -50,7 +53,10 @@ const SidebarNav= () => {
                     max-md:h-14
                     max-md:p-0
                     max-md:border-t-[1px]
-                "
+                `,
+                    keyboardVisible && 'opacity-0 translate-y-full pointer-events-none',
+                    !keyboardVisible && 'opacity-100 translate-y-0'
+                )}
             >
                 <nav
                     className="

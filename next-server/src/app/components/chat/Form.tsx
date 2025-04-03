@@ -7,7 +7,7 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { useMutation } from "@tanstack/react-query";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import ImageUploadButton from "@/src/app/components/ImageUploadButton";
 import { useSocket } from "../../context/socketContext";
 import useComposition from "@/src/app/hooks/useComposition";
@@ -16,7 +16,6 @@ const Form = () => {
     const socket = useSocket();
     const [ isDisabled, setIsDisabled ] = useState(false);
     const { conversationId } = useConversation();
-    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
     const { 
         mutate, 
