@@ -25,7 +25,6 @@ const Sidebar = ({children}: {
                 flex 
                 flex-row 
                 flex-1
-                overflow-hidden
                 w-full
                 min-h-0
             ">

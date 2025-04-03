@@ -14,6 +14,7 @@ export const useLayoutHeight = (ref: React.RefObject<HTMLElement>) => {
 
       const { height } = window.visualViewport;
       el.style.height = `${height}px`;
+      el.style.overflow = 'hidden'; // 중요한 포인트!
     };
 
     // 초기 적용
