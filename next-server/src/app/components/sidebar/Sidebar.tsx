@@ -18,13 +18,13 @@ const Sidebar = ({children}: {
                 md:flex-row 
                 flex-col-reverse
                 overflow-hidden 
-                border-10
             "
         >
             <SidebarNav />
             <main className="
                 flex 
                 flex-row 
+                flex-1
                 overflow-hidden
                 w-full
                 min-h-[18rem] 
