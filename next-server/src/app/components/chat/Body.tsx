@@ -201,6 +201,7 @@ const Body = () => {
             )}
             {status === 'success' 
                 ? data?.pages.map((page, i) => {
+                    if (!page) return null;
                     const messages = page.messages.slice().reverse();
 
                     return (<Fragment key={i}>
