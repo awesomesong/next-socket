@@ -7,8 +7,6 @@ import { useSession } from "next-auth/react";
 import Header from "@/src/app/components/chat/Header";
 import Body from "@/src/app/components/chat/Body";
 import Form from "@/src/app/components/chat/Form";
-import { useRef } from "react";
-import { useLayoutHeight } from "@/src/app/hooks/useLayoutHeight";
 
 interface IParams {
     conversationId: string;
@@ -17,8 +15,6 @@ interface IParams {
 const Conversation = ({ params }: { params : IParams }) => {    
     const { data: session } = useSession();
     const conversationId = params.conversationId;
-    const containerRef = useRef<HTMLDivElement>(null);
-    useLayoutHeight(containerRef);
 
     const { 
         data, 
@@ -41,7 +37,7 @@ const Conversation = ({ params }: { params : IParams }) => {
     const isForm = data?.conversation?.userIds.length > 1;
 
     return (
-        <div ref={containerRef} className="flex flex-col w-full">
+        <div className="flex flex-col w-full">
             {status === 'success' 
                 ? (<div className="flex flex-col overflow-hidden">
                     <Header conversation={data?.conversation} currentUser={session?.user}/>
