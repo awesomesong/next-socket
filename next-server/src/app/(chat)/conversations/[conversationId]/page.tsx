@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import Header from "@/src/app/components/chat/Header";
 import Body from "@/src/app/components/chat/Body";
 import Form from "@/src/app/components/chat/Form";
-import useWindowSize from "@/src/app/hooks/useWindowSize";
+import useWindowHeight from "@/src/app/hooks/useWindowHeight";
 
 interface IParams {
     conversationId: string;
@@ -16,8 +16,7 @@ interface IParams {
 const Conversation = ({ params }: { params : IParams }) => {    
     const { data: session } = useSession();
     const conversationId = params.conversationId;
-    const windowSize = useWindowSize();
-    
+    const windowHeight = useWindowHeight(); // 👈 요거로 바꿈
 
     const { 
         data, 
@@ -42,19 +41,19 @@ const Conversation = ({ params }: { params : IParams }) => {
     return (
         <div className="page-container">
             {status === 'success' 
-                ? (<div className="flex flex-col"
+                ? (<div className="flex flex-col w-full"
                     style={{
-                        height:
-                            windowSize.height && windowSize.width
-                            ? windowSize.width >= 768
-                            ? `${windowSize.height}px`
-                            : `calc(${windowSize.height}px - 55px)`
-                            : undefined,
+                        height: windowHeight ? `${windowHeight}px` : undefined,
                     }}
                 >
                     <Header conversation={data?.conversation} currentUser={session?.user}/>
-                    <Body />
-                    {isForm ? <Form /> : <UnavailableChatForm />}
+                    <div className="flex-1 overflow-y-auto">
+                        <Body />
+                    </div>
+
+                    <div className="flex-shrink-0">
+                        {isForm ? <Form /> : <UnavailableChatForm />}
+                    </div>
                 </div>)
                 : (<div className="flex-1 flex justify-center items-center">
                     <progress className="pure-material-progress-circular"/>
