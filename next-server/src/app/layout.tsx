@@ -72,7 +72,6 @@ export default async function RootLayout({
       <body className={`
         flex
         flex-col
-        relative 
         text-default
         bg-default
         break-all
