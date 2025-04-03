@@ -4,11 +4,13 @@ next-server/.env
 next-server/.env.local
 next-server/.env.production
 next-server/node_modules
+next-server/dist
 next-server/prisma/migrations
 
 socket-server/node_modules
 socket-server/.env
 
+dist
 
 # OS
 .DS_Store
