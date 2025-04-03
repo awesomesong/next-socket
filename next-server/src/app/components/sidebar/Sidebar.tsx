@@ -2,7 +2,6 @@
 import SidebarNav from "./SidebarNav";
 import { useRef } from "react";
 import { useLayoutHeight } from "@/src/app/hooks/useLayoutHeight";
-import clsx from "clsx";
 
 const Sidebar = ({children}: {
     children: React.ReactNode
@@ -28,7 +27,7 @@ const Sidebar = ({children}: {
                 flex-1
                 overflow-hidden
                 w-full
-                min-h-[18rem] 
+                min-h-0
             ">
                 {children}
             </main>

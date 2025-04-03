@@ -2,23 +2,32 @@ import { useEffect } from 'react';
 
 export const useLayoutHeight = (ref: React.RefObject<HTMLElement>) => {
   useEffect(() => {
-    if (!ref.current || !window.visualViewport) return;
+    if (!ref.current) return;
 
     const el = ref.current;
-    const vv = window.visualViewport;
 
     const update = () => {
-      const height = vv.height;
+      if (window.innerWidth >= 768 || !window.visualViewport) {
+        el.style.height = ""; // desktop이거나 지원 안되면 초기화
+        return;
+      }
+
+      const { height } = window.visualViewport;
       el.style.height = `${height}px`;
     };
 
-    vv.addEventListener('resize', update);
-    vv.addEventListener('scroll', update);
+    // 초기 적용
     update();
 
+    // 옵셔버 등록
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    window.addEventListener("orientationchange", update); // 회전 대응
+
     return () => {
-      vv.removeEventListener('resize', update);
-      vv.removeEventListener('scroll', update);
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+      window.removeEventListener("orientationchange", update);
     };
   }, [ref]);
 };
