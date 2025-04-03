@@ -22,10 +22,11 @@ const Sidebar = ({children}: {
         >
             <SidebarNav />
             <main className="
-                    flex 
-                    flex-row 
-                    w-full
-                    min-h-[18rem] 
+                flex 
+                flex-row 
+                overflow-hidden
+                w-full
+                min-h-[18rem] 
             ">
                 {children}
             </main>
