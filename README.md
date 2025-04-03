@@ -41,7 +41,7 @@
 ### 🎨 UI & 스타일
 
 - **Tailwind CSS**
-- **NextUI**
+- **HeroUI**
 - **Framer Motion** - 애니메이션
 - **Highlight.js** - 코드 하이라이팅
 
@@ -88,6 +88,6 @@
 - 로그인 유저 정보, 알림 상태 등 저장
 
 ### 🎨 사용자 경험 개선
-- Tailwind + NextUI + Framer Motion 조합
+- Tailwind + HeroUI + Framer Motion 조합
 - 반응형 UI 및 부드러운 애니메이션
 - 로딩 스켈레톤 UI (댓글, 블로그)

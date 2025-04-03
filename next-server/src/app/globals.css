@@ -270,7 +270,7 @@ h6 {
   @apply flex flex-col gap-2 sm:gap-6 whitespace-pre-wrap
 }
 
-/* nextui dropdown */
+/* HeroUI dropdown */
 div[data-slot="content"] {
   min-width: fit-content;
 }
