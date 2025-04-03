@@ -14,7 +14,7 @@
     "target": "ES2021",
     "downlevelIteration": true,
     "allowJs": true,
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "incremental": true,
