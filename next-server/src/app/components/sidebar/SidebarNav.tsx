@@ -30,7 +30,7 @@ const SidebarNav= () => {
                 onCloseModal={handleCloseModal}
             />
             <div
-                className={clsx(`
+                className="
                     flex
                     flex-col
                     shrink-0
@@ -53,10 +53,7 @@ const SidebarNav= () => {
                     max-md:h-14
                     max-md:p-0
                     max-md:border-t-[1px]
-                `,
-                    keyboardVisible && 'opacity-0 translate-y-full pointer-events-none',
-                    !keyboardVisible && 'opacity-100 translate-y-0'
-                )}
+                "
             >
                 <nav
                     className="
