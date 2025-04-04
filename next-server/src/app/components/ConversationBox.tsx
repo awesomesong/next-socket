@@ -1,5 +1,5 @@
 'use client';
-import { memo, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { FullConversationType } from "@/src/app/types/conversation";
@@ -24,6 +24,13 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
     const { conversationId } = useConversation();
     const { otherUser } = useOtherUser(data, currentUser);
     const router = useRouter();
+
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    if (!isMounted) return null; // ✅ iOS 초기 렌더링 문제 방지
 
     const handleClick = useCallback(() => {
         router.push(`/conversations/${data.id}`);
