@@ -43,7 +43,7 @@ const ProfileDrawer:React.FC<ProfileDrawerProps> = ({
             <ConfirmModal
                 isOpen={confirmOpen}
                 onCloseModal={() => setConfirmOpen(false)}
-                name={otherUser.name}
+                name={data.name || otherUser.name}
             >
             </ConfirmModal>
             <div className={clsx(`

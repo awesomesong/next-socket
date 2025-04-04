@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { FiAlertTriangle } from 'react-icons/fi'
 import { useSocket } from "../../context/socketContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 const ConfirmModal:React.FC<ModalProps> = ({
     isOpen,
@@ -21,6 +22,7 @@ const ConfirmModal:React.FC<ModalProps> = ({
     const { data: session } = useSession();
     const { remove, conversationUsers } = useConversationUserList();
     const [ isLoading, setIsLoading ] = useState(false);
+    const queryClient = useQueryClient();
 
     const onDelete = useCallback(() => {
         setIsLoading(true);
@@ -36,6 +38,7 @@ const ConfirmModal:React.FC<ModalProps> = ({
             onCloseModal();
             router.push('/conversations');
             router.refresh();
+            queryClient.invalidateQueries({queryKey: ['conversationList']});
 
             if(socket) {
                 const filteredUsers = conversationUsers.filter((item) => item.conversationId === conversationId) 
