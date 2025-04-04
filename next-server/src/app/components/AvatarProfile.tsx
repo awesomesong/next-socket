@@ -10,6 +10,7 @@ import { IoCamera } from "react-icons/io5";
 import { RiSave3Fill } from "react-icons/ri";
 import toast from "react-hot-toast";
 import { Button } from "@heroui/react";
+import FallbackNextImage from "./FallbackNextImage";
 
 interface AvatarProfileProps {
     user?: DefaultSession["user"];
@@ -97,7 +98,7 @@ const AvatarProfile:React.FC<AvatarProfileProps> = ({
                             h-full
                             rounded-full
                         ">
-                            <Image
+                            <FallbackNextImage
                                 src={image || user?.image}
                                 alt={image || user?.name +'이미지'}
                                 fill
