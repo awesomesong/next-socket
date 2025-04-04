@@ -123,7 +123,7 @@ const GroupChatModal:React.FC<GroupChatModalProps> = ({
                 id="form" 
             >
                 <div className="space-y-12">
-                    <div className="pb-12 overflow-hidden">
+                    <div className="pb-12">
                         <h2 className="
                             text-xl
                             font-semibold  
