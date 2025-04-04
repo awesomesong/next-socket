@@ -170,7 +170,7 @@ const GroupChatModal:React.FC<GroupChatModalProps> = ({
                                     inline-block
                                     relative
                                     rounded-full
-                                    w-[464px]
+                                    w-full
                                     h-[40px]
                                 ">
                                     <ShapesSkeleton width="100%" height="100%" radius="lg" />
