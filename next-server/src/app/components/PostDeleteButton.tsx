@@ -28,7 +28,7 @@ const PostDeleteButton = ({
         refetchQueries: [{ query: GET_POSTS }],
     });
 
-    const onClickDelete = useCallback(() => {
+    const onPressDelete = useCallback(() => {
         const result = confirm(
             ids && ids.length > 0
                 ? `선택한 ${ids.length}개의 항목을 삭제하시겠습니까?`
@@ -64,9 +64,8 @@ const PostDeleteButton = ({
             </DropdownTrigger>
             <DropdownMenu>
                 <DropdownItem 
-                    key="edit"  
-                    onClick={(e) => {
-                        e.stopPropagation();
+                    key="edit"
+                    onPress={() => {
                         router.push(`/posts/${postId}/edit`);
                     }}
                 >
@@ -76,9 +75,8 @@ const PostDeleteButton = ({
                     key="delete" 
                     className="text-danger" 
                     color="danger"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onClickDelete();
+                    onPress={(e) => {
+                        onPressDelete();
                     }}
                 >
                     삭제
@@ -94,9 +92,8 @@ const PostDeleteButton = ({
             variant='bordered'
             radius='sm'
             className='min-w-[30px] btn-bg'
-            onClick={(e) => {
-                e.stopPropagation();
-                onClickDelete();
+            onPress={(e) => {
+                onPressDelete();
             }}
         >
             삭제

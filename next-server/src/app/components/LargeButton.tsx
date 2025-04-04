@@ -12,7 +12,7 @@ const LargeButton = ({ children, onClick }: LargeButtonProps) => {
       variant="ghost"
       radius="lg"
       className='min-w-10'
-      onClick={onClick}
+      onPress={onClick}
     >
       {children}
     </Button>
