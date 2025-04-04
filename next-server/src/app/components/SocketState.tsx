@@ -18,6 +18,7 @@ const SocketState = () => {
     const { 
         data, 
         status,
+        refetch
     } = useQuery({
         queryKey: ['unReadCount'],
         queryFn: getUnReadCount,
@@ -35,11 +36,18 @@ const SocketState = () => {
 
     useEffect(() => {
         if(!socket) return;
+
+        const handleReconnect = () => {
+            refetch(); // 메시지 다시 불러오기 ✅
+        };
+      
+        socket.on('connect', handleReconnect);
         
         socket.on("receive:conversation", handleReceive);
 
         return() => {
-          socket.off("receive:conversation");
+            socket.off('connect', handleReconnect);
+            socket.off("receive:conversation");
         }
     }, [socket, set, queryClient]);
 
