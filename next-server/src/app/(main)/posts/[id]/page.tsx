@@ -184,7 +184,6 @@ const Post = ({params : {id}}: Props) => {
                                         flex 
                                         flex-col 
                                         gap-2 
-                                        items-end
                                         w-full
                                     "
                                 >
