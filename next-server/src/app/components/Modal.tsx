@@ -9,7 +9,7 @@ const Modal:React.FC<ModalProps> = ({
     onCloseModal,
     children,
 }) => {
-    const { keyboardVisible } = useKeyboardOrInputVisible();
+    const { keyboardVisible, inputFocused } = useKeyboardOrInputVisible();
 
     return (
             <div
@@ -97,6 +97,8 @@ const Modal:React.FC<ModalProps> = ({
                                     >
                                         <span className="sr-only">닫기</span>
                                         <IoClose size={24} />
+                                        <div>📱 keyboard: {keyboardVisible ? "ON" : "OFF"}</div>
+                                        <div>🧠 inputFocused: {inputFocused ? "YES" : "NO"}</div>
                                     </button>
                                 </div>
                                 {children}
