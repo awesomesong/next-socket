@@ -3,6 +3,7 @@ import { IoClose } from "react-icons/io5";
 import clsx from "clsx";
 import { ModalProps } from "@/src/app/types/common";
 import { useKeyboardOrInputVisible } from "../hooks/useKeyboardOrInputVisible";
+import useIsMobile from "../hooks/useIsMobile";
 
 const Modal:React.FC<ModalProps> = ({
     isOpen,
@@ -10,6 +11,7 @@ const Modal:React.FC<ModalProps> = ({
     children,
 }) => {
     const { keyboardVisible, inputFocused } = useKeyboardOrInputVisible();
+    const isOnMobile = useIsMobile();
 
     return (
             <div
@@ -48,7 +50,7 @@ const Modal:React.FC<ModalProps> = ({
                                     text-center
                                     sm:p-0
                                 `,
-                                keyboardVisible ? "items-start" : "items-center"
+                                isOnMobile ? "items-start" : "items-center"
                             )}
                         >
                             <div
@@ -96,8 +98,6 @@ const Modal:React.FC<ModalProps> = ({
                                     >
                                         <span className="sr-only">닫기</span>
                                         <IoClose size={24} />
-                                        <div>📱 keyboard: {keyboardVisible ? "ON" : "OFF"}</div>
-                                        <div>🧠 inputFocused: {inputFocused ? "YES" : "NO"}</div>
                                     </button>
                                 </div>
                                 {children}
