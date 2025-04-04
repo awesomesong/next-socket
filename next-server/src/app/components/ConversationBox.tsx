@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { FullConversationType } from "@/src/app/types/conversation";
@@ -24,10 +24,6 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
     const { conversationId } = useConversation();
     const { otherUser } = useOtherUser(data, currentUser);
     const router = useRouter();
-    const [isMounted, setIsMounted] = useState(false);
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
 
     const handleClick = useCallback(() => {
         router.push(`/conversations/${data.id}`);
@@ -35,10 +31,7 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
 
     const unReadMessageLength = data.unreadCount ?? 0;
 
-    const lastMessage = useMemo(() => {
-        if (!Array.isArray(data.messages) || data.messages.length === 0) return null;
-        return data.messages[0];
-    }, [data.messages]);
+    const lastMessage = (data.messages ?? [])[0]; 
 
     const userEmail = currentUser?.email;
 
@@ -54,8 +47,6 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
         if(lastMessage?.body) return lastMessage.body;
         return '대화방이 생성되었습니다.'
     }, [lastMessage]);
-
-    if (!isMounted) return null; 
 
     return (
         <div
