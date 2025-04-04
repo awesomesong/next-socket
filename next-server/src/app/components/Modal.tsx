@@ -43,13 +43,12 @@ const Modal:React.FC<ModalProps> = ({
                                     flex
                                     overflow-hidden
                                     h-full
-                                    items-center
                                     justify-center
                                     m-4
                                     text-center
                                     sm:p-0
                                 `,
-                                keyboardVisible && "items-start"
+                                keyboardVisible ? "items-start" : "items-center"
                             )}
                         >
                             <div
