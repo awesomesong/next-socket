@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import Header from "@/src/app/components/chat/Header";
 import Body from "@/src/app/components/chat/Body";
 import Form from "@/src/app/components/chat/Form";
+import { useEffect } from "react";
 
 interface IParams {
     conversationId: string;
@@ -19,11 +20,16 @@ const Conversation = ({ params }: { params : IParams }) => {
     const { 
         data, 
         status,
+        refetch
     } = useQuery({
         queryKey: ['conversation', conversationId],
         queryFn: () => getConversationById(conversationId),
         enabled: !!conversationId, 
     });
+
+    useEffect(() => {
+        if (conversationId) refetch();
+    }, [conversationId]);
 
     if(!!data?.message) {
         return (
