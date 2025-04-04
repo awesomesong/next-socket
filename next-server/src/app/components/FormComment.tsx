@@ -21,6 +21,7 @@ const FormComment = ({ blogId, user } : FormCommentProps) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [comment, setComment] = useState<string>('');
     const [stateComment, setStateComment] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const queryClient = useQueryClient();
 
     const { 
@@ -80,10 +81,20 @@ const FormComment = ({ blogId, user } : FormCommentProps) => {
             return alert('댓글을 입력해주세요.')
         }; 
 
-        createBlogsCommentsMutation({
-            blogId,
-            comment
-        });
+        if (isSubmitting) return; // 중복 방지
+        setIsSubmitting(true);
+
+        createBlogsCommentsMutation(
+            {
+                blogId,
+                comment
+            },
+            {
+                onSettled: () => {
+                    setIsSubmitting(false); 
+                }
+            }
+        );
     };
 
     return (
@@ -133,7 +144,7 @@ const FormComment = ({ blogId, user } : FormCommentProps) => {
                                 rounded-md 
                             '
                         >
-                            댓글
+                            {isSubmitting ? '등록 중' : '댓글'}
                         </button>
                     </div>
                 )}
