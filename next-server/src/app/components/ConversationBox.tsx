@@ -29,21 +29,10 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
         router.push(`/conversations/${data.id}`);
     }, [router, data.id]);
 
-    const unReadMessageLength = useMemo(() => {
-        if (!data?.messages || !currentUser?.id) return 0;
-    
-        return data.messages.reduce((count, message) => {
-            const hasUnread = message.readStatuses.some(status => 
-                status.userId === currentUser.id && !status.isRead
-            );
-    
-            return hasUnread ? count + 1 : count;
-        }, 0);
-    }, [data?.messages, currentUser?.id]);
+    const unReadMessageLength = data.unreadCount ?? 0;
 
     const lastMessage = useMemo(() => {
-        const messages = data.messages || [];
-        return messages.find((msg) => msg.type !== 'system');
+        return data.messages?.[0] ?? null;
     }, [data.messages]);
 
     const userEmail = currentUser?.email;
@@ -138,7 +127,7 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
                         >
                             {lastMessageText}
                         </p>
-                        {unReadMessageLength > 0 && 
+                        {!conversationId && unReadMessageLength > 0 && 
                             <p className="
                                 inline-flex
                                 justify-center

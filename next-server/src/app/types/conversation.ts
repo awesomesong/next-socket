@@ -26,6 +26,7 @@ export type MessageType = Message & {
 export type FullConversationType = Conversation & {
     users: IUserList[];
     messages: MessageType[];
+    unreadCount?: number;
 }
 
 export type ConversationProps = {

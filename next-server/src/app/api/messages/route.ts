@@ -29,6 +29,7 @@ export async function POST(req: Request) {
         const newMessage = await prisma.message.create({
             data: {
                 body: message,
+                type: 'text',
                 image: image,
                 conversation: { connect: { id: conversationId } },
                 sender: { connect: { id: user.id } },

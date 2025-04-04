@@ -33,9 +33,15 @@ export async function GET(req: NextRequest){
                     }
                 },
                 messages: {
+                    where: {
+                        type: {
+                            not: 'system',
+                        },
+                    },
                     orderBy: {
                         createdAt: 'desc' 
                     },
+                    take: 1,
                     select: {
                         id: true,
                         body: true,
@@ -69,7 +75,30 @@ export async function GET(req: NextRequest){
             },
         });
 
-        return NextResponse.json({ conversations }, {status: 200})
+        // 👉 병렬로 각 대화방의 안 읽은 메시지 수 가져오기
+        const conversationsWithUnreadCount = await Promise.all(
+            conversations.map(async (conversation) => {
+            const unreadCount = await prisma.messageReadStatus.count({
+                where: {
+                userId: user.id,
+                isRead: false,
+                message: {
+                    conversationId: conversation.id,
+                    type: {
+                        not: 'system',
+                    },
+                },
+                },
+            });
+        
+                return {
+                    ...conversation,
+                    unreadCount,
+                };
+            })
+        );
+
+        return NextResponse.json({ conversations: conversationsWithUnreadCount }, { status: 200 });        
     } catch ( error ) {
         return new NextResponse('대화방을 불러오는 중 오류가 발생하였습니다.', {status: 500})
     }

@@ -55,11 +55,16 @@ const ConversationList = () => {
                 if (!oldData) return { conversations: [] }; // 예외 처리
         
                 // 메시지가 포함된 대화 업데이트
-                const updatedConversations = oldData.conversations.map(conversation =>
-                    conversation.id === message.conversationId
-                        ? { ...conversation, messages: [message, ...conversation.messages] }
-                        : conversation
-                );
+                const updatedConversations = oldData.conversations.map(conversation => {
+                    if (conversation.id !== message.conversationId) return conversation;
+
+                    const existingMessages = conversation.messages ?? [];
+                    return {
+                        ...conversation,
+                        messages: [message, ...existingMessages], 
+                        unreadCount: (conversation.unreadCount ?? 0) + 1,
+                    };
+                });
         
                 // 대화를 정렬하여 최신 메시지가 포함된 대화를 맨 위로 이동
                 const reorderedConversations = [...updatedConversations] // 원본을 복사한 후
