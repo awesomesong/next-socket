@@ -2,12 +2,14 @@
 import { IoClose } from "react-icons/io5";
 import clsx from "clsx";
 import { ModalProps } from "@/src/app/types/common";
+import { useKeyboardOrInputVisible } from "../hooks/useKeyboardOrInputVisible";
 
 const Modal:React.FC<ModalProps> = ({
     isOpen,
     onCloseModal,
     children,
 }) => {
+    const { keyboardVisible } = useKeyboardOrInputVisible();
 
     return (
             <div
@@ -37,16 +39,18 @@ const Modal:React.FC<ModalProps> = ({
                     )}
                     >
                         <div
-                            className="
-                                flex
-                                overflow-hidden
-                                h-full
-                                items-center
-                                justify-center
-                                p-4
-                                text-center
-                                sm:p-0
-                            "
+                            className={clsx(`
+                                    flex
+                                    overflow-hidden
+                                    h-full
+                                    items-center
+                                    justify-center
+                                    m-4
+                                    text-center
+                                    sm:p-0
+                                `,
+                                keyboardVisible && "items-start"
+                            )}
                         >
                             <div
                                 className={clsx(`
@@ -57,7 +61,6 @@ const Modal:React.FC<ModalProps> = ({
                                         p-4
                                         text-left
                                         shadow-xsl
-                                        sm:my-8
                                         sm:w-full
                                         sm:max-w-lg
                                         max-sm:w-full
