@@ -61,6 +61,7 @@ const Body = () => {
             pages: [...data.pages].reverse(),
             pageParams: [...data.pageParams].reverse(),
         }),
+        enabled: !!conversationId
     });
 
     const { mutate: readMessageMutaion } = useMutation({

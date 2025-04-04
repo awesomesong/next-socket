@@ -7,15 +7,13 @@ import { useSession } from "next-auth/react";
 import Header from "@/src/app/components/chat/Header";
 import Body from "@/src/app/components/chat/Body";
 import Form from "@/src/app/components/chat/Form";
-import { useEffect } from "react";
-import { useSocket } from '../../../context/socketContext';
+
 
 interface IParams {
     conversationId: string;
 }
 
 const Conversation = ({ params }: { params : IParams }) => {   
-    const socket = useSocket(); 
     const { data: session } = useSession();
     const conversationId = params.conversationId;
 
@@ -27,21 +25,6 @@ const Conversation = ({ params }: { params : IParams }) => {
         queryKey: ['conversation', conversationId],
         queryFn: () => getConversationById(conversationId),
     });
-
-    useEffect(() => {
-        if(!socket) return; 
-
-        const handleReconnect = () => {
-            socket.emit('join:room', conversationId); // 방 재입장
-            refetch(); // 메시지 다시 불러오기 ✅
-        };
-      
-        socket.on('connect', handleReconnect);
-      
-        return () => {
-          socket.off('connect', handleReconnect);
-        };
-    }, [conversationId]);
 
     if(!!data?.message) {
         return (
