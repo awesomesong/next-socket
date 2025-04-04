@@ -7,20 +7,36 @@ export const useKeyboardOrInputVisible = () => {
     useEffect(() => {
         const visual = window.visualViewport;
 
+        let lastHeight = visual?.height ?? 0;
+
         const onResize = () => {
-        if (!visual) return;
-            const keyboardShown = window.innerHeight - visual.height > 100;
-            setKeyboardVisible(keyboardShown);
+            if (!visual) return;
+
+            const heightDiff = window.innerHeight - visual.height;
+            const keyboardLikelyVisible = heightDiff > 100;
+
+            setKeyboardVisible(keyboardLikelyVisible);
+            lastHeight = visual.height;
         };
 
         const handleFocusIn = (e: FocusEvent) => {
-        if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) {
-            setInputFocused(true);
-        }
+            if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) {
+                setInputFocused(true);
+
+                // ✅ Fallback: visualViewport 작동하지 않는 경우 대비
+                if (!visual) {
+                    setKeyboardVisible(true);
+                }
+            }
         };
 
         const handleFocusOut = () => {
             setInputFocused(false);
+
+            // ✅ Fallback: visualViewport 작동하지 않는 경우 대비
+            if (!visual) {
+                setKeyboardVisible(false);
+            }
         };
 
         visual?.addEventListener('resize', onResize);
