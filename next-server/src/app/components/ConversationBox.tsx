@@ -24,13 +24,10 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
     const { conversationId } = useConversation();
     const { otherUser } = useOtherUser(data, currentUser);
     const router = useRouter();
-
     const [isMounted, setIsMounted] = useState(false);
     useEffect(() => {
         setIsMounted(true);
     }, []);
-
-    if (!isMounted) return null; // ✅ iOS 초기 렌더링 문제 방지
 
     const handleClick = useCallback(() => {
         router.push(`/conversations/${data.id}`);
@@ -57,6 +54,8 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
         if(lastMessage?.body) return lastMessage.body;
         return '대화방이 생성되었습니다.'
     }, [lastMessage]);
+
+    if (!isMounted) return null; 
 
     return (
         <div
