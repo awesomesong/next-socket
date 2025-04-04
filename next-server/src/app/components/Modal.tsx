@@ -2,16 +2,14 @@
 import { IoClose } from "react-icons/io5";
 import clsx from "clsx";
 import { ModalProps } from "@/src/app/types/common";
-import { useKeyboardOrInputVisible } from "../hooks/useKeyboardOrInputVisible";
-import useIsMobile from "../hooks/useIsMobile";
+import useIsMobileDevice from "../hooks/useIsMobileDevice";
 
 const Modal:React.FC<ModalProps> = ({
     isOpen,
     onCloseModal,
     children,
 }) => {
-    const { keyboardVisible, inputFocused } = useKeyboardOrInputVisible();
-    const isOnMobile = useIsMobile();
+    const isMobileDevice = useIsMobileDevice();
 
     return (
             <div
@@ -50,7 +48,7 @@ const Modal:React.FC<ModalProps> = ({
                                     text-center
                                     sm:p-0
                                 `,
-                                isOnMobile ? "items-start" : "items-center"
+                                isMobileDevice ? "items-start" : "items-center"
                             )}
                         >
                             <div

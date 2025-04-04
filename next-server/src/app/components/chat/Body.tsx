@@ -13,7 +13,7 @@ import CircularProgress from '@/src/app/components/CircularProgress';
 import { useSocket } from '../../context/socketContext';
 import useConversationUserList from '../../hooks/useConversationUserList';
 import { useKeyboardOrInputVisible } from '../../hooks/useKeyboardOrInputVisible';
-import useIsMobile from '../../hooks/useIsMobile';
+import useIsMobileDevice from '../../hooks/useIsMobileDevice';
 
 interface PageData {
     messages: FullMessageType[];  // 각 페이지에서 메시지 배열
@@ -32,17 +32,17 @@ const Body = () => {
     const [prevScrollHeight, setPrevScrollHeight] = useState(0); // 기존의 스크롤 높이 저장
     const { set, conversationUsers, remove } = useConversationUserList();
     const { keyboardVisible, inputFocused } = useKeyboardOrInputVisible();
-    const isOnMobile = useIsMobile();
+    const isMobileDevice = useIsMobileDevice();
 
     const shouldShowScrollButton = useMemo(() => {
-        if (isOnMobile) {
+        if (isMobileDevice) {
           // 모바일 조건
           return isScrolledUp && !keyboardVisible;
         } else {
           // 데스크탑 조건
           return isScrolledUp;
         }
-    }, [isScrolledUp, keyboardVisible, isOnMobile]);
+    }, [isScrolledUp, keyboardVisible, isMobileDevice]);
 
     // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
     const {
