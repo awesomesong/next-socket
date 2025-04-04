@@ -50,7 +50,12 @@ export const Post = ({ post, HandlerCheckItem, isChecked }: Props) => {
                     onValueChange={() => HandlerCheckItem(post.id, !isChecked)} 
                 />
                 {session?.user?.email && session?.user?.email === post.writer?.email 
-                    && <PostDeleteButton postId={post.id} postTitle={post.title} />}
+                    && <PostDeleteButton 
+                            postId={post.id} 
+                            postTitle={post.title} 
+                            selectedPosts={[{ id: post?.id, writerEmail: post?.writer.email }]} 
+                            myEmail={session?.user?.email} 
+                        />}
             </div>
             {post.image && (
                 <div className='relative h-60 max-[320px]:h-48 w-full'>

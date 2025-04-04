@@ -38,6 +38,12 @@ const PostsDetailpage = () => {
       }
   };
 
+    const selectedPosts = posts?.filter((post) => checkItems.includes(post.id))
+        .map((post) => ({
+            id: post.id,
+            writerEmail: post.writer.email,
+    }));
+
   return (
       <>
           <div className='
@@ -73,7 +79,12 @@ const PostsDetailpage = () => {
                           </div>
                       )}
                       {checkItems.length > 0 
-                          && <PostDeleteButton ids={checkItems} setCheckItems={setCheckItems} />
+                          && <PostDeleteButton 
+                                ids={checkItems} 
+                                setCheckItems={setCheckItems} 
+                                myEmail={session?.user?.email!}
+                                selectedPosts={selectedPosts}
+                            />
                       }
                   </div>
                   <div>

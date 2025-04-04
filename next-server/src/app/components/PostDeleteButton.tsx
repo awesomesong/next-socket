@@ -13,6 +13,8 @@ type Props = {
     setCheckItems?: (items: string[]) => void;
     variant?: 'icon' | 'text';
     isDisabled?: boolean;
+    selectedPosts?: { id: string; writerEmail: string }[]; 
+    myEmail?: string;
 };
 
 const PostDeleteButton = ({ 
@@ -21,7 +23,10 @@ const PostDeleteButton = ({
     ids, 
     setCheckItems, 
     variant,
-    isDisabled }: Props) => {
+    isDisabled,
+    selectedPosts,
+    myEmail 
+}: Props) => {
 
     const router = useRouter();
     const [deletePost] = useMutation(DELETE_POST, {
@@ -29,6 +34,14 @@ const PostDeleteButton = ({
     });
 
     const onPressDelete = useCallback(() => {
+        if (selectedPosts && myEmail) {
+            const hasOtherAuthors = selectedPosts.some(post => post.writerEmail !== myEmail);
+            if (hasOtherAuthors) {
+                alert("선택한 글 중 내가 작성하지 않은 글이 포함되어 있어 삭제할 수 없습니다.");
+                return;
+            }
+        }
+
         const result = confirm(
             ids && ids.length > 0
                 ? `선택한 ${ids.length}개의 항목을 삭제하시겠습니까?`
@@ -40,7 +53,7 @@ const PostDeleteButton = ({
         deletePost({ variables: { id: postId ?? ids } });
         setCheckItems?.([]);
         if(variant === 'text') router.push('/posts');
-    }, [deletePost, postId, postTitle, ids, setCheckItems]);
+    }, [deletePost, postId, postTitle, ids, setCheckItems, selectedPosts, myEmail, router]);
 
     return postId ? (
         // ✅ 단일 삭제 버튼 (아이콘)
