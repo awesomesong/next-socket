@@ -33,6 +33,7 @@ const Conversation = ({ params }: { params : IParams }) => {
         if(!socket) return; 
 
         const handleReconnect = () => {
+            console.log('@@connect', socket);
             socket.emit('join:room', conversationId); // 방 재입장
             refetch(); // 메시지 다시 불러오기 ✅
         };
