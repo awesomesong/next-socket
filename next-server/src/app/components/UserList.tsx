@@ -15,6 +15,7 @@ const UserList = () => {
         data, 
         status,
         isSuccess,
+        refetch
     } = useQuery({
         queryKey: ['chatMember'],
         queryFn: getUsers,
@@ -24,8 +25,7 @@ const UserList = () => {
     useEffect(() => {
         if(!socket) return;
         socket.on("register:user", (user: IUserList[]) => {
-            // 강제 리렌더링을 위한 쿼리 무효화
-            queryClient.invalidateQueries({queryKey: ['chatMember']});
+            refetch();
         });
 
         return () => {
