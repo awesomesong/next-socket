@@ -32,6 +32,6 @@
 
 ### 🌐 socket-server (실시간 전용 서버)
 
-- **Socket.io Server** – 실시간 메시지 처리 (채팅, 알림 등)
+- **Socket.io Server** – 실시간 메시지 처리 (채팅, 알림, 접속 상태 표시 등)
 - **Express** – 서버 구성
 - **Fly.io** – 실시간 서버 배포 및 호스팅
