@@ -49,7 +49,7 @@ const Post = ({params : {id}}: Props) => {
         refetchQueries: [{query: GET_POST, variables: {id}}],
     })
 
-    const [addPostComment] = useMutation(ADD_POSTCOMMENT, {
+    const [addPostComment, { loading: isSubmitting }] = useMutation(ADD_POSTCOMMENT, {
         variables: { postId: id, text: comment },
         refetchQueries: [{ query: GET_POST, variables: {id}}],
         onCompleted: () => {
@@ -70,10 +70,12 @@ const Post = ({params : {id}}: Props) => {
     //     setUrl("");
     // }
 
-    const handleAddAuthor = (e: FormEvent<HTMLFormElement>) => {
+    const handleAddComment = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if(comment === "") return alert("댓글을 입력해주세요.");
-        addPostComment({ variables: {postId: id, comment}});
+        if (isSubmitting) return;
+
+        addPostComment({ variables: {postId: id, comment: comment.trim()}});
     };
 
     const onFocus = () => {
@@ -177,7 +179,7 @@ const Post = ({params : {id}}: Props) => {
                                     />
                                 </div>
                                 <form 
-                                    onSubmit={handleAddAuthor} 
+                                    onSubmit={handleAddComment} 
                                     className="
                                         flex 
                                         flex-col 
@@ -211,7 +213,7 @@ const Post = ({params : {id}}: Props) => {
                                                 rounded-lg 
                                             "
                                         >
-                                            댓글
+                                            {isSubmitting ? '등록 중' : '댓글'}
                                         </button>
                                 }
                                 </form>
