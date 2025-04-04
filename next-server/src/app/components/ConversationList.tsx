@@ -37,7 +37,6 @@ const ConversationList = () => {
         if(!socket) return;
 
         const handleReconnect = () => {
-            socket.emit('join:room', conversationId); // 방 재입장
             refetch(); // 메시지 다시 불러오기 ✅
         };
       
