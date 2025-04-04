@@ -32,7 +32,8 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
     const unReadMessageLength = data.unreadCount ?? 0;
 
     const lastMessage = useMemo(() => {
-        return data.messages?.[0] ?? null;
+        if (!Array.isArray(data.messages) || data.messages.length === 0) return null;
+        return data.messages[0];
     }, [data.messages]);
 
     const userEmail = currentUser?.email;
