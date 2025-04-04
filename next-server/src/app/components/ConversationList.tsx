@@ -24,7 +24,8 @@ const ConversationList = () => {
     const { 
         data, 
         status,
-        isSuccess
+        isSuccess,
+        refetch
     } = useQuery({
         queryKey: [ 'conversationList' ],
         queryFn: getConversations,
@@ -34,6 +35,14 @@ const ConversationList = () => {
 
     useEffect(() => {
         if(!socket) return;
+
+        const handleReconnect = () => {
+            socket.emit('join:room', conversationId); // 방 재입장
+            refetch(); // 메시지 다시 불러오기 ✅
+        };
+      
+        socket.on('connect', handleReconnect);
+
         socket.on("conversation:new", (conversation: FullConversationType) => {
             queryClient.setQueriesData({ queryKey: ['conversationList']}, (oldData: ConversationProps) => {
                 return { conversations: [ conversation, ...oldData.conversations ] };
@@ -63,8 +72,9 @@ const ConversationList = () => {
 
 
         return () => {
-          socket.off("conversation:new");
-          socket.off("receive:conversation");
+            socket.off('connect', handleReconnect);
+            socket.off("conversation:new");
+            socket.off("receive:conversation");
         };
     }, [ socket ]);
 
