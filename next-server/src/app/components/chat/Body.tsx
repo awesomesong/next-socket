@@ -1,6 +1,6 @@
 'use client';
 import useConversation from '@/src/app/hooks/useConversation';
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import MessageView from './MessageView';
 import { FullMessageType } from '@/src/app/types/conversation';
 import { InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,8 @@ import { PiArrowFatDownFill } from "react-icons/pi";
 import CircularProgress from '@/src/app/components/CircularProgress';
 import { useSocket } from '../../context/socketContext';
 import useConversationUserList from '../../hooks/useConversationUserList';
+import { useKeyboardOrInputVisible } from '../../hooks/useKeyboardOrInputVisible';
+import useIsMobile from '../../hooks/useIsMobile';
 
 interface PageData {
     messages: FullMessageType[];  // 각 페이지에서 메시지 배열
@@ -29,6 +31,18 @@ const Body = () => {
     const [isScrolledUp, setIsScrolledUp] = useState(false); // 스크롤이 위에 있을 때 true
     const [prevScrollHeight, setPrevScrollHeight] = useState(0); // 기존의 스크롤 높이 저장
     const { set, conversationUsers, remove } = useConversationUserList();
+    const { keyboardVisible, inputFocused } = useKeyboardOrInputVisible();
+    const isOnMobile = useIsMobile();
+
+    const shouldShowScrollButton = useMemo(() => {
+        if (isOnMobile) {
+          // 모바일 조건
+          return isScrolledUp && !keyboardVisible && !inputFocused;
+        } else {
+          // 데스크탑 조건
+          return isScrolledUp;
+        }
+    }, [isScrolledUp, keyboardVisible, inputFocused, isOnMobile]);
 
     // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
     const {
@@ -240,13 +254,13 @@ const Body = () => {
             }
 
             {/* ✅ 아래로 이동 버튼 */}
-            {isScrolledUp && (
+            {shouldShowScrollButton && (
                 <button
                     type='button'
                     className="
                         absolute 
                         md:bottom-24 
-                        bottom-36
+                        bottom-28
                         right-1/2
                         p-2 
                         bg-default-reverse 

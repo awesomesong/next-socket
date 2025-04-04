@@ -37,7 +37,7 @@ const Conversation = ({ params }: { params : IParams }) => {
     const isForm = data?.conversation?.userIds.length > 1;
 
     return (
-        <div className="flex flex-col w-full">
+        <div className="flex flex-col w-full relative">
             {status === 'success' 
                 ? (<div className="flex flex-col flex-1 overflow-hidden">
                     <Header conversation={data?.conversation} currentUser={session?.user}/>

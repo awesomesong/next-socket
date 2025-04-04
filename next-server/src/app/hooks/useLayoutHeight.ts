@@ -15,7 +15,6 @@ export const useLayoutHeight = (ref: React.RefObject<HTMLElement>) => {
 
       const { height } = window.visualViewport;
       el.style.height = `${height}px`;
-      el.style.overflow = 'hidden'; 
 
       // ✅ 스크롤을 맨 위로 이동시킴
       requestAnimationFrame(() => {
