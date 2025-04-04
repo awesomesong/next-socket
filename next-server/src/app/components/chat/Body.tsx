@@ -50,7 +50,8 @@ const Body = () => {
         status,
         fetchNextPage,
         hasNextPage,
-        isFetchingNextPage
+        isFetchingNextPage,
+        refetch
     } = useInfiniteQuery({
         queryKey: ['messages', conversationId],
         queryFn: ({ pageParam = null }) => getMessages({ conversationId, pageParam }),
@@ -61,8 +62,22 @@ const Body = () => {
             pages: [...data.pages].reverse(),
             pageParams: [...data.pageParams].reverse(),
         }),
-        enabled: !!conversationId
     });
+
+    useEffect(() => {
+        if(!socket) return; 
+
+        const handleReconnect = () => {
+            socket.emit('join:room', conversationId); // 방 재입장
+            refetch(); // 메시지 다시 불러오기 ✅
+        };
+      
+        socket.on('connect', handleReconnect);
+      
+        return () => {
+          socket.off('connect', handleReconnect);
+        };
+    }, [conversationId]);
 
     const { mutate: readMessageMutaion } = useMutation({
         mutationFn: readMessages,
