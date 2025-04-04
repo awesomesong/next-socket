@@ -26,14 +26,12 @@ const Conversation = ({ params }: { params : IParams }) => {
     } = useQuery({
         queryKey: ['conversation', conversationId],
         queryFn: () => getConversationById(conversationId),
-        enabled: !!conversationId, 
     });
 
     useEffect(() => {
         if(!socket) return; 
 
         const handleReconnect = () => {
-            console.log('@@connect', socket);
             socket.emit('join:room', conversationId); // 방 재입장
             refetch(); // 메시지 다시 불러오기 ✅
         };
