@@ -37,12 +37,12 @@ const Body = () => {
     const shouldShowScrollButton = useMemo(() => {
         if (isOnMobile) {
           // 모바일 조건
-          return isScrolledUp && !keyboardVisible && !inputFocused;
+          return isScrolledUp && !keyboardVisible;
         } else {
           // 데스크탑 조건
           return isScrolledUp;
         }
-    }, [isScrolledUp, keyboardVisible, inputFocused, isOnMobile]);
+    }, [isScrolledUp, keyboardVisible, isOnMobile]);
 
     // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
     const {
