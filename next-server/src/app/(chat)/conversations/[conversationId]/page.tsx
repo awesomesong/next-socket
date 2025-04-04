@@ -8,7 +8,7 @@ import Header from "@/src/app/components/chat/Header";
 import Body from "@/src/app/components/chat/Body";
 import Form from "@/src/app/components/chat/Form";
 import { useEffect } from "react";
-import { useSocket } from "@/src/app/context/socketContext";
+import { useSocket } from '../../../context/socketContext';
 
 interface IParams {
     conversationId: string;
