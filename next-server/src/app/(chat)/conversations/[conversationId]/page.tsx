@@ -22,6 +22,7 @@ const Conversation = ({ params }: { params : IParams }) => {
     } = useQuery({
         queryKey: ['conversation', conversationId],
         queryFn: () => getConversationById(conversationId),
+        enabled: !!conversationId, 
     });
 
     if(!!data?.message) {
