@@ -132,7 +132,8 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
                                 text-neutral-600 
                                 dark:text-neutral-400
                             `,
-                            hasSeen || conversationId || !lastMessage ? 'font-normal' : 'font-bold'
+                            hasSeen || conversationId || !lastMessage || data.messages[0].type === 'system' 
+                                ? 'font-normal' : 'font-bold'
                         )}
                         >
                             {lastMessageText}
