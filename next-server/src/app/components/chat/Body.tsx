@@ -287,16 +287,17 @@ const Body = () => {
             <div className='absolute left-0 top-0'>
                 <div>isScrolledUp: {isScrolledUp ? "true" : "false"}</div>
                 <div>keyboardVisible: {keyboardVisible ? "true" : "false"}</div>
+                <div>shouldShowScrollButton: {shouldShowScrollButton ? "true" : "false"}</div>
             </div>
 
             {/* ✅ 아래로 이동 버튼 */}
-            {shouldShowScrollButton && (
+            {isScrolledUp && (
                 <button
                     type='button'
                     className="
                         absolute 
                         md:bottom-24 
-                        top-28
+                        bottom-28
                         right-1/2
                         p-2 
                         bg-default-reverse 

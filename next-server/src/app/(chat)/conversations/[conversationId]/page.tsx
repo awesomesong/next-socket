@@ -39,9 +39,9 @@ const Conversation = ({ params }: { params : IParams }) => {
     const isForm = data?.conversation?.userIds.length > 1;
 
     return (
-        <div className="flex flex-col overflow-hidden w-full min-h-0 ">
+        <div className="flex flex-col w-full">
             {status === 'success' 
-                ? (<div className="flex flex-col flex-1 overflow-hidden min-h-0 relative">
+                ? (<div className="flex flex-col flex-1 overflow-hidden relative">
                     <Header conversation={data?.conversation} currentUser={session?.user}/>
                     <Body />
                     {isForm ? <Form /> : <UnavailableChatForm />}
