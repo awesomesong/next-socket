@@ -17,16 +17,10 @@ export const useLayoutHeight = (ref: React.RefObject<HTMLElement>) => {
       const { height } = window.visualViewport;
       el.style.height = `${height}px`;
 
-      // ✅ 최초 진입 시, 아래로 스크롤 (최신 메시지 보기)
-      if (isFirstMount) {
-        isFirstMount = false;
 
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            el.scrollTop = 0;
-          });
-        });
-      }
+      requestAnimationFrame(() => {
+        el.scrollTop = 0;
+      });
     };
 
     // 초기 적용
