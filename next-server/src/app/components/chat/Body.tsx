@@ -140,6 +140,15 @@ const Body = () => {
             const prevHeight = scrollRef?.current?.scrollHeight; 
             if(prevHeight) setPrevScrollHeight(() => prevHeight || 0);
 
+            // 지연 감지: Android WebView 대응용
+            requestAnimationFrame(() => {
+                if (scrollRef.current) {
+                    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+                    const isUserScrolledUp = scrollTop + clientHeight < scrollHeight - 30;
+                    setIsScrolledUp(isUserScrolledUp);
+                }
+            });
+
             queryClient.setQueriesData(
                 { queryKey: ['messages', conversationId] },
                 (oldData: InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }> | undefined) => {
@@ -192,15 +201,21 @@ const Body = () => {
     useEffect(() => {
         const handleScroll = async () => {
             if (!scrollRef.current) return;
+            const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
 
-            if(isScrolledUp)  setIsScrolledUp((prevState) => (prevState ? false : prevState));
+            const atTop = scrollTop === 0;
+            const atBottom = scrollTop + clientHeight >= scrollHeight - 30;
 
-            const { scrollTop, scrollHeight } = scrollRef.current;
+            if (!atBottom) {
+                setIsScrolledUp(true);
+            } else {
+                setIsScrolledUp(false);
+            }
 
             // ✅ 스크롤 위치 저장
             const previousScrollHeight = scrollHeight;
 
-            if (scrollTop === 0 && hasNextPage && !isFetchingNextPage) {
+            if (atTop && hasNextPage && !isFetchingNextPage) {
                 await fetchNextPage();
 
                 // ✅ 데이터 로드 후 스크롤 위치를 기존 자리로 유지
@@ -220,11 +235,11 @@ const Body = () => {
         return () => {
             if (scrollContainer) scrollRef.current?.removeEventListener('scroll', handleScroll);
         }
-    }, [isScrolledUp, fetchNextPage, hasNextPage, isFetchingNextPage]);
+    }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
     // ✅ 클릭맨 아래로 스크롤하는 함수
     const clickToBottom = useCallback(() => {
-        setIsScrolledUp(() => false);
+        setIsScrolledUp(false);
         setPrevScrollHeight(() => scrollRef?.current?.scrollHeight || 0); // 스크롤 높이 저장
         bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     },[]);
