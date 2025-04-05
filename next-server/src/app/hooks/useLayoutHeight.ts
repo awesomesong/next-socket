@@ -5,7 +5,6 @@ export const useLayoutHeight = (ref: React.RefObject<HTMLElement>) => {
     if (!ref.current) return;
 
     const el = ref.current;
-    let isFirstMount = true;
 
     const update = () => {
       if (window.innerWidth >= 768 || !window.visualViewport) {

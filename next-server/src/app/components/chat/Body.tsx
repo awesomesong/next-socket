@@ -14,6 +14,7 @@ import { useSocket } from '../../context/socketContext';
 import useConversationUserList from '../../hooks/useConversationUserList';
 import { useKeyboardOrInputVisible } from '../../hooks/useKeyboardOrInputVisible';
 import useIsMobileDevice from '../../hooks/useIsMobileDevice';
+import { useLayoutHeight } from '../../hooks/useLayoutHeight';
 
 interface PageData {
     messages: FullMessageType[];  // 각 페이지에서 메시지 배열
@@ -33,6 +34,7 @@ const Body = () => {
     const { set, conversationUsers, remove } = useConversationUserList();
     const { keyboardVisible, inputFocused } = useKeyboardOrInputVisible();
     const isMobileDevice = useIsMobileDevice();
+    useLayoutHeight(scrollRef);
 
     const shouldShowScrollButton = useMemo(() => {
         if (isMobileDevice) {
