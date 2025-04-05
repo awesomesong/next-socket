@@ -12,8 +12,6 @@ import { PiArrowFatDownFill } from "react-icons/pi";
 import CircularProgress from '@/src/app/components/CircularProgress';
 import { useSocket } from '../../context/socketContext';
 import useConversationUserList from '../../hooks/useConversationUserList';
-import { useKeyboardOrInputVisible } from '../../hooks/useKeyboardOrInputVisible';
-import useIsMobileDevice from '../../hooks/useIsMobileDevice';
 
 interface PageData {
     messages: FullMessageType[];  // 각 페이지에서 메시지 배열
@@ -29,20 +27,17 @@ const Body = () => {
     const { conversationId } = useConversation();
     const [isFirstLoad, setIsFirstLoad] = useState(true); // 처음 로딩 여부
     const [isScrolledUp, setIsScrolledUp] = useState(false); // 스크롤이 위에 있을 때 true
+    const [shouldScrollDown, setShouldScrollDown] = useState(false);
     const [prevScrollHeight, setPrevScrollHeight] = useState(0); // 기존의 스크롤 높이 저장
     const { set, conversationUsers, remove } = useConversationUserList();
-    const { keyboardVisible, inputFocused } = useKeyboardOrInputVisible();
-    const isMobileDevice = useIsMobileDevice();
 
-    const shouldShowScrollButton = useMemo(() => {
-        if (isMobileDevice) {
-          // 모바일 조건
-          return isScrolledUp && !keyboardVisible;
-        } else {
-          // 데스크탑 조건
-          return isScrolledUp;
-        }
-    }, [isScrolledUp, keyboardVisible, isMobileDevice]);
+    const updateScrollState = (atBottom: boolean) => {
+        setIsScrolledUp(prev => {
+            if (prev === true && atBottom) return false;
+            if (prev === false && !atBottom) return true;
+            return prev;
+        });
+    };
 
     // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
     const {
@@ -62,22 +57,7 @@ const Body = () => {
             pages: [...data.pages].reverse(),
             pageParams: [...data.pageParams].reverse(),
         }),
-    });
-
-    useEffect(() => {
-        if(!socket) return; 
-
-        const handleReconnect = () => {
-            socket.emit('join:room', conversationId); // 방 재입장
-            refetch(); // 메시지 다시 불러오기 ✅
-        };
-      
-        socket.on('connect', handleReconnect);
-      
-        return () => {
-          socket.off('connect', handleReconnect);
-        };
-    }, [conversationId]);
+    });    
 
     const { mutate: readMessageMutaion } = useMutation({
         mutationFn: readMessages,
@@ -101,18 +81,16 @@ const Body = () => {
         const chatBox = scrollRef.current;
         if (chatBox) {
             const { scrollTop, scrollHeight, clientHeight } = chatBox;
-            // const isAtBottom = scrollHeight - clientHeight <= scrollTop + 5;
-
-            const isAtBottom = prevScrollHeight <= clientHeight + scrollTop + 20; 
+            const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+            const isAtBottom = distanceFromBottom <= 50;
 
             if (isAtBottom) {
                 requestAnimationFrame(() => {
                     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
                     setPrevScrollHeight(() => scrollRef?.current?.scrollHeight || 0); // 스크롤 높이 저장
                 });
-            } else {
-                setIsScrolledUp(true);
-            }
+            } 
+            updateScrollState(isAtBottom);
         }
     }, [status, data]);
 
@@ -134,20 +112,25 @@ const Body = () => {
     useEffect(() => {
         if (!socket) return;
 
+        const handleReconnect = () => {
+            socket.emit('join:room', conversationId); // 방 재입장
+            refetch(); // 메시지 다시 불러오기 ✅
+        };
+
         socket.emit('join:room', conversationId);
+        socket.on('connect', handleReconnect);
         socket.on("receive:message", (message: FullMessageType) => {
             // 기존의 채팅 높이 저장
             const prevHeight = scrollRef?.current?.scrollHeight; 
             if(prevHeight) setPrevScrollHeight(() => prevHeight || 0);
 
-            // 지연 감지: Android WebView 대응용
-            requestAnimationFrame(() => {
-                if (scrollRef.current) {
-                    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-                    const isUserScrolledUp = scrollTop + clientHeight < scrollHeight - 30;
-                    setIsScrolledUp(isUserScrolledUp);
-                }
-            });
+            if (scrollRef.current) {
+                const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+                const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+                const isAtBottom = distanceFromBottom <= 50;
+                setShouldScrollDown(isAtBottom);
+                updateScrollState(isAtBottom);
+            }
 
             queryClient.setQueriesData(
                 { queryKey: ['messages', conversationId] },
@@ -174,11 +157,22 @@ const Body = () => {
 
         return () => {
             socket.off("join:room");
+            socket.off('connect', handleReconnect);
             socket.off("receive:message");
             socket.off("read:message");
             socket.off("exit:user");
         };
     }, [socket, conversationId]);
+
+    useEffect(() => {
+        if (shouldScrollDown) {
+            requestAnimationFrame(() => {
+                bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                setShouldScrollDown(false);
+            });
+        }
+    }, [shouldScrollDown]);
+
 
     // 채팅방 참여 & 미참여
     useEffect(() => {
@@ -204,14 +198,11 @@ const Body = () => {
             const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
 
             const atTop = scrollTop === 0;
-            const atBottom = scrollTop + clientHeight >= scrollHeight - 30;
+            const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+            const isAtBottom = distanceFromBottom <= 50;
 
-            if (!atBottom) {
-                setIsScrolledUp(true);
-            } else {
-                setIsScrolledUp(false);
-            }
-
+            updateScrollState(isAtBottom);
+            
             // ✅ 스크롤 위치 저장
             const previousScrollHeight = scrollHeight;
 
@@ -283,12 +274,6 @@ const Body = () => {
                 })
                 : (<ChatSkeleton />)
             }
-
-            <div className='absolute left-0 top-0'>
-                <div>isScrolledUp: {isScrolledUp ? "true" : "false"}</div>
-                <div>keyboardVisible: {keyboardVisible ? "true" : "false"}</div>
-                <div>shouldShowScrollButton: {shouldShowScrollButton ? "true" : "false"}</div>
-            </div>
 
             {/* ✅ 아래로 이동 버튼 */}
             {isScrolledUp && (
