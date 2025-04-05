@@ -1,8 +1,8 @@
 'use client';
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { FullConversationType } from "@/src/app/types/conversation";
+import { FullConversationType, MessageType } from "@/src/app/types/conversation";
 import useOtherUser from "@/src/app/hooks/useOtherUser";
 import Avatar from "./Avatar";
 import AvatarGroup from "./AvatarGroup";
@@ -24,14 +24,19 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
     const { conversationId } = useConversation();
     const { otherUser } = useOtherUser(data, currentUser);
     const router = useRouter();
+    const [lastMessage, setLastMessage] = useState<MessageType | null>(null);
+
+    useEffect(() => {
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
+            setLastMessage(data.messages[0]);
+        }
+    }, [data.messages]);
 
     const handleClick = useCallback(() => {
         router.push(`/conversations/${data.id}`);
     }, [router, data.id]);
 
     const unReadMessageLength = data.unreadCount ?? 0;
-
-    const lastMessage = (data.messages ?? [])[0]; 
 
     const userEmail = currentUser?.email;
 
