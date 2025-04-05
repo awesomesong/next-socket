@@ -33,12 +33,11 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
 
     const userEmail = currentUser?.email;
 
-    const lastMessage = data.messages[0] || []
+    const lastMessage = data.messages?.[0] ?? null;
 
     const hasSeen = useMemo(() => {
         if(!lastMessage || !userEmail) return false;
-        const seenArray = lastMessage.seen || [];
-        return !!seenArray.find((user) => user.email === userEmail);
+        return lastMessage.seen?.some((user) => user.email === userEmail) ?? false;
     }, [userEmail, lastMessage]);
 
     const lastMessageText = useMemo(() => {
@@ -119,7 +118,7 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
                                 text-neutral-600 
                                 dark:text-neutral-400
                             `,
-                            hasSeen || conversationId || !lastMessage || data.messages[0].type === 'system' 
+                            hasSeen || conversationId || !lastMessage || lastMessage.type === 'system' 
                                 ? 'font-normal' : 'font-bold'
                         )}
                         >
