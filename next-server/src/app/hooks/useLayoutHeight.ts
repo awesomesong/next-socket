@@ -23,7 +23,7 @@ export const useLayoutHeight = (ref: React.RefObject<HTMLElement>) => {
 
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            el.scrollIntoView({ block: 'start', behavior: 'instant' });
+            el.scrollTop = 0;
           });
         });
       }
