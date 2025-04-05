@@ -219,6 +219,28 @@ const Body = () => {
         }
     }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
+    useEffect(() => {
+        if (!window.visualViewport || !scrollRef.current) return;
+      
+        const handleResize = () => {
+          const { scrollTop, scrollHeight, clientHeight } = scrollRef.current!;
+          const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+          const isAtBottom = distanceFromBottom <= 50;
+      
+          if (isAtBottom) {
+            requestAnimationFrame(() => {
+              setTimeout(() => {
+                bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+              }, 0);
+            });
+          }
+        };
+      
+        window.visualViewport.addEventListener('resize', handleResize);
+        return () => window.visualViewport?.removeEventListener('resize', handleResize);
+    }, []);
+      
+
     // ✅ 클릭맨 아래로 스크롤하는 함수
     const clickToBottom = useCallback(() => {
         setIsScrolledUp(false);
