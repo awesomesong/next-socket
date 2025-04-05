@@ -284,6 +284,11 @@ const Body = () => {
                 : (<ChatSkeleton />)
             }
 
+            <div className='absolute left-0 top-0'>
+                <div>isScrolledUp: {isScrolledUp ? "true" : "false"}</div>
+                <div>keyboardVisible: {keyboardVisible ? "true" : "false"}</div>
+            </div>
+
             {/* ✅ 아래로 이동 버튼 */}
             {shouldShowScrollButton && (
                 <button
