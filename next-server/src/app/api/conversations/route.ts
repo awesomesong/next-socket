@@ -9,11 +9,9 @@ export async function GET(req: NextRequest){
     if(!user?.email) return new NextResponse('로그인이 되지 않았습니다.', {status: 401});
 
     try {
-        // 1. 모든 대화방 가져오기
+        // 1. 대화방 기본 정보
         const conversations = await prisma.conversation.findMany({
-            orderBy: {
-                lastMessageAt: 'desc',
-            },
+            orderBy: { lastMessageAt: "desc" },
             where: {
                 userIds: {
                     has: user.id,
@@ -33,93 +31,103 @@ export async function GET(req: NextRequest){
                     email: true,
                 },
             },
-            messages: {
-                where: {
-                    type: {
-                        not: 'system',
-                    },
+            },
+        });
+
+        const conversationIds = conversations.map((c) => c.id);
+
+        // 2. 모든 "text" 메시지 가져오기 (최신순)
+        const allMessages = await prisma.message.findMany({
+            where: {
+                    type: "text",
+                    conversationId: {
+                        in: conversationIds,
                 },
-                orderBy: {
-                    createdAt: 'desc',
-                },
-                take: 1,
-                select: {
-                    id: true,
-                    body: true,
-                    image: true,
-                    createdAt: true,
-                    type: true,
-                    sender: {
-                        select: {
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+            select: {
+                id: true,
+                body: true,
+                image: true,
+                createdAt: true,
+                type: true,
+                conversationId: true,
+                sender: {
+                    select: {
                         id: true,
                         email: true,
                         name: true,
                         image: true,
-                        },
                     },
-                    seen: {
-                        select: {
+                },
+                seen: {
+                    select: {
                         id: true,
                         email: true,
                         name: true,
-                        },
                     },
-                    readStatuses: {
-                        select: {
+                },
+                readStatuses: {
+                    select: {
                         id: true,
                         userId: true,
                         isRead: true,
-                        },
                     },
                 },
             },
-            },
         });
 
-        // 2. 모든 안 읽은 메시지 상태 가져오기 (메시지 ID, 개수)
+        // Map으로 conversationId별 가장 최근 메시지 추출
+        const lastMessageMap = new Map<string, typeof allMessages[number]>();
+        for (const m of allMessages) {
+            if (!lastMessageMap.has(m.conversationId)) {
+                lastMessageMap.set(m.conversationId, m);
+            }
+        }
+
+        // 3. 모든 안 읽은 메시지 status 가져오기
         const unreadStatuses = await prisma.messageReadStatus.findMany({
             where: {
-                userId: user.id,
-                isRead: false,
-                message: {
-                    type: { not: 'system' },
+                    userId: user.id,
+                    isRead: false,
+                    message: {
+                    type: "text",
+                    conversationId: {
+                        in: conversationIds,
+                    },
                 },
             },
             select: {
-                messageId: true,
+                message: {
+                    select: {
+                        conversationId: true,
+                    },
+                },
             },
         });
 
-        // 3. 해당 메시지들의 대화방 ID 조회
-        const messageIds = unreadStatuses.map((s) => s.messageId);
-
-        const messages = await prisma.message.findMany({
-            where: {
-                id: { in: messageIds },
-            },
-            select: {
-                id: true,
-                conversationId: true,
-            },
+        // conversationId 기준으로 unreadCount 세기
+        const unreadMap = new Map<string, number>();
+        unreadStatuses.forEach(({ message }) => {
+            const id = message.conversationId;
+            unreadMap.set(id, (unreadMap.get(id) || 0) + 1);
         });
 
-        // 4. 대화방별 unread count 집계
-        const conversationUnreadMap: Record<string, number> = {};
+        // 4. conversations에 message, unreadCount 병합
+        const conversationsWithDetails = conversations.map((conversation) => {
+            const lastMessage = lastMessageMap.get(conversation.id);
+            const unreadCount = unreadMap.get(conversation.id) || 0;
 
-        for (const msg of messages) {
-            conversationUnreadMap[msg.conversationId] =
-                (conversationUnreadMap[msg.conversationId] || 0) + 1;
-        }
+            return {
+                ...conversation,
+                messages: lastMessage ? [lastMessage] : [],
+                unreadCount,
+            };
+        });
 
-        // 5. 최종 대화방 데이터에 unreadCount 병합
-        const conversationsWithUnreadCount = conversations.map((conversation) => ({
-            ...conversation,
-            unreadCount: conversationUnreadMap[conversation.id] || 0,
-        }));
-
-        console.log("[CONVERSATION API]", JSON.stringify(conversationsWithUnreadCount, null, 2)); // ✅ 안전하게 찍기
-
-        return NextResponse.json({ conversations: conversationsWithUnreadCount }, { status: 200 });        
+        return NextResponse.json({ conversations: conversationsWithDetails }, { status: 200 });        
     } catch ( error ) {
         return new NextResponse('대화방을 불러오는 중 오류가 발생하였습니다.', {status: 500})
     }
