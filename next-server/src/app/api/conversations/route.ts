@@ -117,6 +117,8 @@ export async function GET(req: NextRequest){
             unreadCount: conversationUnreadMap[conversation.id] || 0,
         }));
 
+        console.log("[CONVERSATION API]", JSON.stringify(conversationsWithUnreadCount, null, 2)); // ✅ 안전하게 찍기
+
         return NextResponse.json({ conversations: conversationsWithUnreadCount }, { status: 200 });        
     } catch ( error ) {
         return new NextResponse('대화방을 불러오는 중 오류가 발생하였습니다.', {status: 500})
