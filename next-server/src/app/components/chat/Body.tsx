@@ -296,7 +296,7 @@ const Body = () => {
                     className="
                         absolute 
                         md:bottom-24 
-                        bottom-28
+                        top-28
                         right-1/2
                         p-2 
                         bg-default-reverse 
