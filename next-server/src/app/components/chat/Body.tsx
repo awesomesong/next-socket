@@ -245,7 +245,7 @@ const Body = () => {
     },[]);
 
     return (
-        <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
             {isFetchingNextPage && (
                 <CircularProgress aria-label="로딩중"/>
             )}
