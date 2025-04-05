@@ -9,94 +9,113 @@ export async function GET(req: NextRequest){
     if(!user?.email) return new NextResponse('로그인이 되지 않았습니다.', {status: 401});
 
     try {
+        // 1. 모든 대화방 가져오기
         const conversations = await prisma.conversation.findMany({
             orderBy: {
-                lastMessageAt: 'desc'
+                lastMessageAt: 'desc',
             },
             where: {
                 userIds: {
-                    has: user.id
-                }
+                    has: user.id,
+                },
             },
             select: {
-                id: true,
-                userIds: true,
-                isGroup: true,
-                name: true,
-                lastMessageAt: true,
-                users: {
-                    select: {
-                        id: true,
-                        name: true,
-                        image: true,
-                        email: true,
-                    }
-                },
-                messages: {
-                    where: {
-                        type: {
-                            not: 'system',
-                        },
-                    },
-                    orderBy: {
-                        createdAt: 'desc' 
-                    },
-                    take: 1,
-                    select: {
-                        id: true,
-                        body: true,
-                        image: true,
-                        createdAt: true,
-                        type: true,
-                        sender: {
-                            select: {
-                                id: true,
-                                email: true,
-                                name: true,
-                                image: true,
-                            },
-                        },
-                        seen: {
-                            select: {
-                                id: true,
-                                email: true,
-                                name: true,
-                            },
-                        },
-                        readStatuses: {
-                            select: {
-                                id: true,
-                                userId: true,
-                                isRead: true,
-                            }
-                        },
-                    }
+            id: true,
+            userIds: true,
+            isGroup: true,
+            name: true,
+            lastMessageAt: true,
+            users: {
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                    email: true,
                 },
             },
-        });
-
-        // 👉 병렬로 각 대화방의 안 읽은 메시지 수 가져오기
-        const conversationsWithUnreadCount = await Promise.all(
-            conversations.map(async (conversation) => {
-            const unreadCount = await prisma.messageReadStatus.count({
+            messages: {
                 where: {
-                userId: user.id,
-                isRead: false,
-                message: {
-                    conversationId: conversation.id,
                     type: {
                         not: 'system',
                     },
                 },
+                orderBy: {
+                    createdAt: 'desc',
                 },
-            });
-        
-                return {
-                    ...conversation,
-                    unreadCount,
-                };
-            })
-        );
+                take: 1,
+                select: {
+                    id: true,
+                    body: true,
+                    image: true,
+                    createdAt: true,
+                    type: true,
+                    sender: {
+                        select: {
+                        id: true,
+                        email: true,
+                        name: true,
+                        image: true,
+                        },
+                    },
+                    seen: {
+                        select: {
+                        id: true,
+                        email: true,
+                        name: true,
+                        },
+                    },
+                    readStatuses: {
+                        select: {
+                        id: true,
+                        userId: true,
+                        isRead: true,
+                        },
+                    },
+                },
+            },
+            },
+        });
+
+        // 2. 모든 안 읽은 메시지 상태 가져오기 (메시지 ID, 개수)
+        const unreadStatuses = await prisma.messageReadStatus.findMany({
+            where: {
+                userId: user.id,
+                isRead: false,
+                message: {
+                    type: { not: 'system' },
+                },
+            },
+            select: {
+                messageId: true,
+            },
+        });
+
+        // 3. 해당 메시지들의 대화방 ID 조회
+        const messageIds = unreadStatuses.map((s) => s.messageId);
+
+        const messages = await prisma.message.findMany({
+            where: {
+                id: { in: messageIds },
+            },
+            select: {
+                id: true,
+                conversationId: true,
+            },
+        });
+
+        // 4. 대화방별 unread count 집계
+        const conversationUnreadMap: Record<string, number> = {};
+
+        for (const msg of messages) {
+            conversationUnreadMap[msg.conversationId] =
+                (conversationUnreadMap[msg.conversationId] || 0) + 1;
+        }
+
+        // 5. 최종 대화방 데이터에 unreadCount 병합
+        const conversationsWithUnreadCount = conversations.map((conversation) => ({
+            ...conversation,
+            unreadCount: conversationUnreadMap[conversation.id] || 0,
+        }));
 
         return NextResponse.json({ conversations: conversationsWithUnreadCount }, { status: 200 });        
     } catch ( error ) {
