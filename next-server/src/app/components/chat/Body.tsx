@@ -28,7 +28,6 @@ const Body = () => {
     const [isFirstLoad, setIsFirstLoad] = useState(true); // 처음 로딩 여부
     const [isScrolledUp, setIsScrolledUp] = useState(false); // 스크롤이 위에 있을 때 true
     const [shouldScrollDown, setShouldScrollDown] = useState(false);
-    const [prevScrollHeight, setPrevScrollHeight] = useState(0); // 기존의 스크롤 높이 저장
     const { set, conversationUsers, remove } = useConversationUserList();
 
     const updateScrollState = (atBottom: boolean) => {
@@ -71,7 +70,6 @@ const Body = () => {
         if (status === 'success' && data?.pages?.length && isFirstLoad) {
             requestAnimationFrame(() => {
                 bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
-                setPrevScrollHeight(() => scrollRef?.current?.scrollHeight || 0); // 스크롤 높이 저장
             });
             setIsFirstLoad(false);
             readMessageMutaion(conversationId);
@@ -87,10 +85,8 @@ const Body = () => {
             if (isAtBottom) {
                 requestAnimationFrame(() => {
                     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-                    setPrevScrollHeight(() => scrollRef?.current?.scrollHeight || 0); // 스크롤 높이 저장
                 });
             } 
-            updateScrollState(isAtBottom);
         }
     }, [status, data]);
 
@@ -120,15 +116,12 @@ const Body = () => {
         socket.emit('join:room', conversationId);
         socket.on('connect', handleReconnect);
         socket.on("receive:message", (message: FullMessageType) => {
-            // 기존의 채팅 높이 저장
-            const prevHeight = scrollRef?.current?.scrollHeight; 
-            if(prevHeight) setPrevScrollHeight(() => prevHeight || 0);
 
             if (scrollRef.current) {
                 const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
                 const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
                 const isAtBottom = distanceFromBottom <= 50;
-                setShouldScrollDown(isAtBottom);
+                if(isAtBottom) setShouldScrollDown(isAtBottom);
                 updateScrollState(isAtBottom);
             }
 
@@ -200,8 +193,6 @@ const Body = () => {
             const atTop = scrollTop === 0;
             const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
             const isAtBottom = distanceFromBottom <= 50;
-
-            updateScrollState(isAtBottom);
             
             // ✅ 스크롤 위치 저장
             const previousScrollHeight = scrollHeight;
@@ -231,7 +222,6 @@ const Body = () => {
     // ✅ 클릭맨 아래로 스크롤하는 함수
     const clickToBottom = useCallback(() => {
         setIsScrolledUp(false);
-        setPrevScrollHeight(() => scrollRef?.current?.scrollHeight || 0); // 스크롤 높이 저장
         bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     },[]);
 
