@@ -5,6 +5,7 @@ export const useLayoutHeight = (ref: React.RefObject<HTMLElement>) => {
     if (!ref.current) return;
 
     const el = ref.current;
+    let isFirstMount = true;
 
     const update = () => {
       if (window.innerWidth >= 768 || !window.visualViewport) {
@@ -16,10 +17,16 @@ export const useLayoutHeight = (ref: React.RefObject<HTMLElement>) => {
       const { height } = window.visualViewport;
       el.style.height = `${height}px`;
 
-      // ✅ 스크롤을 맨 위로 이동시킴
-      requestAnimationFrame(() => {
-        el.scrollIntoView({ block: 'start', behavior: 'instant' });
-      });
+      // ✅ 최초 진입 시, 아래로 스크롤 (최신 메시지 보기)
+      if (isFirstMount) {
+        isFirstMount = false;
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            el.scrollTop = el.scrollHeight;
+          });
+        });
+      }
     };
 
     // 초기 적용
