@@ -24,12 +24,17 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
     const { conversationId } = useConversation();
     const { otherUser } = useOtherUser(data, currentUser);
     const router = useRouter();
+    const [isMounted, setIsMounted] = useState(false);
     const [lastMessage, setLastMessage] = useState<MessageType | null>(null);
 
     useEffect(() => {
-        if (Array.isArray(data.messages) && data.messages.length > 0) {
-            setLastMessage(data.messages[0]);
-        }
+    setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+    if (Array.isArray(data.messages) && data.messages.length > 0) {
+        setLastMessage(data.messages[0]);
+    }
     }, [data.messages]);
 
     const handleClick = useCallback(() => {
@@ -52,6 +57,8 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
         if(lastMessage?.body) return lastMessage.body;
         return '대화방이 생성되었습니다.'
     }, [lastMessage]);
+
+    if (!isMounted) return null;
 
     return (
         <>
