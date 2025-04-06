@@ -117,15 +117,22 @@ const Body = () => {
         socket.on('connect', handleReconnect);
         socket.on("receive:message", (message: FullMessageType) => {
 
-            requestAnimationFrame(() => {
-                if (scrollRef.current) {
-                    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-                    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-                    const isAtBottom = distanceFromBottom <= 50;
-                    if(isAtBottom) setShouldScrollDown(isAtBottom);
-                    updateScrollState(isAtBottom);
+            if (scrollRef.current) {
+                const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+                const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+                const isAtBottom = distanceFromBottom <= 50;
+                if(isAtBottom) setShouldScrollDown(isAtBottom);
+                updateScrollState(isAtBottom);
+
+                const isAndroid = /Android/i.test(navigator.userAgent);
+                if (isAndroid) {
+                    requestAnimationFrame(() => {
+                      setTimeout(() => {
+                        scrollRef.current!.scrollTop = scrollRef.current!.scrollHeight;
+                      }, 30);
+                    });
                 }
-            });
+            }
 
             queryClient.setQueriesData(
                 { queryKey: ['messages', conversationId] },
