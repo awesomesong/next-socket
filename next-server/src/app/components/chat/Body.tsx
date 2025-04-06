@@ -124,22 +124,26 @@ const Body = () => {
         socket.on('connect', handleReconnect);
         socket.on("receive:message", (message: FullMessageType) => {
 
-            if (scrollRef.current) {
-                const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-                const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    if (scrollRef.current) {
+                        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+                        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
 
-                // 안드로이드 키보드 대응
-                const isAndroid = /Android/i.test(navigator.userAgent);
-                const keyboardGap = isAndroid && window.visualViewport
-                    ? window.innerHeight - window.visualViewport.height
-                    : 0;
+                        // 안드로이드 키보드 대응
+                        const isAndroid = /Android/i.test(navigator.userAgent);
+                        const keyboardGap = isAndroid && window.visualViewport
+                            ? window.innerHeight - window.visualViewport.height
+                            : 0;
 
-                const threshold = isAndroid ? Math.max(80, keyboardGap) : 50;
-                const isAtBottom = distanceFromBottom <= threshold;
+                        const threshold = isAndroid ? Math.max(80, keyboardGap) : 50;
+                        const isAtBottom = distanceFromBottom <= threshold;
 
-                if(isAtBottom) setShouldScrollDown(isAtBottom);
-                updateScrollState(isAtBottom);
-            }
+                        if(isAtBottom) setShouldScrollDown(isAtBottom);
+                        updateScrollState(isAtBottom);
+                    }
+                }, 0); 
+            });
 
             queryClient.setQueriesData(
                 { queryKey: ['messages', conversationId] },
@@ -241,7 +245,11 @@ const Body = () => {
     // ✅ 클릭맨 아래로 스크롤하는 함수
     const clickToBottom = useCallback(() => {
         setIsScrolledUp(false);
-        bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+            }, 0);
+        });
     },[]);
 
     return (
