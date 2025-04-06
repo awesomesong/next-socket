@@ -104,7 +104,8 @@ io.on("connection", (socket) => {
       const userSockets = onlineUsersList.filter((u) => u.useremail === user.email);
       // !!userSocket?.useremail && io.to(userSocket.socketId).emit('receive:message', newMessage);
       userSockets.forEach(userSocket => {
-        io.to(userSocket.socketId).emit('receive:conversation', newMessage);
+        const isMyMessage = user.email === newMessage.sender.email;
+        io.to(userSocket.socketId).emit('receive:conversation', newMessage, isMyMessage);
       });
     });
   });

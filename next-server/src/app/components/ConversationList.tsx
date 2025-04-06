@@ -50,7 +50,7 @@ const ConversationList = () => {
             queryClient.invalidateQueries({queryKey: ['conversationList']});
         });
 
-        socket.on("receive:conversation", (message: FullMessageType) => {
+        socket.on("receive:conversation", (message: FullMessageType, isMyMessage: boolean) => {
             queryClient.setQueriesData({ queryKey: ['conversationList'] }, (oldData: ConversationProps) => {
                 if (!oldData) return { conversations: [] }; // 예외 처리
         
@@ -62,7 +62,9 @@ const ConversationList = () => {
                     return {
                         ...conversation,
                         messages: [message, ...existingMessages], 
-                        unreadCount: (conversation.unreadCount ?? 0) + 1,
+                        unreadCount: isMyMessage 
+                            ? conversation.unreadCount // 내가 보낸 메시지면 그대로 유지
+                            : (conversation.unreadCount ?? 0) + 1
                     };
                 });
         

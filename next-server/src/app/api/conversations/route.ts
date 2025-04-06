@@ -90,12 +90,15 @@ export async function GET(req: NextRequest){
         // 3. 모든 안 읽은 메시지 status 가져오기
         const unreadStatuses = await prisma.messageReadStatus.findMany({
             where: {
-                    userId: user.id,
-                    isRead: false,
-                    message: {
+                userId: user.id,
+                isRead: false,
+                message: {
                     type: "text",
                     conversationId: {
                         in: conversationIds,
+                    },
+                    senderId: {
+                        not: user.id, // ✅ 내가 보낸 메시지는 제외
                     },
                 },
             },
