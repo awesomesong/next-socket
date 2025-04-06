@@ -221,6 +221,8 @@ const Body = () => {
 
     useEffect(() => {
         if (!window.visualViewport || !scrollRef.current) return;
+
+        const isAndroid = /Android/i.test(navigator.userAgent);
       
         const handleResize = () => {
           const { scrollTop, scrollHeight, clientHeight } = scrollRef.current!;
@@ -230,6 +232,7 @@ const Body = () => {
           if (isAtBottom) {
             requestAnimationFrame(() => {
               setTimeout(() => {
+                if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; // 강제 맨 아래 이동
                 bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
               }, 0);
             });
