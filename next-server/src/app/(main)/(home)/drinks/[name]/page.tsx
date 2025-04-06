@@ -78,9 +78,6 @@ const DrinksPage = ({params } : { params: { name: string } }) => {
                         content={drink.description} 
                         className={clsx(drink.type?.includes('dark') ? 'text-neutral-950' : 'text-neutral-200')}
                     />
-                    {/* <pre 
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(drink.description || '') }} 
-                    /> */}
                 </motion.div>
             </div>
         }
