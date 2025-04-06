@@ -80,7 +80,14 @@ const Body = () => {
         if (chatBox) {
             const { scrollTop, scrollHeight, clientHeight } = chatBox;
             const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-            const isAtBottom = distanceFromBottom <= 50;
+            // 안드로이드 키보드 대응
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const keyboardGap = isAndroid && window.visualViewport
+                ? window.innerHeight - window.visualViewport.height
+                : 0;
+
+            const threshold = isAndroid ? Math.max(80, keyboardGap) : 50;
+            const isAtBottom = distanceFromBottom <= threshold;
 
             if (isAtBottom) {
                 requestAnimationFrame(() => {
