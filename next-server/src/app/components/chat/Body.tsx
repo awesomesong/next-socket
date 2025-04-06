@@ -117,13 +117,15 @@ const Body = () => {
         socket.on('connect', handleReconnect);
         socket.on("receive:message", (message: FullMessageType) => {
 
-            if (scrollRef.current) {
-                const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-                const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-                const isAtBottom = distanceFromBottom <= 50;
-                if(isAtBottom) setShouldScrollDown(isAtBottom);
-                updateScrollState(isAtBottom);
-            }
+            requestAnimationFrame(() => {
+                if (scrollRef.current) {
+                    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+                    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+                    const isAtBottom = distanceFromBottom <= 50;
+                    if(isAtBottom) setShouldScrollDown(isAtBottom);
+                    updateScrollState(isAtBottom);
+                }
+            });
 
             queryClient.setQueriesData(
                 { queryKey: ['messages', conversationId] },
@@ -219,29 +221,6 @@ const Body = () => {
         }
     }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-    useEffect(() => {
-        if (!window.visualViewport || !scrollRef.current) return;
-
-        const isAndroid = /Android/i.test(navigator.userAgent);
-      
-        const handleResize = () => {
-          const { scrollTop, scrollHeight, clientHeight } = scrollRef.current!;
-          const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-          const isAtBottom = distanceFromBottom <= 50;
-      
-          if (isAtBottom) {
-            requestAnimationFrame(() => {
-              setTimeout(() => {
-                if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; // 강제 맨 아래 이동
-                bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-              }, 0);
-            });
-          }
-        };
-      
-        window.visualViewport.addEventListener('resize', handleResize);
-        return () => window.visualViewport?.removeEventListener('resize', handleResize);
-    }, []);
       
 
     // ✅ 클릭맨 아래로 스크롤하는 함수
