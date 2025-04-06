@@ -30,7 +30,7 @@ const ProductSoju: React.FC = () => {
                 my-20
                 min-[320px]:gap-10
                 gap-4
-                items-baseline
+                items-end
                 w-fit
             ">
                 {sojus.map((soju) => (
