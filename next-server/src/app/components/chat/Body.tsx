@@ -124,23 +124,6 @@ const Body = () => {
         socket.on('connect', handleReconnect);
         socket.on("receive:message", (message: FullMessageType) => {
 
-            if (scrollRef.current) {
-                const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-                const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-
-                // 안드로이드 키보드 대응
-                const isAndroid = /Android/i.test(navigator.userAgent);
-                const keyboardGap = isAndroid && window.visualViewport
-                    ? window.innerHeight - window.visualViewport.height
-                    : 0;
-
-                const threshold = isAndroid ? Math.max(80, keyboardGap) : 50;
-                const isAtBottom = distanceFromBottom <= threshold;
-
-                if(isAtBottom) setShouldScrollDown(isAtBottom);
-                updateScrollState(isAtBottom);
-            }
-
             queryClient.setQueriesData(
                 { queryKey: ['messages', conversationId] },
                 (oldData: InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }> | undefined) => {
@@ -160,6 +143,27 @@ const Body = () => {
             );
 
             readMessageMutaion(conversationId);
+
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    if (scrollRef.current) {
+                        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+                        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+                        // 안드로이드 키보드 대응
+                        const isAndroid = /Android/i.test(navigator.userAgent);
+                        const keyboardGap = isAndroid && window.visualViewport
+                            ? window.innerHeight - window.visualViewport.height
+                            : 0;
+
+                        const threshold = isAndroid ? Math.max(80, keyboardGap) : 50;
+                        const isAtBottom = distanceFromBottom <= threshold;
+
+                        if(isAtBottom) setShouldScrollDown(isAtBottom);
+                        updateScrollState(isAtBottom);
+                    }
+                }, 0); // 짧은 지연을 줘야 iOS에서 제대로 동작
+            });
         });
         socket.on("read:message", handleRead);
         socket.on("exit:user", handleExit);
