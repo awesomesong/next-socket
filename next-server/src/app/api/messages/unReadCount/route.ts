@@ -11,12 +11,25 @@ export async function GET(
 
         if(!user?.email) return NextResponse.json({message: '로그인이 되지 않았습니다. 로그인 후에 이용해주세요.'}, {status: 401})
 
-        const unReadCount = await prisma.messageReadStatus.count({
-            where: {
-                isRead: false,
-                userId: user.id
-            },
-        });
+            const unreadMessages = await prisma.messageReadStatus.findMany({
+                where: {
+                    isRead: false,
+                    userId: user.id,
+                },
+                include: {
+                    message: {
+                        select: {
+                            senderId: true,
+                        },
+                    },
+                },
+            });
+            
+            const filtered = unreadMessages.filter(
+                (status) => status.message.senderId !== user.id
+            );
+            
+            const unReadCount = filtered.length;
 
         return NextResponse.json({unReadCount});
     } catch (error) {
