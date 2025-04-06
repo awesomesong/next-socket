@@ -120,18 +120,18 @@ const Body = () => {
             if (scrollRef.current) {
                 const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
                 const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-                const isAtBottom = distanceFromBottom <= 50;
+
+                // 안드로이드 키보드 대응
+                const isAndroid = /Android/i.test(navigator.userAgent);
+                const keyboardGap = isAndroid && window.visualViewport
+                    ? window.innerHeight - window.visualViewport.height
+                    : 0;
+
+                const threshold = isAndroid ? Math.max(80, keyboardGap) : 50;
+                const isAtBottom = distanceFromBottom <= threshold;
+
                 if(isAtBottom) setShouldScrollDown(isAtBottom);
                 updateScrollState(isAtBottom);
-
-                const isAndroid = /Android/i.test(navigator.userAgent);
-                if (isAndroid) {
-                    requestAnimationFrame(() => {
-                      setTimeout(() => {
-                        scrollRef.current!.scrollTop = scrollRef.current!.scrollHeight;
-                      }, 30);
-                    });
-                }
             }
 
             queryClient.setQueriesData(
@@ -203,6 +203,7 @@ const Body = () => {
             const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
             const isAtBottom = distanceFromBottom <= 50;
             
+            if(isAtBottom) setIsScrolledUp(false);
             // ✅ 스크롤 위치 저장
             const previousScrollHeight = scrollHeight;
 
