@@ -31,7 +31,7 @@ const SocketState = () => {
     }, [data, setUnreadCount]);
 
     const handleReceive = useCallback(() => {
-        queryClient.invalidateQueries({ queryKey: ['unReadCount'] });
+        refetch();
     }, [queryClient]);
 
     useEffect(() => {
