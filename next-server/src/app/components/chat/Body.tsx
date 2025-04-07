@@ -30,6 +30,29 @@ const Body = () => {
     const { set, conversationUsers, remove } = useConversationUserList();
     const isAndroid = /Android/i.test(navigator.userAgent);
 
+    const scrollToBottom = () => {
+        requestAnimationFrame(() => {
+            if (bottomRef.current) {
+                bottomRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+            }
+            if (scrollRef.current) {
+                scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }
+        });
+    };
+
+    const getIsAtBottom = () => {
+        const el = scrollRef.current;
+        if (!el) return false;
+        const { scrollTop, scrollHeight, clientHeight } = el;
+        const visualViewportHeight = window.visualViewport?.height || window.innerHeight;
+        const keyboardGap = isAndroid ? window.innerHeight - visualViewportHeight : 0;
+        const threshold = isAndroid ? Math.max(180, keyboardGap) : 100;
+        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+        return distanceFromBottom <= threshold;
+    };
+
+
     // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
     const {
         data,
@@ -62,7 +85,7 @@ const Body = () => {
         if (status === 'success' && data?.pages?.length && isFirstLoad) {
             requestAnimationFrame(() => {
                 setTimeout(() => {
-                    bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+                    scrollToBottom();
                 }, 50);
             });
             setIsFirstLoad(false);
@@ -118,29 +141,13 @@ const Body = () => {
             readMessageMutaion(conversationId);
 
             requestAnimationFrame(() => {
-                const tryScroll = () => {
-                    const el = document.querySelector(`[data-message-id="${message.id}"]`);
-                    if (el && scrollRef.current) {
-                        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-                        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-                        const visualViewportHeight = window.visualViewport?.height || window.innerHeight;
-                        const keyboardGap = isAndroid ? window.innerHeight - visualViewportHeight : 0;
-
-                        const threshold = isAndroid ? Math.max(180, keyboardGap) : 100;
-                        const isAtBottom = distanceFromBottom <= threshold;
-
-                        if (isAtBottom) {
-                            bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                            if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                            setIsScrolledUp(false);
-                        } else {
-                            setIsScrolledUp(true);
-                        }
-                    } else {
-                        requestAnimationFrame(tryScroll);
-                    }
-                };
-                tryScroll();
+                const isFromMe = message.sender.email === session?.user?.email;
+                if (getIsAtBottom() || isFromMe) {
+                    scrollToBottom();
+                    setIsScrolledUp(false);
+                } else {
+                    setIsScrolledUp(true);
+                }
             });
         });
         socket.on("read:message", handleRead);
@@ -176,25 +183,16 @@ const Body = () => {
     useEffect(() => {
         const handleScroll = async () => {
             if (!scrollRef.current) return;
-            const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+            const el = scrollRef.current;
 
-            const atTop = scrollTop === 0;
-            const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-            const visualViewportHeight = window.visualViewport?.height || window.innerHeight;
-            const keyboardGap = isAndroid ? window.innerHeight - visualViewportHeight : 0;
+            const atTop = el.scrollTop === 0;
+            const isAtBottom = getIsAtBottom();
+            if (isAtBottom) setIsScrolledUp(false);
 
-            const threshold = isAndroid ? Math.max(180, keyboardGap) : 100;
-            const isAtBottom = distanceFromBottom <= threshold;
-
-            
-            if(isAtBottom) setIsScrolledUp(false);
-            // ✅ 스크롤 위치 저장
-            const previousScrollHeight = scrollHeight;
+            const previousScrollHeight = el.scrollHeight;
 
             if (atTop && hasNextPage && !isFetchingNextPage) {
                 await fetchNextPage();
-
-                // ✅ 데이터 로드 후 스크롤 위치를 기존 자리로 유지
                 requestAnimationFrame(() => {
                     if (scrollRef.current) {
                         const newScrollHeight = scrollRef.current.scrollHeight;
@@ -204,16 +202,10 @@ const Body = () => {
             }
         };
 
-        const scrollContainer = scrollRef.current;
-        if (scrollContainer) {
-            scrollContainer.addEventListener('scroll', handleScroll);
-        }
-        return () => {
-            if (scrollContainer) scrollRef.current?.removeEventListener('scroll', handleScroll);
-        }
+        const container = scrollRef.current;
+        container?.addEventListener('scroll', handleScroll);
+        return () => container?.removeEventListener('scroll', handleScroll);
     }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
-
-      
 
     // ✅ 클릭맨 아래로 스크롤하는 함수
     const clickToBottom = useCallback(() => {
