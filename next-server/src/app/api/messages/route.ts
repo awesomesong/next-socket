@@ -19,13 +19,7 @@ export async function POST(req: Request) {
             select: { id: true, email: true },
         });
 
-        // 🔹 readStatuses 데이터 준비 (트랜잭션 전에 생성)
-        const readStatusesData = conversationUsers.map(_user => ({
-            userId: _user.id,
-            isRead: _user.id === user.id,
-        }));
-
-        // 🔹 메시지 생성 (트랜잭션 사용)
+        // 🔹 메시지 생성
         const newMessage = await prisma.message.create({
             data: {
                 body: message,
@@ -34,7 +28,6 @@ export async function POST(req: Request) {
                 conversation: { connect: { id: conversationId } },
                 sender: { connect: { id: user.id } },
                 seen: { connect: { id: user.id } },
-                readStatuses: { create: readStatusesData }, // 미리 준비한 readStatuses 사용
             },
             select: {
                 id: true,
@@ -47,8 +40,16 @@ export async function POST(req: Request) {
                 },
                 seen: { select: { name: true, email: true } },
                 conversation: { select: { isGroup: true, userIds: true } },
-                readStatuses: { select: { id: true, userId: true, isRead: true } },
             }
+        });
+
+        // 🔹 생성된 메시지 기준으로 readStatus 추가
+        const result = await prisma.messageReadStatus.createMany({
+            data: conversationUsers.map((_user) => ({
+                userId: _user.id,
+                messageId: newMessage.id,
+                isRead: _user.id === user.id,
+            })),
         });
 
         // 🔹 conversation 업데이트 & 유저 목록 가져오기 (병렬 실행)
