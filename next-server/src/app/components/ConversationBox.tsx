@@ -124,7 +124,7 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
                         >
                             {lastMessageText}
                         </p>
-                        {conversationId !== data.id && unReadMessageLength > 0 && 
+                        {unReadMessageLength > 0 && 
                             <p className="
                                 inline-flex
                                 justify-center
