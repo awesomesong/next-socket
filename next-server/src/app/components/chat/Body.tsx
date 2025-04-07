@@ -141,8 +141,9 @@ const Body = () => {
             readMessageMutaion(conversationId);
 
             requestAnimationFrame(() => {
-                const isFromMe = message.sender.email === session?.user?.email;
-                if (getIsAtBottom() || isFromMe) {
+                const atBottom = getIsAtBottom();
+
+                if (atBottom) {
                     scrollToBottom();
                     setIsScrolledUp(false);
                 } else {
@@ -187,7 +188,7 @@ const Body = () => {
 
             const atTop = el.scrollTop === 0;
             const isAtBottom = getIsAtBottom();
-            if (isAtBottom) setIsScrolledUp(false);
+            setIsScrolledUp(!isAtBottom);
 
             const previousScrollHeight = el.scrollHeight;
 
@@ -210,8 +211,7 @@ const Body = () => {
     // ✅ 클릭맨 아래로 스크롤하는 함수
     const clickToBottom = useCallback(() => {
         setIsScrolledUp(false);
-        bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-        if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        scrollToBottom();
     },[]);
 
     return (
