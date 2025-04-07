@@ -13,7 +13,7 @@ export async function middleware(req: NextRequest) {
     if(!!token === false) {
         const queryString = searchParams.toString();
         const callbackUrl = `?callbackUrl=${pathname}${queryString ? "?" + queryString : ""}`;
-        return NextResponse.redirect(new URL(`/auth/signin${callbackUrl}`, origin));
+        return NextResponse.redirect(new URL(`/auth/signin${callbackUrl}`, req.url));
     }
 }
 
