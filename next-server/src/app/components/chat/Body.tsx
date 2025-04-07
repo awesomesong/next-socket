@@ -128,9 +128,11 @@ const Body = () => {
                         const isAtBottom = distanceFromBottom <= threshold;
 
                         if (isAtBottom) {
-                            bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                            if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                            setIsScrolledUp(false);
+                            setTimeout(() => {
+                                bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                                if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                                setIsScrolledUp(false);
+                            }, 50);
                         } else {
                             setIsScrolledUp(true);
                         }
