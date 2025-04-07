@@ -124,7 +124,7 @@ const Body = () => {
                         const visualViewportHeight = window.visualViewport?.height || window.innerHeight;
                         const keyboardGap = isAndroid ? window.innerHeight - visualViewportHeight : 0;
 
-                        const threshold = isAndroid ? Math.max(150, keyboardGap) : 100;
+                        const threshold = isAndroid ? Math.max(180, keyboardGap) : 100;
                         const isAtBottom = distanceFromBottom <= threshold;
 
                         if (isAtBottom) {
@@ -181,7 +181,7 @@ const Body = () => {
             const visualViewportHeight = window.visualViewport?.height || window.innerHeight;
             const keyboardGap = isAndroid ? window.innerHeight - visualViewportHeight : 0;
 
-            const threshold = isAndroid ? Math.max(150, keyboardGap) : 100;
+            const threshold = isAndroid ? Math.max(180, keyboardGap) : 100;
             const isAtBottom = distanceFromBottom <= threshold;
 
             
