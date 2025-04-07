@@ -28,6 +28,7 @@ const Body = () => {
     const [isFirstLoad, setIsFirstLoad] = useState(true); // 처음 로딩 여부
     const [isScrolledUp, setIsScrolledUp] = useState(false); // 스크롤이 위에 있을 때 true
     const { set, conversationUsers, remove } = useConversationUserList();
+    const isAndroid = /Android/i.test(navigator.userAgent);
 
     // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
     const {
@@ -121,16 +122,15 @@ const Body = () => {
                         const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
                         const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
                         // 안드로이드 키보드 대응
-                        const isAndroid = /Android/i.test(navigator.userAgent);
                         const keyboardGap = isAndroid && window.visualViewport
                             ? window.innerHeight - window.visualViewport.height
                             : 0;
-
                         const threshold = isAndroid ? Math.max(80, keyboardGap) : 100;
                         const isAtBottom = distanceFromBottom <= threshold;
 
                         if (isAtBottom) {
                             bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                            if(scrollRef.current && isAndroid) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
                             setIsScrolledUp(false);
                         } else {
                             setIsScrolledUp(true);
@@ -221,7 +221,7 @@ const Body = () => {
     const clickToBottom = useCallback(() => {
         setIsScrolledUp(false);
         bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-        if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        if(scrollRef.current && isAndroid) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     },[]);
 
     return (
