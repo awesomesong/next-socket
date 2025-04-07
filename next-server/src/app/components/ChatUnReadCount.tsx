@@ -2,17 +2,23 @@
 import useUnreadStore from "@/src/app/hooks/useUnReadStore";
 import { formatMessageCount } from "@/src/app/utils/formatMessageCount";
 import clsx from "clsx";
+import { useEffect, useState } from "react";
 
 type Props = {
     size?: 'mobile-small';
 }
 
 const ChatUnReadCount = ({ size }: Props) => {
+    const [ chatUnReafCount, setChatUnReafCount] = useState(0);
     const { unreadCount }= useUnreadStore();
+
+    useEffect(() => {
+        setChatUnReafCount(unreadCount);
+    }, [unreadCount]);
 
     return (
         <>
-            {unreadCount > 0 &&
+            {chatUnReafCount > 0 &&
                 <span className={clsx(`
                         absolute 
                         md:-left-[2px]
