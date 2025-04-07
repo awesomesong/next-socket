@@ -121,11 +121,10 @@ const Body = () => {
                     if (el && scrollRef.current) {
                         const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
                         const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-                        // 안드로이드 키보드 대응
-                        const keyboardGap = isAndroid && window.visualViewport
-                            ? window.innerHeight - window.visualViewport.height
-                            : 0;
-                        const threshold = isAndroid ? Math.max(80, keyboardGap) : 100;
+                        const visualViewportHeight = window.visualViewport?.height || window.innerHeight;
+                        const keyboardGap = isAndroid ? window.innerHeight - visualViewportHeight : 0;
+
+                        const threshold = isAndroid ? Math.max(120, keyboardGap) : 100;
                         const isAtBottom = distanceFromBottom <= threshold;
 
                         if (isAtBottom) {
@@ -179,13 +178,10 @@ const Body = () => {
 
             const atTop = scrollTop === 0;
             const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-            // 안드로이드 키보드 대응
-            const isAndroid = /Android/i.test(navigator.userAgent);
-            const keyboardGap = isAndroid && window.visualViewport
-                ? window.innerHeight - window.visualViewport.height
-                : 0;
+            const visualViewportHeight = window.visualViewport?.height || window.innerHeight;
+            const keyboardGap = isAndroid ? window.innerHeight - visualViewportHeight : 0;
 
-            const threshold = isAndroid ? Math.max(80, keyboardGap) : 50;
+            const threshold = isAndroid ? Math.max(120, keyboardGap) : 100;
             const isAtBottom = distanceFromBottom <= threshold;
 
             
