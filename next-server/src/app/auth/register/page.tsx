@@ -57,7 +57,7 @@ const Registerpage = () => {
             }),
         });
         setIsLoading(false);
-        const { message, status } = await res.json();
+        const { message } = await res.json();
         if( res.status === 500 ) {
             toast.error(message);
         }
