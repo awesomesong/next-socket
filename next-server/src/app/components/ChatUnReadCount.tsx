@@ -40,7 +40,7 @@ const ChatUnReadCount = ({ size }: Props) => {
                         max-md:text-[11px]
                         max-[420px]:left-[21%]
                 `)}>
-                    {formatMessageCount(unreadCount)}
+                    {formatMessageCount(unreadCount ?? 0)}
                 </span>
             }
         </>
