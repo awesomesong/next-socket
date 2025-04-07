@@ -9,13 +9,12 @@ const ButtonLogin = () => {
 
     const queryString = searchParams?.toString();
     const fullPath = `${pathname}${queryString ? `?${queryString}` : ''}`;
-    const callbackUrl = `?callbackUrl=${encodeURIComponent(fullPath)}`;
 
     return (
     <Suspense>
         <button
             className='hover:underline'
-            onClick={() => signIn(undefined, { callbackUrl })}
+            onClick={() => signIn(undefined, { callbackUrl: fullPath })}
         >
             login
         </button>

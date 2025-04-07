@@ -8,14 +8,16 @@ const secret = process.env.NEXTAUTH_SECRET;
 export async function middleware(req: NextRequest) {
     const token = await getToken({ req, secret, raw: false });
     const url = req.nextUrl.clone();
-    const { pathname, searchParams } = url;
+    const { pathname, searchParams, origin } = url;
 
     if(!!token === false) {
         const queryString = searchParams.toString();
         const fullPath = `${pathname}${queryString ? `?${queryString}` : ''}`;
-        const callbackUrl = `?callbackUrl=${encodeURIComponent(fullPath)}`;
         
-        return NextResponse.redirect(new URL(`/auth/signin${callbackUrl}`, req.url));
+        const signinUrl = new URL('/auth/signin', origin);
+        signinUrl.searchParams.set('callbackUrl', fullPath);
+    
+        return NextResponse.redirect(signinUrl);
     }
 }
 
