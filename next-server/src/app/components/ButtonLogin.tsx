@@ -7,7 +7,9 @@ const ButtonLogin = () => {
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
-    const callbackUrl = `${pathname}?${searchParams?.toString() || ''}`;
+    const queryString = searchParams?.toString();
+    const fullPath = `${pathname}${queryString ? `?${queryString}` : ''}`;
+    const callbackUrl = `?callbackUrl=${encodeURIComponent(fullPath)}`;
 
     return (
     <Suspense>
