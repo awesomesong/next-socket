@@ -111,7 +111,9 @@ const MessageView:React.FC<MessageBoxProps> = ({
   return (
     data?.type === 'system' 
       ? 
-      (<div className="
+      (<div 
+        data-message-id={data.id}
+        className="
         flex 
         justify-center
       ">
@@ -141,9 +143,11 @@ const MessageView:React.FC<MessageBoxProps> = ({
             </div>
           </div>
         )}
-        <div className={clsx(
-          "flex gap-3 p-4",
-          isOwn && "justify-end"
+        <div 
+          data-message-id={data.id}
+          className={clsx(
+            "flex gap-3 p-4",
+            isOwn && "justify-end"
         )} >
           <div className={clsx(isOwn && "order-2")}>
             <Avatar user={isConversationUser ? data.sender : noUserType} isOwn={isOwn} />

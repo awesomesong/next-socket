@@ -27,16 +27,7 @@ const Body = () => {
     const { conversationId } = useConversation();
     const [isFirstLoad, setIsFirstLoad] = useState(true); // 처음 로딩 여부
     const [isScrolledUp, setIsScrolledUp] = useState(false); // 스크롤이 위에 있을 때 true
-    const [shouldScrollDown, setShouldScrollDown] = useState(false);
     const { set, conversationUsers, remove } = useConversationUserList();
-
-    const updateScrollState = (atBottom: boolean) => {
-        setIsScrolledUp(prev => {
-            if (prev === true && atBottom) return false;
-            if (prev === false && !atBottom) return true;
-            return prev;
-        });
-    };
 
     // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
     const {
@@ -73,27 +64,6 @@ const Body = () => {
             });
             setIsFirstLoad(false);
             readMessageMutaion(conversationId);
-        }
-
-        // 새로운 채팅 입력된 후에, 스크롤 위치 변화 감지
-        const chatBox = scrollRef.current;
-        if (chatBox) {
-            const { scrollTop, scrollHeight, clientHeight } = chatBox;
-            const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-            // 안드로이드 키보드 대응
-            const isAndroid = /Android/i.test(navigator.userAgent);
-            const keyboardGap = isAndroid && window.visualViewport
-                ? window.innerHeight - window.visualViewport.height
-                : 0;
-
-            const threshold = isAndroid ? Math.max(80, keyboardGap) : 50;
-            const isAtBottom = distanceFromBottom <= threshold;
-
-            if (isAtBottom) {
-                requestAnimationFrame(() => {
-                    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-                });
-            } 
         }
     }, [status, data]);
 
@@ -145,24 +115,23 @@ const Body = () => {
             readMessageMutaion(conversationId);
 
             requestAnimationFrame(() => {
-                setTimeout(() => {
-                    if (scrollRef.current) {
+                const tryScroll = () => {
+                    const el = document.querySelector(`[data-message-id="${message.id}"]`);
+                    if (el && scrollRef.current) {
                         const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
                         const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+                        const isAtBottom = distanceFromBottom <= 100;
 
-                        // 안드로이드 키보드 대응
-                        const isAndroid = /Android/i.test(navigator.userAgent);
-                        const keyboardGap = isAndroid && window.visualViewport
-                            ? window.innerHeight - window.visualViewport.height
-                            : 0;
-
-                        const threshold = isAndroid ? Math.max(80, keyboardGap) : 50;
-                        const isAtBottom = distanceFromBottom <= threshold;
-
-                        if(isAtBottom) setShouldScrollDown(isAtBottom);
-                        updateScrollState(isAtBottom);
+                        if (isAtBottom) {
+                            bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        } else {
+                            setIsScrolledUp(true);
+                        }
+                    } else {
+                        requestAnimationFrame(tryScroll);
                     }
-                }, 0); // 짧은 지연을 줘야 iOS에서 제대로 동작
+                };
+                tryScroll();
             });
         });
         socket.on("read:message", handleRead);
@@ -176,17 +145,6 @@ const Body = () => {
             socket.off("exit:user");
         };
     }, [socket, conversationId]);
-
-    useEffect(() => {
-        if (shouldScrollDown) {
-            requestAnimationFrame(() => {
-                if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                setShouldScrollDown(false);
-            });
-        }
-    }, [shouldScrollDown]);
-
 
     // 채팅방 참여 & 미참여
     useEffect(() => {
@@ -215,7 +173,7 @@ const Body = () => {
             const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
             const isAtBottom = distanceFromBottom <= 50;
             
-            if(isAtBottom) setIsScrolledUp(false);
+            setIsScrolledUp(!isAtBottom);
             // ✅ 스크롤 위치 저장
             const previousScrollHeight = scrollHeight;
 
