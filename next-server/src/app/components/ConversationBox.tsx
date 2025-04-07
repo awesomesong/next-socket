@@ -124,7 +124,7 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
                         >
                             {lastMessageText}
                         </p>
-                        {unReadMessageLength > 0 && 
+                        {!selected && unReadMessageLength > 0 && 
                             <p className="
                                 inline-flex
                                 justify-center
