@@ -39,7 +39,8 @@ const Input : React.FC<InputProps> = ({
 }) => {
     const [isVisible, setIsVisible] = useState(false);
     const toggleVisibility = () => setIsVisible(!isVisible);
-
+    const errorMessage = errors[id]?.message;
+    const isError = Boolean(errorMessage);
 
     return (
         <div className='flex w-full flex-wrap'>
@@ -57,9 +58,9 @@ const Input : React.FC<InputProps> = ({
                     fullWidth={fullWidth}
                     isClearable
                     onClear={() => {}}
-                    color={errors[id]?.message?.toString() ? "danger" : "default"}
-                    isInvalid={errors[id]?.message?.toString() ? true : false}
-                    errorMessage={errors[id]?.message?.toString()}
+                    color={isError ? "danger" : "default"}
+                    isInvalid={isError}
+                    errorMessage={typeof errorMessage === 'string' ? errorMessage : undefined}
                 /> 
                 :
                 <Inputs 
@@ -72,9 +73,9 @@ const Input : React.FC<InputProps> = ({
                     labelPlacement={placement}
                     description={description}
                     variant={variant}
-                    color={errors[id]?.message?.toString() ? "danger" : "default"}
-                    isInvalid={errors[id]?.message?.toString() ? true : false}
-                    errorMessage={errors[id]?.message?.toString()}
+                    color={isError ? "danger" : "default"}
+                    isInvalid={isError}
+                    errorMessage={typeof errorMessage === 'string' ? errorMessage : undefined}
                     endContent={
                         <button 
                             className="focus:outline-none" 
@@ -91,53 +92,6 @@ const Input : React.FC<InputProps> = ({
                       }
                 /> 
             }
-            {/* <label 
-                className='
-                    block
-                    text-sm
-                    font-medium
-                    leading-6
-                    text-gray-100
-                '
-                htmlFor={id}
-            >
-                {label}
-            </label>
-            <div className='mt-2'>
-                <input 
-                    id={id}
-                    type={type}
-                    autoComplete={id}
-                    disabled={disabled}
-                    {...register(id, {...rules})}
-                    className={clsx(`
-                        form-input
-                        block
-                        w-full
-                        rounded-md
-                        border-0
-                        p-1.5
-                        bg-white
-                        text-gray-900
-                        shadow-sm
-                        ring-1
-                        ring-inset
-                        ring-gray-300
-                        placeholder:text-gray-400
-                        focus:ring-2
-                        sm:text-sm
-                        sm:leading-6
-                        `, errors[id] && "focus:ring-rose-500",
-                        !errors[id] && "focus:ring-sky-600",
-                        disabled && "opacity-50 cursor-default"
-                    )}
-                />
-                {errors[id]?.message?.toString() && (
-                    <div className='text-rose-500 mt-2'>
-                        {errors[id]?.message?.toString()}
-                    </div>
-                )} 
-            </div> */}
         </div>  
     )
 }
