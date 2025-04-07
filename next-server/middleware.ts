@@ -11,9 +11,9 @@ export async function middleware(req: NextRequest) {
     const { pathname, searchParams } = url;
 
     if(!!token === false) {
-        const callbackUrl = pathname.length > 0 && `?callbackUrl=${pathname}${searchParams.toString() && '?'+searchParams.toString()}`;
-        
-        return NextResponse.redirect(new URL(`/auth/signin${callbackUrl}` , req.url));
+        const queryString = searchParams.toString();
+        const callbackUrl = `?callbackUrl=${pathname}${queryString ? "?" + queryString : ""}`;
+        return NextResponse.redirect(new URL(`/auth/signin${callbackUrl}`, origin));
     }
 }
 
