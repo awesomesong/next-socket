@@ -130,7 +130,7 @@ const Body = () => {
 
                         if (isAtBottom) {
                             bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                            if(scrollRef.current && isAndroid) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                            if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
                             setIsScrolledUp(false);
                         } else {
                             setIsScrolledUp(true);
@@ -221,7 +221,7 @@ const Body = () => {
     const clickToBottom = useCallback(() => {
         setIsScrolledUp(false);
         bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-        if(scrollRef.current && isAndroid) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     },[]);
 
     return (
