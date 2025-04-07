@@ -61,7 +61,9 @@ const Body = () => {
         // 처음 채팅 입장
         if (status === 'success' && data?.pages?.length && isFirstLoad) {
             requestAnimationFrame(() => {
-                bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+                setTimeout(() => {
+                    bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+                }, 50);
             });
             setIsFirstLoad(false);
             readMessageMutaion(conversationId);

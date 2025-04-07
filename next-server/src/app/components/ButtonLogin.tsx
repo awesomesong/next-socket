@@ -7,7 +7,6 @@ const ButtonLogin = () => {
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
-    const queryString = searchParams?.toString();
     const callbackUrl = `${pathname}?${searchParams?.toString() || ''}`;
 
     return (
