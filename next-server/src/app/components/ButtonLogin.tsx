@@ -7,11 +7,14 @@ const ButtonLogin = () => {
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
+    const queryString = searchParams?.toString();
+    const callbackUrl = `${pathname}?${searchParams?.toString() || ''}`;
+
     return (
     <Suspense>
         <button
             className='hover:underline'
-            onClick={() => signIn(undefined, { callbackUrl: `${pathname}${searchParams?.toString() && '?'+searchParams.toString()}` })}
+            onClick={() => signIn(undefined, { callbackUrl })}
         >
             login
         </button>
