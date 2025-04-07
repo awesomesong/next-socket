@@ -124,15 +124,13 @@ const Body = () => {
                         const visualViewportHeight = window.visualViewport?.height || window.innerHeight;
                         const keyboardGap = isAndroid ? window.innerHeight - visualViewportHeight : 0;
 
-                        const threshold = isAndroid ? Math.max(120, keyboardGap) : 100;
+                        const threshold = isAndroid ? Math.max(150, keyboardGap) : 100;
                         const isAtBottom = distanceFromBottom <= threshold;
 
                         if (isAtBottom) {
-                            setTimeout(() => {
-                                bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                                if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                                setIsScrolledUp(false);
-                            }, 50);
+                            bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                            if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                            setIsScrolledUp(false);
                         } else {
                             setIsScrolledUp(true);
                         }
@@ -183,7 +181,7 @@ const Body = () => {
             const visualViewportHeight = window.visualViewport?.height || window.innerHeight;
             const keyboardGap = isAndroid ? window.innerHeight - visualViewportHeight : 0;
 
-            const threshold = isAndroid ? Math.max(120, keyboardGap) : 100;
+            const threshold = isAndroid ? Math.max(150, keyboardGap) : 100;
             const isAtBottom = distanceFromBottom <= threshold;
 
             
