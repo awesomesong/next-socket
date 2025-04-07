@@ -120,10 +120,18 @@ const Body = () => {
                     if (el && scrollRef.current) {
                         const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
                         const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-                        const isAtBottom = distanceFromBottom <= 100;
+                        // 안드로이드 키보드 대응
+                        const isAndroid = /Android/i.test(navigator.userAgent);
+                        const keyboardGap = isAndroid && window.visualViewport
+                            ? window.innerHeight - window.visualViewport.height
+                            : 0;
+
+                        const threshold = isAndroid ? Math.max(80, keyboardGap) : 100;
+                        const isAtBottom = distanceFromBottom <= threshold;
 
                         if (isAtBottom) {
                             bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                            setIsScrolledUp(false);
                         } else {
                             setIsScrolledUp(true);
                         }
@@ -171,9 +179,17 @@ const Body = () => {
 
             const atTop = scrollTop === 0;
             const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-            const isAtBottom = distanceFromBottom <= 50;
+            // 안드로이드 키보드 대응
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const keyboardGap = isAndroid && window.visualViewport
+                ? window.innerHeight - window.visualViewport.height
+                : 0;
+
+            const threshold = isAndroid ? Math.max(80, keyboardGap) : 50;
+            const isAtBottom = distanceFromBottom <= threshold;
+
             
-            setIsScrolledUp(!isAtBottom);
+            if(isAtBottom) setIsScrolledUp(false);
             // ✅ 스크롤 위치 저장
             const previousScrollHeight = scrollHeight;
 
