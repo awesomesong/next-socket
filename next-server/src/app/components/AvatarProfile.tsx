@@ -40,12 +40,27 @@ const AvatarProfile:React.FC<AvatarProfileProps> = ({
     const image = watch('image');
 
     const handleUpload = (result: any) => {
-        setValue('image', result?.info?.secure_url, {
-            shouldValidate: true
-        });
+        const uploadedUrl = result?.info?.secure_url;
+      
+        if (!uploadedUrl) {
+          toast.error("이미지 업로드에 실패했습니다.");
+          return;
+        }
+      
+        const uniqueImageUrl = `${uploadedUrl}?v=${Date.now()}`;
+        setValue("image", uniqueImageUrl, { shouldValidate: true });
+        update();
     };
 
     const onSubmit: SubmitHandler<FieldValues> = async (data) => {
+        const currentImage = user?.image;
+        const newImage = data.image;
+
+        // 변경된 이미지가 없으면 저장하지 않음
+        if (!newImage || newImage === currentImage) {
+            toast.error("변경된 이미지가 없습니다.");
+            return;
+        }
 
         await fetch(`/api/settings`, {
             method: 'POST',
@@ -59,6 +74,7 @@ const AvatarProfile:React.FC<AvatarProfileProps> = ({
         .then((res) => res.json())
         .then((data) => {
             toast.success('프로필이 수정되었습니다.');
+            setValue('image', data.image, { shouldValidate: false });
             update(data);
         })
         .catch(() => {
@@ -99,6 +115,7 @@ const AvatarProfile:React.FC<AvatarProfileProps> = ({
                             rounded-full
                         ">
                             <FallbackNextImage
+                                key={image}
                                 src={image || user?.image}
                                 alt={image || user?.name +'이미지'}
                                 fill
