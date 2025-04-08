@@ -41,6 +41,9 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
   const [images, setImages] = useState<ImageProps[]>(() => (isEdit ? initialDataImage : []));
   const [imageDelete, setImageDelete] = useState<ImageProps[]>([]);
 
+  const [isDirty, setIsDirty] = useState(false);
+  const isNavigating = useRef(false);
+
   const formTitle = useRef<HTMLInputElement>(null);
   const quillRef = useRef<ReactQuill>(null);
   const { data : session } = useSession();
@@ -174,8 +177,10 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
       if (res.status === 200) {
         if (isEdit) {
           await Promise.all(imageDelete.map(img => deleteImage(img.url)));
+          setIsDirty(false);
           router.push(`/blogs/${data.updateBlog.id}`);
         } else {
+          setIsDirty(false);
           router.replace(`/blogs/${data.newBlog.id}`);
         }
   
@@ -189,53 +194,80 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
     } 
   }, [title, content, images, id, imageDelete, isEdit, initialData]);
 
-  const onClick = (e: any) => {
-    if(e.target.tagName === 'A' 
-      || ( e.target.tagName === 'IMG' && !e.target.src.includes('blogs'))
-    ) {
-      e.preventDefault();
-      const isGoBack = confirm('사이트에서 나가시겠습니까? 작성된 내용은 저장되지 않습니다.');
-      if(!isGoBack){
-        return router.replace(location.href);
-      } else {
-        resetImage();
-      }
-    }
-  }
-
-  const onBeforeUnload = (e: any) => {
-    e.preventDefault();
-    resetImage();
-    return true;
-  };
-
-  let count = 0;
-  const onPopstate = (e: any) => {
-    e.preventDefault();
-    const isGoBack = confirm('사이트에서 나가시겠습니까? 작성된 내용은 저장되지 않습니다.');
-    if(!isGoBack) ++count;
-    else {
-      resetImage();
-    }
-    if(isGoBack && count === 0){
-      return history.go(-2);
-    }
-    if(isGoBack && count > 0){
-      return router.back();
-    }
-  };
+  useEffect(() => {
+    const isNowDirty = (
+      title !== (initialData?.title || '') ||
+      content !== (initialData?.content || '') ||
+      JSON.stringify(images) !== JSON.stringify(initialDataImage)
+    );
+    setIsDirty(isNowDirty);
+  }, [title, content, images, initialData?.title, initialData?.content, initialDataImage]);  
 
   useEffect(() => {
-    history.pushState(null, "", location.href);
-    window.addEventListener("beforeunload", onBeforeUnload, {capture: false});
-    window.addEventListener("popstate", onPopstate);
-    window.addEventListener("click", onClick);
-    return () => {
-        window.removeEventListener("beforeunload", onBeforeUnload);
-        window.removeEventListener("popstate", onPopstate);
-        window.removeEventListener("click", onClick);
+    const isFirst = window.history.state === null;
+
+    // 더미 pushState 삽입 (뒤로가기용)
+    if (isFirst) {
+      history.pushState({ isDummy: true }, '', location.href);
     }
-  }, []);
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      e.preventDefault();
+      e.returnValue = ''; // 일부 브라우저에서 필요 
+    };
+  
+    const handlePopState = (e: PopStateEvent) => {
+      if (!isDirty || isNavigating.current) return;
+  
+      const confirmLeave = window.confirm('사이트에서 나가시겠습니까? 작성된 내용은 저장되지 않습니다.');
+  
+      if (!confirmLeave) {
+        // stay: 원래 페이지로 되돌리기
+        history.pushState({ isDummy: true }, '', location.href);
+      } else {
+        // leave: 이미지 정리하고 원래 뒤로감
+        isNavigating.current = true;
+        resetImage();
+  
+        // 뒤로 한 번 더 감 (실제 이전 페이지로)
+        history.go(-1);
+      }
+    };
+  
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+  
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isDirty]);
+  
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const linkElement = target.closest('a') as HTMLAnchorElement | null;
+
+      if (!isDirty || !linkElement || linkElement.target === '_blank') return;
+      
+      e.preventDefault(); // 무조건 먼저 막고
+      const confirmLeave = window.confirm('사이트에서 나가시겠습니까? 작성된 내용은 저장되지 않습니다.');
+  
+      if (confirmLeave) {
+        resetImage();
+        router.push(linkElement.href);
+      } else {
+        history.pushState(null, '', location.href); 
+      }
+    };
+  
+    window.addEventListener('click', handleClick);
+  
+    return () => {
+      window.removeEventListener('click', handleClick);
+    };
+  }, [isDirty]);  
 
   const deleteImage = useCallback(async (url: string) => {
     if(!url) return;
@@ -258,12 +290,8 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
   }, [isEdit, images]);
 
   const resetImage = () => {
-    if(isEdit) {
-      // imageDelete.map((img) => deleteImage(img.url))
-    } else {
-      if(imageDelete.length > 0){
-        imageDelete.map((img) => deleteImage(img.url))
-      }
+    if (!isEdit && imageDelete.length > 0) {
+        imageDelete.forEach((img) => deleteImage(img.url))
     }
   };
 
