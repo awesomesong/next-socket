@@ -10,6 +10,14 @@ export async function middleware(req: NextRequest) {
     const url = req.nextUrl.clone();
     const { pathname, searchParams, origin } = url;
 
+    // 인증 없이 접근 가능한 경로
+    const publicPaths = ["/auth/signin", "/register"];
+
+    // public 경로인 경우 미들웨어 패스
+    if (publicPaths.some(path => pathname.startsWith(path))) {
+        return NextResponse.next();
+    }
+
     if(!!token === false) {
         const queryString = searchParams.toString();
         const fullPath = `${pathname}${queryString ? `?${queryString}` : ''}`;
