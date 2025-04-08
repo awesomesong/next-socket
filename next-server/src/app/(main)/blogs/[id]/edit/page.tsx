@@ -20,7 +20,7 @@ const BlogEditpage = ({ params } : ParamsProps) => {
     const pathname = usePathname();
 
     // const { blog, message } = await getBlog(id);
-    const { data: session } = useSession();
+    const { data: session, status: sessionStatus } = useSession();
     const { 
         data, 
         status,
@@ -31,12 +31,13 @@ const BlogEditpage = ({ params } : ParamsProps) => {
         enabled: !!session?.user?.email,
     });
 
-    // 비로그인 시, 로그인 후에 수정할 수 있도록 설정
+    // 세션 로딩 후, 비로그인인 경우 로그인 페이지로 이동
     useEffect(() => {
-        if(!data && !isSuccess) {
-            router.push(`/api/auth/signin?callbackUrl=${pathname}`);
+        if (sessionStatus === 'unauthenticated') {
+            router.push(`/auth/signin?callbackUrl=${pathname}`);
         }
-    }, [isSuccess]);
+    }, [sessionStatus]);
+
 
     return (
         <>
