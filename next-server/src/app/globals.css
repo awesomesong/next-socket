@@ -328,6 +328,22 @@ div[data-slot="content"] {
   z-index: 20 !important;
 }
 
+.ql-indent-1 {
+  margin-left: 3em;
+}
+.ql-indent-2 {
+  margin-left: 6em;
+}
+.ql-indent-3 {
+  margin-left: 9em;
+}
+
+.ql-indent-1, 
+.ql-indent-2,
+.ql-indent-3 {
+  list-style: disc;
+}
+
 .effect-rightLeft {
   animation: rightLeft .2s;
 }
