@@ -7,6 +7,7 @@ import { useInView } from "react-intersection-observer";
 import BlogCard from "./BlogCard";
 import BlogCardSkeleton from "./skeleton/BlogCardSkeleton";
 import CircularProgress from "./CircularProgress";
+import StatusMessage from "./StatusMessage";
 
 const Blogs = () => {
 
@@ -61,7 +62,7 @@ const Blogs = () => {
                     <CircularProgress aria-label="로딩중" />
                 )}
             </div>
-            {data?.pages[0].length === 0 && <div>작성된 글이 없습니다.</div>}
+            {data?.pages[0].length === 0 && <StatusMessage message="작성된 글이 없습니다." />}
         </>
     
 }
