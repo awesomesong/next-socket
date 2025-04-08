@@ -247,16 +247,23 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const linkElement = target.closest('a') as HTMLAnchorElement | null;
 
-      if (!isDirty || !linkElement || linkElement.target === '_blank') return;
-      
-      e.preventDefault(); // 무조건 먼저 막고
+      // Quill 내부 UI 클릭은 무시
+      const isInsideQuillEditor = !!target.closest('.ql-toolbar, .ql-tooltip, .ql-container');
+      if (isInsideQuillEditor) return;
+
+      // 등록 버튼 or submit 클릭 무시
+      const isSubmitButton = target.closest('button[type="submit"], form');
+      if (isSubmitButton) return;
+
+      const linkElement = target.closest('a');
+      const isExternalImg = target instanceof HTMLImageElement && !target.src.includes('blogs');
+  
+      if (!isDirty || (!linkElement && !isExternalImg)) return;
       const confirmLeave = window.confirm('사이트에서 나가시겠습니까? 작성된 내용은 저장되지 않습니다.');
   
       if (confirmLeave) {
         resetImage();
-        router.push(linkElement.href);
       } else {
         history.pushState(null, '', location.href); 
       }
