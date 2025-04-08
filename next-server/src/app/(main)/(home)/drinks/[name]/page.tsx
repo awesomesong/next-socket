@@ -76,7 +76,7 @@ const DrinksPage = ({params } : { params: { name: string } }) => {
                 >
                     <SsrDOMPurify 
                         content={drink.description} 
-                        className={clsx(drink.type?.includes('dark') ? 'text-neutral-950' : 'text-neutral-200')}
+                        className={clsx("drink-info", drink.type?.includes('dark') ? 'text-neutral-950' : 'text-neutral-200')}
                     />
                 </motion.div>
             </div>
@@ -123,7 +123,7 @@ const DrinksPage = ({params } : { params: { name: string } }) => {
                 >
                     <SsrDOMPurify 
                         content={drink.info} 
-                        className="text-[clamp(11px,2.5vw,20px)]"
+                        className="drink-info text-[clamp(11px,2.5vw,20px)]"
                     />
                 </motion.div>
             </div>

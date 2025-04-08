@@ -1,11 +1,15 @@
 'use client';
 import { motion } from 'framer-motion';
-import DOMPurify from 'dompurify';
+import dynamic from 'next/dynamic';
 
 type DrinksNameProps = {
   name?: string;
   scrollRef: React.RefObject<HTMLDivElement | null>;
 }
+
+const SsrDOMPurify = dynamic(() => import('../SsrDOMPurify'), {
+    ssr: false,
+});
 
 const DrinksName:React.FC<DrinksNameProps> = ({ name, scrollRef }) => {
   if(!name || !scrollRef) return null;
@@ -17,8 +21,9 @@ const DrinksName:React.FC<DrinksNameProps> = ({ name, scrollRef }) => {
       viewport={{ root: scrollRef }}
       transition={{ duration: 1 }}
     >
-        <pre 
-          className='
+        <SsrDOMPurify 
+          content={name} 
+          className="
             text-lg
             sm:text-2xl
             max-[480px]:text-base
@@ -29,10 +34,7 @@ const DrinksName:React.FC<DrinksNameProps> = ({ name, scrollRef }) => {
             whitespace-pre-line
             leading-7
             max-[480px]:leading-5
-          '
-          dangerouslySetInnerHTML={{
-            __html: DOMPurify.sanitize(name)
-          }}
+          "
         />
     </motion.div>
   )

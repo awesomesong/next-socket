@@ -4,7 +4,7 @@ import DOMPurify from "dompurify";
 
 interface Props {
     content : string;
-    className: string;
+    className?: string;
 }
 
 const SsrDOMPurify = ({content, className}: Props) => {
@@ -12,7 +12,7 @@ const SsrDOMPurify = ({content, className}: Props) => {
 
     return (
         <pre
-            className={clsx('drink-info', className)}
+            className={clsx(className)}
             dangerouslySetInnerHTML={{
                 __html: cleanContent
             }}
