@@ -30,15 +30,7 @@ const BlogEditpage = ({ params } : ParamsProps) => {
         queryFn: () => getBlog(id),
         enabled: !!session?.user?.email,
     });
-
-    // 세션 로딩 후, 비로그인인 경우 로그인 페이지로 이동
-    useEffect(() => {
-        if (sessionStatus === 'unauthenticated') {
-            router.push(`/auth/signin?callbackUrl=${pathname}`);
-        }
-    }, [sessionStatus]);
-
-
+    
     return (
         <>
             { status === 'success' && 

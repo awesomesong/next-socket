@@ -26,7 +26,7 @@ export const config = {
         "/chatMember/:path*",
         "/conversations/:path*",
         "/profile",
-        "/blogs/create",
-        "/posts/create"
+        "/blogs/:path*",
+        "/posts/:path*",
     ]
 }
