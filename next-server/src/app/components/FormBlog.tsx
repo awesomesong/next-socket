@@ -194,133 +194,133 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
     } 
   }, [title, content, images, id, imageDelete, isEdit, initialData]);
 
-  useEffect(() => {
-    const isNowDirty = (
-      title !== (initialData?.title || '') ||
-      content !== (initialData?.content || '') ||
-      JSON.stringify(images) !== JSON.stringify(initialDataImage)
-    );
-    setIsDirty(isNowDirty);
-  }, [title, content, images, initialData?.title, initialData?.content, initialDataImage]);  
+  // useEffect(() => {
+  //   const isNowDirty = (
+  //     title !== (initialData?.title || '') ||
+  //     content !== (initialData?.content || '') ||
+  //     JSON.stringify(images) !== JSON.stringify(initialDataImage)
+  //   );
+  //   setIsDirty(isNowDirty);
+  // }, [title, content, images, initialData?.title, initialData?.content, initialDataImage]);  
 
-  useEffect(() => {
-    const isFirst = window.history.state === null;
+  // useEffect(() => {
+  //   const isFirst = window.history.state === null;
 
-    // 더미 pushState 삽입 (뒤로가기용)
-    if (isFirst) {
-      history.pushState({ isDummy: true }, '', location.href);
-    }
+  //   // 더미 pushState 삽입 (뒤로가기용)
+  //   if (isFirst) {
+  //     history.pushState({ isDummy: true }, '', location.href);
+  //   }
 
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (!isDirty) return;
-      e.preventDefault();
-      e.returnValue = ''; // 일부 브라우저에서 필요 
-    };
+  //   const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+  //     if (!isDirty) return;
+  //     e.preventDefault();
+  //     e.returnValue = ''; // 일부 브라우저에서 필요 
+  //   };
   
-    const handlePopState = (e: PopStateEvent) => {
-      if (!isDirty || isNavigating.current) return;
+  //   const handlePopState = (e: PopStateEvent) => {
+  //     if (!isDirty || isNavigating.current) return;
   
-      const confirmLeave = window.confirm('사이트에서 나가시겠습니까? 작성된 내용은 저장되지 않습니다.');
+  //     const confirmLeave = window.confirm('사이트에서 나가시겠습니까? 작성된 내용은 저장되지 않습니다.');
   
-      if (!confirmLeave) {
-        // stay: 원래 페이지로 되돌리기
-        history.pushState({ isDummy: true }, '', location.href);
-      } else {
-        // leave: 이미지 정리하고 원래 뒤로감
-        isNavigating.current = true;
-        resetImage();
+  //     if (!confirmLeave) {
+  //       // stay: 원래 페이지로 되돌리기
+  //       history.pushState({ isDummy: true }, '', location.href);
+  //     } else {
+  //       // leave: 이미지 정리하고 원래 뒤로감
+  //       isNavigating.current = true;
+  //       resetImage();
   
-        // 뒤로 한 번 더 감 (실제 이전 페이지로)
-        history.go(-1);
-      }
-    };
+  //       // 뒤로 한 번 더 감 (실제 이전 페이지로)
+  //       history.go(-1);
+  //     }
+  //   };
   
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('popstate', handlePopState);
+  //   window.addEventListener('beforeunload', handleBeforeUnload);
+  //   window.addEventListener('popstate', handlePopState);
   
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [isDirty]);
+  //   return () => {
+  //     window.removeEventListener('beforeunload', handleBeforeUnload);
+  //     window.removeEventListener('popstate', handlePopState);
+  //   };
+  // }, [isDirty]);
   
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
+  // useEffect(() => {
+  //   const handleClick = (e: MouseEvent) => {
+  //     const target = e.target as HTMLElement;
 
-      // Quill 내부 UI 클릭은 무시
-      const isInsideQuillEditor = !!target.closest('.ql-toolbar, .ql-tooltip, .ql-container');
-      if (isInsideQuillEditor) return;
+  //     // Quill 내부 UI 클릭은 무시
+  //     const isInsideQuillEditor = !!target.closest('.ql-toolbar, .ql-tooltip, .ql-container');
+  //     if (isInsideQuillEditor) return;
 
-      // 등록 버튼 or submit 클릭 무시
-      const isSubmitButton = target.closest('button[type="submit"], form');
-      if (isSubmitButton) return;
+  //     // 등록 버튼 or submit 클릭 무시
+  //     const isSubmitButton = target.closest('button[type="submit"], form');
+  //     if (isSubmitButton) return;
 
-      const linkElement = target.closest('a');
-      const isExternalImg = target instanceof HTMLImageElement && !target.src.includes('blogs');
+  //     const linkElement = target.closest('a');
+  //     const isExternalImg = target instanceof HTMLImageElement && !target.src.includes('blogs');
   
-      if (!isDirty || (!linkElement && !isExternalImg)) return;
-      const confirmLeave = window.confirm('사이트에서 나가시겠습니까? 작성된 내용은 저장되지 않습니다.');
+  //     if (!isDirty || (!linkElement && !isExternalImg)) return;
+  //     const confirmLeave = window.confirm('사이트에서 나가시겠습니까? 작성된 내용은 저장되지 않습니다.');
   
-      if (confirmLeave) {
-        resetImage();
-      } else {
-        history.pushState(null, '', location.href); 
-      }
-    };
+  //     if (confirmLeave) {
+  //       resetImage();
+  //     } else {
+  //       history.pushState(null, '', location.href); 
+  //     }
+  //   };
   
-    window.addEventListener('click', handleClick);
+  //   window.addEventListener('click', handleClick);
   
-    return () => {
-      window.removeEventListener('click', handleClick);
-    };
-  }, [isDirty]);  
+  //   return () => {
+  //     window.removeEventListener('click', handleClick);
+  //   };
+  // }, [isDirty]);  
 
-  const deleteImage = useCallback(async (url: string) => {
-    if(!url) return;
+  // const deleteImage = useCallback(async (url: string) => {
+  //   if(!url) return;
 
-    const result = await deleteCloudinaryImage(url, folderName);
+  //   const result = await deleteCloudinaryImage(url, folderName);
 
-    if (result) {
-      setImages(prev => prev.filter(image => image.url !== url));
+  //   if (result) {
+  //     setImages(prev => prev.filter(image => image.url !== url));
 
-      // 수정 모드일 때 삭제된 이미지 목록에 추가
-      if (isEdit) {
-        setImageDelete(prev => 
-          prev.some(img => img.url === url) 
-            ? prev : [...prev, { index: -1, url }]
-        );
-      }
-    } else {
-      toast.error('이미지 삭제 중 오류가 발생하였습니다.');
-    }
-  }, [isEdit, images]);
+  //     // 수정 모드일 때 삭제된 이미지 목록에 추가
+  //     if (isEdit) {
+  //       setImageDelete(prev => 
+  //         prev.some(img => img.url === url) 
+  //           ? prev : [...prev, { index: -1, url }]
+  //       );
+  //     }
+  //   } else {
+  //     toast.error('이미지 삭제 중 오류가 발생하였습니다.');
+  //   }
+  // }, [isEdit, images]);
 
-  const resetImage = () => {
-    if (!isEdit && imageDelete.length > 0) {
-        imageDelete.forEach((img) => deleteImage(img.url))
-    }
-  };
+  // const resetImage = () => {
+  //   if (!isEdit && imageDelete.length > 0) {
+  //       imageDelete.forEach((img) => deleteImage(img.url))
+  //   }
+  // };
 
-  useEffect(() => {
-    if (!quillRef.current) return;
-    const editorContent = quillRef.current?.getEditor()?.root.innerHTML;
+  // useEffect(() => {
+  //   if (!quillRef.current) return;
+  //   const editorContent = quillRef.current?.getEditor()?.root.innerHTML;
 
-    const remainingImages = images.filter(img => editorContent.includes(img.url));
-    const deletedImages = images.filter(img => !remainingImages.some(keepImg => keepImg.url === img.url));
+  //   const remainingImages = images.filter(img => editorContent.includes(img.url));
+  //   const deletedImages = images.filter(img => !remainingImages.some(keepImg => keepImg.url === img.url));
 
     
-    if (deletedImages.length > 0) {
-      const { url } = deletedImages[0]; // 첫 번째 삭제된 이미지만 처리
-      if (!isEdit) {
-        deleteImage(url); // 즉시 삭제
-        setImageDelete(prev => [...prev, { index: -1, url }]);
-      } else {
-        setImageDelete(prev => [...prev, { index: -1, url }]);
-        setImages(remainingImages);
-      }
-    }
-  }, [content]);
+  //   if (deletedImages.length > 0) {
+  //     const { url } = deletedImages[0]; // 첫 번째 삭제된 이미지만 처리
+  //     if (!isEdit) {
+  //       deleteImage(url); // 즉시 삭제
+  //       setImageDelete(prev => [...prev, { index: -1, url }]);
+  //     } else {
+  //       setImageDelete(prev => [...prev, { index: -1, url }]);
+  //       setImages(remainingImages);
+  //     }
+  //   }
+  // }, [content]);
 
   // useEffect(() => {
   //   if(images?.length > 0 ){
