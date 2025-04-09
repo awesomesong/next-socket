@@ -276,51 +276,51 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
   //   };
   // }, [isDirty]);  
 
-  // const deleteImage = useCallback(async (url: string) => {
-  //   if(!url) return;
+  const deleteImage = useCallback(async (url: string) => {
+    if(!url) return;
 
-  //   const result = await deleteCloudinaryImage(url, folderName);
+    const result = await deleteCloudinaryImage(url, folderName);
 
-  //   if (result) {
-  //     setImages(prev => prev.filter(image => image.url !== url));
+    if (result) {
+      setImages(prev => prev.filter(image => image.url !== url));
 
-  //     // 수정 모드일 때 삭제된 이미지 목록에 추가
-  //     if (isEdit) {
-  //       setImageDelete(prev => 
-  //         prev.some(img => img.url === url) 
-  //           ? prev : [...prev, { index: -1, url }]
-  //       );
-  //     }
-  //   } else {
-  //     toast.error('이미지 삭제 중 오류가 발생하였습니다.');
-  //   }
-  // }, [isEdit, images]);
+      // 수정 모드일 때 삭제된 이미지 목록에 추가
+      if (isEdit) {
+        setImageDelete(prev => 
+          prev.some(img => img.url === url) 
+            ? prev : [...prev, { index: -1, url }]
+        );
+      }
+    } else {
+      toast.error('이미지 삭제 중 오류가 발생하였습니다.');
+    }
+  }, [isEdit, images]);
 
-  // const resetImage = () => {
-  //   if (!isEdit && imageDelete.length > 0) {
-  //       imageDelete.forEach((img) => deleteImage(img.url))
-  //   }
-  // };
+  const resetImage = () => {
+    if (!isEdit && imageDelete.length > 0) {
+        imageDelete.forEach((img) => deleteImage(img.url))
+    }
+  };
 
-  // useEffect(() => {
-  //   if (!quillRef.current) return;
-  //   const editorContent = quillRef.current?.getEditor()?.root.innerHTML;
+  useEffect(() => {
+    if (!quillRef.current) return;
+    const editorContent = quillRef.current?.getEditor()?.root.innerHTML;
 
-  //   const remainingImages = images.filter(img => editorContent.includes(img.url));
-  //   const deletedImages = images.filter(img => !remainingImages.some(keepImg => keepImg.url === img.url));
+    const remainingImages = images.filter(img => editorContent.includes(img.url));
+    const deletedImages = images.filter(img => !remainingImages.some(keepImg => keepImg.url === img.url));
 
     
-  //   if (deletedImages.length > 0) {
-  //     const { url } = deletedImages[0]; // 첫 번째 삭제된 이미지만 처리
-  //     if (!isEdit) {
-  //       deleteImage(url); // 즉시 삭제
-  //       setImageDelete(prev => [...prev, { index: -1, url }]);
-  //     } else {
-  //       setImageDelete(prev => [...prev, { index: -1, url }]);
-  //       setImages(remainingImages);
-  //     }
-  //   }
-  // }, [content]);
+    if (deletedImages.length > 0) {
+      const { url } = deletedImages[0]; // 첫 번째 삭제된 이미지만 처리
+      if (!isEdit) {
+        deleteImage(url); // 즉시 삭제
+        setImageDelete(prev => [...prev, { index: -1, url }]);
+      } else {
+        setImageDelete(prev => [...prev, { index: -1, url }]);
+        setImages(remainingImages);
+      }
+    }
+  }, [content]);
 
   // useEffect(() => {
   //   if(images?.length > 0 ){
