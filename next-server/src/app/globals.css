@@ -344,7 +344,8 @@ div[data-slot="content"] {
   list-style: disc;
 }
 
-pre ul li {
+article ul li {
+  margin-left: 3em;
   list-style: disc;
 }
 
