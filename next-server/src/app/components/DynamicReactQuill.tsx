@@ -16,6 +16,20 @@ export const DynamicReactQuill = dynamic(
         const { SnowTheme } = await import('quill-color-picker-enhance');
         const { ImageResize } = await import('quill-image-resize-module-ts');
 
+        // ✅ 여기서 Link 포맷 커스터마이징
+        const Link = RQ.Quill.import('formats/link');
+        class CustomLink extends Link {
+        static create(value: string) {
+            let node = super.create(value);
+            node.setAttribute('href', value);
+            node.setAttribute('target', '_blank'); // 새 창 열기
+            node.setAttribute('rel', 'noopener noreferrer'); // 보안
+            return node;
+        }
+        }
+        RQ.Quill.register('formats/link', CustomLink, true);
+
+
         RQ.Quill.register('themes/snow-quill-color-picker-enhance', SnowTheme);
         RQ.Quill.register("modules/ImageResize", ImageResize);
         hljs.configure({

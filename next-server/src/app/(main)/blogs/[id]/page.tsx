@@ -116,7 +116,10 @@ const BlogDetailPage = ({ params } : {
                       </div>
                     </div>
                     <article
-                        dangerouslySetInnerHTML={{ __html : DOMPurify.sanitize(data?.blog?.content || '') }}
+                        dangerouslySetInnerHTML={{ __html : DOMPurify.sanitize(data?.blog?.content || '', {
+                            ADD_ATTR: ['target', 'rel'],
+                          }) 
+                        }}
                         className='mt-4 whitespace-pre-wrap'
                     />
 
