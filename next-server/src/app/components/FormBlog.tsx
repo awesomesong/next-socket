@@ -10,8 +10,8 @@ import ReactQuill from 'react-quill';
 import hljs from 'highlight.js';
 import PointsLoading from "./PointsLoading";
 import Button from "./Button";
-import { uploadImage } from "@/src/app/utils/cloudinary/uploadImage";
-import { deleteImage as deleteCloudinaryImage } from "@/src/app/utils/cloudinary/deleteImage";
+import { uploadImage } from "@/src/app/lib/uploadImage";
+import { deleteImage as deleteCloudinaryImage } from "@/src/app/lib/deleteImage";
 
 type FormBlogProps = {
   id?: string; 
@@ -77,8 +77,9 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
           if (!allowedTypes.includes(file.type)) {
             throw new Error("이미지 파일만 업로드 가능합니다.");
           }
-          const url = await uploadImage(file, folderName);
-          if(!url) return;
+          const { url, message }= await uploadImage(file, folderName);
+          if(url) toast.success(message);
+          else return toast.error(message);
 
           const editor = quillRef?.current?.getEditor(); 
           const index = quillRef.current?.getEditor().getSelection()?.index ?? 0;

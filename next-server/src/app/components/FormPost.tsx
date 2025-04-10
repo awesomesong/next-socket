@@ -16,7 +16,7 @@ import { GET_POSTS, GET_POST } from '@/graphql/queries';
 import { FormPostData } from '@/src/app/types/blog';
 import { InitFormData } from '@/src/app/types/init';
 import ImageUploadButton from './ImageUploadButton';
-import { deleteImage } from "@/src/app/utils/cloudinary/deleteImage";
+import { deleteImage } from "@/src/app/lib/deleteImage";
 import PointsLoading from "./PointsLoading";
 
 interface FormPostProps {
