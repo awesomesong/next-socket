@@ -38,7 +38,7 @@ const getPublicIdFromUrl = ({ url, folderName }: { url: string; folderName?: str
     return cleanFolder ? `${cleanFolder}/${filename}` : filename;
 };
 
-export async function DELETE(req: NextResponse, res: NextRequest) {
+export async function DELETE(req: NextRequest) {
 
     try {
         const user = await getCurrentUser();
