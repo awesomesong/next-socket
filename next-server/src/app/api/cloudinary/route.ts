@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import sha1 from 'sha1';
 import { getCurrentUser } from "../../lib/session";
   
-export async function POST(req: NextResponse, res: NextRequest) {
+export async function POST(req: NextRequest) {
     try {
         const user = await getCurrentUser();
         const formData = await req.formData();
