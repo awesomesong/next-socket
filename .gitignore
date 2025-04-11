@@ -8,6 +8,7 @@ next-server/dist
 next-server/build/
 next-server/.turbo/
 next-server/prisma/migrations
+next-server/scripts/
 
 socket-server/node_modules
 socket-server/.env
