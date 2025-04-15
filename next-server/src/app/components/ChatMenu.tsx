@@ -19,7 +19,7 @@ const ChatMenu = () => {
                 className='
                     fixed
                     right-10
-                    bottom-10
+                    bottom-12
                     z-50
                     w-[70px]
                     h-[70px]
