@@ -1,23 +1,18 @@
 'use client';
-import { useSession } from "next-auth/react";
 import getUnReadCount from "@/src/app/lib/getUnReadCount";
 import { useQuery } from "@tanstack/react-query";
 import useUnreadStore from "@/src/app/hooks/useUnReadStore";
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { useSocket } from "../context/socketContext";
-import { useQueryClient } from "@tanstack/react-query";
-import useConversationUserList from "@/src/app/hooks/useConversationUserList";
+import useConversation from "../hooks/useConversation";
 
 const SocketState = () => {
     const socket = useSocket();
-    const { set, conversationUsers, remove } = useConversationUserList();
-    const { data: session } = useSession();
-    const { setUnreadCount, unreadCount } = useUnreadStore();
-    const queryClient = useQueryClient();
+    const { setUnreadCount } = useUnreadStore();
+    const { conversationId } = useConversation();
 
     const { 
         data, 
-        status,
         refetch
     } = useQuery({
         queryKey: ['unReadCount'],
@@ -27,29 +22,36 @@ const SocketState = () => {
     });
 
     useEffect(() => {
-        setUnreadCount(data?.unReadCount);
+        if (data?.unReadCount !== undefined) {
+            setUnreadCount(data.unReadCount);
+        }
     }, [data, setUnreadCount]);
-
-    const handleReceive = useCallback(() => {
-        refetch();
-    }, [queryClient]);
 
     useEffect(() => {
         if(!socket) return;
 
         const handleReconnect = () => {
-            refetch(); // 메시지 다시 불러오기 ✅
+            refetch();
+        };
+
+        const handleReceiveConversation = (message: any, isMyMessage: boolean) => {
+            const messageConversationId = message?.conversationId;
+
+            // ✅ 내가 보낸 메시지가 아니고, 현재 보고 있는 채팅방이 아니면 refetch
+            if (!isMyMessage && messageConversationId !== conversationId) {
+                refetch();
+            }
         };
       
         socket.on('connect', handleReconnect);
+        socket.on("receive:conversation", handleReceiveConversation);
         
-        socket.on("receive:conversation", handleReceive);
 
         return() => {
             socket.off('connect', handleReconnect);
-            socket.off("receive:conversation");
+            socket.off("receive:conversation", handleReceiveConversation);
         }
-    }, [socket, set, queryClient]);
+    }, [socket, refetch]);
 
     return null;
 }

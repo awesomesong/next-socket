@@ -101,7 +101,7 @@ const Body = () => {
     const handleExit = useCallback((data: { conversationId: string; userId: string[] }) => {
         const { conversationId, userId } = data;
         set({ conversationId, userIds: userId });
-        queryClient.invalidateQueries({ queryKey: ['unReadCount'] });
+        // queryClient.invalidateQueries({ queryKey: ['unReadCount'] });
         queryClient.invalidateQueries({ queryKey: ['conversationList'] });
         queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
         queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
