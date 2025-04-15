@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
         const formData = await req.formData();
 
         if(!user?.id || !user?.email) return NextResponse.json({message: '로그인이 되지 않았습니다. 로그인 후에 이용해주세요.'}, {status: 401})
-        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
+        const cloudName = process.env.CLOUDINARY_CLOUD_NAME!;
         const preset = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET!;
         
         formData.append("upload_preset", preset);
