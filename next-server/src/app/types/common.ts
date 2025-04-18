@@ -31,6 +31,6 @@ export interface ModalProps {
 }
 
 export interface AuthSocialProps {
-    onClick: () => void;
+    onClick: (value: boolean) => void;
     disabled?: boolean; 
 }

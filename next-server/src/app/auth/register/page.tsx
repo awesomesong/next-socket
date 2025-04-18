@@ -1,8 +1,8 @@
 'use client';
 import { BASE_URL } from "@/config";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useForm, FieldValues, SubmitHandler } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import clsx from "clsx";
 import Link from "next/link";
@@ -11,8 +11,10 @@ import Input from "../../components/Input";
 import Button from "../../components/Button";
 import AuthSocial from "../../components/AuthSocail";
 
-const Registerpage = () => {
+const RegisterPage = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams?.get("callbackUrl") || "/";
     const [ isLoading, setIsLoading ] = useState(false);
 
     const { 
@@ -66,7 +68,7 @@ const Registerpage = () => {
             toast.success(message);
             clearErrors();
             reset();
-            router.push(`/auth/signin?callbackUrl=`);
+            router.push(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
         }
     };
 
@@ -167,7 +169,7 @@ const Registerpage = () => {
             </form>
 
             <Suspense>
-                <AuthSocial onClick={() => setIsLoading(!isLoading)} disabled={isLoading}/>
+                <AuthSocial onClick={(value) => setIsLoading(value)} disabled={isLoading}/>
             </Suspense>
 
             <div
@@ -180,7 +182,7 @@ const Registerpage = () => {
             >
                 등록한 계정이 있습니까?
                 <Link
-                    href={`${isLoading ? '#' : `/auth/signin?callbackUrl=${encodeURIComponent(BASE_URL as string)}`}`}
+                    href={`${isLoading ? '#' : `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`}`}
                     className={clsx(`
                         hover:underline
                         hover:underline-offset-4
@@ -195,4 +197,4 @@ const Registerpage = () => {
     )
 }
 
-export default Registerpage;
+export default RegisterPage;

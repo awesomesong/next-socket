@@ -2,7 +2,7 @@
 import { Suspense, useState } from "react";
 import { useForm, FieldValues, SubmitHandler } from "react-hook-form";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import AuthForm from "@/src/app/components/AuthForm";
 import Input from "@/src/app/components/Input";
@@ -13,12 +13,13 @@ import clsx from "clsx";
 
 const SignInPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams?.get("callbackUrl") || "/";
   const [ isLoading, setIsLoading ] = useState(false);
 
   const { 
     register, 
     handleSubmit,
-    clearErrors,
     reset,
     formState: {
         errors,
@@ -26,36 +27,29 @@ const SignInPage = () => {
   } = useForm<FieldValues>({
       mode: "onBlur",
       defaultValues: {
-          name: '',
           email: '',
           password: '',
-          passwordConfirm:'',
       }
   });
 
   const onSubmit:SubmitHandler<FieldValues> = async (data) => {
     setIsLoading(true);
-    // clearErrors();
 
     signIn('credentials', {
         ...data,
         redirect: false,
-    }).then((callback) => {
-        if(callback?.error) {
-            toast.error(callback?.error);
-        }
-
-        if(callback?.ok && !callback?.error) {
-            clearErrors();
-            router.push('/');
-            router.refresh();
-            reset();
-            toast.success('로그인이 되었습니다.');
+    }).then((res) => {
+        if(res?.error) {
+            toast.error(res?.error);
+        } else {
+          toast.success('로그인이 되었습니다.');
+          router.push(callbackUrl);
+          router.refresh();
+          reset();
         }
     })
     .finally(() => {
         setIsLoading(false);
-        // clearErrors();
     });
   };
 
@@ -73,7 +67,7 @@ const SignInPage = () => {
           rules={{
               required: "이메일을 입력해주세요.", 
               pattern: {
-                  value: /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/i,
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/i,
                   message: "이메일 형식이 아닙니다.",
               },
           }}
@@ -90,7 +84,7 @@ const SignInPage = () => {
             rules={{
                 required: "비밀번호를 입력해주세요.", 
                 minLength: {
-                    value: 1,
+                    value: 8,
                     message: "비밀번호를 8자 이상 입력해주세요."
                 },
             }}
@@ -114,7 +108,7 @@ const SignInPage = () => {
 
       <Suspense>
         <AuthSocial 
-          onClick={() => setIsLoading(!isLoading)} 
+          onClick={(value) => setIsLoading(value)} 
           disabled={isLoading}
         />
       </Suspense>
@@ -129,7 +123,10 @@ const SignInPage = () => {
       >
         계정이 필요하세요?
         <Link
-          href={`${isLoading ? '#' : '/auth/register'}`}
+          href={isLoading
+              ? '#'
+              : `/auth/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
+          }
           className={clsx(`
             hover:underline
             hover:underline-offset-4
