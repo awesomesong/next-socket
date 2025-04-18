@@ -11,7 +11,7 @@ export default function NotFound() {
                 flex-col 
                 justify-center 
                 items-center 
-                h-dvh
+                h-screen
             '>
             <h2 className='sr-only'>Not Found Page</h2>
             <div className='relative w-[300px] h-[300px]'>

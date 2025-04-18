@@ -97,7 +97,7 @@ const ProfileDrawer:React.FC<ProfileDrawerProps> = ({
                                     flex-col
                                     gap-5
                                     overflow-y-scroll
-                                    h-dvh
+                                    h-screen
                                     py-3
                                     pl-4
                                     pr-2

@@ -40,7 +40,7 @@ const MobileNav = () => {
                         right-0
                         bottom-0
                         top-[92px]
-                        h-dvh
+                        h-screen
                         p-4
                         bg-white
                         dark:bg-[#0d0d0d]

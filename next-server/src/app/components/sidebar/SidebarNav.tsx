@@ -37,7 +37,7 @@ const SidebarNav= () => {
                     overflow-y-hidden
                     left-0
                     w-20
-                    h-dvh
+                    h-screen
                     p-4
                     bg-default
                     border-r-default
