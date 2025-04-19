@@ -21,8 +21,7 @@ const DrinksName:React.FC<DrinksNameProps> = ({ name, scrollRef }) => {
       viewport={{ root: scrollRef }}
       transition={{ duration: 1 }}
     >
-        <SsrDOMPurify 
-          content={name} 
+        <div 
           className="
             text-lg
             sm:text-2xl
@@ -35,7 +34,9 @@ const DrinksName:React.FC<DrinksNameProps> = ({ name, scrollRef }) => {
             leading-7
             max-[480px]:leading-5
           "
-        />
+        >
+          {name}
+        </div>
     </motion.div>
   )
 };

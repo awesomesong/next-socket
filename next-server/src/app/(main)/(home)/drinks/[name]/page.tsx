@@ -5,11 +5,6 @@ import drinksDetailData from '@/src/app/data/drinksDetail';
 import clsx from 'clsx';
 import Image from 'next/image';
 import {  motion } from 'framer-motion';
-import dynamic from 'next/dynamic';
-
-const SsrDOMPurify = dynamic(() => import('../../../../components/SsrDOMPurify'), {
-    ssr: false,
-});
 
 const DrinksPage = ({params } : { params: { name: string } }) => { 
     const router = useRouter();
@@ -74,9 +69,9 @@ const DrinksPage = ({params } : { params: { name: string } }) => {
                                         : 'left-1/2',
                                 )}
                 >
-                    <SsrDOMPurify 
-                        content={drink.description} 
+                    <div 
                         className={clsx("drink-info", drink.type?.includes('dark') ? 'text-neutral-950' : 'text-neutral-200')}
+                        dangerouslySetInnerHTML={{ __html: drink.description }}
                     />
                 </motion.div>
             </div>
@@ -121,9 +116,9 @@ const DrinksPage = ({params } : { params: { name: string } }) => {
                         -translate-y-1/2
                     '
                 >
-                    <SsrDOMPurify 
-                        content={drink.info} 
+                    <div 
                         className="drink-info text-[clamp(11px,2.5vw,20px)]"
+                        dangerouslySetInnerHTML={{ __html: drink.info }}
                     />
                 </motion.div>
             </div>
