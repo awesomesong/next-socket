@@ -1,11 +1,12 @@
 'use client';
 import { IUserList } from "@/src/app/types/common";
-import { memo, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import getUsers from "@/src/app/lib/getUsers";
 import UserBox from "./UserBox";
 import ChatMemberSkeleton from "./skeleton/ChatMemberSkeleton";
 import { useSocket } from "../context/socketContext";
+import SocketState from "./SocketState";
 
 const UserList = () => {
     const socket = useSocket();
@@ -61,6 +62,7 @@ const UserList = () => {
             {status === 'pending'
                 ? (<ChatMemberSkeleton />)
                 : (<>
+                    <SocketState />
                     {memoizedUsers.map((item: IUserList) => (
                         <UserBox
                             key={item.id}
@@ -73,4 +75,4 @@ const UserList = () => {
     )
 }
 
-export default memo(UserList);
+export default UserList;
