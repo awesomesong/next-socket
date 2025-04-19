@@ -90,10 +90,9 @@ const Comments = ({ blogId } : CommentsProps) => {
                                                         ? (<FallbackNextImage
                                                                 src={comment.author?.image} 
                                                                 alt={`${comment.author?.name} 이미지`} 
-                                                                width={0}
-                                                                height={0}
+                                                                fill
+                                                                className="object-cover"
                                                                 unoptimized={false}
-                                                                className="w-full h-full"
                                                             />)
                                                         : (<PiUserCircleFill className="w-full h-full"/>)
                                                     }    
