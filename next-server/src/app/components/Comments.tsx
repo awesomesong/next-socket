@@ -117,6 +117,7 @@ const Comments = ({ blogId } : CommentsProps) => {
                                 </li>
                             ))}
                         </ul>
+                        <CircularProgress aria-label="로딩중" />
                     </>
             )}
             <div ref={ref}>
