@@ -56,14 +56,18 @@ export async function DELETE(req: Request,  { params }: ParamsProp) {
         }
 
         const blog = await prisma.blog.findUnique({
-            where: { id: params.id },
+            where: { id: blogId },
         });
 
         if(!blog) {
             return NextResponse.json({message: '해당 글을 찾을 수 없습니다.'}, { status: 404 });
         }
 
-        const result = await prisma.blog.deleteMany({ 
+        if (blog.authorEmail !== user.email) {
+            return NextResponse.json({ message: "해당 글을 삭제할 권한이 없습니다." },{ status: 403 });
+        }
+
+        await prisma.blog.delete({ 
             where: { 
                 id: blogId
             },
