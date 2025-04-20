@@ -38,25 +38,27 @@ export const Post = ({ post, HandlerCheckItem, isChecked }: Props) => {
                 router.push(`/posts/${post.id}`)
             }}
         >
-            <div className='
-                flex
-                items-center
-                justify-between
-            '>
-                <Checkbox 
-                    className='w-8 h-8'
-                    size='lg'
-                    isSelected={isChecked} 
-                    onValueChange={() => HandlerCheckItem(post.id, !isChecked)} 
-                />
-                {session?.user?.email && session?.user?.email === post.writer?.email 
-                    && <PostDeleteButton 
-                            postId={post.id} 
-                            postTitle={post.title} 
-                            selectedPosts={[{ id: post?.id, writerEmail: post?.writer.email }]} 
-                            myEmail={session?.user?.email} 
-                        />}
-            </div>
+            {session?.user?.email &&
+                <div className='
+                    flex
+                    items-center
+                    justify-between
+                '>
+                    <Checkbox 
+                        className='w-8 h-8'
+                        size='lg'
+                        isSelected={isChecked} 
+                        onValueChange={() => HandlerCheckItem(post.id, !isChecked)} 
+                    />
+                    {session?.user?.email === post.writer?.email 
+                        && <PostDeleteButton 
+                                postId={post.id} 
+                                postTitle={post.title} 
+                                selectedPosts={[{ id: post?.id, writerEmail: post?.writer.email }]} 
+                                myEmail={session?.user?.email} 
+                    />}
+                </div>
+            }
             {post.image && (
                 <div className='relative h-60 max-[320px]:h-48 w-full'>
                     <FallbackNextImage
