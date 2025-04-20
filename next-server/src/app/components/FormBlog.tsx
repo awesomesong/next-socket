@@ -175,6 +175,19 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
       });
       
       const data = await res.json();
+
+      if (!res.ok) {
+        // 권한 없음 처리
+        if (res.status === 403) {
+          toast.error(data.message || '해당 글을 수정할 권한이 없습니다.');
+          router.push('/blogs'); 
+          return;
+        }
+    
+        // 기타 에러 처리
+        throw new Error(data.message || '알 수 없는 오류가 발생했습니다.');
+      }
+
       if (res.status === 200) {
         if (isEdit) {
           await Promise.all(imageDelete.map(img => deleteImage(img.url)));

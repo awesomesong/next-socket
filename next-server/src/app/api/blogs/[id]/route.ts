@@ -86,6 +86,19 @@ export async function PUT(req: Request, { params }: ParamsProp){
             return NextResponse.json({ message: '로그인 후에 수정을 할 수 있습니다.'}, { status: 401 })
         }
 
+        const blog = await prisma.blog.findUnique({
+            where: { id: blogId },
+            select: { authorEmail: true },
+        });
+      
+        if (!blog) {
+            return NextResponse.json({ message: '존재하지 않는 블로그입니다.' }, { status: 404 });
+        }
+      
+        if (blog.authorEmail !== user.email) {
+            return NextResponse.json({ message: '해당 글을 수정할 권한이 없습니다.' }, { status: 403 });
+        }
+
         const { title, content, image } = await req.json();
 
         const updateBlog = await prisma.blog.update({
