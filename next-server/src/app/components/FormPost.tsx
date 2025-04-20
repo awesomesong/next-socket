@@ -159,8 +159,8 @@ const FormPost = ({ id, isEdit} : FormPostProps) => {
                 toast.success(`${shortTitle} 글이 등록되었습니다`);
                 setFormData(InitFormData);
             }
-        } catch (error) {
-            toast.error("작업 중 오류가 발생했습니다.");
+        } catch (error: any) {
+            toast.error(error?.message || "작업 중 오류가 발생했습니다.");
             setIsLoading(false);
         }
     }, [formData, isEdit, id, addPost, updatePost]);

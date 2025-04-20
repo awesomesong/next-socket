@@ -156,6 +156,26 @@ export const resolvers = {
             return post;
         },
         updatePost: async (parent: any, args: any, context: Context) => {
+            const user = context.user; 
+
+            if (!user) {
+              throw new Error('로그인 후 수정할 수 있습니다.');
+            }
+
+            // 해당 게시글 정보 조회
+            const existingPost = await context.prisma.post.findUnique({
+                where: { id: args.id },
+                select: { writerEmail: true },
+            });
+
+            if (!existingPost) {
+                throw new Error('존재하지 않는 게시글입니다.');
+            }
+
+            if (existingPost.writerEmail !== user.email) {
+                throw new Error('해당 게시글을 수정할 권한이 없습니다.');
+            }
+            
             return await context.prisma.post.update({
                 where: {
                     id: args.id
@@ -171,14 +191,29 @@ export const resolvers = {
             });
         },
         deletePost: async (parent: any, args: any, context: Context) => {
-            const existingPosts = await context.prisma.post.findMany({
+            const user = context.user;
+            if (!user) {
+                throw new Error("로그인이 필요합니다.");
+            }
+
+            const targetPosts = await context.prisma.post.findMany({
                 where: {
                     id: { in: args.id }
+                },
+                select: {
+                    id: true,
+                    writerEmail: true, 
                 }
             });
-        
-            if (existingPosts.length === 0) {
-                throw new Error("삭제할 소설이 존재하지 않습니다.");
+
+            if (targetPosts.length === 0) {
+                throw new Error("삭제할 게시글이 없습니다.");
+            }
+
+            // 본인이 작성하지 않은 글이 있는지 확인
+            const hasUnauthorizedPost = targetPosts.some(post => post.writerEmail !== user.email);
+            if (hasUnauthorizedPost) {
+                throw new Error("본인이 작성한 게시글만 삭제할 수 있습니다.");
             }
 
             const result = await context.prisma.post.deleteMany({
@@ -204,7 +239,7 @@ export const resolvers = {
             });
         
             if (!postExists) {
-                throw new Error("존재하지 않는 소설입니다.");
+                throw new Error("존재하지 않는 게시글입니다.");
             }
 
             return await context.prisma.postComment.create({
@@ -220,6 +255,29 @@ export const resolvers = {
             });
         },
         deletePostComment: async (parent: any, args: any, context: Context) => {
+            const user = context.user;
+            if (!user) {
+                throw new Error("로그인이 필요합니다.");
+            }
+
+            const comment = await context.prisma.postComment.findUnique({
+                where: {
+                  id: args.id,
+                },
+                select: {
+                  id: true,
+                  writerEmail: true, 
+                },
+            });
+            
+            if (!comment) {
+                throw new Error("삭제할 댓글이 존재하지 않습니다.");
+            }
+            
+            if (comment.writerEmail !== user.email) {
+                throw new Error("본인이 작성한 댓글만 삭제할 수 있습니다.");
+            }
+
             return await context.prisma.postComment.delete({
                 where: {
                     id: args.id,
