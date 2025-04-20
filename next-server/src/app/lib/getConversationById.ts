@@ -8,8 +8,12 @@ const getConversationById = async ( conversationId: string) => {
         },
     }); 
 
-    const { conversation, message } = await res.json();
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Unknown error');
+    }
 
+    const { conversation, message } = await res.json();
     return { conversation, message };
 };
 

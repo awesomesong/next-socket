@@ -7,6 +7,8 @@ import { useSession } from "next-auth/react";
 import Header from "@/src/app/components/chat/Header";
 import Body from "@/src/app/components/chat/Body";
 import Form from "@/src/app/components/chat/Form";
+import { useEffect } from "react";
+import toast from "react-hot-toast";
 
 
 interface IParams {
@@ -20,11 +22,19 @@ const Conversation = ({ params }: { params : IParams }) => {
     const { 
         data, 
         status,
-        refetch
+        refetch,
+        error
     } = useQuery({
         queryKey: ['conversation', conversationId],
         queryFn: () => getConversationById(conversationId),
     });
+
+    useEffect(() => {
+        if (status === 'error' && error?.message) {
+            toast.dismiss();
+            toast.error(error.message);
+        }
+    }, [status, error]);
 
     if(!!data?.message) {
         return (

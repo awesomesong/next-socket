@@ -17,6 +17,24 @@ export async function GET (
         const user = await getCurrentUser();
         
         if(!user?.email) return NextResponse.json({message: '로그인이 되지 않았습니다. 로그인 후에 이용해주세요.'}, {status: 401})
+
+        if (conversationId) {
+            const isParticipating = await prisma.conversation.findFirst({
+                where: {
+                    id: conversationId,
+                    userIds: {
+                        has: user.id,
+                    },
+                },
+                select: {
+                    id: true,
+                },
+            });
+        
+            if (!isParticipating) {
+                return NextResponse.json({ message: "해당 대화방에 접근할 수 없습니다." }, { status: 403 });
+            }
+        }
         
         const conversation = await prisma.conversation.findUnique({
             where: {
@@ -66,7 +84,7 @@ export async function DELETE(
             }
         });
 
-        if(!existingConversation) return NextResponse.json({message: '대화방이 존재하지 않습니다.'}, {status: 401})
+        if(!existingConversation) return NextResponse.json({message: '대화방이 존재하지 않습니다.'}, {status: 403})
             
         const existingConversationUsers =  existingConversation.users;
         if( existingConversation.messages.length > 0 ) {
