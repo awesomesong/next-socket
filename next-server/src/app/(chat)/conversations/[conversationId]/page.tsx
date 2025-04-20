@@ -27,14 +27,8 @@ const Conversation = ({ params }: { params : IParams }) => {
     } = useQuery({
         queryKey: ['conversation', conversationId],
         queryFn: () => getConversationById(conversationId),
+        enabled: !!conversationId,
     });
-
-    useEffect(() => {
-        if (status === 'error' && error?.message) {
-            toast.dismiss();
-            toast.error(error.message);
-        }
-    }, [status, error]);
 
     if(!!data?.message) {
         return (
