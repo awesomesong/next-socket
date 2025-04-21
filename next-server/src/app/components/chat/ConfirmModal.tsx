@@ -37,7 +37,8 @@ const ConfirmModal:React.FC<ModalProps> = ({
         .then((result) => {
             onCloseModal();
             router.push('/conversations');
-            queryClient.removeQueries({ queryKey: ['conversation', conversationId] });
+            router.refresh();
+            queryClient.invalidateQueries({queryKey: ['conversationList']});
 
             if(socket) {
                 const filteredUsers = conversationUsers.filter((item) => item.conversationId === conversationId) 
