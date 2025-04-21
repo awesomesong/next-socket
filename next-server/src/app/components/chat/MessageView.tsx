@@ -59,7 +59,8 @@ const MessageView:React.FC<MessageBoxProps> = ({
   useEffect(() => {
     const messageId = data.id;
     if ( messageId 
-        &&!messageId.startsWith('optimistic-')
+        && data.sender.email !== currentUser?.email
+        && !messageId.startsWith('optimistic-')
         && isLast
     ) {
       seenMessageMutation({ conversationId, messageId });

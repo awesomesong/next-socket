@@ -127,10 +127,13 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
 
                     const currentMessages = oldData.pages[0].messages;
 
-                    // ✅ 낙관적 메시지 제거 기준: clientGeneratedId가 같은 경우
-                    const filteredMessages = currentMessages.filter(
-                      (m) => m.clientGeneratedId !== message.clientGeneratedId
-                    );
+                    // ✅ 낙관적 메시지 제거 기준: clientGeneratedId가 같고 내가 보낸 메시지 일 경우
+                    const filteredMessages = currentMessages.filter((msg) => {
+                        return !(
+                            msg.clientGeneratedId === message.clientGeneratedId &&
+                            msg.senderId === session?.user?.id
+                        );
+                    });
 
                     return {
                         ...oldData,
@@ -145,7 +148,9 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
                 }
             );
 
-            readMessageMutaion(conversationId);
+            if (message.sender.id !== session?.user?.id) {
+                readMessageMutaion(conversationId);
+            }
 
             requestAnimationFrame(() => {
                 const atBottom = getIsAtBottom();
