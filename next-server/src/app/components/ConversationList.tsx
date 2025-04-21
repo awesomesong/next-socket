@@ -44,7 +44,7 @@ const ConversationList = () => {
 
         socket.on("conversation:new", (conversation: FullConversationType) => {
             queryClient.setQueriesData({ queryKey: ['conversationList']}, (oldData: ConversationProps) => {
-                return { conversations: [ conversation, ...oldData.conversations ] };
+                return { conversations: [ conversation, ...(oldData?.conversations ?? []) ] };
             });
 
             queryClient.invalidateQueries({queryKey: ['conversationList']});
