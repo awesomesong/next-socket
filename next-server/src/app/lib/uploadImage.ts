@@ -14,8 +14,16 @@ export const uploadImage = async (file: File, folderName = 'blogs') => {
     body: formData,
   });
 
-  const { url, message } = await res.json();
+  const data = await res.json();
 
-  if(res.status === 200 ) return { url, message };
-  else return { message };
+  if (res.status === 200 && data.secure_url) {
+    return {
+      url: data.secure_url,
+      message: "이미지 업로드에 성공했습니다.",
+    };
+  }
+
+  return {
+    message: data?.error?.message || "이미지 업로드에 실패했습니다.",
+  };
 }

@@ -82,8 +82,8 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
             throw new Error("이미지 파일만 업로드 가능합니다.");
           }
           const { url, message }= await uploadImage(file, folderName);
-          if(!url) return toast.error(message);
-          toast.success(message);
+          if(!url) return toast.error(message ?? "이미지 업로드에 실패했습니다.");
+          toast.success(message ?? "이미지 업로드에 성공했습니다.");
 
           const editor = quillRef?.current?.getEditor(); 
           const index = editor?.getSelection()?.index ?? 0;
