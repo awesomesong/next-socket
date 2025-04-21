@@ -21,6 +21,7 @@ export type Context = {
 const apolloServer = new ApolloServer<Context>({ 
     typeDefs, 
     resolvers, 
+    introspection: process.env.NODE_ENV !== "production",
 });
 
 // Nextjs에서 apollo 서버를 통합해서 실행할 수 있도록 설정
