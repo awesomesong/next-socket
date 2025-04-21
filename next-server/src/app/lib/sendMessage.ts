@@ -4,9 +4,10 @@ type sendMessageProps = {
     conversationId: string;
     data?: FieldValues;
     image?: string;
+    clientGeneratedId: string;
 }
 
-export const sendMessage = async ({ conversationId, data, image }: sendMessageProps) => {
+export const sendMessage = async ({ conversationId, data, image, clientGeneratedId }: sendMessageProps) => {
     const res = await fetch(`/api/messages`, {
         method: 'POST',
         headers: {
@@ -15,7 +16,8 @@ export const sendMessage = async ({ conversationId, data, image }: sendMessagePr
         body: JSON.stringify({
             ...data,
             image,
-            conversationId
+            conversationId,
+            clientGeneratedId
         }),
     });
 

@@ -57,11 +57,14 @@ const MessageView:React.FC<MessageBoxProps> = ({
 
   // 마지막 메시지 확인
   useEffect(() => {
-    if(isLast) {
-      const messageId = data.id;
+    const messageId = data.id;
+    if ( messageId 
+        &&!messageId.startsWith('optimistic-')
+        && isLast
+    ) {
       seenMessageMutation({ conversationId, messageId });
     }
-  }, [isLast]);
+  }, [isLast, data.id, conversationId]);
 
   // 마지막 메시지를 확인한 사용자 이름 리스트
   useEffect(() => {

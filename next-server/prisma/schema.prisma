@@ -97,6 +97,8 @@ model Message{
   sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   readStatuses MessageReadStatus[]
+
+  clientGeneratedId String?
 }
 
 model MessageReadStatus {

@@ -1,6 +1,6 @@
 'use client';
 import useConversation from '@/src/app/hooks/useConversation';
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import MessageView from './MessageView';
 import { FullMessageType } from '@/src/app/types/conversation';
 import { InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,12 +18,15 @@ interface PageData {
     nextCursor: string | null;    // 다음 페이지의 커서 (있다면)
 }
 
-const Body = () => {
+interface Props  {
+    scrollRef: RefObject<HTMLDivElement>;
+    bottomRef: RefObject<HTMLDivElement>;
+}
+
+const Body = ({ scrollRef, bottomRef }: Props) => {
     const socket = useSocket();
     const queryClient = useQueryClient();
     const { data: session } = useSession();
-    const bottomRef = useRef<HTMLDivElement>(null);
-    const scrollRef = useRef<HTMLDivElement>(null);
     const { conversationId } = useConversation();
     const [isFirstLoad, setIsFirstLoad] = useState(true); // 처음 로딩 여부
     const [isScrolledUp, setIsScrolledUp] = useState(false); // 스크롤이 위에 있을 때 true
@@ -116,20 +119,24 @@ const Body = () => {
             refetch(); // 메시지 다시 불러오기 ✅
         };
 
-        socket.emit('join:room', conversationId);
-        socket.on('connect', handleReconnect);
-        socket.on("receive:message", (message: FullMessageType) => {
-
+        const handleReceiveMessage = (message: FullMessageType) => {
             queryClient.setQueriesData(
                 { queryKey: ['messages', conversationId] },
                 (oldData: InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }> | undefined) => {
                     if (!oldData) return oldData;
 
+                    const currentMessages = oldData.pages[0].messages;
+
+                    // ✅ 낙관적 메시지 제거 기준: clientGeneratedId가 같은 경우
+                    const filteredMessages = currentMessages.filter(
+                      (m) => m.clientGeneratedId !== message.clientGeneratedId
+                    );
+
                     return {
                         ...oldData,
                         pages: [
                             {
-                                messages: [message, ...oldData.pages[0].messages], // 최신 메시지를 첫 번째 페이지에 추가
+                                messages: [message, ...filteredMessages], // 최신 메시지를 첫 번째 페이지에 추가
                                 nextCursor: oldData.pages[0].nextCursor
                             },
                             ...oldData.pages.slice(1), // 나머지 페이지 유지
@@ -150,16 +157,20 @@ const Body = () => {
                     setIsScrolledUp(true);
                 }
             });
-        });
+        };
+
+        socket.emit('join:room', conversationId);
+        socket.on('connect', handleReconnect);
+        socket.on("receive:message", handleReceiveMessage);
         socket.on("read:message", handleRead);
         socket.on("exit:user", handleExit);
 
         return () => {
             socket.off("join:room");
             socket.off('connect', handleReconnect);
-            socket.off("receive:message");
-            socket.off("read:message");
-            socket.off("exit:user");
+            socket.off("receive:message", handleReceiveMessage);
+            socket.off("read:message", handleRead);
+            socket.off("exit:user", handleExit);
         };
     }, [socket, conversationId]);
 
@@ -241,7 +252,7 @@ const Body = () => {
                             const showDateDivider = currentDate !== prevDate;
 
                             return (<MessageView
-                                key={message.id}
+                                key={message.clientGeneratedId || message.id}
                                 data={message}
                                 isLast={idx === Object.keys(page.messages).length - 1}
                                 currentUser={session?.user}

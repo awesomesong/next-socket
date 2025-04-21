@@ -4,18 +4,29 @@ import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { HiPaperAirplane } from "react-icons/hi2";
 import MessageTextarea from "./MessageTextarea";
 import TextareaAutosize from 'react-textarea-autosize';
-import { useMutation } from "@tanstack/react-query";
+import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";
-import { useEffect, useState } from "react";
+import { RefObject, useEffect, useState } from "react";
 import ImageUploadButton from "@/src/app/components/ImageUploadButton";
 import { useSocket } from "../../context/socketContext";
 import useComposition from "@/src/app/hooks/useComposition";
+import useConversationUserList from "../../hooks/useConversationUserList";
+import { FullMessageType } from "../../types/conversation";
+import { useSession } from "next-auth/react";
 
-const Form = () => {
+interface Props  {
+    scrollRef: RefObject<HTMLDivElement>;
+    bottomRef: RefObject<HTMLDivElement>;
+}
+
+const Form = ({ scrollRef, bottomRef }: Props) => {
     const socket = useSocket();
     const [ isDisabled, setIsDisabled ] = useState(false);
     const { conversationId } = useConversation();
+    const { conversationUsers } = useConversationUserList();
+    const queryClient = useQueryClient();
+    const { data: session } =useSession();
 
     const { 
         mutate, 
@@ -23,14 +34,97 @@ const Form = () => {
         isSuccess
     }  = useMutation({
         mutationFn: sendMessage,
+        onMutate: async (newMessage) => {
+            const conversationId = newMessage.conversationId;
+            const clientGeneratedId = newMessage.clientGeneratedId; 
+
+            const body = newMessage.data?.message?.trim() || null;
+            const image = newMessage.image || null;
+
+            const previousData = queryClient.getQueryData<
+                InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }>
+            >(['messages', conversationId]);
+
+            const user = session?.user;
+            const userIds = conversationUsers .find((item) => item.conversationId === conversationId)?.userIds ?? [];
+
+            const isGroupChat = userIds.length > 2;
+
+            const optimisticMessage = {
+                id: clientGeneratedId,
+                body,
+                image,
+                createdAt: new Date().toISOString(),
+                type: 'text',
+                conversationId,
+                senderId: user?.id!,
+                sender: {
+                  id: user?.id!,
+                  name: user?.name!,
+                  email: user?.email!,
+                  image: user?.image ?? null,
+                },
+                seen: [
+                  {
+                    name: user?.name!,
+                    email: user?.email!,
+                  },
+                ],
+                seenId: [],
+                conversation: {
+                  isGroup: isGroupChat,
+                  userIds,
+                },
+                readStatuses: [],
+            };
+
+            queryClient.setQueryData(['messages', conversationId], (old: any) => {
+                if (!old) {
+                  return {
+                    pageParams: [null],
+                    pages: [{ messages: [optimisticMessage], nextCursor: null }],
+                  };
+                }
+            
+                return {
+                  ...old,
+                  pages: [
+                    {
+                      ...old.pages[0],
+                      messages: [optimisticMessage, ...old.pages[0].messages],
+                    },
+                    ...old.pages.slice(1),
+                  ],
+                };
+            });
+
+            return { previousData };
+
+        },
         onSuccess: (data) => {
             setValue('message', '', { shouldValidate : true});
             if(socket) socket.emit('send:message', data);
         },
-        onError: (error) => {
+        onError: (error, _variables, context) => {
+            // 이전 optimistic 캐시로 롤백
+            if (context?.previousData) {
+              queryClient.setQueryData(["messages", _variables.conversationId], context.previousData);
+            }
+
             toast.error(`${error.message || '대화 내용이 입력되지 못했습니다.'}`);
         },
-        onSettled: () => {
+        onSettled: (_data, _error, variables) => {
+            requestAnimationFrame(() => {
+                if (bottomRef.current) {
+                    bottomRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+                }
+
+                if (scrollRef.current) {
+                  scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                }
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["messages", variables.conversationId] });
             setIsDisabled(false);
         }
     });
@@ -62,7 +156,8 @@ const Form = () => {
 
         setIsDisabled(true);
 
-        mutate({conversationId, data});
+        const clientGeneratedId = `optimistic-${Date.now()}`;
+        mutate({conversationId, data, clientGeneratedId});
         if(socket) socket.emit('join:room', conversationId);
 
         // ✅ 모바일 키보드가 계속 유지되도록 다시 포커스
@@ -71,7 +166,9 @@ const Form = () => {
 
     const handleUpload = async (result: any) => {
         if(!result?.info?.secure_url) return;
-        mutate({conversationId, image: result?.info?.secure_url});
+
+        const clientGeneratedId = `optimistic-${Date.now()}`;
+        mutate({conversationId, image: result?.info?.secure_url, clientGeneratedId});
     };
 
     // ✅ 조합 입력 훅 적용
