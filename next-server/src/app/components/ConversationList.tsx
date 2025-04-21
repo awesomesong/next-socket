@@ -17,7 +17,7 @@ import SocketState from "./SocketState";
 const ConversationList = () => {
     const socket = useSocket();
     const { data: session } = useSession();
-    const [ isModalOpen, setIsModaOpen ] = useState(false);
+    const [ isModalOpen, setIsModalOpen ] = useState(false);
     const { isOpen, conversationId } = useConversation();
     const queryClient = useQueryClient();
 
@@ -115,7 +115,7 @@ const ConversationList = () => {
             <SocketState/>
             <GroupChatModal
                 isOpen={isModalOpen}
-                onCloseModal={() => setIsModaOpen(false)}
+                onCloseModal={() => setIsModalOpen(false)}
             />
             <aside className={clsx(`
                     shrink-0
@@ -142,7 +142,7 @@ const ConversationList = () => {
                     </div>
                     { status === 'success'  
                         ? <div 
-                            onClick={() => setIsModaOpen(true)}
+                            onClick={() => setIsModalOpen(true)}
                             className="
                                 flex
                                 justify-start
