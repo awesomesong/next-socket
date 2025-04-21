@@ -46,7 +46,7 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
 
   const formTitle = useRef<HTMLInputElement>(null);
   const quillRef = useRef<ReactQuill>(null);
-  const { data : session } = useSession();
+  const { data : session, status } = useSession();
 
   useEffect(() => {
     setTitle(isEdit ? initialData?.title! : '');
@@ -61,6 +61,10 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
   }, [initialData?.image!]);
 
   const imageHandler = useCallback(() => {
+    if (status === "unauthenticated") {
+      return toast.error("로그인 후 이미지를 업로드할 수 있습니다.");
+    }
+
     const input = document.createElement("input");
     input.setAttribute("type", "file");
     input.setAttribute("accept", "image/*");
@@ -78,11 +82,11 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
             throw new Error("이미지 파일만 업로드 가능합니다.");
           }
           const { url, message }= await uploadImage(file, folderName);
-          if(url) toast.success(message);
-          else return toast.error(message);
+          if(!url) return toast.error(message);
+          toast.success(message);
 
           const editor = quillRef?.current?.getEditor(); 
-          const index = quillRef.current?.getEditor().getSelection()?.index ?? 0;
+          const index = editor?.getSelection()?.index ?? 0;
           editor?.setSelection(index, 1);
           editor?.clipboard.dangerouslyPasteHTML(index,`<img src=${url} alt="" />`);
           // const tempImages = images;
@@ -103,7 +107,7 @@ export const FormBlog = ({ id, initialData, message, isEdit} : FormBlogProps ) =
         }
       }
     };
-  }, []);
+  }, [status, folderName, quillRef, setIsLoading, setImages, setloadingMessage]);
 
   useEffect(() => {
     setImages(prev => [...prev].sort((a, b) => a.index - b.index));
