@@ -34,7 +34,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
         isSuccess
     }  = useMutation({
         mutationFn: sendMessage,
-        onMutate: async (newMessage) => {
+        onMutate: (newMessage) => {
             const conversationId = newMessage.conversationId;
             const clientGeneratedId = newMessage.clientGeneratedId; 
 
@@ -98,11 +98,10 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
                 };
             });
 
+            setValue('message', '', { shouldValidate : true});
             return { previousData };
-
         },
         onSuccess: (data) => {
-            setValue('message', '', { shouldValidate : true});
             if(socket) socket.emit('send:message', data);
         },
         onError: (error, _variables, context) => {
