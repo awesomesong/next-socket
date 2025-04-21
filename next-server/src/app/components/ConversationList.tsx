@@ -39,18 +39,16 @@ const ConversationList = () => {
         const handleReconnect = () => {
             refetch(); // 메시지 다시 불러오기 ✅
         };
-      
-        socket.on('connect', handleReconnect);
 
-        socket.on("conversation:new", (conversation: FullConversationType) => {
-            queryClient.setQueriesData({ queryKey: ['conversationList']}, (oldData: ConversationProps) => {
+        const handleNewConversation = (conversation: FullConversationType) => {
+            queryClient.setQueriesData({ queryKey: ['conversationList']}, (oldData: ConversationProps | undefined) => {
                 return { conversations: [ conversation, ...(oldData?.conversations ?? []) ] };
             });
 
             queryClient.invalidateQueries({queryKey: ['conversationList']});
-        });
+        };
 
-        socket.on("receive:conversation", (message: FullMessageType, isMyMessage: boolean) => {
+        const handleReceiveConversation = (message: FullMessageType, isMyMessage: boolean) => {
             queryClient.setQueriesData({ queryKey: ['conversationList'] }, (oldData: ConversationProps) => {
                 if (!oldData) return { conversations: [] }; // 예외 처리
         
@@ -74,15 +72,19 @@ const ConversationList = () => {
         
                 return { conversations: reorderedConversations };
             });
-        });        
+        };
+      
+        socket.on('connect', handleReconnect);
+        socket.on("conversation:new", handleNewConversation);
+        socket.on("receive:conversation", handleReceiveConversation);        
 
 
         return () => {
             socket.off('connect', handleReconnect);
-            socket.off("conversation:new");
-            socket.off("receive:conversation");
+            socket.off("conversation:new", handleNewConversation);
+            socket.off("receive:conversation", handleReceiveConversation);
         };
-    }, [ socket ]);
+    }, [ socket, queryClient, refetch ]);
 
     const memoizedConversations = useMemo(() => {
         if (status !== 'success') return null;
