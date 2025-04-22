@@ -68,7 +68,10 @@ const FormPost = ({ id, isEdit} : FormPostProps) => {
     });
 
     const [updatePost] = useMutation(UPDATE_POST, {
-        refetchQueries: [{query: GET_POST, variables: {id}}],
+        refetchQueries: [
+            { query: GET_POSTS },
+            { query: GET_POST, variables: {id} },
+        ],
         onCompleted: (result) => {
             setIsLoading(true);
             router.push(`/posts/${result.updatePost.id}`);
@@ -227,7 +230,7 @@ const FormPost = ({ id, isEdit} : FormPostProps) => {
                             onChange={handleChange}
                             disabled={isLoading}
                         >
-                            {formData?.published ? '공개' : '비공개'}
+                            공개
                         </Checkbox>
             
                         <Select
