@@ -28,11 +28,9 @@ const ChatUnReadCount = ({ size }: Props) => {
                         items-center
                         w-fit 
                         px-2
-                        py-1 
                         bg-red-500 
                         text-neutral-50 
                         rounded-full 
-                        leading-none 
                     `,
                     size === 'mobile-small' && `
                         max-md:top-[6px]
