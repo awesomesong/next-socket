@@ -98,7 +98,6 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
                 };
             });
 
-            setValue('message', '', { shouldValidate : true});
             return { previousData };
         },
         onSuccess: (data) => {
@@ -124,7 +123,6 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
             });
 
             queryClient.invalidateQueries({ queryKey: ["messages", variables.conversationId] });
-            setIsDisabled(false);
         }
     });
 
@@ -153,14 +151,14 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
     const onSubmit:SubmitHandler<FieldValues> = async (data) => {
         if(!data || isDisabled) return;
 
-        setIsDisabled(true);
+        // setIsDisabled(true);
 
         const clientGeneratedId = `optimistic-${Date.now()}`;
         mutate({conversationId, data, clientGeneratedId});
+        setIsDisabled(false);
+        setValue('message', '', { shouldValidate : true});
+        setFocus("message");
         if(socket) socket.emit('join:room', conversationId);
-
-        // ✅ 모바일 키보드가 계속 유지되도록 다시 포커스
-        setTimeout(() => setFocus("message"), 100); // 약간의 딜레이로 안정성 ↑
     };
 
     const handleUpload = async (result: any) => {
@@ -188,8 +186,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
             if (value.trim().length === 0) return; // 빈 메시지 방지
 
             setIsDisabled(true);
-            await await onSubmit({ message: value }, e);
-
+            await onSubmit({ message: value }, e);
         }
     };
 
