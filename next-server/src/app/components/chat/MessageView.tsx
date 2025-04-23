@@ -116,7 +116,7 @@ const MessageView:React.FC<MessageBoxProps> = ({
       const { conversationId, seen } = payload;
 
       // 변경 사항이 있는 경우에만 처리
-      const hasChanged = !arraysEqualUnordered(seen, seenUser) && seen.length > seenUser.length;
+      const hasChanged = !arraysEqualUnordered(seen, seenUser);
 
       if (hasChanged) {
         setSeenUser(seen); // ✅ 메시지 하단 "읽음" 표시 갱신
