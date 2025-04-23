@@ -7,11 +7,12 @@ import { FullMessageType } from "@/src/app/types/conversation";
 import clsx from "clsx";
 import { DefaultSession } from "next-auth";
 import { arraysEqualUnordered } from "@/src/app/utils/arraysEqualUnordered";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { seenMessages } from "@/src/app/lib/seenMessages";
 import FallbackNextImage from "@/src/app/components/FallbackNextImage";
 import DOMPurify from "dompurify";
 import { useSocket } from "../../context/socketContext";
+import { MessageSeenInfo } from "../../types/socket";
 
 interface MessageBoxProps {
   data: FullMessageType;
@@ -39,9 +40,11 @@ const MessageView:React.FC<MessageBoxProps> = ({
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [seenUser, setSeenUser ] = useState(data.seen || []);
   const [seenListName, setSeenListName] = useState("");
+  const [showSeenTag, setShowSeenTag] = useState(false);
   const isOwn = currentUser?.email === data?.sender?.email ? true : false;
   const isConversationUser = data.conversation?.userIds?.includes(data?.sender?.id)
   const bottomRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   const { 
     mutate: seenMessageMutation, 
@@ -50,7 +53,10 @@ const MessageView:React.FC<MessageBoxProps> = ({
       mutationFn: seenMessages,
       onSuccess: (data) => {
           if(data.seenMessageUser.seen.length > 1 && socket) {
-            socket.emit('seen:message', { seenMessageUser: data.seenMessageUser });
+            socket.emit('seen:message', { 
+              seenMessageUser: data.seenMessageUser, 
+              userEmail: currentUser?.email 
+            });
           }
       },
   });
@@ -71,17 +77,20 @@ const MessageView:React.FC<MessageBoxProps> = ({
   useEffect(() => {
     if(!isLast || seenUser.length <= 1) return;
 
-    const updatedSeenList = (seenUser || [])
-      .filter((user) => user.email !== data?.sender?.email)
-      .map((user) => user.name)
-      .join(', ');
-  
+    const filteredSeenList = (seenUser || [])
+      .filter((user) => 
+        user.email !== data?.sender?.email && 
+        user.email !== currentUser?.email
+      )
+      
+    const updatedSeenList = filteredSeenList.map(user => user.name).join(', ');
     setSeenListName(updatedSeenList);
-  }, [seenUser]);
+    setShowSeenTag(filteredSeenList.length >= 1); // 1:1에서 상대방 1명만 읽어도 표시
+  }, [seenUser, isLast, data?.sender?.email, currentUser?.email]);
 
   // 스크롤 맨아래에서 메시지를 읽은 사용자가 있으면, 아래로 스크롤 내려가게 설정
   useEffect(() => {
-    if (!isLast || seenUser.length <= 1 || !seenListName || !bottomRef.current) return;
+    if (!isLast || seenUser.length <= 1 || !showSeenTag || !bottomRef.current) return;
   
     // 현재 스크롤이 맨 아래인지 확인
     const messageContainer = bottomRef.current.parentElement; // 메시지를 감싸는 부모 컨테이너
@@ -98,19 +107,28 @@ const MessageView:React.FC<MessageBoxProps> = ({
         bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
       });
     }
-  }, [seenListName]);  
+  }, [showSeenTag]);  
 
   useEffect(() => {
     if(!socket) return;
 
-    socket.on("seen:user", (seenMessageUser) => {
-      const seenUsers = !arraysEqualUnordered(seenMessageUser.seen, seenUser) && seenMessageUser.seen > seenUser ? seenMessageUser.seen : seenUser;
-      setSeenUser(seenUsers);
-    });
-    return () => {
-      socket.off("seen:user");
+    const handleSeenUser = (payload: MessageSeenInfo) => {
+      const { conversationId, seen } = payload;
+
+      // 변경 사항이 있는 경우에만 처리
+      const hasChanged = !arraysEqualUnordered(seen, seenUser) && seen.length > seenUser.length;
+
+      if (hasChanged) {
+        setSeenUser(seen); // ✅ 메시지 하단 "읽음" 표시 갱신
+        queryClient.invalidateQueries({ queryKey: ['unReadCount', conversationId] }); // ✅ 전체 안읽은 수 갱신
+      }
     }
-  }, [socket]);
+
+    socket.on("seen:user", handleSeenUser);
+    return () => {
+      socket.off("seen:user", handleSeenUser);
+    }
+  }, [socket, seenUser]);
 
   return (
     data?.type === 'system' 
@@ -210,7 +228,7 @@ const MessageView:React.FC<MessageBoxProps> = ({
                 })}
               </div>
             </div>
-            { isLast && isOwn && seenListName.length > 1 && (
+            { isLast && isOwn && showSeenTag && (
               <>
                 <div className="
                   text-sm
@@ -223,7 +241,7 @@ const MessageView:React.FC<MessageBoxProps> = ({
               )}
           </div>
         </div>
-        { isLast && isOwn && seenListName.length > 1 
+        { isLast && isOwn && showSeenTag 
           && (<div ref={bottomRef} className="bottom"/>)
         }
       </>

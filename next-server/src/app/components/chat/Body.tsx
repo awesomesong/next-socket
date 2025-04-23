@@ -97,18 +97,9 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
     }, [status, data]);
 
     const handleRead = useCallback(() => {
-        queryClient.invalidateQueries({ queryKey: ['unReadCount'] });
+        queryClient.invalidateQueries({ queryKey: ['unReadCount', conversationId] });
         queryClient.invalidateQueries({ queryKey: ['conversationList'] });
     }, [queryClient]);
-    
-    const handleExit = useCallback((data: { conversationId: string; userId: string[] }) => {
-        const { conversationId, userId } = data;
-        set({ conversationId, userIds: userId });
-        // queryClient.invalidateQueries({ queryKey: ['unReadCount'] });
-        queryClient.invalidateQueries({ queryKey: ['conversationList'] });
-        queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
-        queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
-    }, [queryClient, set]);
 
     // ✅ 소켓 메시지 수신 시 최신 메시지를 리스트의 가장 아래에 추가
     useEffect(() => {
@@ -168,14 +159,12 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
         socket.on('connect', handleReconnect);
         socket.on("receive:message", handleReceiveMessage);
         socket.on("read:message", handleRead);
-        socket.on("exit:user", handleExit);
 
         return () => {
             socket.off("join:room");
             socket.off('connect', handleReconnect);
             socket.off("receive:message", handleReceiveMessage);
             socket.off("read:message", handleRead);
-            socket.off("exit:user", handleExit);
         };
     }, [socket, conversationId]);
 

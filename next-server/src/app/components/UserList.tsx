@@ -25,12 +25,15 @@ const UserList = () => {
 
     useEffect(() => {
         if(!socket) return;
-        socket.on("register:user", (user: IUserList[]) => {
+
+        const handelRegisterUser = () => {
             refetch();
-        });
+        };
+        
+        socket.on("register:user", handelRegisterUser);
 
         return () => {
-            socket.off("register:user");
+            socket.off("register:user", handelRegisterUser);
         }
     }, [ socket ]);
 

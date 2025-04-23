@@ -5,21 +5,32 @@ const cors = require("cors");
 
 let onlineUsersList = [];
 
-const addUser = (useremail, socketId) => {
-  const isExist = onlineUsersList.find((user) => user.socketId === socketId);
+const addUser = (useremail, socketId, userId) => {
+  const isExist = onlineUsersList.some((u) => 
+    u.userId === userId && u.socketId === socketId
+  );
 
   console.log("isExist: ", isExist);
   if (!isExist) {
-    onlineUsersList.push({ useremail, socketId });
+    onlineUsersList.push({ useremail, socketId, userId });
     console.log(useremail + " added!");
   }
 };
 
 const removeUser = (socketId) => {
-  const leaveUser = onlineUsersList.find((user) => user.socketId === socketId)?.useremail;
-  onlineUsersList = onlineUsersList.filter((user) => user.socketId !== socketId);
+  const leavingUser = onlineUsersList.find((u) => u.socketId === socketId);
+  if (!leavingUser) return null;
 
-  return leaveUser;
+  // 제거
+  onlineUsersList = onlineUsersList.filter((u) => u.socketId !== socketId);
+
+  // 동일 유저가 여전히 남아 있는지 확인
+  const isLastSocket = !onlineUsersList.some((u) => u.userId === leavingUser.userId);
+
+  return {
+    ...leavingUser, // userId, useremail, socketId
+    isLastSocket
+  };
 };
 
 const app = express();
@@ -52,8 +63,8 @@ io.on("connection", (socket) => {
   console.log("A user connected: ", socket.data.user);
   
   // 로그인한 사용자의 소켓 아이디를 저장
-  socket.on("online:user", (useremail) => {
-    addUser(useremail, socket.id);
+  socket.on("online:user", ({ useremail, userId }) => {
+    addUser(useremail, socket.id, userId);
     io.emit('register:user', useremail);
     socket.emit('get:onlineUsers', onlineUsersList);
   });
@@ -84,12 +95,23 @@ io.on("connection", (socket) => {
 
   // 사용자가 채팅방을 삭제하고 나감 (다시 접속 안됨)
   socket.on("exit:room", (data) => {
-    const { existingUsers, conversationId, userId } = data;
+    const { existingUsers, conversationId, userIds } = data;
     
+    // 대화방에 남아있는 유저들에게 exit:user 전송
     existingUsers.forEach(user => {
       const userSockets = onlineUsersList.filter((u) => u.useremail === user.email);
       userSockets.forEach(userSocket => {
-        io.to(userSocket.socketId).emit('exit:user', {conversationId, userId: userId});
+        io.to(userSocket.socketId).emit('exit:user', {conversationId, userIds});
+      });
+    });
+
+    // 현재 브라우저(socket) 제외하고, 같은 유저의 나머지 소켓들에 전송
+    userIds.forEach(uid => {
+      const otherSockets = onlineUsersList.filter((u) =>
+        u.userId === uid && u.socketId !== socket.id
+      );
+      otherSockets.forEach(userSocket => {
+        io.to(userSocket.socketId).emit('exit:user', { conversationId, userIds });
       });
     });
   })
@@ -102,10 +124,8 @@ io.on("connection", (socket) => {
     // 채팅방에 참여한 사용자들에게 메시지 전송
     conversationUsers.users.forEach(user => {
       const userSockets = onlineUsersList.filter((u) => u.useremail === user.email);
-      // !!userSocket?.useremail && io.to(userSocket.socketId).emit('receive:message', newMessage);
       userSockets.forEach(userSocket => {
-        const isMyMessage = user.email === newMessage.sender.email;
-        io.to(userSocket.socketId).emit('receive:conversation', newMessage, isMyMessage);
+        io.to(userSocket.socketId).emit('receive:conversation', newMessage, userSocket.useremail);
       });
     });
   });
@@ -120,14 +140,27 @@ io.on("connection", (socket) => {
   });
 
   socket.on("seen:message", (data) => {
-    const { seenMessageUser } = data;
-    io.to(seenMessageUser.conversationId).emit("seen:user", seenMessageUser);
+    const { seenMessageUser, userEmail } = data;
+    io.to(seenMessageUser.conversationId).emit("seen:user", {
+      conversationId: seenMessageUser.conversationId,
+      seen: seenMessageUser.seen,
+      userEmail
+    });
   });
 
   socket.on("disconnect", () => {
-    const leaveUser = removeUser(socket.id);
-    io.emit('leave:user', leaveUser);
-    console.log("User disconnected:", socket.id);
+    const result = removeUser(socket.id);
+
+    if (result) {
+      const { useremail, userId, isLastSocket } = result;
+  
+      console.log("User disconnected:", socket.id);
+  
+      if (isLastSocket) {
+        console.log(`📤 ${useremail} 전체 로그아웃 처리됨`);
+        io.emit("leave:user", useremail);
+      }
+    }
   });
 });
 

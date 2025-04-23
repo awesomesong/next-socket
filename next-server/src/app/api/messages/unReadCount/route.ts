@@ -11,17 +11,24 @@ export async function GET(
 
         if(!user?.email) return NextResponse.json({message: '로그인이 되지 않았습니다. 로그인 후에 이용해주세요.'}, {status: 401})
 
-            const unreadMessages = await prisma.messageReadStatus.count({
-                where: {
-                    isRead: false,
-                    userId: user.id,
-                    message: {
-                        senderId: {
-                          not: user.id,
-                        },
+        const excludeConversationId  = req.nextUrl.searchParams.get('exclude') || null;
+
+        const unreadMessages = await prisma.messageReadStatus.count({
+            where: {
+                isRead: false,
+                userId: user.id,
+                message: {
+                    senderId: {
+                        not: user.id,
                     },
-                }
-            });
+                    ...(excludeConversationId && {
+                        conversationId: {
+                          not: excludeConversationId,
+                        },
+                    }),
+                },
+            }
+        });
 
         return NextResponse.json({unReadCount: unreadMessages});
     } catch (error) {

@@ -41,16 +41,20 @@ const ConfirmModal:React.FC<ModalProps> = ({
             queryClient.invalidateQueries({queryKey: ['conversationList']});
 
             if(socket) {
-                const filteredUsers = conversationUsers.filter((item) => item.conversationId === conversationId) 
-                        .map((item) => ({
-                            ...item,
-                            userIds: item.userIds.filter((id) => id !== session?.user?.id) 
-                        }));
+                const targetUserList = conversationUsers.find((item) => 
+                    item.conversationId === conversationId
+                );
+            
+                if (!targetUserList || !result?.existingConversationUsers) return;
+            
+                const filteredUserIds = targetUserList.userIds.filter(id => 
+                    id !== session?.user?.id
+                );
 
                 socket.emit("exit:room", {
                         existingUsers: result.existingConversationUsers,
                         conversationId,
-                        userId: filteredUsers[0].userIds
+                        userIds: filteredUserIds
                     }
                 );
             }

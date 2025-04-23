@@ -23,8 +23,8 @@ export default function SocketComponents({user}: {user?: IUserList}) {
                 setTransport(transport.name);
             });
             
-            if( session?.user?.email ) {
-                socket.emit("online:user", session.user.email);
+            if( session?.user?.email && socket?.connected) {
+                socket.emit("online:user", { useremail: session.user.email, userId: session.user.id });
             }
         }
 

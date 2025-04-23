@@ -48,7 +48,7 @@ const ConversationList = () => {
             queryClient.invalidateQueries({queryKey: ['conversationList']});
         };
 
-        const handleReceiveConversation = (message: FullMessageType, isMyMessage: boolean) => {
+        const handleReceiveConversation = (message: FullMessageType, targetEmail: string) => {
             queryClient.setQueriesData({ queryKey: ['conversationList'] }, (oldData: ConversationProps) => {
                 if (!oldData) return { conversations: [] }; // 예외 처리
         
@@ -60,9 +60,6 @@ const ConversationList = () => {
                     return {
                         ...conversation,
                         messages: [message, ...existingMessages], 
-                        unreadCount: isMyMessage 
-                            ? conversation.unreadCount // 내가 보낸 메시지면 그대로 유지
-                            : (conversation.unreadCount ?? 0) + 1
                     };
                 });
         
@@ -72,6 +69,9 @@ const ConversationList = () => {
         
                 return { conversations: reorderedConversations };
             });
+
+            // 이후 정확한 데이터 동기화를 위해 서버 fetch
+            queryClient.invalidateQueries({ queryKey: ['conversationList'] });
         };
       
         socket.on('connect', handleReconnect);
