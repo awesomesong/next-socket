@@ -58,15 +58,23 @@ const SocketState = () => {
             queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
             queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
         };
+
+        const handleSeenUser = (payload: { conversationId: string }) => {
+            if (payload.conversationId !== conversationId) {
+                refetch();
+                queryClient.invalidateQueries({ queryKey: ['conversationList'] });
+            }
+        };
       
         socket.on('connect', handleReconnect);
         socket.on("receive:conversation", handleReceiveConversation);
         socket.on("exit:user", handleExit);
-
+        socket.on("seen:user", handleSeenUser);
         return() => {
             socket.off('connect', handleReconnect);
             socket.off("receive:conversation", handleReceiveConversation);
             socket.off("exit:user", handleExit);
+            socket.off("seen:user", handleSeenUser);
         }
     }, [socket, refetch, conversationId, queryClient, set]);
 

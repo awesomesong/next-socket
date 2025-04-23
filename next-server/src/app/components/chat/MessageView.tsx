@@ -52,13 +52,13 @@ const MessageView:React.FC<MessageBoxProps> = ({
   }  = useMutation({
       mutationFn: seenMessages,
       onSuccess: (data) => {
-          if(data.seenMessageUser.seen.length > 1 && socket) {
-            socket.emit('seen:message', { 
-              seenMessageUser: data.seenMessageUser, 
-              userEmail: currentUser?.email 
-            });
-          }
-      },
+        if (socket && data?.seenMessageUser && currentUser?.email) {
+          socket.emit("seen:message", {
+            seenMessageUser: data.seenMessageUser,
+            userEmail: currentUser.email,
+          });
+        }
+      }
   });
 
   // 마지막 메시지 확인
@@ -113,14 +113,13 @@ const MessageView:React.FC<MessageBoxProps> = ({
     if(!socket) return;
 
     const handleSeenUser = (payload: MessageSeenInfo) => {
-      const { conversationId, seen } = payload;
+      const { conversationId: conId, seen } = payload;
 
       // 변경 사항이 있는 경우에만 처리
       const hasChanged = !arraysEqualUnordered(seen, seenUser);
 
       if (hasChanged) {
         setSeenUser(seen); // ✅ 메시지 하단 "읽음" 표시 갱신
-        queryClient.invalidateQueries({ queryKey: ['unReadCount', conversationId] }); // ✅ 전체 안읽은 수 갱신
       }
     }
 

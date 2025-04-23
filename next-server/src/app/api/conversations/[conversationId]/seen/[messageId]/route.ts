@@ -32,6 +32,17 @@ export async function POST(
                         email: true,
                     }
                 },
+                conversation: { 
+                    select: {
+                        users: {
+                                select: {
+                                id: true,
+                                email: true,
+                                name: true,
+                            }
+                        }
+                    }
+                }
             }
         });
 

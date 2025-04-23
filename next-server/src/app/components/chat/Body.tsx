@@ -97,7 +97,6 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
     }, [status, data]);
 
     const handleRead = useCallback(() => {
-        queryClient.invalidateQueries({ queryKey: ['unReadCount', conversationId] });
         queryClient.invalidateQueries({ queryKey: ['conversationList'] });
     }, [queryClient]);
 

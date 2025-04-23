@@ -141,10 +141,22 @@ io.on("connection", (socket) => {
 
   socket.on("seen:message", (data) => {
     const { seenMessageUser, userEmail } = data;
-    io.to(seenMessageUser.conversationId).emit("seen:user", {
-      conversationId: seenMessageUser.conversationId,
-      seen: seenMessageUser.seen,
-      userEmail
+    const conversationId = seenMessageUser.conversationId;
+
+    const emitted = new Set();
+
+    seenMessageUser.conversation.users.forEach((user) => {
+      const sockets = onlineUsersList.filter((u) => u.useremail === user.email);
+      sockets.forEach(({ socketId }) => {
+        if (!emitted.has(socketId)) {
+          io.to(socketId).emit("seen:user", {
+            conversationId,
+            seen: seenMessageUser.seen,
+            userEmail,
+          });
+          emitted.add(socketId);
+        }
+      });
     });
   });
 
