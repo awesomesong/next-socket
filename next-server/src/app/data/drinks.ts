@@ -40,7 +40,7 @@ const drinksData = [
     },
     {
       type: 'soju',
-      name: `참이슬\n&nbsp;`,
+      name: `참이슬\n\n`,
       image: '/image/drinks/chamisul.png',
       link: '/drinks/chamisul',
       slug: 'chamisul',
@@ -61,14 +61,14 @@ const drinksData = [
     },
     {
       type: 'soju',
-      name: '진로골드\n&nbsp;',
+      name: '진로골드\n\n',
       image: '/image/drinks/jinro_gold.png',
       link: '/drinks/jinro_gold',
       slug: 'jinro_gold',
     },
     {
       type: 'soju',
-      name: '일품진로\n&nbsp;',
+      name: '일품진로\n\n',
       image: '/image/drinks/ilpum.png',
       link: '/drinks/chamisul_ilpum',
       slug: 'chamisul_ilpum',
