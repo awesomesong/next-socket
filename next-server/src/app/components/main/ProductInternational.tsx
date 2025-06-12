@@ -15,7 +15,7 @@ const ProductInternational = () => {
         return drinks.filter((drink) => drink.type === 'international');
     }, []); 
 
-    const positionGroup = useMemo(() => ['10vw', '17vw', '24vw'], []);
+    const positionGroup = useMemo(() => ['10vw', '15vw', '20vw'], []);
 
     return (
         <div  className="product-layout" ref={scrollRef} >
@@ -29,7 +29,7 @@ const ProductInternational = () => {
                 justify-center 
                 items-end 
                 max-[940px]:items-baseline
-                sm:gap-4
+                sm:gap-10
                 gap-4
                 overflow-hidden
                 sm:mt-20 
