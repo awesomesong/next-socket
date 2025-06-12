@@ -31,6 +31,7 @@ const ProductInternational = () => {
                 max-[940px]:items-baseline
                 sm:gap-10 
                 gap-4
+                overflow-hidden
                 sm:mt-20 
                 sm:mb-24
                 mt-20
