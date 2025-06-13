@@ -59,15 +59,18 @@ const ProductInternational = () => {
                             {product.image2 ? (
                                 <div
                                     className={clsx(`
-                                    flex flex-row items-end
-                                    lg:w-[300px]
-                                    max-[1023px]:w-[280px]
-                                    max-[940px]:w-[200px]
-                                    max-[768px]:w-[180px]
-                                    max-[640px]:w-[140px]
-                                    max-[480px]:w-[110px]
-                                    max-[420px]:w-[80px]
-                                    max-[320px]:w-[55px]
+                                        flex 
+                                        flex-row 
+                                        items-end 
+                                        justify-center
+                                        lg:w-[300px]
+                                        max-[1023px]:w-[280px]
+                                        max-[940px]:w-[200px]
+                                        max-[768px]:w-[180px]
+                                        max-[640px]:w-[140px]
+                                        max-[480px]:w-[110px]
+                                        max-[420px]:w-[80px]
+                                        max-[320px]:w-[55px]
                                     `)}
                                 >
                                     {/* 왼쪽 이미지 */}
