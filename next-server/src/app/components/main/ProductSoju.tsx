@@ -46,19 +46,18 @@ const ProductSoju: React.FC = () => {
                         "
                     >
                         <motion.div
-                            initial={{ width: '80%', opacity: 0 }}
-                            whileInView={{ width: '100%', opacity: 1 }}
-                            viewport={{ amount: .8, once: true }}
-                            transition={{ duration: 0.8, ease: "easeOut" }} 
-                            className='max-[480px]:w-[140px] w-[80px]'
+                            initial={{ opacity: 0, y: 30, scale: 0.8 }}
+                            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                            viewport={{ amount: 0.5, once: true }}
+                            transition={{ duration: 0.6, ease: 'easeOut' }}
+                            className="w-full"
                         >
                             <Image
                                 src={soju.image}
-                                alt={soju.name }
-                                width={0}
-                                height={0}
-                                sizes='100vw'
-                                className="w-full h-fit"
+                                alt={soju.name}
+                                width={300}
+                                height={400}
+                                className="w-full h-auto object-contain"
                             />
                         </motion.div>
                         <DrinksName name={soju.name} scrollRef={scrollRef} />
