@@ -52,7 +52,7 @@ const ProductSoju: React.FC = () => {
                             transition={{
                                 opacity: { duration: 0.4, ease: 'easeOut' },
                             }}
-                            className="w-full"
+                            className="w-full aspect-[3/4]"
                         >
                             <Image
                                 src={soju.image}
@@ -60,6 +60,7 @@ const ProductSoju: React.FC = () => {
                                 width={300}
                                 height={400}
                                 sizes="(max-width: 768px) 30vw, 100vw"
+                                priority
                                 className="w-full object-contain"
                             />
                         </motion.div>
