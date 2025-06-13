@@ -46,12 +46,11 @@ const ProductSoju: React.FC = () => {
                         "
                     >
                         <motion.div
-                            initial={{ opacity: 0, y: 30, scale: 0.8 }}
-                            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ amount: 0.5, once: true }}
                             transition={{
                                 opacity: { duration: 0.4, ease: 'easeOut' },
-                                scale: { duration: 0.6, ease: 'backOut' }
                             }}
                             className="w-full"
                         >
