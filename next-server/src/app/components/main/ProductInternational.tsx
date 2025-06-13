@@ -73,8 +73,8 @@ const ProductInternational = () => {
                                 <Image
                                     src={product.image}
                                     alt={product.name}
-                                    width={0}
-                                    height={0}
+                                    width={1}
+                                    height={1}
                                     sizes='100vw'
                                     className={clsx("h-fit", 
                                         product.image2 ? 'w-1/2' : 'w-full'
