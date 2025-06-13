@@ -56,41 +56,79 @@ const ProductInternational = () => {
                                 max-lg:items-center
                             '
                         >
-                            <div className={clsx(`
-                                relative 
-                                lg:w-[300px]
-                                max-[1023px]:w-[280px]
-                                max-[940px]:w-[200px]
-                                max-[768px]:w-[180px]
-                                max-[640px]:w-[140px]
-                                max-[480px]:w-[110px]
-                                max-[420px]:w-[80px]
-                                max-[320px]:w-[55px]
-                                items-end
-                                `,
-                                product.image2 && 'flex flex-row'
-                            )}>
-                                <Image
-                                    src={product.image}
-                                    alt={product.name}
-                                    width={1}
-                                    height={1}
-                                    sizes='100vw'
-                                    className={clsx("h-fit", 
-                                        product.image2 ? 'w-1/2' : 'w-full'
+                            {product.image2 ? (
+                                <div
+                                    className={clsx(`
+                                    flex flex-row items-end
+                                    lg:w-[300px]
+                                    max-[1023px]:w-[280px]
+                                    max-[940px]:w-[200px]
+                                    max-[768px]:w-[180px]
+                                    max-[640px]:w-[140px]
+                                    max-[480px]:w-[110px]
+                                    max-[420px]:w-[80px]
+                                    max-[320px]:w-[55px]
+                                    `)}
+                                >
+                                    {/* 왼쪽 이미지 */}
+                                    <div
+                                    className={clsx(
+                                        "flex",
+                                        index === 0 ? "w-2/5 justify-end" :
+                                        index === 2 ? "w-2/5 justify-center" :
+                                        "w-1/2 justify-center"
                                     )}
-                                />
-                                {product.image2 && (
+                                    >
+                                    <Image
+                                        src={product.image}
+                                        alt={product.name}
+                                        width={200}
+                                        height={300}
+                                        className="object-contain"
+                                    />
+                                    </div>
+
+                                    {/* 오른쪽 이미지 */}
+                                    <div
+                                    className={clsx(
+                                        "flex",
+                                        index === 0 ? "w-2/5 justify-center" :
+                                        index === 2 ? "w-2/5 justify-start" :
+                                        "w-1/2 justify-center"
+                                    )}
+                                    >
                                     <Image
                                         src={product.image2}
                                         alt={`${product.name} glass`}
-                                        width={0}
-                                        height={0}
-                                        sizes='100vw'
-                                        className="w-1/2 h-fit"
+                                        width={200}
+                                        height={300}
+                                        className="object-contain"
                                     />
+                                    </div>
+                                </div>
+                                ) : (
+                                // 단일 이미지일 경우
+                                <div
+                                    className={clsx(`
+                                    relative aspect-[2/3]
+                                    lg:w-[300px]
+                                    max-[1023px]:w-[280px]
+                                    max-[940px]:w-[200px]
+                                    max-[768px]:w-[180px]
+                                    max-[640px]:w-[140px]
+                                    max-[480px]:w-[110px]
+                                    max-[420px]:w-[80px]
+                                    max-[320px]:w-[55px]
+                                    `)}
+                                >
+                                    <Image
+                                    src={product.image}
+                                    alt={product.name}
+                                    fill
+                                    className="object-contain"
+                                    />
+                                </div>
                                 )}
-                            </div>
                             <DrinksName name={product.name} scrollRef={scrollRef} />
                         </Link>
                     </motion.div>
