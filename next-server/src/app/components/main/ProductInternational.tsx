@@ -125,10 +125,11 @@ const ProductInternational = () => {
                                     `)}
                                 >
                                     <Image
-                                    src={product.image}
-                                    alt={product.name}
-                                    fill
-                                    className="object-contain"
+                                        src={product.image}
+                                        alt={product.name}
+                                        fill
+                                        sizes="(max-width: 768px) 40vw, 120px"
+                                        className="object-contain"
                                     />
                                 </div>
                                 )}
