@@ -52,7 +52,7 @@ const ProductSoju: React.FC = () => {
                             transition={{
                                 opacity: { duration: 0.4, ease: 'easeOut' },
                             }}
-                            className="w-full"
+                            className="w-full aspect-[3/4]"
                         >
                             <Image
                                 src={soju.image}
