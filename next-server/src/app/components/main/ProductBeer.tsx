@@ -122,26 +122,28 @@ const ProductBeer = () => {
                                     w-full
                                     h-auto
                             `}>
-                                <span className='flex flex-row items-end'>
-                                <Image 
-                                    src={beer.image} 
-                                    alt={beer.name } 
-                                    width={0}
-                                    height={0}
-                                    sizes='100vw'
-                                    className="w-1/2 h-fit"
-                                />
-                                {beer.image2 && (
-                                    <Image 
-                                        src={beer.image2} 
-                                        alt={`${beer.name } 두번째 이미지`} 
-                                        width={0}
-                                        height={0}
-                                        sizes='100vw'
-                                        className="w-1/2 h-fit"
-                                    />
-                                )}
-                                </span>
+                                <div className='flex flex-row items-end relative w-full aspect-[3/2]'>
+                                    <div className='w-1/2'>
+                                        <Image 
+                                            src={beer.image} 
+                                            alt={beer.name } 
+                                            width={150}
+                                            height={200}
+                                            className="object-contain"
+                                        />
+                                    </div>
+                                    {beer.image2 && (
+                                        <div className='w-1/2'>
+                                            <Image 
+                                                src={beer.image2} 
+                                                alt={`${beer.name } 두번째 이미지`} 
+                                                width={150}
+                                                height={200}
+                                                className="object-contain"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                                 <DrinksName name={beer.name} scrollRef={scrollRef} />
                             </Link>
                         </motion.div>
