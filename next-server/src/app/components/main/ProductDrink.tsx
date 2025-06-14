@@ -54,7 +54,7 @@ const ProductDrink = () => {
             whileInView={{ x: 0, opacity: 1 }}
             viewport={{ amount: 0.3, once: true }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="relative"
+            className="relative aspect-[3/4]"
           >
             <Link
               href={drink.link}
@@ -65,15 +65,15 @@ const ProductDrink = () => {
                 items-center 
                 justify-end
                 gap-6
+                relative
               "
             >
               <Image
                 src={drink.image}
                 alt={drink.name}
-                width={0}
-                height={0}
-                sizes="100vw"
-                className="w-auto lg:h-[265px] min-[940px]:h-[220px] h-[180px]"
+                width={300}
+                height={400}
+                className="w-auto lg:h-[265px] min-[940px]:h-[220px] h-[180px] object-contain"
               />
               <DrinksName name={drink.name} scrollRef={scrollRef} />
             </Link>
