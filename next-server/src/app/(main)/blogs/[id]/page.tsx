@@ -120,7 +120,15 @@ const BlogDetailPage = ({ params } : {
                             ADD_ATTR: ['target', 'rel'],
                           }) 
                         }}
-                        className='mt-4 whitespace-pre-wrap'
+                        className='
+                            mt-4  
+                            text-sm
+                            scrollbar-thin
+                            [&_pre]:overflow-x-auto
+                            [&_pre]:whitespace-pre
+                            [&_code]:break-keep
+                            [&_code]:text-sm
+                        '
                     />
 
                     <FormComment blogId={id} user={session?.user!} />
