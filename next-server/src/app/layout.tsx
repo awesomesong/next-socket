@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     icon: "/image/songhee_logo.png",
   },
   openGraph: {
-    title: "강송희 포트폴리오(프론트엔드 개발자)",
+    title: "강송희 포트폴리오 | 프론트엔드 개발자",
     description:
       "Next.js 14, React, GraphQL, Prisma 등을 사용하여 구현한 웹 개발 포트폴리오입니다.",
     url: "https://www.devsonghee.com",
