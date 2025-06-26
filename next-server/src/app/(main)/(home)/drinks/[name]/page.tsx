@@ -127,8 +127,10 @@ const DrinksPage = ({params } : { params: { name: string } }) => {
                 </motion.div>
             </div>
         }
-        <FormReview slug={name} user={session?.user!} />
-        <Reviews slug={name} />
+        <div className='md:px-6 md:py-3 px-3'>
+            <FormReview slug={name} user={session?.user!} />
+            <Reviews slug={name} />
+        </div>
     </div>
   );
 };

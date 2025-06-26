@@ -3,7 +3,14 @@ import { IUser } from '@/src/app/types/common';
 import { InfiniteData } from '@tanstack/react-query';
 
 export type DrinkReviewType = DrinkReview & {
-    author: IUser;
+    author:  {
+        id: string;
+        name?: string | null | undefined;
+        email?: string | null | undefined;
+        image?: string | null | undefined;
+        profileImage?: string | null | undefined;
+        role?: string | null | undefined;
+    }
 };
 
 export type DrinkReviewPage = [

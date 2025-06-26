@@ -29,8 +29,8 @@ const Reviews = ({ slug } : ReviewsProps) => {
         getNextPageParam: (lastPage) => {
             if (!lastPage) return undefined;
             const reviewsPage = lastPage.find((item) => 'reviews' in item) as { reviews: { id: string }[] } | undefined;
-            if (!reviewsPage || !reviewsPage.reviews.length) return undefined;
-            const lastReviewId = reviewsPage.reviews.at(-1)?.id;
+            if (!reviewsPage || !reviewsPage.reviews?.length) return undefined;
+            const lastReviewId = reviewsPage.reviews?.at(-1)?.id;
             return lastReviewId || undefined;
         }
     });
@@ -48,7 +48,10 @@ const Reviews = ({ slug } : ReviewsProps) => {
             {data?.pages[0]?.flat().map((page, i) => (
                 <Fragment key={i}>
                     {Object.keys(page)[0] === 'reviewsCount' && (
-                        <h4>리뷰 {page.reviewsCount}개</h4>
+                        <h4>
+                            <span className='capitalize'>{slug} </span>
+                            리뷰 {page.reviewsCount}개
+                        </h4>
                     )}
                 </Fragment>
             ))}

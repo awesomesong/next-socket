@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from '../../../../../../prisma/db';
+import prisma from '@/prisma/db';
 import { getCurrentUser } from '@/src/app/lib/session';
 
 interface IParams {
@@ -47,6 +47,7 @@ export async function GET(
 
         return NextResponse.json({ reviews, reviewsCount }, { status: 200 });
     } catch(error) {
+        console.log('@@error', error);
         return NextResponse.json({ message: '리뷰를 불러오지 못했습니다.' }, { status: 500 });
     }
 }

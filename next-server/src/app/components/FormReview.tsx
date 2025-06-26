@@ -100,7 +100,7 @@ const FormReview = ({ slug, user } : FormReviewProps) => {
                     type='submit'
                     className='bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 mt-2 rounded-md'
                 >
-                    {isSubmitting ? '등록 중' : '리뷰'}
+                    {isSubmitting ? '등록 중' : '확인'}
                 </button>
             )}
         </div>
