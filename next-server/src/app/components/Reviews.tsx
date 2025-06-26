@@ -13,9 +13,10 @@ import DOMPurify from 'dompurify';
 
 type ReviewsProps = {
     slug: string;
+    name: string;
 };
 
-const Reviews = ({ slug } : ReviewsProps) => {
+const Reviews = ({ slug, name } : ReviewsProps) => {
     const {
         data,
         status,
@@ -48,10 +49,7 @@ const Reviews = ({ slug } : ReviewsProps) => {
             {data?.pages[0]?.flat().map((page, i) => (
                 <Fragment key={i}>
                     {Object.keys(page)[0] === 'reviewsCount' && (
-                        <h4>
-                            <span className='capitalize'>{slug} </span>
-                            리뷰 {page.reviewsCount}개
-                        </h4>
+                        <h4>{name} - 리뷰 {page.reviewsCount}개</h4>
                     )}
                 </Fragment>
             ))}
