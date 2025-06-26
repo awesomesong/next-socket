@@ -57,6 +57,7 @@ model User {
   posts           Post[]
   postComments    PostComment[]
   blogs           Blog[]
+  drinkReviews   DrinkReview[]
   messageReadStatus MessageReadStatus[]
 
   conversationsIds String[]      @db.ObjectId
@@ -164,7 +165,18 @@ model PostComment {
   text    String
   postId String? @db.ObjectId
   post   Post? @relation(fields: [postId], references: [id])
-  writerEmail String? 
+  writerEmail String?
   writer    User?  @relation(fields: [writerEmail], references: [email], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+model DrinkReview {
+  id        String  @id   @map("_id")  @default(auto())  @db.ObjectId
+  drinkSlug String
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorEmail String?
+  author      User? @relation(fields: [authorEmail], references: [email])
 }
