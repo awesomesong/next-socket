@@ -4,10 +4,14 @@ import { useRouter } from 'next/navigation';
 import drinksDetailData from '@/src/app/data/drinksDetail';
 import clsx from 'clsx';
 import Image from 'next/image';
-import {  motion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useSession } from 'next-auth/react';
+import FormReview from '@/src/app/components/FormReview';
+import Reviews from '@/src/app/components/Reviews';
 
-const DrinksPage = ({params } : { params: { name: string } }) => { 
+const DrinksPage = ({params } : { params: { name: string } }) => {
     const router = useRouter();
+    const { data: session } = useSession();
 
     const { name } = params;
 
@@ -122,7 +126,9 @@ const DrinksPage = ({params } : { params: { name: string } }) => {
                     />
                 </motion.div>
             </div>
-        }         
+        }
+        <FormReview slug={name} user={session?.user!} />
+        <Reviews slug={name} />
     </div>
   );
 };

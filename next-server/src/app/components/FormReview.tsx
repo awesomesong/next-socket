@@ -1,0 +1,110 @@
+'use client';
+import TextareaAutosize from 'react-textarea-autosize';
+import React, { useRef, useState, FormEvent } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createDrinkReviews } from '@/src/app/lib/createDrinkReviews';
+import { DrinkReviewsDataProps, DrinkReviewPage, DrinkReviewType } from '@/src/app/types/drink';
+
+type FormReviewProps = {
+    slug: string;
+    user: {
+        role?: string;
+        id: string;
+        name?: string | null | undefined;
+        email?: string | null | undefined;
+        image?: string | null | undefined;
+    };
+};
+
+const FormReview = ({ slug, user } : FormReviewProps) => {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [review, setReview] = useState<string>('');
+    const [stateReview, setStateReview] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const queryClient = useQueryClient();
+
+    const { mutate: createDrinkReviewsMutation } = useMutation({
+        mutationFn: createDrinkReviews,
+        onSuccess: (newData) => {
+            setReview('');
+            queryClient.setQueriesData({ queryKey: ['drinkReviews', slug] },
+                (oldData: DrinkReviewsDataProps | undefined): DrinkReviewsDataProps => {
+                    const newReviewData = newData.newReview;
+                    newReviewData.author = user;
+
+                    if (!oldData || oldData.pages.length === 0) {
+                        return {
+                            pages: [[
+                                { reviews: [newReviewData] },
+                                { reviewsCount: 1 }
+                            ]],
+                            pageParams: [undefined],
+                        };
+                    }
+
+                    const currentPage = oldData.pages[0];
+                    const reviewsObj = currentPage.find((p) => 'reviews' in p) as { reviews: DrinkReviewType[] };
+                    const countObj = currentPage.find((p) => 'reviewsCount' in p) as { reviewsCount: number };
+
+                    const updatedPage: [ { reviews: DrinkReviewType[] }, { reviewsCount: number } ] = [
+                        { reviews: [newReviewData, ...reviewsObj.reviews] },
+                        { reviewsCount: countObj.reviewsCount + 1 }
+                    ];
+
+                    return {
+                        ...oldData,
+                        pages: [updatedPage, ...oldData.pages.slice(1)],
+                    };
+                }
+            );
+        },
+    });
+
+    const onFocus = () => {
+        if(!user.email) return;
+        setStateReview(true);
+    };
+
+    const handleSubmitReview = (e: FormEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        if(review.trim() === '') {
+            textareaRef.current?.focus();
+            return alert('리뷰를 입력해주세요.');
+        }
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        createDrinkReviewsMutation(
+            { slug, text: review },
+            {
+                onSettled: () => {
+                    setIsSubmitting(false);
+                }
+            }
+        );
+    };
+
+    return (
+        <div className='my-4'>
+            <TextareaAutosize
+                ref={textareaRef}
+                disabled={user?.email ? false : true}
+                placeholder={user?.email ? '리뷰를 입력해주세요.' : '로그인 후에 리뷰를 작성할 수 있습니다.'}
+                value={review}
+                onChange={e => setReview(e.target.value)}
+                onFocus={onFocus}
+                className='w-full p-2 box-border border-solid border-b-[1px]'
+            />
+            {stateReview && (
+                <button
+                    onClick={handleSubmitReview}
+                    type='submit'
+                    className='bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 mt-2 rounded-md'
+                >
+                    {isSubmitting ? '등록 중' : '리뷰'}
+                </button>
+            )}
+        </div>
+    );
+};
+
+export default FormReview;
