@@ -129,7 +129,7 @@ const DrinksPage = ({params } : { params: { name: string } }) => {
         }
         <div className='md:px-6 md:py-3 px-3'>
             <FormReview slug={name} user={session?.user!} />
-            <Reviews slug={name} />
+            <Reviews slug={name} user={session?.user!} />
         </div>
     </div>
   );
