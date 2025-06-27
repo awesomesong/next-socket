@@ -46,9 +46,9 @@ const ButtonProfile = () => {
                             fill
                             sizes={`${width}px`}
                             unoptimized={false}
-                            className="object-cover"
+                            className="object-cover drop-shadow-lg"
                         />)
-                        : <PiUserCircleDuotone className="w-full h-full scale-[1.2]"/>
+                        : <PiUserCircleDuotone className="w-full h-full scale-[1.2] drop-shadow-lg"/>
                 }
             </Link>
         </Tooltip>

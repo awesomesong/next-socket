@@ -34,7 +34,12 @@ export default function ThemeSwitch() {
                     size={22} 
                     tabIndex={0}
                     onKeyDown={handleKeyPress}
-                    className="cursor-pointer"
+                    className="
+                        cursor-pointer 
+                        drop-shadow-lg 
+                        dark:text-slate-200 
+                        text-neutral-950
+                    "
                 />
     }
 
@@ -44,7 +49,12 @@ export default function ThemeSwitch() {
                     size={22}
                     tabIndex={0}
                     onKeyDown={handleKeyPress}
-                    className="cursor-pointer"
+                    className="
+                        cursor-pointer 
+                        drop-shadow-lg 
+                        dark:text-slate-200 
+                        text-neutral-950
+                    "
                 />
     }
 };

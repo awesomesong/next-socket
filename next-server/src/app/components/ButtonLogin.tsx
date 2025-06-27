@@ -14,7 +14,12 @@ const ButtonLogin = () => {
     return (
     <Suspense fallback={<StatusMessage message="로딩 중..."/>}>
         <button
-            className='hover:underline'
+            className='
+                hover:underline
+                drop-shadow-lg
+                dark:text-slate-200 
+                text-neutral-950
+            '
             onClick={() => signIn(undefined, { callbackUrl: fullPath })}
         >
             login
