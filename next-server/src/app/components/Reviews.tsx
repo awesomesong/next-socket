@@ -1,11 +1,14 @@
 'use client';
 import dayjs from '@/src/app/lib/day';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PiUserCircleFill } from 'react-icons/pi';
 import { getDrinkReviews } from '@/src/app/lib/getDrinkReviews';
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { DrinkReviewType } from '@/src/app/types/drink';
+import { updateDrinkReview } from '@/src/app/lib/updateDrinkReview';
+import { deleteDrinkReview } from '@/src/app/lib/deleteDrinkReview';
+import FormReview from './FormReview';
 import CommentSkeleton from './skeleton/CommentSkeleton';
 import CircularProgress from './CircularProgress';
 import FallbackNextImage from './FallbackNextImage';
@@ -13,9 +16,19 @@ import DOMPurify from 'dompurify';
 
 type ReviewsProps = {
     slug: string;
+    user?: {
+        role?: string;
+        id: string;
+        name?: string | null | undefined;
+        email?: string | null | undefined;
+        image?: string | null | undefined;
+    };
 };
 
-const Reviews = ({ slug } : ReviewsProps) => {
+const Reviews = ({ slug, user } : ReviewsProps) => {
+    const queryClient = useQueryClient();
+    const [editingId, setEditingId] = useState<string | null>(null);
+
     const {
         data,
         status,
@@ -36,6 +49,21 @@ const Reviews = ({ slug } : ReviewsProps) => {
     });
 
     const { ref, inView } = useInView({ threshold: 0.2, delay: 100 });
+
+    const { mutateAsync: updateReview } = useMutation({
+        mutationFn: updateDrinkReview,
+        onSuccess: () => {
+            setEditingId(null);
+            queryClient.invalidateQueries({ queryKey: ['drinkReviews', slug] });
+        }
+    });
+
+    const { mutate: deleteReview } = useMutation({
+        mutationFn: deleteDrinkReview,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['drinkReviews', slug] });
+        }
+    });
 
     useEffect(() => {
         if (inView && hasNextPage) {
@@ -83,7 +111,7 @@ const Reviews = ({ slug } : ReviewsProps) => {
                                                     <PiUserCircleFill className='w-full h-full' />
                                                 )}
                                             </span>
-                                            <div>
+                                            <div className='flex-1'>
                                                 <div>
                                                     <span className='break-all mr-2'>
                                                         {review.author?.name}
@@ -92,10 +120,29 @@ const Reviews = ({ slug } : ReviewsProps) => {
                                                         {dayjs(review.createdAt).fromNow()}
                                                     </span>
                                                 </div>
-                                                <pre
-                                                    className='whitespace-pre-wrap'
-                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(review?.text || '') }}
-                                                />
+                                                {editingId === review.id ? (
+                                                    <FormReview
+                                                        slug={slug}
+                                                        user={user!}
+                                                        initialText={review.text}
+                                                        submitLabel='저장'
+                                                        onSubmit={(text) => updateReview({ id: review.id, text })}
+                                                        onCancel={() => setEditingId(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <pre
+                                                            className='whitespace-pre-wrap'
+                                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(review?.text || '') }}
+                                                        />
+                                                        {user?.role === 'admin' && user?.email === review.author?.email && (
+                                                            <div className='flex gap-2 text-xs text-gray-500'>
+                                                                <button onClick={() => {setEditingId(review.id);}} className='hover:underline'>수정</button>
+                                                                <button onClick={() => deleteReview(review.id)} className='hover:underline'>삭제</button>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
