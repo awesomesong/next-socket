@@ -95,7 +95,11 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
                             <li key={i}>
                                 {page?.reviews && page.reviews.length > 0 && Object.keys(page)[0] === 'reviews' &&
                                     page.reviews?.map((review: DrinkReviewType) => (
-                                        <div key={review.id} className='flex flex-row gap-3 py-1'>
+                                        <div 
+                                            key={review.id}
+                                            id={`review-${review.id}`}
+                                            className='flex flex-row gap-3 py-1'
+                                        >
                                             <span className='shrink-0 overflow-hidden relative w-10 h-10 mt-1 rounded-full'>
                                                 {review.author?.image ? (
                                                     <FallbackNextImage

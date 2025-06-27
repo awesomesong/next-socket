@@ -82,6 +82,13 @@ const FormReview = ({
                     };
                 }
             );
+            const reviewId = newData.newReview.id;
+            setTimeout(() => {
+                document.getElementById(`review-${reviewId}`)?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'end'
+                });
+            }, 100);
         },
     });
 
