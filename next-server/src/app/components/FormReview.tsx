@@ -6,7 +6,7 @@ import { createDrinkReviews } from '@/src/app/lib/createDrinkReviews';
 import { DrinkReviewsDataProps, DrinkReviewType } from '@/src/app/types/drink';
 
 type FormReviewProps = {
-    slug: string;
+    id: string;
     user: {
         role?: string;
         id: string;
@@ -16,7 +16,7 @@ type FormReviewProps = {
     };
 };
 
-const FormReview = ({ slug, user } : FormReviewProps) => {
+const FormReview = ({ id, user } : FormReviewProps) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [review, setReview] = useState<string>('');
     const [stateReview, setStateReview] = useState(false);
@@ -27,7 +27,7 @@ const FormReview = ({ slug, user } : FormReviewProps) => {
         mutationFn: createDrinkReviews,
         onSuccess: (newData) => {
             setReview('');
-            queryClient.setQueriesData({ queryKey: ['drinkReviews', slug] },
+            queryClient.setQueriesData({ queryKey: ['drinkReviews', id] },
                 (oldData: DrinkReviewsDataProps | undefined): DrinkReviewsDataProps => {
                     const newReviewData = newData.newReview;
                     newReviewData.author = user;
@@ -74,7 +74,7 @@ const FormReview = ({ slug, user } : FormReviewProps) => {
         if (isSubmitting) return;
         setIsSubmitting(true);
         createDrinkReviewsMutation(
-            { slug, text: review },
+            { id, text: review },
             {
                 onSettled: () => {
                     setIsSubmitting(false);

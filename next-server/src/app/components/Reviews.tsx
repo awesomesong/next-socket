@@ -14,7 +14,7 @@ import FallbackNextImage from './FallbackNextImage';
 import DOMPurify from 'dompurify';
 
 type ReviewsProps = {
-    slug: string;
+    id: string;
     user?: {
         role?: string;
         id: string;
@@ -24,7 +24,7 @@ type ReviewsProps = {
     };
 };
 
-const Reviews = ({ slug, user } : ReviewsProps) => {
+const Reviews = ({ id, user } : ReviewsProps) => {
     const queryClient = useQueryClient();
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editText, setEditText] = useState('');
@@ -36,7 +36,7 @@ const Reviews = ({ slug, user } : ReviewsProps) => {
         hasNextPage,
         isFetchingNextPage,
     } = useInfiniteQuery({
-        queryKey: ['drinkReviews', slug],
+        queryKey: ['drinkReviews', id],
         queryFn: getDrinkReviews,
         initialPageParam: '',
         getNextPageParam: (lastPage) => {
@@ -54,14 +54,14 @@ const Reviews = ({ slug, user } : ReviewsProps) => {
         mutationFn: updateDrinkReview,
         onSuccess: () => {
             setEditingId(null);
-            queryClient.invalidateQueries({ queryKey: ['drinkReviews', slug] });
+            queryClient.invalidateQueries({ queryKey: ['drinkReviews', id] });
         }
     });
 
     const { mutate: deleteReview } = useMutation({
         mutationFn: deleteDrinkReview,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['drinkReviews', slug] });
+            queryClient.invalidateQueries({ queryKey: ['drinkReviews', id] });
         }
     });
 
@@ -77,7 +77,7 @@ const Reviews = ({ slug, user } : ReviewsProps) => {
                 <Fragment key={i}>
                     {Object.keys(page)[0] === 'reviewsCount' && (
                         <h4>
-                            <span className='capitalize'>{slug} </span>
+                            <span className='capitalize'>{id} </span>
                             리뷰 {page.reviewsCount}개
                         </h4>
                     )}
@@ -138,7 +138,7 @@ const Reviews = ({ slug, user } : ReviewsProps) => {
                                                             className='whitespace-pre-wrap'
                                                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(review?.text || '') }}
                                                         />
-                                                        {user?.role === 'admin' && user?.email === review.author?.email && (
+                                                        {user?.role === 'admin' || user?.email === review.author?.email && (
                                                             <div className='flex gap-2 text-xs text-gray-500'>
                                                                 <button onClick={() => {setEditingId(review.id); setEditText(review.text);}} className='hover:underline'>수정</button>
                                                                 <button onClick={() => deleteReview(review.id)} className='hover:underline'>삭제</button>

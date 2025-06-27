@@ -1,10 +1,10 @@
 interface Props {
-    slug: string;
+    id: string;
     text: string;
 }
 
-export const createDrinkReviews = async ({ slug, text }: Props) => {
-    const res = await fetch(`/api/drinks/reviews/${slug}`, {
+export const createDrinkReviews = async ({ id, text }: Props) => {
+    const res = await fetch(`/api/drinks/reviews/${id}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
