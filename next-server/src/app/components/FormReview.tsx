@@ -1,6 +1,6 @@
 'use client';
 import TextareaAutosize from 'react-textarea-autosize';
-import React, { useRef, useState, FormEvent } from 'react';
+import React, { useRef, useState, FormEvent, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createDrinkReviews } from '@/src/app/lib/createDrinkReviews';
 import { DrinkReviewsDataProps, DrinkReviewType } from '@/src/app/types/drink';
@@ -22,14 +22,31 @@ type FormReviewProps = {
     onSubmit?: (text: string) => Promise<unknown> | void;
     /** 취소 버튼 클릭 시 호출 */
     onCancel?: () => void;
+    /** 컴포넌트가 나타날 때 자동으로 포커스 */
+    autoFocus?: boolean;
 };
 
-const FormReview = ({ id, user, initialText = '', submitLabel = '확인', onSubmit, onCancel }: FormReviewProps) => {
+const FormReview = ({ 
+    id, 
+    user, 
+    initialText = '', 
+    submitLabel = '확인', 
+    onSubmit, 
+    onCancel,
+    autoFocus = false
+}: FormReviewProps) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [review, setReview] = useState<string>(initialText);
     const [stateReview, setStateReview] = useState(Boolean(onSubmit) ? true : false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const queryClient = useQueryClient();
+
+    useEffect(() => {
+        if (autoFocus) {
+            textareaRef.current?.focus();
+            textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [autoFocus]);
 
     const { mutate: createDrinkReviewsMutation } = useMutation({
         mutationFn: createDrinkReviews,
@@ -125,7 +142,7 @@ const FormReview = ({ id, user, initialText = '', submitLabel = '확인', onSubm
                         <button
                             onClick={onCancel}
                             type='button'
-                            className='px-4 py-2 text-gray-600 border rounded-md'
+                            className='px-4 py-2 bg-gray-600 rounded-md text-white'
                         >
                             취소
                         </button>

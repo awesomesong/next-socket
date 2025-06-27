@@ -98,7 +98,7 @@ export async function PUT(
             return NextResponse.json({ message: '존재하지 않는 리뷰입니다.' }, { status: 404 });
         }
 
-        if (review.authorEmail !== user.email || user.role !== 'admin') {
+        if (review.authorEmail !== user.email) {
             return NextResponse.json({ message: '수정 권한이 없습니다.' }, { status: 403 });
         }
 
@@ -135,7 +135,7 @@ export async function DELETE(
             return NextResponse.json({ message: '존재하지 않는 리뷰입니다.' }, { status: 404 });
         }
 
-        if (review.authorEmail !== user.email || user.role !== 'admin') {
+        if (review.authorEmail !== user.email) {
             return NextResponse.json({ message: '삭제 권한이 없습니다.' }, { status: 403 });
         }
 

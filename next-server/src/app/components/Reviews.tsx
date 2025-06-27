@@ -112,13 +112,53 @@ const Reviews = ({ id, user } : ReviewsProps) => {
                                                 )}
                                             </span>
                                             <div className='flex-1'>
-                                                <div>
+                                                <div className='inline-flex items-end flex-wrap'>
                                                     <span className='break-all mr-2'>
                                                         {review.author?.name}
                                                     </span>
-                                                    <span className='text-gray-400'>
+                                                    <span className='text-gray-400 mr-2'>
                                                         {dayjs(review.createdAt).fromNow()}
                                                     </span>
+                                                    {user?.role === 'admin' || user?.email === review.author?.email && (
+                                                        <span className='text-gray-500'>
+                                                            <button 
+                                                                onClick={() => {setEditingId(review.id);}}
+                                                                className='
+                                                                    px-3
+                                                                    py-1 
+                                                                    mr-2
+                                                                    rounded-full
+                                                                    text-xs
+                                                                    text-blue-500
+                                                                    border-blue-500
+                                                                    border-1
+                                                                '
+                                                            >
+                                                                수정
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    if (confirm('리뷰를 지우시겠습니까?')) {
+                                                                        deleteReview(review.id);
+                                                                    }
+                                                                    setEditingId(null);
+                                                                }} 
+                                                                className='
+                                                                    px-3
+                                                                    py-1 
+                                                                    rounded-full
+                                                                    text-xs
+                                                                    text-gray-500
+                                                                    border-gray-500
+                                                                    dark:text-gray-400
+                                                                    dark:border-gray-400
+                                                                    border-1
+                                                                '
+                                                            >
+                                                                삭제
+                                                            </button>
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 {editingId === review.id ? (
                                                     <FormReview
@@ -126,6 +166,7 @@ const Reviews = ({ id, user } : ReviewsProps) => {
                                                         user={user!}
                                                         initialText={review.text}
                                                         submitLabel='저장'
+                                                        autoFocus
                                                         onSubmit={(text) => updateReview({ id: review.id, text })}
                                                         onCancel={() => setEditingId(null)}
                                                     />
@@ -135,12 +176,6 @@ const Reviews = ({ id, user } : ReviewsProps) => {
                                                             className='whitespace-pre-wrap'
                                                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(review?.text || '') }}
                                                         />
-                                                        {user?.role === 'admin' || user?.email === review.author?.email && (
-                                                            <div className='flex gap-2 text-xs text-gray-500'>
-                                                                <button onClick={() => {setEditingId(review.id);}} className='hover:underline'>수정</button>
-                                                                <button onClick={() => deleteReview(review.id)} className='hover:underline'>삭제</button>
-                                                            </div>
-                                                        )}
                                                     </>
                                                 )}
                                             </div>
