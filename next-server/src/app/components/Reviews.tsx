@@ -135,7 +135,7 @@ const Reviews = ({ id, user } : ReviewsProps) => {
                                                             className='whitespace-pre-wrap'
                                                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(review?.text || '') }}
                                                         />
-                                                        {user?.role === 'admin' && user?.email === review.author?.email && (
+                                                        {user?.role === 'admin' || user?.email === review.author?.email && (
                                                             <div className='flex gap-2 text-xs text-gray-500'>
                                                                 <button onClick={() => {setEditingId(review.id);}} className='hover:underline'>수정</button>
                                                                 <button onClick={() => deleteReview(review.id)} className='hover:underline'>삭제</button>
