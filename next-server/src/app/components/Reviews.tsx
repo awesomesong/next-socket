@@ -8,6 +8,7 @@ import { useInView } from 'react-intersection-observer';
 import { DrinkReviewType } from '@/src/app/types/drink';
 import { updateDrinkReview } from '@/src/app/lib/updateDrinkReview';
 import { deleteDrinkReview } from '@/src/app/lib/deleteDrinkReview';
+import FormReview from './FormReview';
 import CommentSkeleton from './skeleton/CommentSkeleton';
 import CircularProgress from './CircularProgress';
 import FallbackNextImage from './FallbackNextImage';
@@ -27,7 +28,6 @@ type ReviewsProps = {
 const Reviews = ({ id, user } : ReviewsProps) => {
     const queryClient = useQueryClient();
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [editText, setEditText] = useState('');
 
     const {
         data,
@@ -50,7 +50,7 @@ const Reviews = ({ id, user } : ReviewsProps) => {
 
     const { ref, inView } = useInView({ threshold: 0.2, delay: 100 });
 
-    const { mutate: updateReview } = useMutation({
+    const { mutateAsync: updateReview } = useMutation({
         mutationFn: updateDrinkReview,
         onSuccess: () => {
             setEditingId(null);
@@ -121,26 +121,23 @@ const Reviews = ({ id, user } : ReviewsProps) => {
                                                     </span>
                                                 </div>
                                                 {editingId === review.id ? (
-                                                    <>
-                                                        <textarea
-                                                            value={editText}
-                                                            onChange={e => setEditText(e.target.value)}
-                                                            className='w-full p-1 border'
-                                                        />
-                                                        <div className='flex gap-1 mt-1 text-sm'>
-                                                            <button onClick={() => updateReview({ id: review.id, text: editText })} className='text-blue-600'>저장</button>
-                                                            <button onClick={() => setEditingId(null)} className='text-gray-600'>취소</button>
-                                                        </div>
-                                                    </>
+                                                    <FormReview
+                                                        id={id}
+                                                        user={user!}
+                                                        initialText={review.text}
+                                                        submitLabel='저장'
+                                                        onSubmit={(text) => updateReview({ id: review.id, text })}
+                                                        onCancel={() => setEditingId(null)}
+                                                    />
                                                 ) : (
                                                     <>
                                                         <pre
                                                             className='whitespace-pre-wrap'
                                                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(review?.text || '') }}
                                                         />
-                                                        {user?.role === 'admin' || user?.email === review.author?.email && (
+                                                        {user?.role === 'admin' && user?.email === review.author?.email && (
                                                             <div className='flex gap-2 text-xs text-gray-500'>
-                                                                <button onClick={() => {setEditingId(review.id); setEditText(review.text);}} className='hover:underline'>수정</button>
+                                                                <button onClick={() => {setEditingId(review.id);}} className='hover:underline'>수정</button>
                                                                 <button onClick={() => deleteReview(review.id)} className='hover:underline'>삭제</button>
                                                             </div>
                                                         )}

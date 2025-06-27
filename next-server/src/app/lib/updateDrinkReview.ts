@@ -4,7 +4,7 @@ interface Props {
 }
 
 export const updateDrinkReview = async ({ id, text }: Props) => {
-    const res = await fetch(`/api/drinks/reviews/${id}`, {
+    const res = await fetch(`/api/drinks/review/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',

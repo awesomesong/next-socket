@@ -14,12 +14,20 @@ type FormReviewProps = {
         email?: string | null | undefined;
         image?: string | null | undefined;
     };
+    /** 초기 표시할 리뷰 내용. 수정 폼에서 사용 */
+    initialText?: string;
+    /** 저장 버튼 텍스트 */
+    submitLabel?: string;
+    /** 저장 동작을 직접 처리하고 싶을 때 전달 */
+    onSubmit?: (text: string) => Promise<unknown> | void;
+    /** 취소 버튼 클릭 시 호출 */
+    onCancel?: () => void;
 };
 
-const FormReview = ({ id, user } : FormReviewProps) => {
+const FormReview = ({ id, user, initialText = '', submitLabel = '확인', onSubmit, onCancel }: FormReviewProps) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [review, setReview] = useState<string>('');
-    const [stateReview, setStateReview] = useState(false);
+    const [review, setReview] = useState<string>(initialText);
+    const [stateReview, setStateReview] = useState(Boolean(onSubmit) ? true : false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const queryClient = useQueryClient();
 
@@ -67,20 +75,30 @@ const FormReview = ({ id, user } : FormReviewProps) => {
 
     const handleSubmitReview = (e: FormEvent<HTMLButtonElement>) => {
         e.preventDefault();
-        if(review.trim() === '') {
+        if (review.trim() === '') {
             textareaRef.current?.focus();
             return alert('리뷰를 입력해주세요.');
         }
         if (isSubmitting) return;
         setIsSubmitting(true);
-        createDrinkReviewsMutation(
-            { id, text: review },
-            {
-                onSettled: () => {
-                    setIsSubmitting(false);
+
+        if (onSubmit) {
+            Promise.resolve(onSubmit(review))
+                .then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['drinkReviews', id] });
+                    onCancel?.();
+                })
+                .finally(() => setIsSubmitting(false));
+        } else {
+            createDrinkReviewsMutation(
+                { id, text: review },
+                {
+                    onSettled: () => {
+                        setIsSubmitting(false);
+                    }
                 }
-            }
-        );
+            );
+        }
     };
 
     return (
@@ -95,13 +113,24 @@ const FormReview = ({ id, user } : FormReviewProps) => {
                 className='w-full p-2 box-border border-solid border-b-[1px]'
             />
             {stateReview && (
-                <button
-                    onClick={handleSubmitReview}
-                    type='submit'
-                    className='bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 mt-2 rounded-md'
-                >
-                    {isSubmitting ? '등록 중' : '확인'}
-                </button>
+                <div className='flex gap-2 mt-2'>
+                    <button
+                        onClick={handleSubmitReview}
+                        type='submit'
+                        className='bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md'
+                    >
+                        {isSubmitting ? '등록 중' : submitLabel}
+                    </button>
+                    {onCancel && (
+                        <button
+                            onClick={onCancel}
+                            type='button'
+                            className='px-4 py-2 text-gray-600 border rounded-md'
+                        >
+                            취소
+                        </button>
+                    )}
+                </div>
             )}
         </div>
     );

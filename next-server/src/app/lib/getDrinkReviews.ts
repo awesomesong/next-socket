@@ -16,7 +16,7 @@ export const getDrinkReviews = async (
     const cursor = pageParam ?? null;
 
     try {
-        const res = await fetch(`/api/drinks/reviews/${id}?cursor=${cursor}`, {
+        const res = await fetch(`/api/drinks/review/${id}?cursor=${cursor}`, {
             next: {
                 tags: [_key]
             },
