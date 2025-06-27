@@ -1,12 +1,12 @@
 'use client';
 import TextareaAutosize from 'react-textarea-autosize';
-import React, { useRef, useState, FormEvent } from 'react';
+import React, { useRef, useState, FormEvent, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createDrinkReviews } from '@/src/app/lib/createDrinkReviews';
 import { DrinkReviewsDataProps, DrinkReviewType } from '@/src/app/types/drink';
 
 type FormReviewProps = {
-    slug: string;
+    id: string;
     user: {
         role?: string;
         id: string;
@@ -14,20 +14,45 @@ type FormReviewProps = {
         email?: string | null | undefined;
         image?: string | null | undefined;
     };
+    /** 초기 표시할 리뷰 내용. 수정 폼에서 사용 */
+    initialText?: string;
+    /** 저장 버튼 텍스트 */
+    submitLabel?: string;
+    /** 저장 동작을 직접 처리하고 싶을 때 전달 */
+    onSubmit?: (text: string) => Promise<unknown> | void;
+    /** 취소 버튼 클릭 시 호출 */
+    onCancel?: () => void;
+    /** 컴포넌트가 나타날 때 자동으로 포커스 */
+    autoFocus?: boolean;
 };
 
-const FormReview = ({ slug, user } : FormReviewProps) => {
+const FormReview = ({ 
+    id, 
+    user, 
+    initialText = '', 
+    submitLabel = '확인', 
+    onSubmit, 
+    onCancel,
+    autoFocus = false
+}: FormReviewProps) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [review, setReview] = useState<string>('');
-    const [stateReview, setStateReview] = useState(false);
+    const [review, setReview] = useState<string>(initialText);
+    const [stateReview, setStateReview] = useState(Boolean(onSubmit) ? true : false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const queryClient = useQueryClient();
+
+    useEffect(() => {
+        if (autoFocus) {
+            textareaRef.current?.focus();
+            textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [autoFocus]);
 
     const { mutate: createDrinkReviewsMutation } = useMutation({
         mutationFn: createDrinkReviews,
         onSuccess: (newData) => {
             setReview('');
-            queryClient.setQueriesData({ queryKey: ['drinkReviews', slug] },
+            queryClient.setQueriesData({ queryKey: ['drinkReviews', id] },
                 (oldData: DrinkReviewsDataProps | undefined): DrinkReviewsDataProps => {
                     const newReviewData = newData.newReview;
                     newReviewData.author = user;
@@ -67,20 +92,30 @@ const FormReview = ({ slug, user } : FormReviewProps) => {
 
     const handleSubmitReview = (e: FormEvent<HTMLButtonElement>) => {
         e.preventDefault();
-        if(review.trim() === '') {
+        if (review.trim() === '') {
             textareaRef.current?.focus();
             return alert('리뷰를 입력해주세요.');
         }
         if (isSubmitting) return;
         setIsSubmitting(true);
-        createDrinkReviewsMutation(
-            { slug, text: review },
-            {
-                onSettled: () => {
-                    setIsSubmitting(false);
+
+        if (onSubmit) {
+            Promise.resolve(onSubmit(review))
+                .then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['drinkReviews', id] });
+                    onCancel?.();
+                })
+                .finally(() => setIsSubmitting(false));
+        } else {
+            createDrinkReviewsMutation(
+                { id, text: review },
+                {
+                    onSettled: () => {
+                        setIsSubmitting(false);
+                    }
                 }
-            }
-        );
+            );
+        }
     };
 
     return (
@@ -95,13 +130,24 @@ const FormReview = ({ slug, user } : FormReviewProps) => {
                 className='w-full p-2 box-border border-solid border-b-[1px]'
             />
             {stateReview && (
-                <button
-                    onClick={handleSubmitReview}
-                    type='submit'
-                    className='bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 mt-2 rounded-md'
-                >
-                    {isSubmitting ? '등록 중' : '확인'}
-                </button>
+                <div className='flex gap-2 mt-2'>
+                    <button
+                        onClick={handleSubmitReview}
+                        type='submit'
+                        className='bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md'
+                    >
+                        {isSubmitting ? '등록 중' : submitLabel}
+                    </button>
+                    {onCancel && (
+                        <button
+                            onClick={onCancel}
+                            type='button'
+                            className='px-4 py-2 bg-gray-600 rounded-md text-white'
+                        >
+                            취소
+                        </button>
+                    )}
+                </div>
             )}
         </div>
     );

@@ -91,7 +91,13 @@ const DesktopNav = () => {
                                 onFocus={HandleIndicatorMotion}
                                 onBlur={HandleIndicatorActive}
                                 href={route.href}
-                                className='navBar capitalize'
+                                className='
+                                    navBar 
+                                    capitalize 
+                                    drop-shadow-lg 
+                                    dark:text-slate-200 
+                                    text-neutral-950
+                                '
                             >
                                 {route.label}
                             </Link>

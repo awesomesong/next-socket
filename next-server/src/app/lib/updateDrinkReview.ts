@@ -3,9 +3,9 @@ interface Props {
     text: string;
 }
 
-export const createDrinkReviews = async ({ id, text }: Props) => {
+export const updateDrinkReview = async ({ id, text }: Props) => {
     const res = await fetch(`/api/drinks/review/${id}`, {
-        method: 'POST',
+        method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
         },

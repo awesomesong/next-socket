@@ -12,11 +12,11 @@ type ParamProps = {
 export const getDrinkReviews = async (
     { queryKey, pageParam }: ParamProps
 ) => {
-    const [_key, slug ] = queryKey;
+    const [_key, id ] = queryKey;
     const cursor = pageParam ?? null;
 
     try {
-        const res = await fetch(`/api/drinks/reviews/${slug}?cursor=${cursor}`, {
+        const res = await fetch(`/api/drinks/review/${id}?cursor=${cursor}`, {
             next: {
                 tags: [_key]
             },

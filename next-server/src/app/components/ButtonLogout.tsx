@@ -16,7 +16,13 @@ const ButtonLogout = () => {
 
     return (
         <div 
-            className='cursor-pointer hover:underline'
+            className='
+                cursor-pointer 
+                hover:underline 
+                drop-shadow-lg
+                dark:text-slate-200 
+                text-neutral-950
+            '
             onClick={onClick}
         >
             Logout

@@ -1,22 +1,35 @@
 'use client';
 import dayjs from '@/src/app/lib/day';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PiUserCircleFill } from 'react-icons/pi';
 import { getDrinkReviews } from '@/src/app/lib/getDrinkReviews';
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { DrinkReviewType } from '@/src/app/types/drink';
+import { updateDrinkReview } from '@/src/app/lib/updateDrinkReview';
+import { deleteDrinkReview } from '@/src/app/lib/deleteDrinkReview';
+import FormReview from './FormReview';
 import CommentSkeleton from './skeleton/CommentSkeleton';
 import CircularProgress from './CircularProgress';
 import FallbackNextImage from './FallbackNextImage';
 import DOMPurify from 'dompurify';
 
 type ReviewsProps = {
-    slug: string;
+    id: string;
     name: string;
+    user?: {
+        role?: string;
+        id: string;
+        name?: string | null | undefined;
+        email?: string | null | undefined;
+        image?: string | null | undefined;
+    };
 };
 
-const Reviews = ({ slug, name } : ReviewsProps) => {
+const Reviews = ({ id, name, user } : ReviewsProps) => {
+    const queryClient = useQueryClient();
+    const [editingId, setEditingId] = useState<string | null>(null);
+
     const {
         data,
         status,
@@ -24,7 +37,7 @@ const Reviews = ({ slug, name } : ReviewsProps) => {
         hasNextPage,
         isFetchingNextPage,
     } = useInfiniteQuery({
-        queryKey: ['drinkReviews', slug],
+        queryKey: ['drinkReviews', id],
         queryFn: getDrinkReviews,
         initialPageParam: '',
         getNextPageParam: (lastPage) => {
@@ -37,6 +50,21 @@ const Reviews = ({ slug, name } : ReviewsProps) => {
     });
 
     const { ref, inView } = useInView({ threshold: 0.2, delay: 100 });
+
+    const { mutateAsync: updateReview } = useMutation({
+        mutationFn: updateDrinkReview,
+        onSuccess: () => {
+            setEditingId(null);
+            queryClient.invalidateQueries({ queryKey: ['drinkReviews', id] });
+        }
+    });
+
+    const { mutate: deleteReview } = useMutation({
+        mutationFn: deleteDrinkReview,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['drinkReviews', id] });
+        }
+    });
 
     useEffect(() => {
         if (inView && hasNextPage) {
@@ -81,19 +109,73 @@ const Reviews = ({ slug, name } : ReviewsProps) => {
                                                     <PiUserCircleFill className='w-full h-full' />
                                                 )}
                                             </span>
-                                            <div>
-                                                <div>
+                                            <div className='flex-1'>
+                                                <div className='inline-flex items-end flex-wrap'>
                                                     <span className='break-all mr-2'>
                                                         {review.author?.name}
                                                     </span>
-                                                    <span className='text-gray-400'>
+                                                    <span className='text-gray-400 mr-2'>
                                                         {dayjs(review.createdAt).fromNow()}
                                                     </span>
+                                                    {user?.role === 'admin' || user?.email === review.author?.email && (
+                                                        <span className='text-gray-500'>
+                                                            <button 
+                                                                onClick={() => {setEditingId(review.id);}}
+                                                                className='
+                                                                    px-3
+                                                                    py-1 
+                                                                    mr-2
+                                                                    rounded-full
+                                                                    text-xs
+                                                                    text-blue-500
+                                                                    border-blue-500
+                                                                    border-1
+                                                                '
+                                                            >
+                                                                수정
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    if (confirm('리뷰를 지우시겠습니까?')) {
+                                                                        deleteReview(review.id);
+                                                                    }
+                                                                    setEditingId(null);
+                                                                }} 
+                                                                className='
+                                                                    px-3
+                                                                    py-1 
+                                                                    rounded-full
+                                                                    text-xs
+                                                                    text-gray-500
+                                                                    border-gray-500
+                                                                    dark:text-gray-400
+                                                                    dark:border-gray-400
+                                                                    border-1
+                                                                '
+                                                            >
+                                                                삭제
+                                                            </button>
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                <pre
-                                                    className='whitespace-pre-wrap'
-                                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(review?.text || '') }}
-                                                />
+                                                {editingId === review.id ? (
+                                                    <FormReview
+                                                        id={id}
+                                                        user={user!}
+                                                        initialText={review.text}
+                                                        submitLabel='저장'
+                                                        autoFocus
+                                                        onSubmit={(text) => updateReview({ id: review.id, text })}
+                                                        onCancel={() => setEditingId(null)}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        <pre
+                                                            className='whitespace-pre-wrap'
+                                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(review?.text || '') }}
+                                                        />
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
