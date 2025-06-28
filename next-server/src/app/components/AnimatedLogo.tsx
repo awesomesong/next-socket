@@ -1,41 +1,98 @@
 'use client';
-
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Urbanist } from 'next/font/google';
+
+const urbanist = Urbanist({ subsets: ['latin'], weight: ['400', '700'], style: ['italic', 'normal'] });
 
 const letters = 'songhee'.split('');
 
 const container = {
-  hidden: { opacity: 0 },
+  hidden: {},
   visible: {
-    opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      delayChildren: 0.2,
+      staggerChildren: 0.08,
     },
   },
 };
 
 const item = {
-  hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1 },
+  hidden: { y: 12, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 100,
+      damping: 20,
+    },
+  },
 };
 
 const AnimatedLogo = () => {
   return (
-    <motion.h1
-      className="shrink-0 text-4xl font-bold leading-none"
-      variants={container}
-      initial="hidden"
-      animate="visible"
-    >
-      <Link href="/">
-        {letters.map((char, index) => (
-          <motion.span key={index} variants={item} className="inline-block">
-            {char}
-          </motion.span>
-        ))}
-      </Link>
-    </motion.h1>
+    <div className="relative inline-block">
+      {/* 배경 흐릿한 고정 텍스트 */}
+      <h1
+        className={`
+          ${urbanist.className}
+          italic
+          absolute 
+          top-0 
+          left-0 
+          text-3xl 
+          max-[480px]:text-2xl 
+          max-[310px]:text-xl 
+          font-bold 
+          opacity-30 
+          bg-gradient-to-r 
+          from-rose-400 
+          via-fuchsia-500 
+          to-indigo-500 
+          bg-clip-text 
+          text-transparent 
+          pointer-events-none
+        `}
+        aria-hidden="true"
+      >
+        songhee
+      </h1>
+
+      {/* 앞쪽 등장 애니메이션 텍스트 */}
+      <motion.h1
+        className={`
+          ${urbanist.className}
+          italic
+          relative
+          text-3xl 
+          max-[480px]:text-2xl
+          max-[310px]:text-xl
+          font-bold 
+          bg-gradient-to-r 
+          from-rose-400 
+          via-fuchsia-500 
+          to-indigo-500 
+          bg-clip-text 
+          text-transparent
+        `}
+        variants={container}
+        initial="hidden"
+        animate="visible"
+      >
+        <Link href="/">
+          {letters.map((char, index) => (
+            <motion.span
+              key={index}
+              variants={item}
+              className="inline-block"
+            >
+              {char}
+            </motion.span>
+          ))}
+        </Link>
+      </motion.h1>
+    </div>
   );
 };
 
