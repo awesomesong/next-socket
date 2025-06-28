@@ -1,5 +1,4 @@
-import Image from 'next/image';
-import Link from 'next/link';
+import AnimatedLogo from './AnimatedLogo';
 import { getCurrentUser } from '../lib/session'
 import ButtonLogout from './ButtonLogout';
 import ThemeSwitch from './ThemeSwitch';
@@ -41,19 +40,7 @@ export const Header = async () => {
                     max-md:justify-end
                     max-md:gap-4
                 '>
-                    <h1 className='shrink-0'>
-                        <Link 
-                            href="/"
-                        >
-                            <Image 
-                                src='/image/songhee_logo.png'
-                                alt='송희 로고'
-                                width='78'
-                                height='66'
-                                priority={true}
-                            />
-                        </Link>
-                    </h1>
+                    <AnimatedLogo />
                     <Navigation />
                 </div>
                 <ul className='
