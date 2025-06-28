@@ -16,12 +16,13 @@ const DrinksName:React.FC<DrinksNameProps> = ({ name, scrollRef }) => {
 
   return(
     <motion.div
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ root: scrollRef }}
-      transition={{ duration: 1 }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
     >
-        <div 
+        <motion.div
+          whileHover={{ scale: 1.05 }}
           className="
             text-lg
             sm:text-2xl
@@ -36,7 +37,7 @@ const DrinksName:React.FC<DrinksNameProps> = ({ name, scrollRef }) => {
           "
         >
           {name}
-        </div>
+        </motion.div>
     </motion.div>
   )
 };

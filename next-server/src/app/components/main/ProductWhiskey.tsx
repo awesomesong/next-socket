@@ -16,9 +16,24 @@ const ProductWhiskey = () => {
      }, []); 
     
     return (
-        <div ref={scrollRef} className="product-layout">
+        <motion.section
+            ref={scrollRef}
+            className="product-layout bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-neutral-800 dark:via-neutral-700 dark:to-neutral-800"
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
             <div className="product-title-layout">
-                <h2 className="product-title">위스키</h2>
+                <motion.h2
+                    className="product-title"
+                    initial={{ opacity: 0, y: -10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                >
+                    위스키
+                </motion.h2>
             </div>
             <div 
                 className="
@@ -82,7 +97,7 @@ const ProductWhiskey = () => {
                     </motion.div>
                 ))}
             </div>
-        </div>
+        </motion.section>
     );
 };
 

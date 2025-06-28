@@ -18,9 +18,24 @@ const ProductInternational = () => {
     const positionGroup = useMemo(() => ['3vw', '6vw', '9vw'], []);
 
     return (
-        <div  className="product-layout" ref={scrollRef} >
+        <motion.section
+            className="product-layout bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-neutral-800 dark:via-neutral-700 dark:to-neutral-800"
+            ref={scrollRef}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
             <div className="product-title-layout">
-                <h2 className="product-title">인터내셔널</h2>
+                <motion.h2
+                    className="product-title"
+                    initial={{ opacity: 0, y: -10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                >
+                    인터내셔널
+                </motion.h2>
             </div>
             <div className="
                 product-box
@@ -138,7 +153,7 @@ const ProductInternational = () => {
                     </motion.div>
                 ))}
             </div>
-        </div>
+        </motion.section>
     );
 };
 

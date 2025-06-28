@@ -14,12 +14,24 @@ const ProductBeer = () => {
     const firstBeer = beers[0];
 
     return (
-        <div 
-            ref={scrollRef} 
-            className="product-layout"
+        <motion.section
+            ref={scrollRef}
+            className="product-layout bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-neutral-800 dark:via-neutral-700 dark:to-neutral-800"
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
         >
             <div className="product-title-layout">
-                <h2 className="product-title">맥주</h2>
+                <motion.h2
+                    className="product-title"
+                    initial={{ opacity: 0, y: -10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                >
+                    맥주
+                </motion.h2>
                 <p className="product-scroll"><span className='animate-bounce'>↓ 스크롤을 아래로 내려주세요.</span></p>
             </div>
             <div className='product-box px-4'>
@@ -150,7 +162,7 @@ const ProductBeer = () => {
                     ))}
                 </div>
             </div>
-        </div>
+        </motion.section>
     );
 };
 
