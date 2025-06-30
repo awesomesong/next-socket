@@ -5,7 +5,7 @@ import { Urbanist } from 'next/font/google';
 
 const urbanist = Urbanist({ subsets: ['latin'], weight: ['400', '700'], style: ['italic', 'normal'] });
 
-const letters = 'songhee'.split('');
+const letters = 'HITEJINRO'.split('');
 
 const container = {
   hidden: {},
@@ -37,42 +37,38 @@ const AnimatedLogo = () => {
       <h1
         className={`
           ${urbanist.className}
-          italic
           absolute 
           top-0 
           left-0 
           text-3xl 
-          max-[480px]:text-2xl 
-          max-[310px]:text-xl 
-          font-bold 
+          max-[480px]:text-xl
+          max-[319px]:text-[18px]
           opacity-30 
           bg-gradient-to-r 
-          from-rose-400 
-          via-fuchsia-500 
-          to-indigo-500 
+        from-blue-900 
+        via-blue-500 
+        to-sky-300 
           bg-clip-text 
           text-transparent 
           pointer-events-none
         `}
         aria-hidden="true"
       >
-        songhee
+        HITEJINRO
       </h1>
 
       {/* 앞쪽 등장 애니메이션 텍스트 */}
       <motion.h1
         className={`
           ${urbanist.className}
-          italic
           relative
           text-3xl 
-          max-[480px]:text-2xl
-          max-[310px]:text-xl
-          font-bold 
+          max-[480px]:text-xl
+          max-[319px]:text-[18px]
           bg-gradient-to-r 
-          from-rose-400 
-          via-fuchsia-500 
-          to-indigo-500 
+        from-blue-900 
+        via-blue-500 
+        to-sky-300 
           bg-clip-text 
           text-transparent
         `}
