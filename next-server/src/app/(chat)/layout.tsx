@@ -3,13 +3,13 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.devsonghee.com"),
   title: {
-    default: "채팅",
-    template: "%s | 채팅",
+    default: "하이트 톡톡",
+    template: "%s | 하이트 톡톡",
   },
-  description: "실시간 채팅 기능을 제공합니다. 유저와 대화를 나눠보세요.",
+  description: "하이트를 좋아하는 사람들을 위한 소통 공간입니다.",
   openGraph: {
-    title: "채팅",
-    description: "Socket.io 기반의 실시간 채팅",
+    title: "하이트 톡톡",
+    description: "Socket.io 기반의 실시간 소통 공간",
     url: "https://www.devsonghee.com/chatMember",
     type: "website",
   },
