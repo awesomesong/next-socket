@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     "프론트엔드 개발자",
   ],
   icons: {
-    icon: "/image/hitejiro.png",
+    icon: "/image/hitejinro.png",
   },
   openGraph: {
     title: "강송희 포트폴리오 | 프론트엔드 개발자",
