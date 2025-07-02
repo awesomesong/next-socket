@@ -7,6 +7,7 @@ import UserBox from "./UserBox";
 import ChatMemberSkeleton from "./skeleton/ChatMemberSkeleton";
 import { useSocket } from "../context/socketContext";
 import SocketState from "./SocketState";
+import { IoBeerOutline } from "react-icons/io5";
 
 const UserList = () => {
     const socket = useSocket();
@@ -60,7 +61,15 @@ const UserList = () => {
                 text-2xl
                 font-bold
             ">
-                멤버
+                <span className="
+                    inline-flex 
+                    items-end 
+                    gap-2
+                    leading-none
+                ">
+                    <IoBeerOutline size={26} />
+                    멤버
+                </span>
             </div>
             {status === 'pending'
                 ? (<ChatMemberSkeleton />)

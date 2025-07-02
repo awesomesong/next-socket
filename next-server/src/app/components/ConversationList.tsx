@@ -13,6 +13,7 @@ import useConversation from "@/src/app/hooks/useConversation";
 import GroupChatModal from "./chat/GroupChatModal";
 import { useSocket } from "../context/socketContext";
 import SocketState from "./SocketState";
+import { IoBeerOutline } from "react-icons/io5";
 
 const ConversationList = () => {
     const socket = useSocket();
@@ -137,9 +138,14 @@ const ConversationList = () => {
                                 px-3
                     ">
                     <div className="
+                        inline-flex 
+                        items-end 
+                        gap-2
+                        leading-none
                         text-2xl
                         font-bold
                     ">
+                        <IoBeerOutline size={26} />
                         대화방
                     </div>
                     { status === 'success'  
