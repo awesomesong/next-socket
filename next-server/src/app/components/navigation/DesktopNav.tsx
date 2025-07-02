@@ -67,7 +67,10 @@ const DesktopNav = () => {
                         -bottom-[8px]
                         w-0
                         h-[4px]
-                        bg-neutral-500
+                        bg-gradient-to-r 
+                        from-blue-700 
+                        via-blue-500 
+                        to-sky-400 
                         rounded-sm
                         transition-all
                         duration-[200ms]

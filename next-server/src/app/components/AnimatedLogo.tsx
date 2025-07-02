@@ -66,9 +66,9 @@ const AnimatedLogo = () => {
           max-[480px]:text-xl
           max-[319px]:text-[18px]
           bg-gradient-to-r 
-        from-blue-900 
+        from-blue-700 
         via-blue-500 
-        to-sky-300 
+        to-sky-400 
           bg-clip-text 
           text-transparent
         `}
