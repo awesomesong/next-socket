@@ -4,7 +4,7 @@ const AuthFormSkeleton = () => {
   return (
     <div className="flex flex-col justify-center min-h-full py-10 max-sm:py-6 max-sm:px-2">
       <div className="sm:mx-auto sm:w-full sm:max-w-md space-y-3">
-        <Skeleton className="w-40 h-8 mx-auto rounded-lg" />
+        <Skeleton className="w-40 h-8 rounded-lg" />
         <Skeleton className="w-24 h-6 mx-auto rounded-lg" />
       </div>
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">

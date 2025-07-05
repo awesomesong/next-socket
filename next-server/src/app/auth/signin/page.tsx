@@ -1,3 +1,4 @@
+'use client';
 import { Suspense } from "react";
 import SignInForm from "../../components/SignInForm";
 import AuthFormSkeleton from "../../components/skeleton/AuthFormSkeleton";
