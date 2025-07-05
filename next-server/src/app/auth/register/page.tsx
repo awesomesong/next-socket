@@ -1,10 +1,13 @@
-'use client';
+import { Suspense } from "react";
 import RegisterForm from "../../components/RegisterForm";
+import AuthFormSkeleton from "../../components/skeleton/AuthFormSkeleton";
 
 const RegisterPage = () => {
 
     return (
-        <RegisterForm />
+        <Suspense fallback={<AuthFormSkeleton />}>
+            <RegisterForm />
+        </Suspense>
     )
 }
 

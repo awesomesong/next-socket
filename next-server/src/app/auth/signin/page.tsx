@@ -1,10 +1,13 @@
-'use client';
+import { Suspense } from "react";
 import SignInForm from "../../components/SignInForm";
+import AuthFormSkeleton from "../../components/skeleton/AuthFormSkeleton";
 
 const SignInPage = () => {
 
     return (
-      <SignInForm />
+      <Suspense fallback={<AuthFormSkeleton />}>
+        <SignInForm />
+      </Suspense>
     )
 }
 
