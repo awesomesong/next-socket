@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import { useForm, FieldValues, SubmitHandler } from "react-hook-form";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -10,7 +10,6 @@ import Button from "@/src/app/components/Button";
 import AuthSocial from "@/src/app/components/AuthSocail";
 import Link from "next/link";
 import clsx from "clsx";
-import StatusMessage from "./StatusMessage";
 
 const SignInForm = () => {
   const router = useRouter();
@@ -107,12 +106,10 @@ const SignInForm = () => {
         </div>
       </form>
 
-      <Suspense fallback={<StatusMessage message="로딩 중..."/>}>
-        <AuthSocial 
-          onClick={(value) => setIsLoading(value)} 
-          disabled={isLoading}
-        />
-      </Suspense>
+      <AuthSocial 
+        onClick={(value) => setIsLoading(value)} 
+        disabled={isLoading}
+      />
 
       <div
         className="

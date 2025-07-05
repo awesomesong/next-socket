@@ -1,8 +1,6 @@
 'use client';
 import { signIn } from "next-auth/react";
 import { usePathname, useSearchParams} from "next/navigation";
-import { Suspense } from "react";
-import StatusMessage from "./StatusMessage";
 
 const ButtonLogin = () => {
     const pathname = usePathname();
@@ -12,7 +10,6 @@ const ButtonLogin = () => {
     const fullPath = `${pathname}${queryString ? `?${queryString}` : ''}`;
 
     return (
-    <Suspense fallback={<StatusMessage message="로딩 중..."/>}>
         <button
             className='
                 hover:underline
@@ -24,7 +21,6 @@ const ButtonLogin = () => {
         >
             login
         </button>
-    </Suspense>
     )
 }
 

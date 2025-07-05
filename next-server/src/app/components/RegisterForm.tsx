@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import { useForm, FieldValues, SubmitHandler } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
@@ -9,7 +9,6 @@ import AuthForm from "./AuthForm";
 import Input from "./Input";
 import Button from "./Button";
 import AuthSocial from "./AuthSocail";
-import StatusMessage from "./StatusMessage";
 
 const RegisterForm = () => {
     const router = useRouter();
@@ -168,9 +167,7 @@ const RegisterForm = () => {
                 </div>
             </form>
 
-            <Suspense fallback={<StatusMessage message="로딩 중..."/>}>
-                <AuthSocial onClick={(value) => setIsLoading(value)} disabled={isLoading}/>
-            </Suspense>
+            <AuthSocial onClick={(value) => setIsLoading(value)} disabled={isLoading}/>
 
             <div
                 className="
