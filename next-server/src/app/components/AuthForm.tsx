@@ -1,3 +1,5 @@
+import AnimatedLogo from "./AnimatedLogo";
+
 interface AuthFormProps {
     children: React.ReactNode;
     title: string;
@@ -15,24 +17,24 @@ const AuthForm:React.FC<AuthFormProps> = ({
                 flex-col 
                 justify-center 
                 min-h-full 
-                py-12
-                lg:px-8
-                sm:px-6
+                py-10
+                max-sm:py-6 
+                max-sm:px-2
             '
         >
-            <div
-                className='sm:mx-auto sm:w-full sm:max-w-md'
-            >
-                <h2
-                    className='
-                        mt-6
-                        text-center
-                        text-3xl
-                        font-bold
-                        tracking-tight
-                    '
-                >
-                    {title}   
+            <div className='
+                sm:mx-auto 
+                sm:w-full 
+                sm:max-w-md
+            '>
+                <AnimatedLogo responsive={false} />
+                <h2 className='
+                    mt-1
+                    text-center
+                    text-2xl
+                    tracking-tight
+                '>
+                    {title}
                 </h2>
             </div>
             <div
@@ -41,7 +43,6 @@ const AuthForm:React.FC<AuthFormProps> = ({
                     sm:mx-auto
                     sm:w-full
                     sm:max-w-md
-                    max-sm:px-2
                 "
             >
                 <div

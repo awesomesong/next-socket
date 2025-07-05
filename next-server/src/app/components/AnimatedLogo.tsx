@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Urbanist } from 'next/font/google';
+import clsx from 'clsx';
 
 const urbanist = Urbanist({ subsets: ['latin'], weight: ['400', '700'], style: ['italic', 'normal'] });
 
@@ -30,19 +31,23 @@ const item = {
   },
 };
 
-const AnimatedLogo = () => {
+interface AnimatedLogoProps {
+  responsive?: boolean;
+}
+
+const AnimatedLogo: React.FC<AnimatedLogoProps> = ({ responsive = true }) => {
+  const textSizeClass = responsive
+    ? 'text-3xl max-[480px]:text-xl max-[319px]:text-[18px]'
+    : 'text-3xl';
+
   return (
     <div className="relative inline-block">
       {/* 배경 흐릿한 고정 텍스트 */}
-      <h1
-        className={`
-          ${urbanist.className}
+      <h1 
+        className={clsx(`
           absolute 
           top-0 
           left-0 
-          text-3xl 
-          max-[480px]:text-xl
-          max-[319px]:text-[18px]
           opacity-30 
           bg-gradient-to-r 
         from-blue-900 
@@ -51,7 +56,10 @@ const AnimatedLogo = () => {
           bg-clip-text 
           text-transparent 
           pointer-events-none
-        `}
+        `,
+          urbanist.className,
+          textSizeClass
+        )}
         aria-hidden="true"
       >
         HITEJINRO
@@ -59,19 +67,18 @@ const AnimatedLogo = () => {
 
       {/* 앞쪽 등장 애니메이션 텍스트 */}
       <motion.h1
-        className={`
-          ${urbanist.className}
+        className={clsx(`
           relative
-          text-3xl 
-          max-[480px]:text-xl
-          max-[319px]:text-[18px]
           bg-gradient-to-r 
         from-blue-700 
         via-blue-500 
         to-sky-400 
           bg-clip-text 
           text-transparent
-        `}
+        `,
+          urbanist.className,
+          textSizeClass
+        )}
         variants={container}
         initial="hidden"
         animate="visible"
