@@ -8,7 +8,7 @@ interface Props {
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const base = 'https://www.devsonghee.com';
   try {
-    const res = await fetch(`/api/blogs/${params.id}`, { next: { revalidate: 0 } });
+    const res = await fetch(`${base}/api/blogs/${params.id}`, { next: { revalidate: 0 } });
     if (!res.ok) return {};
     const { blog } = await res.json();
     if (!blog) return {};
