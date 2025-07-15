@@ -63,7 +63,8 @@
 - next-server/ – Next.js 기반 프론트엔드와 API 서버 
 - socket-server/ – 실시간 채팅을 처리하는 Socket.io 서버
 
-##### next-server
+#### 🖥️ next-server
+```
 next-server
 ├── config.ts                # 환경변수 활용에 필요한 설정
 ├── next.config.js           # Next.js 전역 설정
@@ -96,8 +97,10 @@ next-server
 ├── server.js                # 필요 시 커스텀 서버 로직
 ├── tsconfig.json            # TypeScript 설정
 └── .env                     # 환경 변수 예시 
+```
 
-##### socket-server
+#### 🌐 socket-server
+```
 socket-server
 ├── server.js        # Socket.io 이벤트 핸들러와 Express 서버
 ├── Dockerfile       # 컨테이너 배포 시 사용되는 도커 설정
@@ -105,7 +108,7 @@ socket-server
 ├── package.json     # 서버 의존성 및 스크립트 정의
 ├── package-lock.json
 └── .env             # 소켓 서버용 환경 변수
-
+```
 
 
 ### 2. 배포 정보
