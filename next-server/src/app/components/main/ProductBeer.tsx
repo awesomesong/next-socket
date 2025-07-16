@@ -128,8 +128,8 @@ const ProductBeer = () => {
                                             src={beer.image} 
                                             alt={beer.name } 
                                             width={150}
-                                            height={200}
-                                            className="object-contain"
+                                            height={0}
+                                            className="object-contain w-full h-autoㅇ"
                                         />
                                     </div>
                                     {beer.image2 && (
@@ -138,8 +138,8 @@ const ProductBeer = () => {
                                                 src={beer.image2} 
                                                 alt={`${beer.name } 두번째 이미지`} 
                                                 width={150}
-                                                height={200}
-                                                className="object-contain"
+                                                height={0}
+                                                className="object-contain w-full h-auto"
                                             />
                                         </div>
                                     )}

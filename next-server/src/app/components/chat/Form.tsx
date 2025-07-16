@@ -16,8 +16,8 @@ import { FullMessageType } from "../../types/conversation";
 import { useSession } from "next-auth/react";
 
 interface Props  {
-    scrollRef: RefObject<HTMLDivElement>;
-    bottomRef: RefObject<HTMLDivElement>;
+    scrollRef: RefObject<HTMLDivElement | null>;
+    bottomRef: RefObject<HTMLDivElement | null>;
 }
 
 const Form = ({ scrollRef, bottomRef }: Props) => {

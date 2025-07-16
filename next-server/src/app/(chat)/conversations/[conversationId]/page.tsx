@@ -7,17 +7,15 @@ import { useSession } from "next-auth/react";
 import Header from "@/src/app/components/chat/Header";
 import Body from "@/src/app/components/chat/Body";
 import Form from "@/src/app/components/chat/Form";
-import { useRef } from "react";
-import toast from "react-hot-toast";
-
+import { useRef, use } from "react";
 
 interface IParams {
     conversationId: string;
 }
 
-const Conversation = ({ params }: { params : IParams }) => {   
+const Conversation = ({ params }: { params : Promise<IParams> }) => {   
     const { data: session } = useSession();
-    const conversationId = params.conversationId;
+    const { conversationId } = use(params);
     const scrollRef = useRef<HTMLDivElement>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
 

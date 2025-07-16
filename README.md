@@ -28,7 +28,7 @@
   - 다양한 뷰포트에 적응하는 레이아웃 구현
 - **react-hook-form** – 폼 관리
 - **react-hot-toast** – 사용자 알림 처리
-- **react-quill** – WYSIWYG 에디터
+- **react-quill-new** – WYSIWYG 에디터
 - **dayjs** – 날짜 처리
 - **dompurify** – XSS 방지
 - **Highlight.js** – 코드 하이라이팅

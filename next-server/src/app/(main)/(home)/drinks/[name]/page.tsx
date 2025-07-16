@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, use } from 'react';
 import { useRouter } from 'next/navigation';
 import drinksDetailData from '@/src/app/data/drinksDetail';
 import clsx from 'clsx';
@@ -9,11 +9,11 @@ import { useSession } from 'next-auth/react';
 import FormReview from '@/src/app/components/FormReview';
 import Reviews from '@/src/app/components/Reviews';
 
-const DrinksPage = ({params } : { params: { name: string } }) => {
+const DrinksPage = ({params } : { params: Promise<{ name: string }> }) => {
     const router = useRouter();
     const { data: session } = useSession();
 
-    const { name } = params;
+    const { name } = use(params);
 
     const drink = useMemo(() => {
         return drinksDetailData.find(drink => drink.slug === name);
@@ -41,6 +41,7 @@ const DrinksPage = ({params } : { params: { name: string } }) => {
                 alt={drink.name} 
                 fill
                 unoptimized
+                priority
                 sizes="100vw"
                 className="object-cover"
             />

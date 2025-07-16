@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic';
-import ReactQuill, { ReactQuillProps } from 'react-quill';
+import ReactQuill, { ReactQuillProps } from 'react-quill-new';
 import 'react-quill/dist/quill.snow.css';
 import 'quill-color-picker-enhance/dist/index.css';
 import hljs from 'highlight.js';
@@ -12,7 +12,7 @@ interface ForwardedQuillComponent extends ReactQuillProps {
 
 export const DynamicReactQuill = dynamic( 
     async () => { 
-        const { default: RQ } = await import("react-quill");
+        const { default: RQ } = await import("react-quill-new");
         const { SnowTheme } = await import('quill-color-picker-enhance');
         const { ImageResize } = await import('quill-image-resize-module-ts');
 

@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import drinksDetailData from '@/src/app/data/drinksDetail';
 
 interface Props {
@@ -6,9 +5,10 @@ interface Props {
   params: { name: string };
 }
 
-export function generateMetadata({ params }: { params: { name: string } }): Metadata {
+export async function generateMetadata({ params }: { params: { name: string } }) {
+  const { name } = await params;
   const base = 'https://www.devsonghee.com';
-  const drink = drinksDetailData.find((d) => d.slug === params.name);
+  const drink = drinksDetailData.find((d) => d.slug === name);
   const raw = (drink?.description || drink?.info || '') as string;
   const description = raw.replace(/<[^>]*>/g, '').slice(0, 150);
   return {
@@ -18,7 +18,7 @@ export function generateMetadata({ params }: { params: { name: string } }): Meta
     openGraph: {
       title: drink?.name || 'Drink',
       description,
-      url: `${base}/drinks/${params.name}`,
+      url: `${base}/drinks/${name}`,
       type: 'article',
     },
     keywords: ['맥주', '하이트', '드링크', 'Beer', 'Hite', '주류'],

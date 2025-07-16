@@ -1,4 +1,5 @@
-'use client'
+'use client';
+import { use } from 'react';
 import Comments from '@/src/app/components/Comments';
 import FormComment from '@/src/app/components/FormComment';
 import BlogDelete from '@/src/app/components/BlogDelete';
@@ -18,10 +19,10 @@ import FallbackNextImage from '@/src/app/components/FallbackNextImage';
 import DOMPurify from 'dompurify';
 
 const BlogDetailPage = ({ params } : {
-    params: { id: string }
+    params: Promise<{ id: string }> 
 }) => { 
-    const { id } = params;
-    const [viewCount, setViewCount] = useState(0);
+    const { id } = use(params);
+    const [ viewCount, setViewCount] = useState(0);
     const { data: session } = useSession();
 
     const { 

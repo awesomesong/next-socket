@@ -4,18 +4,18 @@ import getBlog from '@/src/app/lib/getBlog';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, use } from 'react';
 
 type IdProps = {
     id: string
 }
 
 type ParamsProps = {
-    params: IdProps
+    params: Promise<IdProps>
 }
 
 const BlogEditpage = ({ params } : ParamsProps) => {
-    const { id } = params;
+    const { id } = use(params);
     const router = useRouter();
     const pathname = usePathname();
 

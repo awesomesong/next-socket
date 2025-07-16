@@ -7,7 +7,7 @@ import { InitFormData } from '../../../types/init';
 import { useMutation, useQuery } from "@apollo/client";
 import dayjs from '@/src/app/lib/day';
 import TextareaAutosize from 'react-textarea-autosize';
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, use } from "react";
 import { AiFillMinusCircle } from "react-icons/ai";
 import { useRouter } from "next/navigation";
 import { Button, Tooltip } from "@heroui/react";
@@ -21,12 +21,11 @@ import StatusMessage from "@/src/app/components/StatusMessage";
 import DOMPurify from "dompurify";
 
 type Props = {
-    params : {
-        id: string;
-    }
+    id: string;
 }
 
-const Post = ({params : {id}}: Props) => {
+const Post = ({ params } : { params : Promise<Props> }) => {
+    const { id } = use(params);
     const {data: session} = useSession();
     const router = useRouter();
     const [formData, setFormData] = useState<FormPostData>(InitFormData);

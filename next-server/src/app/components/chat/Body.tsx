@@ -19,8 +19,8 @@ interface PageData {
 }
 
 interface Props  {
-    scrollRef: RefObject<HTMLDivElement>;
-    bottomRef: RefObject<HTMLDivElement>;
+    scrollRef: RefObject<HTMLDivElement | null>;
+    bottomRef: RefObject<HTMLDivElement | null>;
 }
 
 const Body = ({ scrollRef, bottomRef }: Props) => {

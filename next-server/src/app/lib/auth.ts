@@ -113,7 +113,7 @@ export const authOptions: AuthOptions = {
     pages: {
         signIn: '/auth/signin',
     },
-    debug: process.env.NODE_ENV === 'development',
+    debug: process.env.NODE_ENV !== "production",
     session: {
         strategy: "jwt",
         maxAge: 24 * 60 * 60
