@@ -5,8 +5,6 @@ import FormComment from '@/src/app/components/FormComment';
 import BlogDelete from '@/src/app/components/BlogDelete';
 import BlogEdit from '@/src/app/components/BlogEdit';
 import getBlog from '@/src/app/lib/getBlog';
-import hljs from 'highlight.js';
-import 'highlight.js/styles/vs2015.css';
 import BlogList from '@/src/app/components/BlogList';
 import dayjs from '@/src/app/lib/day';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -42,13 +40,6 @@ const BlogDetailPage = ({ params } : {
             }
         },
     });
-
-    // ✅ highlight.js 실행
-    useEffect(() => {
-        if (isSuccess && data?.blog?.content) {
-            hljs.highlightAll();
-        }
-    }, [isSuccess, data?.blog?.content]);
 
     useEffect(() => {
         if (isSuccess && data?.blog?.viewCount >= 0 && viewCount === 0) {

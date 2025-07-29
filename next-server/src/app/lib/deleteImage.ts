@@ -1,4 +1,5 @@
 export const deleteImage = async (url: string, folderName?: string) => {
+  try {
     const res = await fetch('/api/cloudinary', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -8,4 +9,8 @@ export const deleteImage = async (url: string, folderName?: string) => {
     const { data } = await res.json();
     
     return data.result === 'ok';
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    return false;
+  }
 };

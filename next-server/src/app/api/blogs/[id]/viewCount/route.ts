@@ -8,10 +8,10 @@ interface IParams {
 
 export async function POST(
     req: NextRequest,
-    { params }: { params : IParams},
+    { params }: { params : Promise<IParams>},
     res: NextApiResponse,
 ){
-    const { id } = params;
+    const { id } = await params;
 
     // 쿠키에서 방문 기록 가져오기
     const cookies = req.cookies.get(`visitedBlogPages-${id}`);

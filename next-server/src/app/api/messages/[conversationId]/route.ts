@@ -8,7 +8,7 @@ interface IParams {
 
 export async function GET (
     req: NextRequest,
-    { params }: { params : IParams}
+    { params }: { params : Promise<IParams>}
 ){
     try {
         const limit = 50;
@@ -16,7 +16,7 @@ export async function GET (
         // const cursor = searchParams ? searchParams : null;
 
 
-        const  { conversationId } = params;
+        const  { conversationId } = await params;
         const user = await getCurrentUser();
         
         if(!user?.email) return NextResponse.json({message: '로그인이 되지 않았습니다. 로그인 후에 이용해주세요.'}, {status: 401})

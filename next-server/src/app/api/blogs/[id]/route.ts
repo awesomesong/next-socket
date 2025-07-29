@@ -3,13 +3,13 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/src/app/lib/session";
 
 type ParamsProp = {
-    params: {
+    params: Promise<{
         id: string;
-    }
+    }>
 }
 
 export async function GET(req: Request, { params }: ParamsProp){
-    const { id: blogId } = params;
+    const { id: blogId } = await params;
 
     try {
         const blog = await prisma.blog.findFirst({
@@ -48,7 +48,7 @@ export async function GET(req: Request, { params }: ParamsProp){
 
 export async function DELETE(req: Request,  { params }: ParamsProp) {
     const user = await getCurrentUser();
-    const { id: blogId } = params;
+    const { id: blogId } = await params;
 
     try {
         if(!user?.email) {
@@ -83,7 +83,7 @@ export async function DELETE(req: Request,  { params }: ParamsProp) {
 
 export async function PUT(req: Request, { params }: ParamsProp){
     const user = await getCurrentUser();
-    const { id: blogId } = params;
+    const { id: blogId } = await params;
 
     try {
         if(!user?.email) {

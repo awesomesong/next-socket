@@ -257,98 +257,6 @@ div[data-slot="content"] {
   min-width: fit-content;
 }
 
-/* react-quill*/
-.quill {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-.quill > * {
-  border-color: inherit !important;
-  color: inherit !important;
-}
-.quill > .ql-toolbar {
-  /* border radius of the toolbar */
-  border-radius: 10px 10px 0 0;
-}
-.quill > .ql-container {
-  z-index: 10;
-  min-height: 100px;
-  /* border radius of the container and for font size*/
-  font-size: inherit;
-  border-radius: 0 0 10px 10px;
-}
-
-.ql-toolbar.ql-snow .ql-picker-label {
-  color: inherit !important;
-  opacity: 0.76;
-}
-.ql-snow .ql-picker {
-  color: inherit !important;
-}
-.quill > .ql-container > .ql-editor {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  min-height: 50px;
-}
-.quill > .ql-container > .ql-editor.ql-blank::before {
-  /* for placeholder */
-  color: inherit;
-}
-.ql-snow.ql-toolbar button svg {
-  opacity: 0.76;
-  color: currentColor;
-}
-.ql-snow .ql-stroke {
-  /* for the border of the editor */
-  stroke: currentColor !important;
-}
-.ql-snow .ql-fill {
-  /* for the bg color */
-  fill: currentColor !important;
-}
-.ql-picker-item {
-  /* for dropdown */
-  color: #444 !important;
-}
-.ql-syntax {
-  overflow: visible;
-  margin-top: 5px;
-  margin-bottom: 5px;
-  padding: 5px 10px;
-  background-color: #23241f;
-  border-radius: 3px;
-  color: #f8f8f2;
-  white-space: pre-wrap;
-}
-
-.ql-picker-options {
-  z-index: 20 !important;
-}
-
-.ql-indent-1 {
-  margin-left: 3em;
-}
-.ql-indent-2 {
-  margin-left: 6em;
-}
-.ql-indent-3 {
-  margin-left: 9em;
-}
-
-.ql-indent-1, 
-.ql-indent-2,
-.ql-indent-3 {
-  list-style: disc;
-}
-
-article ul li {
-  margin-left: 3em;
-  list-style: disc;
-}
-
 .effect-rightLeft {
   animation: rightLeft .2s;
 }
@@ -411,6 +319,31 @@ article ul li {
 }
 
 /* Loading */
+.points-loading-bg {
+  background: rgba(20, 20, 20, 0.92);
+  border: 2px solid #444;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.18);
+  padding: 2.5rem 2.5rem 2rem 2.5rem;
+  min-width: 320px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dark .points-loading-bg {
+  background: rgba(30, 30, 40, 0.98);
+  border: 2px solid #fff;
+}
+.points-loading-text {
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+.dark .points-loading-text {
+  color: #fff;
+}
 .container {
   display: grid;
   grid-template-columns: repeat(5, 12px);
@@ -418,36 +351,28 @@ article ul li {
   justify-content: center;
   align-items: center;
 }
-
 .ball {
   width: 12px;
   height: 12px;
   border-radius: 50%;
   animation: wave 1s ease-in-out infinite;
-  @apply bg-[#232323] dark:bg-[#fdfdfd];
+  background: #022b9c;
 }
-
 .ball:nth-child(2) {
   animation-delay: 0.2s;
-  @apply bg-[#555] dark:bg-[#cfcfcf];
-
+  background: #1d4ed8;
 }
-
 .ball:nth-child(3) {
   animation-delay: 0.4s;
-  @apply bg-[#777] dark:bg-[#999];
-
+  background: #3b82f6;
 }
-
 .ball:nth-child(4) {
   animation-delay: 0.6s;
-  @apply bg-[#999] dark:bg-[#777];
-
+  background: #61aefa;
 }
-
 .ball:nth-child(5) {
   animation-delay: 0.8s;
-  @apply bg-[#afafaf] dark:bg-[#555];
+  background: #84bef7;
 }
 
 @keyframes wave {
@@ -658,4 +583,41 @@ article ul li {
       border-bottom-color: currentColor;
       transform: rotate(225deg);
   }
+}
+
+#editor > .quill {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.ql-container {
+  flex: 1;
+  height: auto !important;
+  border-bottom-left-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+}
+
+.ql-toolbar.ql-snow {
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+}
+
+.ql-snow .ql-editor .ql-code-block-container {
+  white-space: pre;
+  overflow: auto !important;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+}
+
+.ql-snow .ql-editor .ql-code-block {
+  display: block;
+  min-width: max-content;
+  width: fit-content;
+  background: transparent;
+  padding: 0 10px;
+  margin: 0;
+  font-family: 'Fira Mono', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
 }

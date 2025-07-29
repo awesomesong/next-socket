@@ -10,8 +10,8 @@
 
 ### 🖥️ next-server (프론트 + API 서버)
 
-- **Next.js 14 (App Router 기반)**
-- **React 18**
+- **Next.js 15 (App Router 기반)**
+- **React 19**
 - **TypeScript**
 - **NextAuth** – 소셜 로그인 및 계정 등록
 - **Apollo Client / Apollo Server** – GraphQL API 구축 및 운영

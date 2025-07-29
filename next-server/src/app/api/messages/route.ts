@@ -6,7 +6,7 @@ export async function POST(req: Request) {
     try {
         const user = await getCurrentUser();
         const body = await req.json();
-        const { message, image, conversationId, clientGeneratedId } = body;
+        const { message, image, conversationId, messageId } = body;
         
         if(!user?.id || !user?.email) return NextResponse.json({message: '로그인이 되지 않았습니다. 로그인 후에 이용해주세요.'}, {status: 401})
         if(Object.keys(body).length < 1) return NextResponse.json({message: '입력한 정보가 없습니다.' }, {status: 401});
@@ -22,10 +22,10 @@ export async function POST(req: Request) {
         // 🔹 메시지 생성
         const newMessage = await prisma.message.create({
             data: {
+                id: messageId,
                 body: message,
                 type: 'text',
                 image: image,
-                clientGeneratedId,
                 conversation: { connect: { id: conversationId } },
                 sender: { connect: { id: user.id } },
                 seen: { connect: { id: user.id } },

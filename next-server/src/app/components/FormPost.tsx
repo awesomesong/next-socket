@@ -169,7 +169,7 @@ const FormPost = ({ id, isEdit} : FormPostProps) => {
     }, [formData, isEdit, id, addPost, updatePost]);
 
     const categories = useMemo(() => [
-        "next.js 14", 
+        "next.js 15", 
         "mongodb", 
         "prisma",
         "apollo", 

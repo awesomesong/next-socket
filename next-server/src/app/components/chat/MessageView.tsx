@@ -1,5 +1,4 @@
 'use client';
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import Avatar from "@/src/app/components/Avatar";
 import ImageModal from "@/src/app/components/ImageModal";
@@ -13,6 +12,7 @@ import FallbackNextImage from "@/src/app/components/FallbackNextImage";
 import DOMPurify from "dompurify";
 import { useSocket } from "../../context/socketContext";
 import { MessageSeenInfo } from "../../types/socket";
+import { isAtBottom } from "../../utils/isAtBottom";
 
 interface MessageBoxProps {
   data: FullMessageType;
@@ -44,7 +44,6 @@ const MessageView:React.FC<MessageBoxProps> = ({
   const isOwn = currentUser?.email === data?.sender?.email ? true : false;
   const isConversationUser = data.conversation?.userIds?.includes(data?.sender?.id)
   const bottomRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
 
   const { 
     mutate: seenMessageMutation, 
@@ -66,12 +65,11 @@ const MessageView:React.FC<MessageBoxProps> = ({
     const messageId = data.id;
     if ( messageId 
         && data.sender.email !== currentUser?.email
-        && !messageId.startsWith('optimistic-')
         && isLast
     ) {
       seenMessageMutation({ conversationId, messageId });
     }
-  }, [isLast, data.id, conversationId]);
+  }, [isLast, data.id, conversationId, data.sender.email, currentUser?.email, seenMessageMutation]);
 
   // 마지막 메시지를 확인한 사용자 이름 리스트
   useEffect(() => {
@@ -91,20 +89,12 @@ const MessageView:React.FC<MessageBoxProps> = ({
   // 스크롤 맨아래에서 메시지를 읽은 사용자가 있으면, 아래로 스크롤 내려가게 설정
   useEffect(() => {
     if (!isLast || seenUser.length <= 1 || !showSeenTag || !bottomRef.current) return;
-  
-    // 현재 스크롤이 맨 아래인지 확인
-    const messageContainer = bottomRef.current.parentElement; // 메시지를 감싸는 부모 컨테이너
-    if (!messageContainer) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = messageContainer;
-  
-    const scrollDiff = Math.abs(scrollHeight - clientHeight - scrollTop); 
-    const isAtBottom = scrollDiff <= 100; 
-  
-    // 스크롤이 이미 맨 아래에 있을 때만 자동 이동
-    if (isAtBottom) {
+    const messageContainer = bottomRef.current.parentElement as HTMLElement | null;
+    if (isAtBottom(messageContainer)) {
       requestAnimationFrame(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+        if (bottomRef.current) {
+          bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
       });
     }
   }, [showSeenTag]);  

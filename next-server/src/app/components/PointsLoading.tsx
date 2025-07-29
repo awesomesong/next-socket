@@ -14,7 +14,7 @@ const PointsLoading = ({loadingMessage}: PointsLoadingProps) => {
             left-0
             right-0
             z-[500]
-            bg-neutral-700/[.60]
+            bg-neutral-700/[.50]
             dark:bg-neutral-900/[.90]
         ">
             <div className="flex flex-col gap-6">
@@ -25,7 +25,7 @@ const PointsLoading = ({loadingMessage}: PointsLoadingProps) => {
                     <div className="ball"></div>
                     <div className="ball"></div>
                 </div>
-                <div className="text-center text-lg">
+                <div className="text-center text-lg points-loading-text">
                     {loadingMessage}
                 </div>
             </div>

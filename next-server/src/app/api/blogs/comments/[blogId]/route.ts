@@ -2,16 +2,18 @@ import { getCurrentUser } from '@/src/app/lib/session';
 import prisma from '../../../../../../prisma/db';
 import { NextRequest, NextResponse } from "next/server";
 
-interface IParams {
-    blogId?: string;
+interface ParamsProp {
+    params: Promise<{
+        blogId?: string;
+    }>
 }
 
 export async function GET(
     req: NextRequest,
-    { params }: { params : IParams}
+    { params }: ParamsProp
 ){
     try {
-        const { blogId } = params;
+        const { blogId } = await params;
         const limit = 15;
         const cursor  = req.nextUrl.searchParams.get('cursor') || null;
 
@@ -62,9 +64,9 @@ export async function GET(
 
 export async function POST(
     req: Request,
-    { params }: { params : IParams}
+    { params }: ParamsProp
 ){
-    const { blogId } = params;
+    const { blogId } = await params;
     const user = await getCurrentUser();
     
     try {

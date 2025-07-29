@@ -87,7 +87,7 @@ const AnimatedLogo: React.FC<AnimatedLogoProps> = ({ responsive = true }) => {
           {letters.map((char, index) => (
             <motion.span
               key={index}
-              variants={item}
+              variants={item as any}
               className="inline-block"
             >
               {char}

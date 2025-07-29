@@ -1,16 +1,15 @@
 "use client"
-import { GET_POST } from '@/graphql/queries';
-import { useQuery } from '@apollo/client';
 import FormPost from '@/src/app/components/FormPost';
+import { use } from 'react';
 
 type ParamsProps = {
-    params: {
+    params: Promise<{
         id: string;
-    }
+    }>
 }
 
 const PostsCreatePage = ({ params } : ParamsProps) => {
-    const { id } = params;
+    const { id } = use(params);
 
     return (
         <>

@@ -2,15 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from '@/prisma/db';
 import { getCurrentUser } from '@/src/app/lib/session';
 
-interface IParams {
-    id?: string; // treated as slug for GET/POST and review id for PUT/DELETE
+interface ParamsProp {
+    params: Promise<{
+        id?: string; 
+    }>
 }
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: IParams }
+    { params }: ParamsProp
 ) {
-    const { id: slug } = params;
+    const { id: slug } = await params;
     try {
         const limit = 20;
         const cursor = req.nextUrl.searchParams.get('cursor') || null;
@@ -53,9 +55,9 @@ export async function GET(
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: IParams }
+    { params }: ParamsProp
 ) {
-    const { id: slug } = params;
+    const { id: slug } = await params;
     const user = await getCurrentUser();
 
     try {
@@ -79,9 +81,9 @@ export async function POST(
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: IParams }
+    { params }: ParamsProp
 ) {
-    const { id } = params;
+    const { id } = await params;
     const user = await getCurrentUser();
 
     try {
@@ -116,9 +118,9 @@ export async function PUT(
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: IParams }
+    { params }: ParamsProp
 ) {
-    const { id } = params;
+    const { id } = await params;
     const user = await getCurrentUser();
 
     try {

@@ -11,7 +11,7 @@ import ChatSkeleton from '@/src/app/components/skeleton/ChatSkeleton';
 import { PiArrowFatDownFill } from "react-icons/pi";
 import CircularProgress from '@/src/app/components/CircularProgress';
 import { useSocket } from '../../context/socketContext';
-import useConversationUserList from '../../hooks/useConversationUserList';
+import { isAtBottom } from '../../utils/isAtBottom';
 
 interface PageData {
     messages: FullMessageType[];  // 각 페이지에서 메시지 배열
@@ -30,31 +30,19 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
     const { conversationId } = useConversation();
     const [isFirstLoad, setIsFirstLoad] = useState(true); // 처음 로딩 여부
     const [isScrolledUp, setIsScrolledUp] = useState(false); // 스크롤이 위에 있을 때 true
-    const { set, conversationUsers, remove } = useConversationUserList();
+    const wasAtBottomRef = useRef(false);
     const isAndroid = /Android/i.test(navigator.userAgent);
 
-    const scrollToBottom = () => {
+    const scrollToBottom = useCallback(() => {
         requestAnimationFrame(() => {
             if (bottomRef.current) {
-                bottomRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+                bottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
             }
-            if (scrollRef.current) {
-                scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-            }
+            // if (scrollRef.current) {
+            //     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            // }
         });
-    };
-
-    const getIsAtBottom = () => {
-        const el = scrollRef.current;
-        if (!el) return false;
-        const { scrollTop, scrollHeight, clientHeight } = el;
-        const visualViewportHeight = window.visualViewport?.height || window.innerHeight;
-        const keyboardGap = isAndroid ? window.innerHeight - visualViewportHeight : 0;
-        const threshold = isAndroid ? Math.max(180, keyboardGap) : 100;
-        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-        return distanceFromBottom <= threshold;
-    };
-
+    }, [bottomRef]);
 
     // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
     const {
@@ -67,138 +55,164 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
     } = useInfiniteQuery({
         queryKey: ['messages', conversationId],
         queryFn: ({ pageParam = null }) => getMessages({ conversationId, pageParam }),
-        initialPageParam: null, // 최신 메시지부터 로드
-        getNextPageParam: (lastPage) => lastPage?.nextCursor ?? null,
-        select: (data) => ({
-            // 데이터 역순으로 정렬
-            pages: [...data.pages].reverse(),
-            pageParams: [...data.pageParams].reverse(),
-        }),
-    });    
+        initialPageParam: null, // 최신 메시지부터 로드 
+        getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
+    });
 
     const { mutate: readMessageMutaion } = useMutation({
         mutationFn: readMessages,
         onSuccess: () => {
             if (socket) socket.emit('read:messages', { conversationId });
+            // 'conversationList' 쿼리를 무효화하여 읽지 않은 메시지 카운트 등을 업데이트
+            queryClient.invalidateQueries({ queryKey: ['conversationList'] });
         },
     });
 
+    // 컴포넌트 마운트 시 및 conversationId 변경 시, 첫 로드 처리 및 메시지 읽음 처리
     useEffect(() => {
-        // 처음 채팅 입장
         if (status === 'success' && data?.pages?.length && isFirstLoad) {
+            // 처음 로드될 때만 스크롤 맨 아래로
             requestAnimationFrame(() => {
                 setTimeout(() => {
                     scrollToBottom();
-                }, 50);
+                }, 50); // 약간의 지연으로 렌더링 완료 후 스크롤
             });
             setIsFirstLoad(false);
+
+            // 항상 메시지를 읽음 처리 (대화방 진입 시)
             readMessageMutaion(conversationId);
         }
-    }, [status, data]);
+    }, [status, data?.pages]);
 
-    const handleRead = useCallback(() => {
-        queryClient.invalidateQueries({ queryKey: ['conversationList'] });
-    }, [queryClient]);
 
-    // ✅ 소켓 메시지 수신 시 최신 메시지를 리스트의 가장 아래에 추가
+    // ✅ 소켓 메시지 수신 시 최신 메시지를 리스트에 추가 또는 업데이트
     useEffect(() => {
         if (!socket) return;
 
         const handleReconnect = () => {
             socket.emit('join:room', conversationId); // 방 재입장
-            refetch(); // 메시지 다시 불러오기 ✅
+            // refetch(); // 메시지 다시 불러오기는 setQueriesData에서 처리하므로 여기서 호출하지 않아도 됨
         };
 
         const handleReceiveMessage = (message: FullMessageType) => {
+            // **핵심 로직 변경:** 옵티미스틱 메시지를 서버 메시지로 "교체"하거나 새 메시지를 "추가"
             queryClient.setQueriesData(
                 { queryKey: ['messages', conversationId] },
                 (oldData: InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }> | undefined) => {
-                    if (!oldData) return oldData;
+                    if (!oldData || !oldData.pages.length) {
+                        // 데이터가 없거나 페이지가 없으면 새 메시지로 새 페이지를 만듭니다.
+                        return {
+                            pageParams: [null], // 초기 페이지 파라미터는 null로 유지
+                            pages: [{ messages: [message], nextCursor: null }],
+                        };
+                    }
 
-                    const currentMessages = oldData.pages[0].messages;
+                    // 기존 페이지 배열을 복사합니다.
+                    const updatedPages = [...oldData.pages];
 
-                    // ✅ 낙관적 메시지 제거 기준: clientGeneratedId가 같고 내가 보낸 메시지 일 경우
-                    const filteredMessages = currentMessages.filter((msg) => {
-                        return !(
-                            msg.clientGeneratedId === message.clientGeneratedId &&
-                            msg.senderId === session?.user?.id
-                        );
-                    });
+                    // 가장 최신 메시지가 있는 첫 번째 페이지를 가져옵니다. (oldData.pages[0]가 가장 최신 메시지 페이지라고 가정)
+                    const firstPage = { ...updatedPages[0] };
+                    let messagesInFirstPage = [...firstPage.messages];
+
+                    // 서버 ID (message.id)로 기존 메시지를 찾습니다.
+                    const existingMessageIndex = messagesInFirstPage.findIndex(
+                        (msg) => msg.id === message.id
+                    );
+
+                    if (existingMessageIndex !== -1) {
+                        // 이미 해당 ID를 가진 메시지가 첫 페이지에 있다면 업데이트
+                        messagesInFirstPage[existingMessageIndex] = message;
+                    } else {
+                        // 첫 페이지에 없는 새로운 메시지라면 추가합니다.
+                        // 이 메시지는 소켓으로 수신된 메시지이므로, 가장 최신 메시지일 가능성이 높습니다.
+                        // createdAt 기준으로 정렬될 것이므로 일단 추가합니다.
+                        messagesInFirstPage.push(message); 
+                    }
+
+                    // 첫 페이지 내에서 메시지를 createdAt 기준으로 정렬합니다. (최신 메시지 순서 유지)
+                    // 오래된 -> 최신 순으로 정렬되어야 스크롤 상단에 오래된 메시지가 나타납니다.
+                    messagesInFirstPage.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+                    // 업데이트된 첫 페이지를 기존 페이지 배열에 다시 할당합니다.
+                    updatedPages[0] = {
+                        ...firstPage,
+                        messages: messagesInFirstPage,
+                    };
 
                     return {
                         ...oldData,
-                        pages: [
-                            {
-                                messages: [message, ...filteredMessages], // 최신 메시지를 첫 번째 페이지에 추가
-                                nextCursor: oldData.pages[0].nextCursor
-                            },
-                            ...oldData.pages.slice(1), // 나머지 페이지 유지
-                        ]
+                        pages: updatedPages, // 이전 페이지들은 그대로 유지
                     };
                 }
             );
 
+            if (isAtBottom(scrollRef.current)) {
+                requestAnimationFrame(() => {
+                    scrollToBottom();
+                    setIsScrolledUp(false);
+                });
+            }else{
+                setIsScrolledUp(true);
+            }
+
+            // 내가 보낸 메시지가 아닐 경우에만 읽음 처리
             if (message.sender.id !== session?.user?.id) {
                 readMessageMutaion(conversationId);
             }
+        };
 
-            requestAnimationFrame(() => {
-                const atBottom = getIsAtBottom();
 
-                if (atBottom) {
-                    scrollToBottom();
-                    setIsScrolledUp(false);
-                } else {
-                    setIsScrolledUp(true);
-                }
-            });
+        const handleReadMessages = (payload: { conversationId: string; seenUser: FullMessageType['seen'] }) => {
+            // 'seen:user' 이벤트가 MessageView에서 처리되므로, 여기서 직접 메시지의 seen 상태를 업데이트할 필요는 없을 수 있습니다.
+            // 하지만 전체 대화방 목록의 '읽지 않은 메시지 수' 업데이트를 위해 'conversationList' 쿼리를 무효화합니다.
+            if (payload?.conversationId === conversationId) {
+                queryClient.invalidateQueries({ queryKey: ['conversationList'] });
+            }
         };
 
         socket.emit('join:room', conversationId);
         socket.on('connect', handleReconnect);
         socket.on("receive:message", handleReceiveMessage);
-        socket.on("read:message", handleRead);
+        socket.on("read:message", handleReadMessages);
 
         return () => {
-            socket.off("join:room");
             socket.off('connect', handleReconnect);
             socket.off("receive:message", handleReceiveMessage);
-            socket.off("read:message", handleRead);
+            socket.off("read:message", handleReadMessages);
+        };
+    }, [socket, conversationId, queryClient, session?.user?.id, readMessageMutaion, scrollToBottom, scrollRef]); 
+
+    // 채팅방 참여 & 미참여 (beforeunload 이벤트)
+    // 이 useEffect는 window 레벨 이벤트를 다루므로, conversationId의 변화보다는 컴포넌트 마운트/언마운트에 집중합니다.
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+          if(socket) socket.emit("leave:room", conversationId);
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        return () => {
+          window.removeEventListener("beforeunload", handleBeforeUnload);
+          // 컴포넌트 언마운트 시 명시적으로 leave:room 전송
+          if(socket) socket.emit("leave:room", conversationId);
         };
     }, [socket, conversationId]);
 
-    // 채팅방 참여 & 미참여
-    useEffect(() => {
-        const handleBeforeUnload = () => {
-          // 페이지를 떠나기 전에 채팅방 나가기 이벤트 전송
-          if(socket) socket.emit("leave:room", conversationId);
-        };
-    
-        window.addEventListener("beforeunload", handleBeforeUnload);
-    
-        // 컴포넌트 언마운트 시 cleanup
-        return () => {
-          window.removeEventListener("beforeunload", handleBeforeUnload);
-          // 혹은 필요시 여기서도 leaveRoom 이벤트 전송
-          if(socket) socket.emit("leave:room", conversationId);
-        };
-    }, [conversationId]);
 
-    // ✅ 스크롤 이벤트 리스너
+    // ✅ 스크롤 이벤트 리스너 (이전 메시지 로드)
     useEffect(() => {
         const handleScroll = async () => {
             if (!scrollRef.current) return;
             const el = scrollRef.current;
 
             const atTop = el.scrollTop === 0;
-            const isAtBottom = getIsAtBottom();
-            setIsScrolledUp(!isAtBottom);
-
-            const previousScrollHeight = el.scrollHeight;
+            const isBottom = isAtBottom(scrollRef.current, isAndroid);
+            setIsScrolledUp(!isBottom);
 
             if (atTop && hasNextPage && !isFetchingNextPage) {
-                await fetchNextPage();
-                requestAnimationFrame(() => {
+                const previousScrollHeight = el.scrollHeight;
+                await fetchNextPage(); // 다음 페이지 로드
+                requestAnimationFrame(() => { // 로드 후 스크롤 위치 유지
                     if (scrollRef.current) {
                         const newScrollHeight = scrollRef.current.scrollHeight;
                         scrollRef.current.scrollTop = newScrollHeight - previousScrollHeight;
@@ -210,50 +224,50 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
         const container = scrollRef.current;
         container?.addEventListener('scroll', handleScroll);
         return () => container?.removeEventListener('scroll', handleScroll);
-    }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+    }, [fetchNextPage, hasNextPage, isFetchingNextPage, isAndroid, scrollRef]);
 
-    // ✅ 클릭맨 아래로 스크롤하는 함수
+    // ✅ 클릭 맨 아래로 스크롤하는 함수
     const clickToBottom = useCallback(() => {
         setIsScrolledUp(false);
         scrollToBottom();
-    },[]);
+    }, [scrollToBottom]); 
+
+
+    // 모든 페이지의 메시지를 FlatMap으로 합친 후 정렬하여 반환 (UI 렌더링용)
+    const allMessages = useMemo(() => {
+        return (
+            data?.pages
+              .flatMap(page => page.messages)
+              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // 오래된 → 최신
+            || []
+        );
+    }, [data?.pages]);
+      
+    const lastMessageId = allMessages.at(-1)?.id;
 
     return (
         <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
             {isFetchingNextPage && (
-                <CircularProgress aria-label="로딩중"/>
+                <CircularProgress aria-label="메시지 로딩중"/>
             )}
-            {status === 'success' 
-                ? data?.pages.map((page: PageData, i) => {
-                    if (!page) return null;
-
-                    const messages = page.messages.slice().reverse();
-
-                    return (<Fragment key={i}>
-                        {messages.map((message: FullMessageType, idx: number) => {
-                            // 날짜 구분선 계산
-                            const prevMessageInPage = idx > 0 ? messages[idx - 1] : null;
-                            const prevMessageInPrevPage =
-                                idx === 0 && i > 0
-                                    ? data.pages[i - 1].messages.slice().reverse().at(-1)
-                                    : null;
-
-                            const prevMessage = prevMessageInPage ?? prevMessageInPrevPage;
-
-                            const currentDate = new Date(message.createdAt).toDateString();
-                            const prevDate = prevMessage ? new Date(prevMessage.createdAt).toDateString() : null;
-                            const showDateDivider = currentDate !== prevDate;
-
-                            return (<MessageView
-                                key={message.clientGeneratedId || message.id}
-                                data={message}
-                                isLast={idx === Object.keys(page.messages).length - 1}
-                                currentUser={session?.user}
-                                conversationId={conversationId}
-                                showDateDivider={showDateDivider}
-                            />)
-                        })}
-                    </Fragment>)
+            {status === 'success'
+                ? allMessages.map((message: FullMessageType, idx: number) => {
+                    const prevMessage = idx > 0 ? allMessages[idx - 1] : null;
+    
+                    const currentDate = new Date(message.createdAt).toDateString();
+                    const prevDate = prevMessage ? new Date(prevMessage.createdAt).toDateString() : null;
+                    const showDateDivider = currentDate !== prevDate;
+    
+                    return (
+                        <MessageView
+                            key={message.id}
+                            data={message}
+                            isLast={message.id === lastMessageId}
+                            currentUser={session?.user}
+                            conversationId={conversationId}
+                            showDateDivider={showDateDivider}
+                        />
+                    );
                 })
                 : (<ChatSkeleton />)
             }
@@ -263,15 +277,15 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
                 <button
                     type='button'
                     className="
-                        absolute 
-                        md:bottom-24 
+                        absolute
+                        md:bottom-24
                         bottom-28
                         right-1/2
-                        p-2 
-                        bg-default-reverse 
+                        p-2
+                        bg-default-reverse
                         text-default-reverse
-                        rounded-full 
-                        shadow-lg 
+                        rounded-full
+                        shadow-lg
                         opacity-70
                         translate-x-[50%]
                     "
@@ -287,4 +301,3 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
 };
 
 export default Body;
-

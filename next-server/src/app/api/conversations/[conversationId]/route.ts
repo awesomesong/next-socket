@@ -3,17 +3,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from '@/src/app/lib/session';
 import { pusherServer } from '@/src/app/lib/_pusher';
 
-interface IParams {
-    conversationId: string;
+interface ParamsProp {
+    params: Promise<{
+        conversationId: string;
+    }>
 }
 
 export async function GET (
     req: NextRequest,
-    { params }: { params : IParams}
+    { params }: ParamsProp
 ){
     
     try {
-        const  { conversationId } = params;
+        const  { conversationId } = await params;
         const user = await getCurrentUser();
         
         if(!user?.email) return NextResponse.json({message: '로그인이 되지 않았습니다. 로그인 후에 이용해주세요.'}, {status: 401})
@@ -53,10 +55,10 @@ export async function GET (
 
 export async function DELETE(
     req: Request,
-    { params }: { params : IParams}
+    { params }: ParamsProp
 ){
     try {
-        const { conversationId } = params;
+        const { conversationId } = await params;
         const user = await getCurrentUser();
 
         if(!user?.id) return NextResponse.json({message: '로그인이 되지 않았습니다. 로그인 후에 이용해주세요.'}, {status: 401})

@@ -7,13 +7,15 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";
-import { RefObject, useEffect, useState } from "react";
+import { RefObject, useCallback, useEffect, useState } from "react";
 import ImageUploadButton from "@/src/app/components/ImageUploadButton";
 import { useSocket } from "../../context/socketContext";
 import useComposition from "@/src/app/hooks/useComposition";
 import useConversationUserList from "../../hooks/useConversationUserList";
 import { FullMessageType } from "../../types/conversation";
 import { useSession } from "next-auth/react";
+import { isAtBottom } from "../../utils/isAtBottom";
+import { ObjectId } from 'bson'; 
 
 interface Props  {
     scrollRef: RefObject<HTMLDivElement | null>;
@@ -28,15 +30,29 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
     const queryClient = useQueryClient();
     const { data: session } =useSession();
 
+    const scrollToBottom = useCallback(() => {
+        requestAnimationFrame(() => {
+            if (bottomRef.current) {
+                // 현재 스크롤이 맨 아래에 있을 때만 자동으로 스크롤
+                bottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+        });
+    }, [bottomRef]);
+
     const { 
         mutate, 
-        data,
         isSuccess
     }  = useMutation({
         mutationFn: sendMessage,
         onMutate: (newMessage) => {
+            if (isAtBottom(scrollRef.current)) {
+                requestAnimationFrame(() => {
+                    scrollToBottom();
+                });
+            }
+
             const conversationId = newMessage.conversationId;
-            const clientGeneratedId = newMessage.clientGeneratedId; 
+            const messageId = newMessage.messageId; 
 
             const body = newMessage.data?.message?.trim() || null;
             const image = newMessage.image || null;
@@ -51,7 +67,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
             const isGroupChat = userIds.length > 2;
 
             const optimisticMessage = {
-                id: clientGeneratedId,
+                id: messageId,
                 body,
                 image,
                 createdAt: new Date().toISOString(),
@@ -80,49 +96,55 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
 
             queryClient.setQueryData(['messages', conversationId], (old: any) => {
                 if (!old) {
-                  return {
-                    pageParams: [null],
-                    pages: [{ messages: [optimisticMessage], nextCursor: null }],
-                  };
+                    return {
+                        pageParams: [null],
+                        pages: [{ messages: [optimisticMessage], nextCursor: null }],
+                    };
                 }
+
+                const updatedPages = old.pages.map((page: { messages: FullMessageType[] }, index: number) => {
+                    if (index === 0) { // 가장 최신 메시지가 있는 첫 페이지에 추가
+                        return {
+                            ...page,
+                            messages: [optimisticMessage, ...page.messages],
+                        };
+                    }
+                    return page;
+                });
             
                 return {
-                  ...old,
-                  pages: [
-                    {
-                      ...old.pages[0],
-                      messages: [optimisticMessage, ...old.pages[0].messages],
-                    },
-                    ...old.pages.slice(1),
-                  ],
+                    ...old,
+                    pages: updatedPages,
                 };
             });
 
-            return { previousData };
+            return { previousData, messageId };
         },
         onSuccess: (data) => {
             if(socket) socket.emit('send:message', data);
         },
         onError: (error, _variables, context) => {
-            // 이전 optimistic 캐시로 롤백
             if (context?.previousData) {
               queryClient.setQueryData(["messages", _variables.conversationId], context.previousData);
+            }
+
+            if (context?.messageId) {
+                queryClient.setQueriesData(
+                    { queryKey: ['messages', _variables.conversationId] },
+                    (old: InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }> | undefined) => {
+                        if (!old) return old;
+                        const newPages = old.pages.map((page: { messages: FullMessageType[] }) => ({
+                            ...page,
+                            messages: page.messages.filter(msg => msg.id !== context.messageId)
+                        }));
+                        return { ...old, pages: newPages };
+                    }
+                );
             }
 
             toast.error(`${error.message || '대화 내용이 입력되지 못했습니다.'}`);
         },
         onSettled: (_data, _error, variables) => {
-            requestAnimationFrame(() => {
-                if (bottomRef.current) {
-                    bottomRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
-                }
-
-                if (scrollRef.current) {
-                  scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                }
-            });
-
-            queryClient.invalidateQueries({ queryKey: ["messages", variables.conversationId] });
         }
     });
 
@@ -152,9 +174,8 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
         if(!data || isDisabled) return;
 
         // setIsDisabled(true);
-
-        const clientGeneratedId = `optimistic-${Date.now()}`;
-        mutate({conversationId, data, clientGeneratedId});
+        const messageId = new ObjectId().toHexString(); 
+        mutate({conversationId, data, messageId });
         setIsDisabled(false);
         setValue('message', '', { shouldValidate : true});
         setFocus("message");
@@ -164,8 +185,8 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
     const handleUpload = async (result: any) => {
         if(!result?.info?.secure_url) return;
 
-        const clientGeneratedId = `optimistic-${Date.now()}`;
-        mutate({conversationId, image: result?.info?.secure_url, clientGeneratedId});
+        const messageId = new ObjectId().toHexString(); 
+        mutate({conversationId, image: result?.info?.secure_url, messageId});
     };
 
     // ✅ 조합 입력 훅 적용

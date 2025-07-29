@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.devsonghee.com"),
   title: "강송희 포트폴리오 | 프론트엔드 개발자",
   description: `프론트엔드 개발자 강송희의 포트폴리오입니다. 
-    Next.js 14, React 18, Prisma, GraphQL, Pusher, Next-Auth 등을 활용하여 
+    Next.js 15, React 18, Prisma, GraphQL, Pusher, Next-Auth 등을 활용하여 
     블로그, 채팅, 인증 기능을 구현하였습니다.`,
   keywords: [
     "강송희",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "강송희 포트폴리오 | 프론트엔드 개발자",
     description:
-      "Next.js 14, React, GraphQL, Prisma 등을 사용하여 구현한 웹 개발 포트폴리오입니다.",
+      "Next.js 15, React, GraphQL, Prisma 등을 사용하여 구현한 웹 개발 포트폴리오입니다.",
     url: "https://www.devsonghee.com",
     siteName: "강송희 포트폴리오",
     images: [
