@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { MdOutlineGroupAdd } from 'react-icons/md'
 import ConversationBox from "./ConversationBox";
 import { DefaultSession } from "next-auth";
-import { find } from "lodash";
+// import { find } from "lodash";
 import { IUserList } from "@/src/app/types/common";
 import { pusherClient } from "@/src/app/lib/_pusher";
 import GroupChatModal from "./chat/GroupChatModal";

@@ -5,7 +5,7 @@ import MessageView from './MessageView';
 import { FullMessageType } from '@/src/app/types/conversation';
 import { DefaultSession } from 'next-auth';
 import { pusherClient } from '@/src/app/lib/_pusher';
-import { find } from 'lodash';
+// import { find } from 'lodash';
 import { useSocket } from '../../context/socketContext';
 
 interface BodyProps {
