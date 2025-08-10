@@ -30,5 +30,4 @@ const getTotalUnreadCount = async (excludeConversationId?: string) => {
     return { unReadCount };
 };
 
-export default getUnReadCount;
-export { getTotalUnreadCount };
+export { getUnReadCount, getTotalUnreadCount };
