@@ -29,7 +29,7 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
         router.push(`/conversations/${data.id}`);
     }, [router, data.id]);
 
-    const unReadMessageLength = data.unreadCount ?? 0;
+    const unReadMessageLength = data.unReadCount ?? 0;
 
     const userEmail = currentUser?.email;
 
@@ -41,11 +41,29 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
     }, [userEmail, lastMessage]);
 
     const lastMessageText = useMemo(() => {
+        // AI 채팅방인 경우 마지막 메시지 요약 표시
+        if (data.isAIChat) {            
+            // AI 채팅방의 마지막 메시지 찾기 (최신 메시지가 첫 번째)
+            const lastMessage = data.messages?.[0];
+            
+            if (lastMessage?.body) {
+                // 메시지가 길면 요약
+                const message = lastMessage.body;
+                
+                if (message.length > 30) {
+                    return `${message.substring(0, 30)}...`;
+                }
+                return message;
+            }
+            
+            return "하이트진로 AI 어시스턴트와 대화해보세요. 술에 대한 질문이나 추천을 받을 수 있습니다.";
+        }
+        
         if(lastMessage?.type === 'system') return;
         if(lastMessage?.image) return '사진을 보냈습니다.';
         if(lastMessage?.body) return lastMessage.body;
         return '대화방이 생성되었습니다.'
-    }, [lastMessage]);
+    }, [lastMessage, data.isAIChat, data.messages]);
 
     return (
         <div
@@ -61,7 +79,7 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
                 transition
                 cursor-pointer
             `,
-            data.userIds?.length < 2 && 'opacity-40',
+            (!data.isAIChat && data.userIds?.length < 2) && 'opacity-40',
             selected ? 'bg-neutral-100 dark:bg-neutral-800' : 'bg-white dark:bg-neutral-900'
         )}
         >   
@@ -69,7 +87,7 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
                 <AvatarGroup users={data.users} />
             ): ( 
                 <div className="m-1">
-                    <Avatar user={otherUser} /> 
+                    <Avatar user={otherUser} isAIChat={!!data.isAIChat} /> 
                 </div>
             )}
             <div className="flex-1 overflow-hidden">
@@ -89,7 +107,7 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
                                 font-medium
                             "
                         >
-                            {data.name || otherUser.name }
+                            {data.isAIChat ? "하이트진로 AI 어시스턴트" : (data.name || otherUser.name)}
                             {data.isGroup && <span className="ml-2 text-neutral-500">{data.userIds?.length}</span>}
                         </p>
                         {lastMessage?.createdAt && (

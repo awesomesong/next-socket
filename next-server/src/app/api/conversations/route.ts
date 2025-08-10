@@ -21,6 +21,8 @@ export async function GET(req: NextRequest){
             id: true,
             userIds: true,
             isGroup: true,
+            isAIChat: true,
+            aiAgentType: true,
             name: true,
             lastMessageAt: true,
             users: {
@@ -36,12 +38,11 @@ export async function GET(req: NextRequest){
 
         const conversationIds = conversations.map((c) => c.id);
 
-        // 2. 모든 "text" 메시지 가져오기 (최신순)
+        // 2. 모든 메시지 가져오기 (최신순)
         const allMessages = await prisma.message.findMany({
             where: {
-                    type: "text",
-                    conversationId: {
-                        in: conversationIds,
+                conversationId: {
+                    in: conversationIds,
                 },
             },
             orderBy: {
@@ -53,6 +54,7 @@ export async function GET(req: NextRequest){
                 image: true,
                 createdAt: true,
                 type: true,
+                isAIResponse: true,
                 conversationId: true,
                 sender: {
                     select: {
@@ -87,18 +89,20 @@ export async function GET(req: NextRequest){
             }
         }
 
-        // 3. 모든 안 읽은 메시지 status 가져오기
+        // 3. 모든 안 읽은 메시지 status 가져오기 (AI 대화방 제외)
         const unreadStatuses = await prisma.messageReadStatus.findMany({
             where: {
                 userId: user.id,
                 isRead: false,
                 message: {
-                    type: "text",
                     conversationId: {
                         in: conversationIds,
                     },
                     senderId: {
                         not: user.id, // ✅ 내가 보낸 메시지는 제외
+                    },
+                    conversation: {
+                        isAIChat: false, // ✅ AI 대화방 제외
                     },
                 },
             },
@@ -111,22 +115,31 @@ export async function GET(req: NextRequest){
             },
         });
 
-        // conversationId 기준으로 unreadCount 세기
+        // conversationId 기준으로 unReadCount 세기 (AI 대화방 제외)
         const unreadMap = new Map<string, number>();
         unreadStatuses.forEach(({ message }) => {
             const id = message.conversationId;
             unreadMap.set(id, (unreadMap.get(id) || 0) + 1);
         });
 
-        // 4. conversations에 message, unreadCount 병합
+        // 4. conversations에 message, unReadCount 병합
         const conversationsWithDetails = conversations.map((conversation) => {
             const lastMessage = lastMessageMap.get(conversation.id);
-            const unreadCount = unreadMap.get(conversation.id) || 0;
+            const unReadCount = conversation.isAIChat ? 0 : (unreadMap.get(conversation.id) || 0); // ✅ AI 대화방은 unReadCount를 0으로 설정
+
+            // AI 채팅방의 경우 더 많은 메시지 가져오기
+            let messages = lastMessage ? [lastMessage] : [];
+            
+            if (conversation.isAIChat) {
+                // AI 채팅방의 경우 최근 10개 메시지 가져오기
+                const aiChatMessages = allMessages.filter(m => m.conversationId === conversation.id).slice(0, 10);
+                messages = aiChatMessages.length > 0 ? aiChatMessages : [];
+            }
 
             return {
                 ...conversation,
-                messages: lastMessage ? [lastMessage] : [],
-                unreadCount,
+                messages,
+                unReadCount,
             };
         });
 

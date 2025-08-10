@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import Header from "@/src/app/components/chat/Header";
 import Body from "@/src/app/components/chat/Body";
 import Form from "@/src/app/components/chat/Form";
+import AIChatForm from "@/src/app/components/chat/AIChatForm";
 import { useRef, use } from "react";
 
 interface IParams {
@@ -41,6 +42,7 @@ const Conversation = ({ params }: { params : Promise<IParams> }) => {
     }
     
     const isForm = data?.conversation?.userIds.length > 1;
+    const isAIChat = data?.conversation?.isAIChat;
 
     return (
         <div className="flex flex-col w-full">
@@ -48,7 +50,18 @@ const Conversation = ({ params }: { params : Promise<IParams> }) => {
                 ? (<div className="flex flex-col flex-1 overflow-hidden relative">
                     <Header conversation={data?.conversation} currentUser={session?.user}/>
                     <Body scrollRef={scrollRef} bottomRef={bottomRef} />
-                    {isForm ? <Form scrollRef={scrollRef} bottomRef={bottomRef}  /> : <UnavailableChatForm />}
+                    {isAIChat ? (
+                        <AIChatForm 
+                            scrollRef={scrollRef} 
+                            bottomRef={bottomRef} 
+                            conversationId={conversationId}
+                            aiAgentType={data?.conversation?.aiAgentType}
+                        />
+                    ) : isForm ? (
+                        <Form scrollRef={scrollRef} bottomRef={bottomRef} />
+                    ) : (
+                        <UnavailableChatForm />
+                    )}
                 </div>)
                 : (<div className="flex-1 flex justify-center items-center">
                     <progress className="pure-material-progress-circular"/>

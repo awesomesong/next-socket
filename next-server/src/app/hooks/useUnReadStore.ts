@@ -1,18 +1,18 @@
 import { create } from 'zustand';
 
 interface UnreadStore {
-    unreadCount: number;
+    unReadCount: number;
     setUnreadCount: (count: number) => void;
     incrementUnread: () => void;
     resetUnread: () => void;
 }
 
 const useUnreadStore = create<UnreadStore>((set) => ({
-    unreadCount: 0,
-    setUnreadCount: (count) => set({ unreadCount: count }),
+    unReadCount: 0,
+    setUnreadCount: (count) => set({ unReadCount: count }),
     incrementUnread: () =>
-        set((state) => ({ unreadCount: state.unreadCount + 1 })),
-    resetUnread: () => set({ unreadCount: 0 }),
+        set((state) => ({ unReadCount: state.unReadCount + 1 })),
+    resetUnread: () => set({ unReadCount: 0 }),
 }));
 
 export default useUnreadStore;

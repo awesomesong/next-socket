@@ -142,6 +142,23 @@ export async function DELETE(
 
         } else {
             // 메시지가 없으면 대화방 자체 삭제
+            // 먼저 관련된 메시지 읽기 상태 삭제
+            await prisma.messageReadStatus.deleteMany({
+                where: {
+                    message: {
+                        conversationId: conversationId
+                    }
+                }
+            });
+
+            // 메시지 삭제
+            await prisma.message.deleteMany({
+                where: {
+                    conversationId: conversationId
+                }
+            });
+
+            // 대화방 삭제
             const deleteConversation = await prisma.conversation.deleteMany({
                 where: {
                     id: conversationId,
@@ -149,7 +166,7 @@ export async function DELETE(
                         hasSome: [user.id]
                     }
                 },
-            });    
+            });
         }
 
         // existingConversation.users.forEach((user) => {

@@ -14,6 +14,7 @@ interface ButtonProps {
     variant: 'solid' | 'bordered' | 'light' | 'flat' | 'faded' | 'shadow' | 'ghost';
     size?: 'sm' | 'md' | 'lg';
     radius?: 'none' | 'sm' | 'md' | 'lg' | 'full';
+    className?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -28,6 +29,7 @@ const Button: React.FC<ButtonProps> = ({
     variant,
     size,
     radius,
+    className,
 }) => {
   return (
     <>
@@ -43,6 +45,7 @@ const Button: React.FC<ButtonProps> = ({
         className={clsx(`
           text-[16px]
           `,
+          className
         )}
       >
         {children}

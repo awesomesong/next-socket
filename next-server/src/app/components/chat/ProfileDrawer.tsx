@@ -143,34 +143,47 @@ const ProfileDrawer:React.FC<ProfileDrawerProps> = ({
                                     </button>
                                 </div>
                                 <div className="flex flex-col items-start gap-2">
-                                    {sortedUser.map((user, i) => (
-                                        <div className="flex flex-row items-center gap-3" key={user.id}>
+                                    {data?.isAIChat ? (
+                                        // AI 채팅방인 경우 AI 어시스턴트 표시
+                                        <div className="flex flex-row items-center gap-3">
                                             <div>
-                                                <Avatar user={user} />
+                                                <Avatar user={otherUser} isAIChat={true} />
                                             </div>
-                                            <div className="flex flex-col">
-                                                <span>
-                                                    {i === 0 
-                                                        && (<span className="
-                                                                inline-flex
-                                                                w-6
-                                                                h-6
-                                                                items-center
-                                                                justify-center
-                                                                mr-2
-                                                                bg-default-reverse 
-                                                                text-default-reverse
-                                                                rounded-lg
-                                                            ">
+                                            <div>
+                                                하이트톡톡 AI 어시스턴트
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        // 일반 채팅방인 경우 기존 사용자 목록 표시
+                                        sortedUser.map((user, i) => (
+                                            <div className="flex flex-row items-center gap-3" key={user.id}>
+                                                <div>
+                                                    <Avatar user={user} />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span>
+                                                        {i === 0 
+                                                            && (<span className="
+                                                                    inline-flex
+                                                                    w-6
+                                                                    h-6
+                                                                    items-center
+                                                                    justify-center
+                                                                    mr-2
+                                                                    bg-default-reverse 
+                                                                    text-default-reverse
+                                                                    rounded-lg
+                                                                ">
                                                                 나
                                                             </span>)
-                                                    }
-                                                    {user.name}
-                                                </span>
-                                                <span>{user.email}</span>
-                                            </div>
-                                        </div> 
-                                    ))} 
+                                                        }
+                                                        {user.name}
+                                                    </span>
+                                                    <span>{user.email}</span>
+                                                </div>
+                                            </div> 
+                                        ))
+                                    )}
                                 </div>
                                 <div className="flex justify-center w-full my-10">
                                     <div

@@ -84,12 +84,12 @@ const Header:React.FC<HeaderProps> = ({
                         {conversation?.isGroup && conversation.userIds.length > 2? (
                             <AvatarGroup users={conversation.users} />
                         ) : (
-                            <Avatar user={otherUser} />
+                            <Avatar user={otherUser} isAIChat={!!conversation.isAIChat} />
                         )}
                     </div>
                     <div className="flex flex-col">
                         <div className="line-clamp-2">
-                            {conversation?.name || otherUser.name}
+                            {conversation?.isAIChat ? "하이트진로 AI 어시스턴트" : (conversation?.name || otherUser.name)}
                         </div>
                         <div 
                             className="

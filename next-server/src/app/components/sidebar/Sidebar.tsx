@@ -7,7 +7,9 @@ const Sidebar = ({children}: {
     children: React.ReactNode
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    useLayoutHeight(containerRef);
+    
+    // 모바일 가상 키보드 처리를 위한 레이아웃 높이 조정
+    useLayoutHeight(containerRef as React.RefObject<HTMLElement>);
 
     return (
         <div 

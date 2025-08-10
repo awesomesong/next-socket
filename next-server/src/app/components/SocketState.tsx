@@ -1,5 +1,5 @@
 'use client';
-import getUnReadCount from "@/src/app/lib/getUnReadCount";
+import { getTotalUnreadCount } from "@/src/app/lib/getUnReadCount";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import useUnreadStore from "@/src/app/hooks/useUnReadStore";
 import { useEffect } from "react";
@@ -19,7 +19,7 @@ const SocketState = () => {
         refetch
     } = useQuery({
         queryKey: ['unReadCount', conversationId],
-        queryFn: () => getUnReadCount(conversationId),
+        queryFn: () => getTotalUnreadCount(conversationId), // ✅ 현재 대화방을 제외한 전체 unReadCount
         staleTime: 0,
         gcTime: 0,
     });
@@ -48,6 +48,8 @@ const SocketState = () => {
             // 내가 보낸 것도 아니고, 내가 본 메시지도 아니고, 현재 보고 있는 대화방도 아니면 refetch
             if (!isMyMessage && !isSeenByMe && messageConversationId !== conversationId) {
                 refetch();
+                // ✅ 메시지 수신 시 conversationList도 무효화
+                queryClient.invalidateQueries({ queryKey: ['conversationList'] });
             }
         };
 

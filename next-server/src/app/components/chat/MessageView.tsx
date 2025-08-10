@@ -13,6 +13,8 @@ import DOMPurify from "dompurify";
 import { useSocket } from "../../context/socketContext";
 import { MessageSeenInfo } from "../../types/socket";
 import { isAtBottom } from "../../utils/isAtBottom";
+import { HiSparkles } from "react-icons/hi2";
+import { HiExclamationTriangle } from "react-icons/hi2";
 
 interface MessageBoxProps {
   data: FullMessageType;
@@ -37,12 +39,18 @@ const MessageView:React.FC<MessageBoxProps> = ({
   showDateDivider
 }) => {
   const socket = useSocket();
+  const queryClient = useQueryClient();
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [seenUser, setSeenUser ] = useState(data.seen || []);
   const [seenListName, setSeenListName] = useState("");
   const [showSeenTag, setShowSeenTag] = useState(false);
-  const isOwn = currentUser?.email === data?.sender?.email ? true : false;
-  const isConversationUser = data.conversation?.userIds?.includes(data?.sender?.id)
+  const [dots, setDots] = useState('');
+  const isAIMessage = data.isAIResponse;
+  const isOwn = isAIMessage ? false : currentUser?.email === data?.sender?.email ? true : false;
+  const isConversationUser = data.conversation?.userIds?.includes(data?.sender?.id);
+  const isWaiting = (data as any).isWaiting; // 대기 상태
+  const isError = (data as any).isError; // 오류 상태
+  const isTyping = (data as any).isTyping; // 타이핑 상태
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { 
@@ -57,6 +65,8 @@ const MessageView:React.FC<MessageBoxProps> = ({
             userEmail: currentUser.email,
           });
         }
+        // ✅ 메시지 읽음 처리 시 conversationList 쿼리 무효화
+        queryClient.invalidateQueries({ queryKey: ['conversationList'] });
       }
   });
 
@@ -119,6 +129,20 @@ const MessageView:React.FC<MessageBoxProps> = ({
     }
   }, [socket, seenUser]);
 
+  // 대기 상태 애니메이션
+  useEffect(() => {
+    if (!isWaiting && !isTyping) return;
+    
+    const interval = setInterval(() => {
+      setDots(prev => {
+        if (prev === '...') return '';
+        return prev + '.';
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isWaiting, isTyping]);
+
   return (
     data?.type === 'system' 
       ? 
@@ -158,18 +182,24 @@ const MessageView:React.FC<MessageBoxProps> = ({
           data-message-id={data.id}
           className={clsx(
             "flex gap-3 p-4",
-            isOwn && "justify-end"
+            isOwn && !isAIMessage && "justify-end"
         )} >
-          <div className={clsx(isOwn && "order-2")}>
-            <Avatar user={isConversationUser ? data.sender : noUserType} isOwn={isOwn} />
+          <div className={clsx(isOwn && !isAIMessage && "order-2")}>
+            <Avatar 
+              user={isConversationUser ? data.sender : noUserType} 
+              isOwn={isOwn && !isAIMessage} 
+              isAIChat={isAIMessage}
+            />
           </div>
           <div className={clsx(
             "flex flex-col flex-1",
-            isOwn && "items-end",
+            isOwn && !isAIMessage && "items-end",
             data.image && 'max-[360px]:w-full'
           )}>
             <div className={clsx(
               "text-sm w-fit overflow-hidden mb-2",
+              isError ? 'bg-red-100 border-l-4 border-red-400' :
+              isAIMessage ? 'bg-gray-100' : 
               isOwn ? 'bg-sky-300' : 'bg-sky-100',
               data.image ? 'max-[360px]:w-full rounded-md p-0' : 'py-2 px-3 rounded-2xl'
             )}>
@@ -197,17 +227,33 @@ const MessageView:React.FC<MessageBoxProps> = ({
                   />
                 </div>
               ): (
-                <pre 
-                  className="whitespace-pre-wrap dark:text-neutral-950"
-                   dangerouslySetInnerHTML={{ __html : DOMPurify.sanitize(data.body || '') }} 
-                />
+                <div className="flex items-center gap-2">
+                  {isWaiting && (
+                    <HiSparkles className="w-4 h-4 text-amber-500 animate-pulse" />
+                  )}
+                  {isError && (
+                    <HiExclamationTriangle className="w-4 h-4 text-red-500" />
+                  )}
+                  <pre 
+                    className="whitespace-pre-wrap dark:text-neutral-950"
+                    dangerouslySetInnerHTML={{ __html : DOMPurify.sanitize(data.body || '') }} 
+                  />
+                  {isWaiting && (
+                    <span className="text-amber-500 font-medium">
+                      {dots}
+                    </span>
+                  )}
+                  {isTyping && (
+                    <span className="inline-block w-0.5 h-4 bg-amber-500 animate-pulse ml-1"></span>
+                  )}
+                </div>
               )}
             </div>
             <div className={clsx("flex items-baseline gap-1" ,
                 isOwn && 'justify-end',
             )}>
               <div className="text-sm text-neutral-700 dark:text-neutral-300">
-                {isConversationUser ? data.sender.name : '(알 수 없음)'}
+                {isAIMessage ? '하이트진로 AI 어시스턴트' : isConversationUser ? data.sender.name : '(알 수 없음)'}
               </div>
               <div className="text-xs text-neutral-500 dark:text-neutral-400">
                 {new Date(data.createdAt).toLocaleString("ko-KR", 

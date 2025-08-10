@@ -11,8 +11,48 @@ export async function GET(
 
         if(!user?.email) return NextResponse.json({message: '로그인이 되지 않았습니다. 로그인 후에 이용해주세요.'}, {status: 401})
 
-        const excludeConversationId  = req.nextUrl.searchParams.get('exclude') || null;
+        const conversationId = req.nextUrl.searchParams.get('conversationId') || null;
+        const excludeConversationId = req.nextUrl.searchParams.get('exclude') || null;
 
+        // 특정 대화방의 unreadCount를 가져오는 경우
+        if (conversationId) {
+            const unreadMessages = await prisma.messageReadStatus.count({
+                where: {
+                    isRead: false,
+                    userId: user.id,
+                    message: {
+                        conversationId: conversationId,
+                        senderId: {
+                            not: user.id,
+                        },
+                    },
+                }
+            });
+
+            return NextResponse.json({unReadCount: unreadMessages});
+        }
+
+        // 현재 대화방을 제외한 전체 unreadCount를 가져오는 경우
+        if (excludeConversationId) {
+            const unreadMessages = await prisma.messageReadStatus.count({
+                where: {
+                    isRead: false,
+                    userId: user.id,
+                    message: {
+                        senderId: {
+                            not: user.id,
+                        },
+                        conversationId: {
+                            not: excludeConversationId,
+                        },
+                    },
+                }
+            });
+
+            return NextResponse.json({unReadCount: unreadMessages});
+        }
+
+        // 전체 unreadCount를 가져오는 경우
         const unreadMessages = await prisma.messageReadStatus.count({
             where: {
                 isRead: false,
@@ -21,11 +61,6 @@ export async function GET(
                     senderId: {
                         not: user.id,
                     },
-                    ...(excludeConversationId && {
-                        conversationId: {
-                          not: excludeConversationId,
-                        },
-                    }),
                 },
             }
         });

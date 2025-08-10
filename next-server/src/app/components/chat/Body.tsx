@@ -120,8 +120,13 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
                     );
 
                     if (existingMessageIndex !== -1) {
-                        // 이미 해당 ID를 가진 메시지가 첫 페이지에 있다면 업데이트
-                        messagesInFirstPage[existingMessageIndex] = message;
+                        // ✅ 이미 해당 ID를 가진 메시지가 있다면 부드럽게 업데이트 (낙관적 → 서버 데이터)
+                        messagesInFirstPage[existingMessageIndex] = {
+                            ...messagesInFirstPage[existingMessageIndex],
+                            ...message,
+                            // 낙관적 업데이트의 일부 속성은 유지 (UX 흔들림 방지)
+                            createdAt: messagesInFirstPage[existingMessageIndex].createdAt,
+                        };
                     } else {
                         // 첫 페이지에 없는 새로운 메시지라면 추가합니다.
                         // 이 메시지는 소켓으로 수신된 메시지이므로, 가장 최신 메시지일 가능성이 높습니다.
@@ -151,7 +156,7 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
                     scrollToBottom();
                     setIsScrolledUp(false);
                 });
-            }else{
+            } else {
                 setIsScrolledUp(true);
             }
 

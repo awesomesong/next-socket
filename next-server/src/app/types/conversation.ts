@@ -14,7 +14,11 @@ export type FullMessageType = Message & {
     conversation: {
         isGroup: boolean | null;
         userIds: string[];
-    }
+    };
+    isAIResponse?: boolean;
+    isWaiting?: boolean;
+    isTyping?: boolean;
+    isError?: boolean;
 }
 
 export type MessageType = Message & {
@@ -26,7 +30,7 @@ export type MessageType = Message & {
 export type FullConversationType = Conversation & {
     users: IUserList[];
     messages: MessageType[];
-    unreadCount?: number;
+    unReadCount?: number;
 }
 
 export type ConversationProps = {

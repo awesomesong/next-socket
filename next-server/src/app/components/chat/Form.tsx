@@ -44,7 +44,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
         isSuccess
     }  = useMutation({
         mutationFn: sendMessage,
-        onMutate: (newMessage) => {
+        onMutate: async (newMessage) => {
             if (isAtBottom(scrollRef.current)) {
                 requestAnimationFrame(() => {
                     scrollToBottom();
@@ -62,7 +62,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
             >(['messages', conversationId]);
 
             const user = session?.user;
-            const userIds = conversationUsers .find((item) => item.conversationId === conversationId)?.userIds ?? [];
+            const userIds = conversationUsers.find((item) => item.conversationId === conversationId)?.userIds ?? [];
 
             const isGroupChat = userIds.length > 2;
 
@@ -94,6 +94,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
                 readStatuses: [],
             };
 
+            // ✅ 메시지 목록에 낙관적 업데이트 (고유 ID로 구분)
             queryClient.setQueryData(['messages', conversationId], (old: any) => {
                 if (!old) {
                     return {
@@ -116,6 +117,38 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
                     ...old,
                     pages: updatedPages,
                 };
+            });
+
+            // ✅ ConversationList 즉시 업데이트 (사용자 메시지 전송 시)
+            queryClient.setQueryData(['conversationList'], (old: any) => {
+                if (!old) return old;
+                
+                const updatedConversations = old.conversations.map((conversation: any) => {
+                    if (conversation.id === conversationId) {
+                        return {
+                            ...conversation,
+                            messages: [
+                                {
+                                    id: messageId,
+                                    body: body || '이미지를 보냈습니다.',
+                                    createdAt: new Date(),
+                                    updatedAt: new Date(),
+                                    isAIResponse: false
+                                },
+                                ...(conversation.messages || [])
+                            ],
+                            lastMessageAt: new Date() // ✅ lastMessageAt 즉시 업데이트
+                        };
+                    }
+                    return conversation;
+                });
+
+                // 최신 메시지가 있는 대화를 맨 위로 이동
+                const reorderedConversations = updatedConversations.sort((a: any, b: any) => 
+                    a.id === conversationId ? -1 : b.id === conversationId ? 1 : 0
+                );
+
+                return { ...old, conversations: reorderedConversations };
             });
 
             return { previousData, messageId };

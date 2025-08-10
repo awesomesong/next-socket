@@ -73,6 +73,8 @@ model Conversation {
   lastMessageAt DateTime        @default(now())
   name          String?
   isGroup       Boolean? 
+  isAIChat      Boolean?  @default(false)
+  aiAgentType   String?
 
   messagesIds   String[]   @db.ObjectId
   messages      Message[]
@@ -87,6 +89,7 @@ model Message{
   image String?
   createdAt DateTime @default(now())
   type String?
+  isAIResponse Boolean? @default(false)
 
   seenId String[]  @db.ObjectId
   seen User[] @relation("Seen", fields: [seenId], references: [id])

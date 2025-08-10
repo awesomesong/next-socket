@@ -36,7 +36,15 @@ export async function GET (
             // cursor: cursor ? { id: cursor } : undefined,
             take: limit, 
             skip: cursor ? 1 : 0,
-            include: {
+            select: {
+                id: true,
+                body: true,
+                image: true, // 이미지 필드 포함
+                createdAt: true,
+                type: true,
+                isAIResponse: true,
+                conversationId: true,
+                senderId: true,
                 sender: {
                     select: {
                         id: true,

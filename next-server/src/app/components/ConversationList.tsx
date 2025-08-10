@@ -1,8 +1,7 @@
 'use client';
 import { useSession } from "next-auth/react";
 import { ConversationProps, FullConversationType, FullMessageType } from "@/src/app/types/conversation";
-import { memo, useEffect, useState, useMemo } from 'react';
-import { MdOutlineGroupAdd } from 'react-icons/md'
+import { useEffect, useState, useMemo } from 'react';
 import ConversationBox from "./ConversationBox";
 import getConversations from "@/src/app/lib/getConversations";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,6 +13,13 @@ import GroupChatModal from "./chat/GroupChatModal";
 import { useSocket } from "../context/socketContext";
 import SocketState from "./SocketState";
 import { IoBeerOutline } from "react-icons/io5";
+import { useCallback } from 'react';
+import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
+import { useTheme } from 'next-themes';
+import { PiDotsThreeVerticalBold } from "react-icons/pi";
+import { useCreateAIConversation } from '@/src/app/lib/createAIConversation';
+import { getTotalUnreadCount } from '@/src/app/lib/getUnReadCount';
+import useUnreadStore from '@/src/app/hooks/useUnReadStore';
 
 const ConversationList = () => {
     const socket = useSocket();
@@ -21,6 +27,21 @@ const ConversationList = () => {
     const [ isModalOpen, setIsModalOpen ] = useState(false);
     const { isOpen, conversationId } = useConversation();
     const queryClient = useQueryClient();
+    const { theme, setTheme } = useTheme();
+    const { setUnreadCount } = useUnreadStore();
+
+    // AI 채팅방 생성 mutation
+    const aiConversationMutation = useCreateAIConversation();
+
+    // 다크모드 토글 함수
+    const toggleTheme = useCallback(() => {
+        setTheme(theme === 'dark' ? 'light' : 'dark');
+    }, [theme, setTheme]);
+
+    // AI 채팅방 생성 함수
+    const createAIChat = useCallback((aiAgentType: string) => {
+        aiConversationMutation.mutate({ aiAgentType });
+    }, [aiConversationMutation]);
 
     const { 
         data, 
@@ -34,6 +55,23 @@ const ConversationList = () => {
         gcTime: 0,
     });
 
+    // ✅ 전체 unReadCount 실시간 업데이트
+    useEffect(() => {
+        const updateTotalUnreadCount = async () => {
+            try {
+                const { unReadCount } = await getTotalUnreadCount(conversationId);
+                setUnreadCount(unReadCount);
+            } catch (error) {
+                console.error('Failed to update total unread count:', error);
+            }
+        };
+
+        // ✅ 초기 로드 시에만 호출 (불필요한 호출 방지)
+        if (data?.conversations && status === 'success') {
+            updateTotalUnreadCount();
+        }
+    }, [status, conversationId, setUnreadCount]); // data?.conversations 제거
+
     useEffect(() => {
         if(!socket) return;
 
@@ -42,54 +80,125 @@ const ConversationList = () => {
         };
 
         const handleNewConversation = (conversation: FullConversationType) => {
-            queryClient.setQueriesData({ queryKey: ['conversationList']}, (oldData: ConversationProps | undefined) => {
-                return { conversations: [ conversation, ...(oldData?.conversations ?? []) ] };
+            queryClient.setQueryData(['conversationList'], (oldData: ConversationProps | undefined) => {
+                const updatedConversations = [conversation, ...(oldData?.conversations ?? [])];
+                
+                // ✅ lastMessageAt 기준으로 정렬 (최신 메시지가 있는 대화를 맨 위로)
+                const reorderedConversations = [...updatedConversations]
+                    .sort((a, b) => {
+                        const aTime = new Date(a.lastMessageAt || 0).getTime();
+                        const bTime = new Date(b.lastMessageAt || 0).getTime();
+                        return bTime - aTime; // 내림차순 (최신이 위)
+                    });
+                
+                return { conversations: reorderedConversations };
             });
-
-            queryClient.invalidateQueries({queryKey: ['conversationList']});
         };
 
-        const handleReceiveConversation = (message: FullMessageType, targetEmail: string) => {
-            queryClient.setQueriesData({ queryKey: ['conversationList'] }, (oldData: ConversationProps) => {
-                if (!oldData) return { conversations: [] }; // 예외 처리
-        
-                // 메시지가 포함된 대화 업데이트
+        const handleReceiveConversation = async (message: FullMessageType, targetEmail: string) => {
+            const isMyMessage = message.sender.email === targetEmail;
+            
+            // ✅ 클라이언트 측에서 unReadCount 계산 (API 호출 최소화)
+            queryClient.setQueryData(['conversationList'], (oldData: ConversationProps) => {
+                if (!oldData) return { conversations: [] };
+                
                 const updatedConversations = oldData.conversations.map(conversation => {
                     if (conversation.id !== message.conversationId) return conversation;
 
                     const existingMessages = conversation.messages ?? [];
+                    let newUnreadCount = conversation.unReadCount || 0;
+                    
+                    // 내가 보낸 메시지가 아니면 unReadCount 증가
+                    if (!isMyMessage) {
+                        newUnreadCount += 1;
+                    }
+                    
+                    // ✅ 메시지의 실제 createdAt 시간 사용 (순서 일관성 보장)
+                    const messageCreatedAt = new Date(message.createdAt);
+                    
+                    // ✅ 메시지 배열도 시간순으로 정렬 (최신이 맨 위)
+                    const updatedMessages = [message, ...existingMessages].sort((a, b) => {
+                        const aTime = new Date(a.createdAt).getTime();
+                        const bTime = new Date(b.createdAt).getTime();
+                        return bTime - aTime; // 내림차순 (최신이 위)
+                    });
+                    
                     return {
                         ...conversation,
-                        messages: [message, ...existingMessages], 
+                        messages: updatedMessages,
+                        unReadCount: newUnreadCount, // ✅ 클라이언트 측 계산
+                        lastMessageAt: messageCreatedAt, // ✅ 메시지의 실제 시간 사용
                     };
                 });
-        
-                // 대화를 정렬하여 최신 메시지가 포함된 대화를 맨 위로 이동
-                const reorderedConversations = [...updatedConversations] // 원본을 복사한 후
-                    .sort((a, b) => (a.id === message.conversationId ? -1 : b.id === message.conversationId ? 1 : 0));
-        
+                
+                // ✅ lastMessageAt 기준으로 정렬 (최신 메시지가 있는 대화를 맨 위로)
+                const reorderedConversations = [...updatedConversations]
+                    .sort((a, b) => {
+                        const aTime = new Date(a.lastMessageAt || 0).getTime();
+                        const bTime = new Date(b.lastMessageAt || 0).getTime();
+                        return bTime - aTime; // 내림차순 (최신이 위)
+                    });
+                
                 return { conversations: reorderedConversations };
             });
 
-            // 이후 정확한 데이터 동기화를 위해 서버 fetch
-            queryClient.invalidateQueries({ queryKey: ['conversationList'] });
+            // ✅ 전체 unReadCount도 클라이언트 측에서 계산
+            if (!isMyMessage) {
+                queryClient.setQueryData(['conversationList'], (oldData: ConversationProps) => {
+                    if (!oldData) return oldData;
+                    
+                    const totalUnreadCount = oldData.conversations.reduce((total, conversation) => {
+                        return total + (conversation.unReadCount || 0);
+                    }, 0);
+                    
+                    setUnreadCount(totalUnreadCount);
+                    return oldData;
+                });
+            }
+        };
+
+        const handleSeenMessage = async (payload: { conversationId: string; seenUser: any }) => {
+            // ✅ 클라이언트 측에서 unReadCount 계산 (API 호출 최소화)
+            queryClient.setQueryData(['conversationList'], (oldData: ConversationProps) => {
+                if (!oldData) return { conversations: [] };
+                
+                const updatedConversations = oldData.conversations.map(conversation => {
+                    if (conversation.id !== payload.conversationId) return conversation;
+                    
+                    // 현재 대화방의 unReadCount를 0으로 설정
+                    return {
+                        ...conversation,
+                        unReadCount: 0,
+                    };
+                });
+                
+                // ✅ 전체 unReadCount도 클라이언트 측에서 계산
+                const totalUnreadCount = updatedConversations.reduce((total, conversation) => {
+                    return total + (conversation.unReadCount || 0);
+                }, 0);
+                
+                setUnreadCount(totalUnreadCount);
+                
+                return { conversations: updatedConversations };
+            });
         };
       
         socket.on('connect', handleReconnect);
         socket.on("conversation:new", handleNewConversation);
-        socket.on("receive:conversation", handleReceiveConversation);        
-
+        socket.on("receive:conversation", handleReceiveConversation);
+        socket.on("seen:message", handleSeenMessage);
 
         return () => {
             socket.off('connect', handleReconnect);
             socket.off("conversation:new", handleNewConversation);
             socket.off("receive:conversation", handleReceiveConversation);
+            socket.off("seen:message", handleSeenMessage);
         };
-    }, [ socket, queryClient, refetch ]);
+    }, [ socket, queryClient, refetch, conversationId, setUnreadCount ]);
 
     const memoizedConversations = useMemo(() => {
         if (status !== 'success') return null;
-        if (data.conversations && data.conversations.length === 0) {
+        if (status === 'success' && data.conversations && data.conversations.length === 0) {
             return (
                 <div className="
                     flex
@@ -149,25 +258,45 @@ const ConversationList = () => {
                         대화방
                     </div>
                     { status === 'success'  
-                        ? <div 
-                            onClick={() => setIsModalOpen(true)}
-                            className="
-                                flex
-                                justify-start
-                                items-start
-                                w-[40px]
-                                h-[40px]
-                                p-2
-                                rounded-full
-                                bg-neutral-200
-                                dark:bg-neutral-700
-                                hover:opacity-75
-                                cursor-pointer
-                                transition
-                            "
-                        >   
-                            <MdOutlineGroupAdd size={24} />
-                        </div>
+                        ? <Dropdown>
+                            <DropdownTrigger>
+                                <Button 
+                                    type='button'
+                                    variant='shadow'
+                                    radius='sm'
+                                    className='
+                                        min-w-6 
+                                        h-6 
+                                        p-0 
+                                        bg-gray-100 
+                                        dark:bg-neutral-800 
+                                        dark:border-neutral-600
+
+                                '>
+                                    <PiDotsThreeVerticalBold size={21} />
+                                </Button>
+                            </DropdownTrigger>
+                            <DropdownMenu>
+                                <DropdownItem 
+                                    key="group-chat"
+                                    onPress={() => setIsModalOpen(true)}
+                                >
+                                    단체 채팅
+                                </DropdownItem>
+                                <DropdownItem 
+                                    key="ai-chat"
+                                    onPress={() => createAIChat("assistant")}
+                                >
+                                    AI 채팅
+                                </DropdownItem>
+                                <DropdownItem 
+                                    key="theme-toggle"
+                                    onPress={toggleTheme}
+                                >
+                                    {theme === 'dark' ? '라이트 모드' : '다크 모드'}
+                                </DropdownItem>
+                            </DropdownMenu>
+                        </Dropdown>
                         :   
                         (<div className="
                                 overflow-hidden

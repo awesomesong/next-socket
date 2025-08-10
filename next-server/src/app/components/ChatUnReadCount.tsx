@@ -10,11 +10,11 @@ type Props = {
 
 const ChatUnReadCount = ({ size }: Props) => {
     const [ chatUnReafCount, setChatUnReafCount] = useState(0);
-    const { unreadCount }= useUnreadStore();
+    const { unReadCount }= useUnreadStore();
 
     useEffect(() => {
-        setChatUnReafCount(unreadCount);
-    }, [unreadCount]);
+        setChatUnReafCount(unReadCount);
+    }, [unReadCount]);
 
     return (
         <>
@@ -38,7 +38,7 @@ const ChatUnReadCount = ({ size }: Props) => {
                         max-md:text-[11px]
                         max-[420px]:left-[21%]
                 `)}>
-                    {formatMessageCount(unreadCount ?? 0)}
+                    {formatMessageCount(unReadCount ?? 0)}
                 </span>
             }
         </>

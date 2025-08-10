@@ -13,7 +13,9 @@ const ChatConversationsPage = () => {
                             `,
                               isOpen ? 'block' : 'hidden',
                             )}>
-            <EmptyState message="대화방이나 멤버를 선택하면 하이트 톡톡이 시작됩니다." />
+            <div className="flex flex-col items-center justify-center h-full space-y-6">
+                <EmptyState message="대화방이나 멤버를 선택하면 채팅이 시작됩니다." />
+            </div>
         </div>
     );
 }
