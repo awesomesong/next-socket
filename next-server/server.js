@@ -17,6 +17,7 @@ app.prepare().then(() => {
     process.env.NEXT_PUBLIC_SOCKET_SERVER_URL, // socket-server 주소
     "http://localhost:3001",                  // 로컬 프론트 주소
     "https://www.devsonghee.com",             // 실제 배포 주소 (원하면 추가)
+    "https://api.openai.com/v1/chat/completions",
   ];
 
   server.use(cors({
