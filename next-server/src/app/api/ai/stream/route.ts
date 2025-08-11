@@ -211,7 +211,7 @@ async function handleStreamingResponse(response: Response, controller: ReadableS
             conversation: { select: { isGroup: true, userIds: true } },
           }
         });
-        console.log('AI 메시지가 성공적으로 저장되었습니다.');
+        console.log('AI 응답 메시지가 성공적으로 저장되었습니다.');
       } catch (error) {
         console.error('AI 메시지 저장 오류:', error);
         // AI 메시지 저장 실패는 스트리밍을 중단하지 않음
@@ -334,57 +334,12 @@ export async function POST(req: NextRequest) {
     if (!apiKey) {
       console.error('OpenAI API 키가 설정되지 않았습니다.');
       
-      // ✅ API 키가 없어도 사용자 메시지는 저장
-      try {
-        await prisma.message.create({
-          data: {
-            id: new ObjectId().toHexString(),
-            body: message.trim(),
-            type: 'text',
-            conversation: { connect: { id: conversationId } },
-            sender: { connect: { id: user.id } },
-            seen: { connect: { id: user.id } },
-            isAIResponse: false,
-          },
-        });
-        console.log('API 키 없음 - 사용자 메시지가 저장되었습니다.');
-      } catch (saveError) {
-        console.error('API 키 없음 - 사용자 메시지 저장 실패:', saveError);
-      }
-      
+      // ✅ API 키가 없어도 사용자 메시지는 이미 저장되었으므로 추가 저장하지 않음
       return new NextResponse('AI 서비스를 사용할 수 없습니다.', { status: 500 });
     }
 
-    // 5. 사용자 메시지 저장 (트랜잭션 사용)
-    let userMessage;
-    try {
-      userMessage = await prisma.message.create({
-        data: {
-          id: new ObjectId().toHexString(),
-          body: message.trim(),
-          type: 'text',
-          conversation: { connect: { id: conversationId } },
-          sender: { connect: { id: user.id } },
-          seen: { connect: { id: user.id } },
-          isAIResponse: false,
-        },
-        select: {
-          id: true,
-          body: true,
-          createdAt: true,
-          conversationId: true,
-          sender: {
-            select: { id: true, name: true, email: true, image: true },
-          },
-          seen: { select: { name: true, email: true } },
-          conversation: { select: { isGroup: true, userIds: true } },
-        }
-      });
-      console.log('사용자 메시지가 성공적으로 저장되었습니다.');
-    } catch (error) {
-      console.error('메시지 저장 오류:', error);
-      return new NextResponse('메시지 저장에 실패했습니다.', { status: 500 });
-    }
+    // ✅ 사용자 메시지는 이미 AIChatForm에서 저장되었으므로 여기서는 저장하지 않음
+    console.log('사용자 메시지는 이미 저장되었습니다. AI 응답을 생성합니다.');
 
     // 6. 대화 컨텍스트 준비
     const conversationHistory = await getConversationHistory(conversationId);
