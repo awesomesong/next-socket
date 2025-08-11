@@ -305,20 +305,20 @@ async function callOpenAI(apiKey: string, contextMessages: any[]) {
 }
 
 export async function POST(req: NextRequest) {
+  // 2. 요청 데이터 파싱 및 검증 (먼저 수행)
+  let requestData;
+  try {
+    requestData = await req.json();
+  } catch (error) {
+    return new NextResponse('잘못된 요청 형식입니다.', { status: 400 });
+  }
+
   try {
     // 1. 사용자 인증 확인
     const user = await getCurrentUser();
     
     if (!user?.id || !user?.email) {
       return new NextResponse('로그인이 필요합니다.', { status: 401 });
-    }
-
-    // 2. 요청 데이터 파싱 및 검증
-    let requestData;
-    try {
-      requestData = await req.json();
-    } catch (error) {
-      return new NextResponse('잘못된 요청 형식입니다.', { status: 400 });
     }
 
     const { message, conversationId, aiAgentType, messageId, autoSave } = requestData;
@@ -333,6 +333,25 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
     if (!apiKey) {
       console.error('OpenAI API 키가 설정되지 않았습니다.');
+      
+      // ✅ API 키가 없어도 사용자 메시지는 저장
+      try {
+        await prisma.message.create({
+          data: {
+            id: new ObjectId().toHexString(),
+            body: message.trim(),
+            type: 'text',
+            conversation: { connect: { id: conversationId } },
+            sender: { connect: { id: user.id } },
+            seen: { connect: { id: user.id } },
+            isAIResponse: false,
+          },
+        });
+        console.log('API 키 없음 - 사용자 메시지가 저장되었습니다.');
+      } catch (saveError) {
+        console.error('API 키 없음 - 사용자 메시지 저장 실패:', saveError);
+      }
+      
       return new NextResponse('AI 서비스를 사용할 수 없습니다.', { status: 500 });
     }
 
@@ -361,6 +380,7 @@ export async function POST(req: NextRequest) {
           conversation: { select: { isGroup: true, userIds: true } },
         }
       });
+      console.log('사용자 메시지가 성공적으로 저장되었습니다.');
     } catch (error) {
       console.error('메시지 저장 오류:', error);
       return new NextResponse('메시지 저장에 실패했습니다.', { status: 500 });
@@ -398,6 +418,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('스트리밍 API 오류:', error);
     
+    // ✅ 에러 발생 시 사용자 메시지 저장은 이미 정상적인 경우에 수행되었으므로 중복 저장하지 않음
     // 에러 타입에 따른 적절한 응답
     if (error instanceof Error) {
       if (error.message.includes('AI 응답 시간 초과')) {

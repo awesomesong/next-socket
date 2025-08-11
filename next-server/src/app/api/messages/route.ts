@@ -13,6 +13,22 @@ export async function POST(req: NextRequest) {
 
     const { conversationId, body, message, type, isAIResponse, messageId, image, isError } = await req.json();
 
+    // ✅ messageId가 제공된 경우 중복 체크
+    if (messageId) {
+      const existingMessage = await prisma.message.findUnique({
+        where: { id: messageId }
+      });
+      
+      if (existingMessage) {
+        console.log(`메시지 ID ${messageId}가 이미 존재합니다. 중복 저장을 방지합니다.`);
+        return NextResponse.json({
+          newMessage: existingMessage,
+          conversationUsers: { users: [] },
+          readStatuses: { count: 0 }
+        });
+      }
+    }
+
     // 대화방의 모든 사용자 가져오기 (MessageReadStatus 생성을 위해)
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
@@ -54,6 +70,8 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    console.log(`메시지가 성공적으로 저장되었습니다. ID: ${newMessage.id}, Type: ${isAIResponse ? 'AI' : 'User'}`);
+
     // MessageReadStatus 생성 (모든 사용자에 대해)
     const messageReadStatuses = await prisma.messageReadStatus.createMany({
       data: conversation.users.map((_user) => ({
@@ -94,6 +112,13 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('메시지 저장 오류:', error);
+    
+    // ✅ 더 자세한 에러 정보 로깅
+    if (error instanceof Error) {
+      console.error('에러 메시지:', error.message);
+      console.error('에러 스택:', error.stack);
+    }
+    
     return new NextResponse('서버 오류', { status: 500 });
   }
 }
