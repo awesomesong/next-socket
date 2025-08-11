@@ -6,6 +6,39 @@ const nextConfig = {
       config.resolve.alias['@'] = path.resolve(__dirname);
       return config;
     },
+    async headers() {
+        return [
+            {
+                source: '/api/ai/:path*',
+                headers: [
+                    {
+                        key: 'Access-Control-Allow-Origin',
+                        value: '*',
+                    },
+                    {
+                        key: 'Access-Control-Allow-Methods',
+                        value: 'GET, POST, OPTIONS',
+                    },
+                    {
+                        key: 'Access-Control-Allow-Headers',
+                        value: 'Content-Type, Authorization',
+                    },
+                    {
+                        key: 'Cross-Origin-Embedder-Policy',
+                        value: 'unsafe-none',
+                    },
+                    {
+                        key: 'Cross-Origin-Opener-Policy',
+                        value: 'same-origin',
+                    },
+                    {
+                        key: 'Cross-Origin-Resource-Policy',
+                        value: 'cross-origin',
+                    },
+                ],
+            },
+        ];
+    },
     images: {
         remotePatterns: [
           {

@@ -3,6 +3,21 @@ import { getCurrentUser } from '@/src/app/lib/session';
 import prisma from '@/prisma/db';
 import { ObjectId } from 'bson';
 
+// OPTIONS 요청 처리
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Cross-Origin-Embedder-Policy': 'unsafe-none',
+            'Cross-Origin-Opener-Policy': 'same-origin',
+            'Cross-Origin-Resource-Policy': 'cross-origin',
+        },
+    });
+}
+
 // 상수 정의
 const CONSTANTS = {
   MAX_MESSAGE_LENGTH: 4000,
@@ -202,9 +217,13 @@ async function callOpenAI(apiKey: string, contextMessages: any[]) {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
+        'User-Agent': 'hitejinro-ai-assistant/1.0',
       },
       body: JSON.stringify(requestBody),
       signal: controller.signal,
+      // CORS 및 CSP 관련 설정 추가
+      mode: 'cors',
+      credentials: 'omit',
     });
 
     clearTimeout(timeoutId);
@@ -307,6 +326,12 @@ export async function POST(req: NextRequest) {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Connection': 'keep-alive',
         'X-Accel-Buffering': 'no', // Nginx 프록시에서 버퍼링 비활성화
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Cross-Origin-Embedder-Policy': 'unsafe-none',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Resource-Policy': 'cross-origin',
       },
     });
 

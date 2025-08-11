@@ -3,6 +3,21 @@ import { NextResponse } from "next/server";
 import prisma from '@/prisma/db';
 import { ObjectId } from 'bson';
 
+// OPTIONS 요청 처리
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Cross-Origin-Embedder-Policy': 'unsafe-none',
+            'Cross-Origin-Opener-Policy': 'same-origin',
+            'Cross-Origin-Resource-Policy': 'cross-origin',
+        },
+    });
+}
+
 export async function POST(req: Request) {
     try {
         const user = await getCurrentUser();
@@ -87,7 +102,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ 
             userMessage, 
             aiMessage 
-        }, {status: 200});
+        }, {
+            status: 200,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Cross-Origin-Embedder-Policy': 'unsafe-none',
+                'Cross-Origin-Opener-Policy': 'same-origin',
+                'Cross-Origin-Resource-Policy': 'cross-origin',
+            }
+        });
 
     } catch (error) {
         console.log('ERROR_AI_CHAT', error);
