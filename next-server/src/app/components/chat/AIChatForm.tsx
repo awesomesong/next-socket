@@ -244,7 +244,7 @@ const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assis
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         conversationId,
-                        body: 'AI 응답 실패. 아래 버튼을 눌러 재시도하세요.',
+                        body: 'AI 응답 실패하였습니다. 다시 시도해주세요.',
                         type: 'text',
                         isAIResponse: true,
                         isError: true,
