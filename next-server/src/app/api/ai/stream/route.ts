@@ -117,6 +117,35 @@ async function handleStreamingResponse(response: Response, controller: ReadableS
   let isStreamingComplete = false;
 
   if (!reader) {
+    // 스트리밍을 시작할 수 없는 경우 에러 메시지 저장
+    try {
+      await prisma.message.create({
+        data: {
+          id: new ObjectId().toHexString(),
+          body: 'AI 응답을 생성할 수 없습니다. 다시 시도해주세요.',
+          type: 'text',
+          conversation: { connect: { id: conversationId } },
+          sender: { connect: { id: userId } },
+          seen: { connect: { id: userId } },
+          isAIResponse: true, // 에러 메시지도 AI 메시지로 간주
+          isError: true, // 에러 상태 표시
+        },
+        select: {
+          id: true,
+          body: true,
+          createdAt: true,
+          conversationId: true,
+          sender: {
+            select: { id: true, name: true, email: true, image: true },
+          },
+          seen: { select: { name: true, email: true } },
+          conversation: { select: { isGroup: true, userIds: true } },
+        }
+      });
+      console.log('AI 에러 메시지가 저장되었습니다.');
+    } catch (error) {
+      console.error('AI 에러 메시지 저장 오류:', error);
+    }
     controller.close();
     return;
   }
@@ -191,6 +220,37 @@ async function handleStreamingResponse(response: Response, controller: ReadableS
 
   } catch (error) {
     console.error('스트리밍 처리 오류:', error);
+    
+    // 스트리밍 중 오류 발생 시 에러 메시지 저장
+    try {
+      await prisma.message.create({
+        data: {
+          id: new ObjectId().toHexString(),
+          body: 'AI 응답 생성 중 오류가 발생했습니다. 다시 시도해주세요.',
+          type: 'text',
+          conversation: { connect: { id: conversationId } },
+          sender: { connect: { id: userId } },
+          seen: { connect: { id: userId } },
+          isAIResponse: true, // 에러 메시지도 AI 메시지로 간주
+          isError: true, // 에러 상태 표시
+        },
+        select: {
+          id: true,
+          body: true,
+          createdAt: true,
+          conversationId: true,
+          sender: {
+            select: { id: true, name: true, email: true, image: true },
+          },
+          seen: { select: { name: true, email: true } },
+          conversation: { select: { isGroup: true, userIds: true } },
+        }
+      });
+      console.log('AI 스트리밍 에러 메시지가 저장되었습니다.');
+    } catch (saveError) {
+      console.error('AI 에러 메시지 저장 오류:', saveError);
+    }
+    
     controller.error(error);
   } finally {
     reader.releaseLock();

@@ -90,6 +90,7 @@ model Message{
   createdAt DateTime @default(now())
   type String?
   isAIResponse Boolean? @default(false)
+  isError Boolean? @default(false)
 
   seenId String[]  @db.ObjectId
   seen User[] @relation("Seen", fields: [seenId], references: [id])

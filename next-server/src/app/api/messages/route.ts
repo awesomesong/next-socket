@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       return new NextResponse('로그인이 필요합니다.', { status: 401 });
     }
 
-    const { conversationId, body, message, type, isAIResponse, messageId, image } = await req.json();
+    const { conversationId, body, message, type, isAIResponse, messageId, image, isError } = await req.json();
 
     // 대화방의 모든 사용자 가져오기 (MessageReadStatus 생성을 위해)
     const conversation = await prisma.conversation.findUnique({
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
         sender: { connect: { id: user.id } },
         seen: { connect: { id: user.id } }, // 발신자는 자동으로 읽음
         isAIResponse: isAIResponse || false,
+        isError: isError || false,
       },
       select: {
         id: true,

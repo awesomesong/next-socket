@@ -43,6 +43,7 @@ export async function GET (
                 createdAt: true,
                 type: true,
                 isAIResponse: true,
+                isError: true,
                 conversationId: true,
                 senderId: true,
                 sender: {

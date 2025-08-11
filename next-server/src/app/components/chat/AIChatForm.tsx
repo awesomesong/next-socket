@@ -237,6 +237,24 @@ const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assis
             
             setRetryMessage(message);
 
+            // 에러 메시지를 데이터베이스에 저장
+            try {
+                await fetch('/api/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        conversationId,
+                        body: 'AI 응답 실패. 아래 버튼을 눌러 재시도하세요.',
+                        type: 'text',
+                        isAIResponse: true,
+                        isError: true,
+                        messageId: aiWaitingMessageId
+                    }),
+                });
+            } catch (saveError) {
+                console.error('에러 메시지 저장 실패:', saveError);
+            }
+
             // 에러 상태로 메시지 업데이트
             queryClient.setQueryData(['messages', conversationId], (old: any) => {
                 if (!old) return old;
@@ -323,7 +341,8 @@ const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assis
             seenId: [],
             conversation: { isGroup: false, userIds: [user?.id!] },
             readStatuses: [],
-            isAIResponse: false
+            isAIResponse: false,
+            isError: false
         };
 
         // ✅ AI 대기 메시지
@@ -371,6 +390,7 @@ const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assis
             conversation: { isGroup: false, userIds: [user?.id!] },
             readStatuses: [],
             isAIResponse: true,
+            isError: false,
             isWaiting: true,
             isTyping: true
         };
