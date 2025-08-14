@@ -14,8 +14,8 @@ import DOMPurify from "dompurify";
 import { useSocket } from "../../context/socketContext";
 import { MessageSeenInfo } from "../../types/socket";
 import { isAtBottom } from "../../utils/isAtBottom";
-import { HiSparkles } from "react-icons/hi2";
-import { HiExclamationTriangle } from "react-icons/hi2";
+import { HiExclamationTriangle, HiSparkles } from "react-icons/hi2";
+import { toast } from "react-hot-toast";
 
 interface MessageBoxProps {
   data: FullMessageType;
@@ -49,7 +49,7 @@ const MessageView:React.FC<MessageBoxProps> = ({
   const isAIMessage = data.isAIResponse;
   const isOwn = isAIMessage ? false : currentUser?.email === data?.sender?.email ? true : false;
   const isConversationUser = data.conversation?.userIds?.includes(data?.sender?.id);
-  const isWaiting = (data as any).isWaiting; // 대기 상태
+  const isWaiting = (data as any).isWaiting; // 대기 상태 (일반 메시지는 사용 안함)
   const isError = (data as any).isError; // 오류 상태
   const isTyping = (data as any).isTyping; // 타이핑 상태
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -79,28 +79,166 @@ const MessageView:React.FC<MessageBoxProps> = ({
   });
 
   const handleRetry = () => {
-    // 대기 상태로 전환 및 에러 해제
-    queryClient.setQueriesData(
-      { queryKey: ['messages', conversationId] },
-      (old: any) => {
-        if (!old) return old;
-        const newPages = old.pages.map((page: { messages: FullMessageType[] }) => ({
-          ...page,
-          messages: page.messages.map((msg: any) =>
-            msg.id === data.id ? { ...msg, isError: false, isWaiting: true } : msg
-          )
-        }));
-        return { ...old, pages: newPages };
+    if (isAIMessage) {
+      // AI 응답 재시도: 직전 사용자 메시지를 찾아 그 내용으로 스트림 재요청
+      const cache: any = queryClient.getQueryData(['messages', conversationId]);
+      const allMessages: FullMessageType[] = cache?.pages?.flatMap((p: any) => p.messages) ?? [];
+      const idx = allMessages.findIndex((m) => m.id === data.id);
+      let prompt: string | null = null;
+      for (let i = idx - 1; i >= 0; i--) {
+        const m = allMessages[i] as any;
+        if (!m?.isAIResponse && typeof m?.body === 'string' && m?.body?.length > 0) {
+          prompt = m.body as string;
+          break;
+        }
       }
-    );
+      if (!prompt) {
+        toast.error('재시도할 사용자 메시지를 찾을 수 없습니다.');
+        return;
+      }
 
-    // 원본 내용으로 재전송
-    resendMessage({
-      conversationId,
-      data: data.body ? { message: data.body } : undefined,
-      image: data.image || undefined,
-      messageId: data.id,
-    });
+      // 에러 해제 및 대기/타이핑 표시
+      queryClient.setQueriesData(
+        { queryKey: ['messages', conversationId] },
+        (old: any) => {
+          if (!old) return old;
+          const newPages = old.pages.map((page: { messages: FullMessageType[] }) => ({
+            ...page,
+            messages: page.messages.map((msg: any) =>
+              msg.id === data.id ? { ...msg, isError: false, isWaiting: true, isTyping: true, body: 'AI가 응답을 준비 중입니다.' } : msg
+            )
+          }));
+          return { ...old, pages: newPages };
+        }
+      );
+
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), 60000);
+      const decoder = new TextDecoder();
+      let fullResponse = '';
+      let isStreamingComplete = false;
+
+      fetch('/api/ai/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: prompt,
+          conversationId,
+          aiAgentType: 'assistant',
+          messageId: data.id,
+          autoSave: true,
+        }),
+        signal: abortController.signal,
+      })
+      .then(async (response) => {
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`AI 응답 생성 중 오류가 발생했습니다. (${response.status}: ${errorText})`);
+        }
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error('스트리밍 응답을 읽을 수 없습니다.');
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const payload = line.slice(6);
+                if (payload === '[DONE]') { isStreamingComplete = true; break; }
+                try {
+                  const parsed = JSON.parse(payload);
+                  const content = parsed.content;
+                  if (content && typeof content === 'string') {
+                    fullResponse += content;
+                    queryClient.setQueriesData(
+                      { queryKey: ['messages', conversationId] },
+                      (old: any) => {
+                        if (!old) return old;
+                        const newPages = old.pages.map((page: { messages: FullMessageType[] }) => ({
+                          ...page,
+                          messages: page.messages.map((msg: any) =>
+                            msg.id === data.id ? { ...msg, body: fullResponse, isWaiting: false, isTyping: true } : msg
+                          )
+                        }));
+                        return { ...old, pages: newPages };
+                      }
+                    );
+                  }
+                } catch (_e) {
+                  // ignore parse errors during stream
+                }
+              }
+            }
+            if (isStreamingComplete) break;
+          }
+        } finally {
+          reader.releaseLock();
+        }
+
+        // 완료 처리
+        queryClient.setQueriesData(
+          { queryKey: ['messages', conversationId] },
+          (old: any) => {
+            if (!old) return old;
+            const newPages = old.pages.map((page: { messages: FullMessageType[] }) => ({
+              ...page,
+              messages: page.messages.map((msg: any) =>
+                msg.id === data.id ? { ...msg, isTyping: false, isWaiting: false } : msg
+              )
+            }));
+            return { ...old, pages: newPages };
+          }
+        );
+      })
+      .catch((error) => {
+        if (error instanceof Error && error.name === 'AbortError') {
+          toast.error('AI 응답 시간이 초과되었습니다. 다시 시도해주세요.');
+        } else {
+          toast.error('AI 응답 생성 중 오류가 발생했습니다.');
+        }
+        queryClient.setQueriesData(
+          { queryKey: ['messages', conversationId] },
+          (old: any) => {
+            if (!old) return old;
+            const newPages = old.pages.map((page: { messages: FullMessageType[] }) => ({
+              ...page,
+              messages: page.messages.map((msg: any) =>
+                msg.id === data.id ? { ...msg, body: 'AI 응답 실패. 위의 버튼을 눌러 재시도하세요.', isError: true, isTyping: false, isWaiting: false } : msg
+              )
+            }));
+            return { ...old, pages: newPages };
+          }
+        );
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
+      });
+    } else {
+      // 일반 메시지 재전송: 에러 해제 후 재전송
+      queryClient.setQueriesData(
+        { queryKey: ['messages', conversationId] },
+        (old: any) => {
+          if (!old) return old;
+          const newPages = old.pages.map((page: { messages: FullMessageType[] }) => ({
+            ...page,
+            messages: page.messages.map((msg: any) =>
+              msg.id === data.id ? { ...msg, isError: false } : msg
+            )
+          }));
+          return { ...old, pages: newPages };
+        }
+      );
+
+      resendMessage({
+        conversationId,
+        data: data.body ? { message: data.body } : undefined,
+        image: data.image || undefined,
+        messageId: data.id,
+      });
+    }
   };
 
   const { 
@@ -252,6 +390,20 @@ const MessageView:React.FC<MessageBoxProps> = ({
             isOwn && !isAIMessage && "items-end",
             data.image && 'max-[360px]:w-full'
           )}>
+            {isError && (
+              <div className="flex flex-row items-center mb-1">
+                <HiExclamationTriangle className="w-4 h-4 text-red-500" />
+                {(isOwn || isAIMessage) && (
+                  <button
+                    type="button"
+                    onClick={handleRetry}
+                    className="text-sm text-red-600 underline ml-1"
+                  >
+                    재시도
+                  </button>
+                )}
+              </div>
+            )}
             <div className={clsx(
               "text-sm w-fit overflow-hidden mb-2",
               isError ? 'bg-red-100 border-l-4 border-red-400' :
@@ -283,51 +435,22 @@ const MessageView:React.FC<MessageBoxProps> = ({
                   />
                 </div>
               ): (
-                <div className="flex items-center gap-2">
-                  {isWaiting && (
-                    <HiSparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-                  )}
-                  {isError && (
-                    <>
-                      <HiExclamationTriangle className="w-4 h-4 text-red-500" />
-                      {isOwn && (
-                        <button
-                          type="button"
-                          onClick={handleRetry}
-                          className="text-xs text-red-600 underline ml-1"
-                        >
-                          재시도
-                        </button>
-                      )}
-                    </>
+                <div className="flex items-start gap-2">
+                  {(isWaiting && isTyping) && (
+                    <div className="flex items-center gap-1">
+                      <HiSparkles className="w-4 h-4 text-amber-500 animate-pulse" />
+                      <span className="text-amber-500 font-medium">
+                        {dots}
+                      </span>
+                    </div>
                   )}
                   <pre 
                     className="whitespace-pre-wrap dark:text-neutral-950"
                     dangerouslySetInnerHTML={{ __html : DOMPurify.sanitize(data.body || '') }} 
                   />
-                  {isWaiting && (
-                    <span className="text-amber-500 font-medium">
-                      {dots}
-                    </span>
-                  )}
-                  {isTyping && (
-                    <span className="inline-block w-0.5 h-4 bg-amber-500 animate-pulse ml-1"></span>
-                  )}
                 </div>
               )}
             </div>
-            {data.image && isError && isOwn && (
-              <div className="mt-1 flex items-center gap-2 text-red-600">
-                <HiExclamationTriangle className="w-3 h-3" />
-                <button
-                  type="button"
-                  onClick={handleRetry}
-                  className="text-xs underline"
-                >
-                  이미지 재시도
-                </button>
-              </div>
-            )}
             <div className={clsx("flex items-baseline gap-1" ,
                 isOwn && 'justify-end',
             )}>

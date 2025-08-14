@@ -92,8 +92,6 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
                   userIds,
                 },
                 readStatuses: [],
-                 // 전송 중 상태 표시 (UI 점등용)
-                 isWaiting: true,
             };
 
             // ✅ 메시지 목록에 낙관적 업데이트 (고유 ID로 구분)
@@ -169,7 +167,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
                             ...page,
                             messages: page.messages.map((msg: any) =>
                                 msg.id === context.messageId
-                                    ? { ...msg, isError: true, isWaiting: false }
+                                    ? { ...msg, isError: true }
                                     : msg
                             )
                         }));

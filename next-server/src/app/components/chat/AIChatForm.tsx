@@ -20,7 +20,6 @@ interface Props {
 
 const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assistant' }: Props) => {
     const [isDisabled, setIsDisabled] = useState(false);
-    const [retryMessage, setRetryMessage] = useState<string | null>(null); // ✅ 재시도 메시지 저장
     const autoScrollEnabled = useRef(true);
     const queryClient = useQueryClient();
     const { data: session } = useSession();
@@ -223,37 +222,12 @@ const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assis
             }
 
             setIsDisabled(false);
-            setRetryMessage(null);
 
         } catch (error) {
             console.error('AI 스트리밍 오류:', error);
             
-            // 타임아웃 오류 처리
-            if (error instanceof Error && error.name === 'AbortError') {
-                toast.error('AI 응답 시간이 초과되었습니다. 다시 시도해주세요.');
-            } else {
-                toast.error('AI 응답 생성 중 오류가 발생했습니다.');
-            }
-            
-            setRetryMessage(message);
-
-            // ✅ 에러 메시지만 데이터베이스에 저장 (사용자 메시지는 이미 저장됨)
-            try {
-                await fetch('/api/messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        conversationId,
-                        body: 'AI 응답 실패하였습니다. 다시 시도해주세요.',
-                        type: 'text',
-                        isAIResponse: true,
-                        isError: true,
-                        messageId: aiWaitingMessageId
-                    }),
-                });
-            } catch (saveError) {
-                console.error('에러 메시지 저장 실패:', saveError);
-            }
+            // 일반 채팅과 동일한 토스트 메시지 사용
+            toast.error('메시지 전송에 실패했습니다. 다시 시도해주세요.');
 
             // 에러 상태로 메시지 업데이트
             queryClient.setQueryData(['messages', conversationId], (old: any) => {
@@ -265,7 +239,7 @@ const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assis
                         msg.id === aiWaitingMessageId
                             ? { 
                                 ...msg, 
-                                body: 'AI 응답 실패. 아래 버튼을 눌러 재시도하세요.', 
+                                body: 'AI 응답 실패. 위의 버튼을 눌러 재시도하세요.', 
                                 isError: true,
                                 isTyping: false,
                                 isWaiting: false,
@@ -348,7 +322,7 @@ const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assis
         // ✅ AI 대기 메시지
         const optimisticAIMessage: FullMessageType = {
             id: aiWaitingMessageId,
-            body: 'AI가 응답을 준비 중입니다...',
+            body: 'AI가 응답을 준비 중입니다.',
             image: null,
             createdAt: new Date(),
             type: 'text',
@@ -508,7 +482,7 @@ const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assis
                     minRows={2}
                     maxRows={4}
                     {...register('message', { required: true })}
-                    placeholder={retryMessage ? '실패한 메시지를 재시도 버튼을 눌러 다시 시도하세요.' : isDisabled ? 'AI 응답이 완료될 때까지 기다려주세요.' : '하이트진로 AI 어시스턴트에게 궁금한 점을 물어보세요.'}
+                    placeholder={isDisabled ? 'AI 응답이 완료될 때까지 기다려주세요.' : '하이트진로 AI 어시스턴트에게 궁금한 점을 물어보세요.'}
                     onKeyDown={handleKeyPress}
                     onCompositionStart={handleCompositionStart}
                     onCompositionEnd={handleCompositionEnd}
@@ -524,52 +498,25 @@ const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assis
                         focus:outline-none
                     '
                 />
-                {retryMessage ? (
-                    // 재시도 버튼이 있을 때는 재시도 버튼 표시
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setRetryMessage(null);
-                            setIsDisabled(true);
-                            const aiWaitingMessageId = new ObjectId().toHexString();
-                            sendAIRequest(retryMessage, aiWaitingMessageId);
-                        }}
-                        className="
-                            rounded-full
-                            p-2
-                            bg-red-500
-                            cursor-pointer
-                            hover:bg-red-600
-                            transition
-                        "
-                    >
-                        <HiPaperAirplane 
-                            size={20}
-                            className="text-white"
-                        />
-                    </button>
-                ) : (
-                    // 재시도 버튼이 없을 때는 일반 submit 버튼 표시
-                    <button 
-                        type="submit"
-                        disabled={isDisabled}
-                        className="
-                            rounded-full
-                            p-2
-                            bg-sky-500
-                            cursor-pointer
-                            hover:bg-sky-600
-                            transition
-                            disabled:opacity-50
-                            disabled:cursor-not-allowed
-                        "
-                    >
-                        <HiPaperAirplane 
-                            size={20}
-                            className="text-white"
-                        />
-                    </button>
-                )}
+                <button 
+                    type="submit"
+                    disabled={isDisabled}
+                    className="
+                        rounded-full
+                        p-2
+                        bg-sky-500
+                        cursor-pointer
+                        hover:bg-sky-600
+                        transition
+                        disabled:opacity-50
+                        disabled:cursor-not-allowed
+                    "
+                >
+                    <HiPaperAirplane 
+                        size={20}
+                        className="text-white"
+                    />
+                </button>
             </form>
         </div>
     );
