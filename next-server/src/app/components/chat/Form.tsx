@@ -92,6 +92,8 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
                   userIds,
                 },
                 readStatuses: [],
+                 // 전송 중 상태 표시 (UI 점등용)
+                 isWaiting: true,
             };
 
             // ✅ 메시지 목록에 낙관적 업데이트 (고유 ID로 구분)
@@ -157,10 +159,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
             if(socket) socket.emit('send:message', data);
         },
         onError: (error, _variables, context) => {
-            if (context?.previousData) {
-              queryClient.setQueryData(["messages", _variables.conversationId], context.previousData);
-            }
-
+            // 실패한 메시지를 목록에서 제거하지 말고 오류 상태로 표시하여 재전송 가능하게 유지
             if (context?.messageId) {
                 queryClient.setQueriesData(
                     { queryKey: ['messages', _variables.conversationId] },
@@ -168,14 +167,18 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
                         if (!old) return old;
                         const newPages = old.pages.map((page: { messages: FullMessageType[] }) => ({
                             ...page,
-                            messages: page.messages.filter(msg => msg.id !== context.messageId)
+                            messages: page.messages.map((msg: any) =>
+                                msg.id === context.messageId
+                                    ? { ...msg, isError: true, isWaiting: false }
+                                    : msg
+                            )
                         }));
                         return { ...old, pages: newPages };
                     }
                 );
             }
 
-            toast.error(`${error.message || '대화 내용이 입력되지 못했습니다.'}`);
+            toast.error(`${(error as any)?.message || '메시지 전송에 실패했습니다. 다시 시도해주세요.'}`);
         },
         onSettled: (_data, _error, variables) => {
         }

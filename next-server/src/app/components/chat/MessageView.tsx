@@ -8,6 +8,7 @@ import { DefaultSession } from "next-auth";
 import { arraysEqualUnordered } from "@/src/app/utils/arraysEqualUnordered";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { seenMessages } from "@/src/app/lib/seenMessages";
+import { sendMessage } from "@/src/app/lib/sendMessage";
 import FallbackNextImage from "@/src/app/components/FallbackNextImage";
 import DOMPurify from "dompurify";
 import { useSocket } from "../../context/socketContext";
@@ -52,6 +53,55 @@ const MessageView:React.FC<MessageBoxProps> = ({
   const isError = (data as any).isError; // 오류 상태
   const isTyping = (data as any).isTyping; // 타이핑 상태
   const bottomRef = useRef<HTMLDivElement>(null);
+  const {
+    mutate: resendMessage,
+  } = useMutation({
+    mutationFn: sendMessage,
+    onSuccess: (data) => {
+      if (socket) socket.emit('send:message', data);
+    },
+    onError: (_error) => {
+      // 실패 시 다시 에러 상태로 표시
+      queryClient.setQueriesData(
+        { queryKey: ['messages', conversationId] },
+        (old: any) => {
+          if (!old) return old;
+          const newPages = old.pages.map((page: { messages: FullMessageType[] }) => ({
+            ...page,
+            messages: page.messages.map((msg: any) =>
+              msg.id === data.id ? { ...msg, isError: true, isWaiting: false } : msg
+            )
+          }));
+          return { ...old, pages: newPages };
+        }
+      );
+    }
+  });
+
+  const handleRetry = () => {
+    // 대기 상태로 전환 및 에러 해제
+    queryClient.setQueriesData(
+      { queryKey: ['messages', conversationId] },
+      (old: any) => {
+        if (!old) return old;
+        const newPages = old.pages.map((page: { messages: FullMessageType[] }) => ({
+          ...page,
+          messages: page.messages.map((msg: any) =>
+            msg.id === data.id ? { ...msg, isError: false, isWaiting: true } : msg
+          )
+        }));
+        return { ...old, pages: newPages };
+      }
+    );
+
+    // 원본 내용으로 재전송
+    resendMessage({
+      conversationId,
+      data: data.body ? { message: data.body } : undefined,
+      image: data.image || undefined,
+      messageId: data.id,
+    });
+  };
 
   const { 
     mutate: seenMessageMutation, 
@@ -238,7 +288,18 @@ const MessageView:React.FC<MessageBoxProps> = ({
                     <HiSparkles className="w-4 h-4 text-amber-500 animate-pulse" />
                   )}
                   {isError && (
-                    <HiExclamationTriangle className="w-4 h-4 text-red-500" />
+                    <>
+                      <HiExclamationTriangle className="w-4 h-4 text-red-500" />
+                      {isOwn && (
+                        <button
+                          type="button"
+                          onClick={handleRetry}
+                          className="text-xs text-red-600 underline ml-1"
+                        >
+                          재시도
+                        </button>
+                      )}
+                    </>
                   )}
                   <pre 
                     className="whitespace-pre-wrap dark:text-neutral-950"
@@ -255,6 +316,18 @@ const MessageView:React.FC<MessageBoxProps> = ({
                 </div>
               )}
             </div>
+            {data.image && isError && isOwn && (
+              <div className="mt-1 flex items-center gap-2 text-red-600">
+                <HiExclamationTriangle className="w-3 h-3" />
+                <button
+                  type="button"
+                  onClick={handleRetry}
+                  className="text-xs underline"
+                >
+                  이미지 재시도
+                </button>
+              </div>
+            )}
             <div className={clsx("flex items-baseline gap-1" ,
                 isOwn && 'justify-end',
             )}>
