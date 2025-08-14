@@ -2,46 +2,38 @@
 import useUnreadStore from "@/src/app/hooks/useUnReadStore";
 import { formatMessageCount } from "@/src/app/utils/formatMessageCount";
 import clsx from "clsx";
-import { useEffect, useState } from "react";
 
 type Props = {
     size?: 'mobile-small';
 }
 
 const ChatUnReadCount = ({ size }: Props) => {
-    const [ chatUnReafCount, setChatUnReafCount] = useState(0);
-    const { unReadCount }= useUnreadStore();
+    const { unReadCount } = useUnreadStore();
 
-    useEffect(() => {
-        setChatUnReafCount(unReadCount);
-    }, [unReadCount]);
+    if (!unReadCount) return null;
 
     return (
-        <>
-            {chatUnReafCount > 0 &&
-                <span className={clsx(`
-                        absolute 
-                        md:-left-[2px]
-                        md:-top-[3px]
-                        inline-flex 
-                        justify-center 
-                        items-center
-                        w-fit 
-                        px-2
-                        bg-red-500 
-                        text-neutral-50 
-                        rounded-full 
-                    `,
-                    size === 'mobile-small' && `
-                        max-md:top-[6px]
-                        max-md:left-[37%]
-                        max-md:text-[11px]
-                        max-[420px]:left-[21%]
-                `)}>
-                    {formatMessageCount(unReadCount ?? 0)}
-                </span>
-            }
-        </>
+        <span className={clsx(`
+                absolute 
+                md:-left-[2px]
+                md:-top-[3px]
+                inline-flex 
+                justify-center 
+                items-center
+                w-fit 
+                px-2
+                bg-red-500 
+                text-neutral-50 
+                rounded-full 
+            `,
+            size === 'mobile-small' && `
+                max-md:top-[6px]
+                max-md:left-[37%]
+                max-md:text-[11px]
+                max-[420px]:left-[21%]
+        `)}>
+            {formatMessageCount(unReadCount)}
+        </span>
     )
 }
 

@@ -5,9 +5,6 @@ export const readMessages = async (conversationId: string) => {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            conversationId
-        })
     });
 
     return res.json();

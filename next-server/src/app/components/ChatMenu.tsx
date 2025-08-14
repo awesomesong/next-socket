@@ -2,12 +2,10 @@ import { Tooltip } from "@heroui/react";
 import Image from "next/image";
 import Link from "next/link";
 import ChatUnReadCount from "./ChatUnReadCount";
-import SocketState from "./SocketState";
 
 const ChatMenu = () => {
   return (
     <>
-        <SocketState />
         <Tooltip
             showArrow={true} 
             content="채팅"

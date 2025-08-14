@@ -133,7 +133,12 @@ const AvatarProfile:React.FC<AvatarProfileProps> = ({
                     options={{ 
                         maxFiles: 1,
                         clientAllowedFormats: ["jpg", "jpeg", "png", "gif", "webp"], 
-                        resourceType: "image"
+                        resourceType: "image",
+                        sources: ['local', 'camera'],
+                        showAdvancedOptions: false,
+                        showSkipCropButton: true,
+                        showPoweredBy: false,
+                        singleUploadAutoClose: true,
                     }}
                     onSuccess={handleUpload}
                     uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET}

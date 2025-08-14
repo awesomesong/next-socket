@@ -66,7 +66,13 @@ const MessageView:React.FC<MessageBoxProps> = ({
           });
         }
         // ✅ 메시지 읽음 처리 시 conversationList 쿼리 무효화
-        queryClient.invalidateQueries({ queryKey: ['conversationList'] });
+        queryClient.setQueryData(['conversationList'], (old: any) => {
+          if (!old?.conversations) return old;
+          const conversations = old.conversations.map((c: any) =>
+            c.id === conversationId ? { ...c, unReadCount: 0 } : c
+          );
+          return { conversations };
+        });
       }
   });
 

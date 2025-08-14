@@ -3,12 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from '@/prisma/db';
 
 export async function POST(
-    req: NextRequest
+    req: NextRequest,
+    { params }: { params: Promise<{ conversationId: string }> }
 ) {
     const user = await getCurrentUser();
     
     try { 
-        const { conversationId } = await req.json();
+        const { conversationId } = await params;
         if(!user?.id || !user?.email) return NextResponse.json({message: '로그인이 되지 않았습니다. 로그인 후에 이용해주세요.'}, {status: 401})
 
         // 사용자가 접속한 채팅방에서 읽지 않은 메시지를 "읽음"으로 변경

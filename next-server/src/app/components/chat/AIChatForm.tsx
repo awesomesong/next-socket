@@ -251,7 +251,6 @@ const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assis
                         messageId: aiWaitingMessageId
                     }),
                 });
-                console.log('AI 에러 메시지가 성공적으로 저장되었습니다.');
             } catch (saveError) {
                 console.error('에러 메시지 저장 실패:', saveError);
             }
@@ -465,7 +464,6 @@ const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assis
                     messageId: userMessageId
                 }),
             });
-            console.log('사용자 메시지가 성공적으로 저장되었습니다.');
         } catch (saveError) {
             console.error('사용자 메시지 저장 실패:', saveError);
             // 사용자 메시지 저장 실패 시에도 AI 요청은 계속 진행

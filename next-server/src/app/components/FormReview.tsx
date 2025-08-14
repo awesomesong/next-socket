@@ -108,8 +108,61 @@ const FormReview = ({
 
         if (onSubmit) {
             Promise.resolve(onSubmit(review))
-                .then(() => {
-                    queryClient.invalidateQueries({ queryKey: ['drinkReviews', id] });
+                .then((result: any) => {
+                    const savedReview: DrinkReviewType | undefined = (
+                        result && typeof result === 'object'
+                            ? (result.newReview ?? result)
+                            : undefined
+                    );
+
+                    if (savedReview?.id) {
+                        const normalized: DrinkReviewType = {
+                          id: savedReview.id,
+                          drinkSlug: savedReview.drinkSlug ?? id,
+                          text: savedReview.text ?? '',
+                          createdAt: savedReview.createdAt instanceof Date ? savedReview.createdAt : new Date(savedReview.createdAt ?? Date.now()),
+                          updatedAt: new Date(),
+                          authorEmail: savedReview.authorEmail ?? user.email ?? null,
+                          author: savedReview.author ?? {
+                            id: user.id,
+                            name: user.name ?? '',
+                            email: user.email ?? '',
+                            image: user.image ?? null,
+                          },
+                        };
+                    
+                        queryClient.setQueriesData(
+                          { queryKey: ['drinkReviews', id] },
+                          (oldData: DrinkReviewsDataProps | undefined): DrinkReviewsDataProps | undefined => {
+                            if (!oldData || oldData.pages.length === 0) {
+                              return {
+                                pages: [[{ reviews: [normalized] }, { reviewsCount: 1 }]],
+                                pageParams: [undefined],
+                              };
+                            }
+                    
+                            const currentPage = oldData.pages[0];
+                            const reviewsObj = currentPage.find((p) => 'reviews' in p) as { reviews: DrinkReviewType[] };
+                            const countObj = currentPage.find((p) => 'reviewsCount' in p) as { reviewsCount: number };
+                    
+                            const idx = reviewsObj.reviews.findIndex((r) => r.id === normalized.id);
+                            const nextReviews = idx === -1
+                              ? [normalized, ...reviewsObj.reviews]
+                              : reviewsObj.reviews.map((r) => (r.id === normalized.id ? { ...r, ...normalized } : r));
+                    
+                            const nextCount = idx === -1 ? countObj.reviewsCount + 1 : countObj.reviewsCount;
+                            const updatedPage: [{ reviews: DrinkReviewType[] }, { reviewsCount: number }] = [
+                              { reviews: nextReviews },
+                              { reviewsCount: nextCount },
+                            ];
+                    
+                            return { ...oldData, pages: [updatedPage, ...oldData.pages.slice(1)] };
+                          }
+                        );
+                    }
+
+                    // 서버 원본으로 재검증 (백그라운드)
+                    queryClient.invalidateQueries({ queryKey: ['drinkReviews', id], exact: true });
                     onCancel?.();
                 })
                 .finally(() => setIsSubmitting(false));

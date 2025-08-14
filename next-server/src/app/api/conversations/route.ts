@@ -38,56 +38,28 @@ export async function GET(req: NextRequest){
 
         const conversationIds = conversations.map((c) => c.id);
 
-        // 2. 모든 메시지 가져오기 (최신순)
-        const allMessages = await prisma.message.findMany({
-            where: {
-                conversationId: {
-                    in: conversationIds,
-                },
-            },
-            orderBy: {
-                createdAt: "desc",
-            },
-            select: {
-                id: true,
-                body: true,
-                image: true,
-                createdAt: true,
-                type: true,
-                isAIResponse: true,
-                conversationId: true,
-                sender: {
+        // 2. 각 대화방의 마지막 메시지만 한번에 가져오기 (MongoDB aggregate)
+        // Prisma Mongo에서는 $runCommandRaw를 사용해 집계를 수행합니다.
+        // 각 대화방의 마지막 메시지를 간단히 개별 조회 (안정적)
+        const lastMessageMap = new Map<string, any>();
+        await Promise.all(
+            conversations.map(async (c) => {
+                const m = await prisma.message.findFirst({
+                    where: { conversationId: c.id },
+                    orderBy: { createdAt: 'desc' },
                     select: {
                         id: true,
-                        email: true,
-                        name: true,
+                        body: true,
                         image: true,
+                        createdAt: true,
+                        type: true,
+                        conversationId: true,
+                        seen: { select: { email: true } },
                     },
-                },
-                seen: {
-                    select: {
-                        id: true,
-                        email: true,
-                        name: true,
-                    },
-                },
-                readStatuses: {
-                    select: {
-                        id: true,
-                        userId: true,
-                        isRead: true,
-                    },
-                },
-            },
-        });
-
-        // Map으로 conversationId별 가장 최근 메시지 추출
-        const lastMessageMap = new Map<string, typeof allMessages[number]>();
-        for (const m of allMessages) {
-            if (!lastMessageMap.has(m.conversationId)) {
-                lastMessageMap.set(m.conversationId, m);
-            }
-        }
+                });
+                if (m) lastMessageMap.set(c.id, m);
+            })
+        );
 
         // 3. 모든 안 읽은 메시지 status 가져오기 (AI 대화방 제외)
         const unreadStatuses = await prisma.messageReadStatus.findMany({
@@ -122,19 +94,13 @@ export async function GET(req: NextRequest){
             unreadMap.set(id, (unreadMap.get(id) || 0) + 1);
         });
 
-        // 4. conversations에 message, unReadCount 병합
+        // 4. conversations에 message, unReadCount 병합 (모든 대화방은 마지막 메시지 1개만 포함)
         const conversationsWithDetails = conversations.map((conversation) => {
             const lastMessage = lastMessageMap.get(conversation.id);
             const unReadCount = conversation.isAIChat ? 0 : (unreadMap.get(conversation.id) || 0); // ✅ AI 대화방은 unReadCount를 0으로 설정
 
-            // AI 채팅방의 경우 더 많은 메시지 가져오기
+            // 메시지: 모든 대화방은 마지막 메시지 1개만 포함
             let messages = lastMessage ? [lastMessage] : [];
-            
-            if (conversation.isAIChat) {
-                // AI 채팅방의 경우 최근 10개 메시지 가져오기
-                const aiChatMessages = allMessages.filter(m => m.conversationId === conversation.id).slice(0, 10);
-                messages = aiChatMessages.length > 0 ? aiChatMessages : [];
-            }
 
             return {
                 ...conversation,

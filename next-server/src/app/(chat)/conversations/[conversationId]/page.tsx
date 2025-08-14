@@ -49,7 +49,7 @@ const Conversation = ({ params }: { params : Promise<IParams> }) => {
             {status === 'success' 
                 ? (<div className="flex flex-col flex-1 overflow-hidden relative">
                     <Header conversation={data?.conversation} currentUser={session?.user}/>
-                    <Body scrollRef={scrollRef} bottomRef={bottomRef} />
+                    <Body scrollRef={scrollRef} bottomRef={bottomRef} isAIChat={!!isAIChat} />
                     {isAIChat ? (
                         <AIChatForm 
                             scrollRef={scrollRef} 

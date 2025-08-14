@@ -12,6 +12,7 @@ import { PiArrowFatDownFill } from "react-icons/pi";
 import CircularProgress from '@/src/app/components/CircularProgress';
 import { useSocket } from '../../context/socketContext';
 import { isAtBottom } from '../../utils/isAtBottom';
+import useUnreadStore from '@/src/app/hooks/useUnReadStore';
 
 interface PageData {
     messages: FullMessageType[];  // 각 페이지에서 메시지 배열
@@ -21,13 +22,15 @@ interface PageData {
 interface Props  {
     scrollRef: RefObject<HTMLDivElement | null>;
     bottomRef: RefObject<HTMLDivElement | null>;
+    isAIChat?: boolean;
 }
 
-const Body = ({ scrollRef, bottomRef }: Props) => {
+const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const socket = useSocket();
     const queryClient = useQueryClient();
     const { data: session } = useSession();
     const { conversationId } = useConversation();
+    const { setUnreadCount } = useUnreadStore();
     const [isFirstLoad, setIsFirstLoad] = useState(true); // 처음 로딩 여부
     const [isScrolledUp, setIsScrolledUp] = useState(false); // 스크롤이 위에 있을 때 true
     const wasAtBottomRef = useRef(false);
@@ -64,7 +67,18 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
         onSuccess: () => {
             if (socket) socket.emit('read:messages', { conversationId });
             // 'conversationList' 쿼리를 무효화하여 읽지 않은 메시지 카운트 등을 업데이트
-            queryClient.invalidateQueries({ queryKey: ['conversationList'] });
+            queryClient.setQueryData(['conversationList'], (old: any) => {
+                if (!old?.conversations) return old;
+                const conversations = old.conversations.map((c: any) =>
+                    c.id === conversationId ? { ...c, unReadCount: 0 } : c
+                );
+
+                // 총합 계산 → 전역 뱃지 갱신
+                const total = conversations.reduce((sum: number, c: any) => sum + (c.unReadCount || 0), 0);
+                setUnreadCount(total);
+
+                return { conversations };
+            });
         },
     });
 
@@ -79,10 +93,12 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
             });
             setIsFirstLoad(false);
 
-            // 항상 메시지를 읽음 처리 (대화방 진입 시)
-            readMessageMutaion(conversationId);
+            // 항상 메시지를 읽음 처리 (대화방 진입 시) - AI 채팅방 제외
+            if (!isAIChat) {
+                readMessageMutaion(conversationId);
+            }
         }
-    }, [status, data?.pages]);
+    }, [status, data?.pages, isAIChat]);
 
 
     // ✅ 소켓 메시지 수신 시 최신 메시지를 리스트에 추가 또는 업데이트
@@ -151,6 +167,25 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
                 }
             );
 
+            queryClient.setQueryData(['conversationList'], (old: any) => {
+                if (!old?.conversations) return old;
+                const updated = old.conversations.map((c: any) =>
+                  c.id === conversationId
+                    ? {
+                        ...c,
+                        lastMessageAt: new Date(message.createdAt), // 정렬 갱신
+                        unReadCount: 0, // 현재 방이므로 즉시 읽음 처리
+                        messages: c.messages ? [message, ...c.messages] : [message],
+                      }
+                    : c
+                );
+                // 최신 순 정렬 유지
+                updated.sort((a: any, b: any) =>
+                  new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime()
+                );
+                return { conversations: updated };
+            });
+
             if (isAtBottom(scrollRef.current)) {
                 requestAnimationFrame(() => {
                     scrollToBottom();
@@ -160,18 +195,22 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
                 setIsScrolledUp(true);
             }
 
-            // 내가 보낸 메시지가 아닐 경우에만 읽음 처리
-            if (message.sender.id !== session?.user?.id) {
+            // 내가 보낸 메시지가 아닐 경우에만 읽음 처리 (AI 채팅방 제외)
+            if (!isAIChat && message.sender.id !== session?.user?.id) {
                 readMessageMutaion(conversationId);
             }
         };
 
 
         const handleReadMessages = (payload: { conversationId: string; seenUser: FullMessageType['seen'] }) => {
-            // 'seen:user' 이벤트가 MessageView에서 처리되므로, 여기서 직접 메시지의 seen 상태를 업데이트할 필요는 없을 수 있습니다.
-            // 하지만 전체 대화방 목록의 '읽지 않은 메시지 수' 업데이트를 위해 'conversationList' 쿼리를 무효화합니다.
             if (payload?.conversationId === conversationId) {
-                queryClient.invalidateQueries({ queryKey: ['conversationList'] });
+                queryClient.setQueryData(['conversationList'], (old: any) =>
+                    !old?.conversations ? old : {
+                        conversations: old.conversations.map((c: any) =>
+                            c.id === conversationId ? { ...c, unReadCount: 0 } : c
+                        ),
+                    }
+                );
             }
         };
 
@@ -185,7 +224,7 @@ const Body = ({ scrollRef, bottomRef }: Props) => {
             socket.off("receive:message", handleReceiveMessage);
             socket.off("read:message", handleReadMessages);
         };
-    }, [socket, conversationId, queryClient, session?.user?.id, readMessageMutaion, scrollToBottom, scrollRef]); 
+    }, [socket, conversationId, queryClient, session?.user?.id, readMessageMutaion, scrollToBottom, scrollRef, isAIChat]); 
 
     // 채팅방 참여 & 미참여 (beforeunload 이벤트)
     // 이 useEffect는 window 레벨 이벤트를 다루므로, conversationId의 변화보다는 컴포넌트 마운트/언마운트에 집중합니다.

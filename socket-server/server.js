@@ -181,24 +181,31 @@ io.on("connection", (socket) => {
   socket.on("send:message", (data) => {
     const { newMessage, conversationUsers } = data;
     
-    // 1. 해당 대화방에 있는 모든 사용자에게 메시지 전송 (메시지 보기에 사용)
-    io.to(newMessage.conversationId).emit('receive:message', newMessage);
+    // 1) 현재 대화방에 참여 중인 소켓(보낸 소켓 제외)에게만 메시지 이벤트 전송
+    socket.to(newMessage.conversationId).emit('receive:message', newMessage);
     console.log(`Message sent to room ${newMessage.conversationId}.`);
 
-    // 2. 각 대화 참여자의 모든 기기/탭에 'receive:conversation' 전송 (대화 목록 업데이트 등에 사용)
+    // 2) 같은 사용자의 다른 탭/디바이스 중, 현재 해당 대화방에 참여하지 않은 소켓에게만
+    //    대화 목록 갱신 이벤트 전송 (receive:conversation)
+    const roomSockets = io.sockets.adapter.rooms.get(newMessage.conversationId) || new Set();
+
     conversationUsers.users.forEach(user => {
       const userSockets = getUserSocketIdsByEmail(user.email);
-      userSockets.forEach(userSocketId => {
-          io.to(userSocketId).emit('receive:conversation', newMessage, user.email); 
-        });
+
+      // 현재 방에 참여 중인 이 사용자의 소켓들은 제외 (이미 receive:message를 받음)
+      const socketsOutOfRoom = userSockets.filter((sid) => !roomSockets.has(sid));
+
+      socketsOutOfRoom.forEach((userSocketId) => {
+        io.to(userSocketId).emit('receive:conversation', newMessage, user.email);
+      });
     });
   });
 
   // 메시지 읽음 처리 시
   socket.on("read:messages", (data) => {
     const { conversationId } = data;
-    // 해당 대화방에 있는 모든 사용자에게 메시지 읽음 알림
-    io.to(conversationId).emit('read:message');
+    // 해당 대화방에 있는 사용자(보낸 소켓 제외)에게 메시지 읽음 알림
+    socket.to(conversationId).emit('read:message');
     console.log(`Read messages event for room ${conversationId}.`);
   });
 
@@ -212,6 +219,8 @@ io.on("connection", (socket) => {
     seenMessageUser.conversation.users.forEach((user) => {
       const sockets = getUserSocketIdsByEmail(user.email); // 해당 유저의 모든 소켓 ID 가져오기
       sockets.forEach((socketId) => { 
+        // 현재 보낸 소켓으로는 다시 보내지 않음 (본인 탭 중복 방지)
+        if (socketId === socket.id) return;
         if (!emittedSockets.has(socketId)) { // 이미 전송된 소켓이 아니면
           io.to(socketId).emit("seen:user", {
             conversationId,

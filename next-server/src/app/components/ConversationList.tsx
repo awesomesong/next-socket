@@ -11,14 +11,12 @@ import clsx from "clsx";
 import useConversation from "@/src/app/hooks/useConversation";
 import GroupChatModal from "./chat/GroupChatModal";
 import { useSocket } from "../context/socketContext";
-import SocketState from "./SocketState";
 import { IoBeerOutline } from "react-icons/io5";
 import { useCallback } from 'react';
 import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
 import { useTheme } from 'next-themes';
 import { PiDotsThreeVerticalBold } from "react-icons/pi";
 import { useCreateAIConversation } from '@/src/app/lib/createAIConversation';
-import { getTotalUnreadCount } from '@/src/app/lib/getUnReadCount';
 import useUnreadStore from '@/src/app/hooks/useUnReadStore';
 
 const ConversationList = () => {
@@ -43,41 +41,24 @@ const ConversationList = () => {
         aiConversationMutation.mutate({ aiAgentType });
     }, [aiConversationMutation]);
 
-    const { 
-        data, 
-        status,
-        isSuccess,
-        refetch
-    } = useQuery({
+    const { data: conversations = [], status } = useQuery<
+        { conversations: FullConversationType[] },
+        Error,
+        FullConversationType[]
+    >({
         queryKey: [ 'conversationList' ],
         queryFn: getConversations,
-        staleTime: 0, 
-        gcTime: 0,
+        select: (d) => d.conversations,
+        staleTime: 1000 * 60 * 5, 
+        gcTime: 1000 * 60 * 5,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        refetchOnMount: false,
+        placeholderData: (prev) => prev,
     });
-
-    // ✅ 전체 unReadCount 실시간 업데이트
-    useEffect(() => {
-        const updateTotalUnreadCount = async () => {
-            try {
-                const { unReadCount } = await getTotalUnreadCount(conversationId);
-                setUnreadCount(unReadCount);
-            } catch (error) {
-                console.error('Failed to update total unread count:', error);
-            }
-        };
-
-        // ✅ 초기 로드 시에만 호출 (불필요한 호출 방지)
-        if (data?.conversations && status === 'success') {
-            updateTotalUnreadCount();
-        }
-    }, [status, conversationId, setUnreadCount]); // data?.conversations 제거
 
     useEffect(() => {
         if(!socket) return;
-
-        const handleReconnect = () => {
-            refetch(); // 메시지 다시 불러오기 ✅
-        };
 
         const handleNewConversation = (conversation: FullConversationType) => {
             queryClient.setQueryData(['conversationList'], (oldData: ConversationProps | undefined) => {
@@ -94,111 +75,16 @@ const ConversationList = () => {
                 return { conversations: reorderedConversations };
             });
         };
-
-        const handleReceiveConversation = async (message: FullMessageType, targetEmail: string) => {
-            const isMyMessage = message.sender.email === targetEmail;
-            
-            // ✅ 클라이언트 측에서 unReadCount 계산 (API 호출 최소화)
-            queryClient.setQueryData(['conversationList'], (oldData: ConversationProps) => {
-                if (!oldData) return { conversations: [] };
-                
-                const updatedConversations = oldData.conversations.map(conversation => {
-                    if (conversation.id !== message.conversationId) return conversation;
-
-                    const existingMessages = conversation.messages ?? [];
-                    let newUnreadCount = conversation.unReadCount || 0;
-                    
-                    // 내가 보낸 메시지가 아니면 unReadCount 증가
-                    if (!isMyMessage) {
-                        newUnreadCount += 1;
-                    }
-                    
-                    // ✅ 메시지의 실제 createdAt 시간 사용 (순서 일관성 보장)
-                    const messageCreatedAt = new Date(message.createdAt);
-                    
-                    // ✅ 메시지 배열도 시간순으로 정렬 (최신이 맨 위)
-                    const updatedMessages = [message, ...existingMessages].sort((a, b) => {
-                        const aTime = new Date(a.createdAt).getTime();
-                        const bTime = new Date(b.createdAt).getTime();
-                        return bTime - aTime; // 내림차순 (최신이 위)
-                    });
-                    
-                    return {
-                        ...conversation,
-                        messages: updatedMessages,
-                        unReadCount: newUnreadCount, // ✅ 클라이언트 측 계산
-                        lastMessageAt: messageCreatedAt, // ✅ 메시지의 실제 시간 사용
-                    };
-                });
-                
-                // ✅ lastMessageAt 기준으로 정렬 (최신 메시지가 있는 대화를 맨 위로)
-                const reorderedConversations = [...updatedConversations]
-                    .sort((a, b) => {
-                        const aTime = new Date(a.lastMessageAt || 0).getTime();
-                        const bTime = new Date(b.lastMessageAt || 0).getTime();
-                        return bTime - aTime; // 내림차순 (최신이 위)
-                    });
-                
-                return { conversations: reorderedConversations };
-            });
-
-            // ✅ 전체 unReadCount도 클라이언트 측에서 계산
-            if (!isMyMessage) {
-                queryClient.setQueryData(['conversationList'], (oldData: ConversationProps) => {
-                    if (!oldData) return oldData;
-                    
-                    const totalUnreadCount = oldData.conversations.reduce((total, conversation) => {
-                        return total + (conversation.unReadCount || 0);
-                    }, 0);
-                    
-                    setUnreadCount(totalUnreadCount);
-                    return oldData;
-                });
-            }
-        };
-
-        const handleSeenMessage = async (payload: { conversationId: string; seenUser: any }) => {
-            // ✅ 클라이언트 측에서 unReadCount 계산 (API 호출 최소화)
-            queryClient.setQueryData(['conversationList'], (oldData: ConversationProps) => {
-                if (!oldData) return { conversations: [] };
-                
-                const updatedConversations = oldData.conversations.map(conversation => {
-                    if (conversation.id !== payload.conversationId) return conversation;
-                    
-                    // 현재 대화방의 unReadCount를 0으로 설정
-                    return {
-                        ...conversation,
-                        unReadCount: 0,
-                    };
-                });
-                
-                // ✅ 전체 unReadCount도 클라이언트 측에서 계산
-                const totalUnreadCount = updatedConversations.reduce((total, conversation) => {
-                    return total + (conversation.unReadCount || 0);
-                }, 0);
-                
-                setUnreadCount(totalUnreadCount);
-                
-                return { conversations: updatedConversations };
-            });
-        };
       
-        socket.on('connect', handleReconnect);
         socket.on("conversation:new", handleNewConversation);
-        socket.on("receive:conversation", handleReceiveConversation);
-        socket.on("seen:message", handleSeenMessage);
 
         return () => {
-            socket.off('connect', handleReconnect);
             socket.off("conversation:new", handleNewConversation);
-            socket.off("receive:conversation", handleReceiveConversation);
-            socket.off("seen:message", handleSeenMessage);
         };
-    }, [ socket, queryClient, refetch, conversationId, setUnreadCount ]);
+    }, [ socket, queryClient, conversationId, setUnreadCount ]);
 
     const memoizedConversations = useMemo(() => {
-        if (status !== 'success') return null;
-        if (status === 'success' && data.conversations && data.conversations.length === 0) {
+        if (!conversations || conversations.length === 0) {
             return (
                 <div className="
                     flex
@@ -210,9 +96,9 @@ const ConversationList = () => {
                 ">
                     대화방이 없습니다.
                 </div>
-            )
+            );
         }
-        return data.conversations.map((conversation: FullConversationType) => (
+        return conversations.map((conversation: FullConversationType) => (
             <ConversationBox
                 key={conversation.id}
                 data={conversation}
@@ -220,11 +106,10 @@ const ConversationList = () => {
                 currentUser={session?.user}
             />
         ));
-    }, [data, conversationId, session, status]);
+    }, [conversations, conversationId, session]);
 
     return (
         <>
-            <SocketState/>
             <GroupChatModal
                 isOpen={isModalOpen}
                 onCloseModal={() => setIsModalOpen(false)}

@@ -46,7 +46,12 @@ const ImageUploadButton = ({
       options={{ 
         maxFiles,
         clientAllowedFormats: ["jpg", "jpeg", "png", "gif", "webp"], 
-        resourceType: "image"
+        resourceType: "image",
+        sources: ['local', 'camera'],
+        showAdvancedOptions: false,
+        showSkipCropButton: true,
+        showPoweredBy: false,
+        singleUploadAutoClose: true,
       }}
       onSuccess={onUploadSuccess}
       uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET}

@@ -10,6 +10,7 @@ import { useCallback, useState } from "react";
 import { FiAlertTriangle } from 'react-icons/fi'
 import { useSocket } from "../../context/socketContext";
 import { useQueryClient } from "@tanstack/react-query";
+import useUnreadStore from "../../hooks/useUnReadStore";
 
 const ConfirmModal:React.FC<ModalProps> = ({
     isOpen,
@@ -19,6 +20,7 @@ const ConfirmModal:React.FC<ModalProps> = ({
     const socket = useSocket();
     const router = useRouter();
     const { conversationId } = useConversation();
+    const { setUnreadCount } = useUnreadStore();
     const { data: session } = useSession();
     const { remove, conversationUsers } = useConversationUserList();
     const [ isLoading, setIsLoading ] = useState(false);
@@ -37,8 +39,15 @@ const ConfirmModal:React.FC<ModalProps> = ({
         .then((result) => {
             onCloseModal();
             router.push('/conversations');
-            router.refresh();
-            queryClient.invalidateQueries({queryKey: ['conversationList']});
+
+            queryClient.setQueryData(['conversationList'], (old: any) => {
+                if (!old?.conversations) return old;
+                const conversations = old.conversations.filter((c: any) => c.id !== conversationId);
+                // 전역 뱃지도 맞춰 갱신 중이라면:
+                const total = conversations.reduce((s: number, c: any) => s + (c.unReadCount || 0), 0);
+                setUnreadCount(total);
+                return { conversations };
+              });
 
             if(socket) {
                 const targetUserList = conversationUsers.find((item) => 

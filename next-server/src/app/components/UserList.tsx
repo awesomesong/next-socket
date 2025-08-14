@@ -6,7 +6,6 @@ import getUsers from "@/src/app/lib/getUsers";
 import UserBox from "./UserBox";
 import ChatMemberSkeleton from "./skeleton/ChatMemberSkeleton";
 import { useSocket } from "../context/socketContext";
-import SocketState from "./SocketState";
 import { IoBeerOutline } from "react-icons/io5";
 
 const UserList = () => {
@@ -74,7 +73,6 @@ const UserList = () => {
             {status === 'pending'
                 ? (<ChatMemberSkeleton />)
                 : (<>
-                    <SocketState />
                     {memoizedUsers.map((item: IUserList) => (
                         <UserBox
                             key={item.id}

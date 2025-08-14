@@ -20,7 +20,6 @@ export async function POST(req: NextRequest) {
       });
       
       if (existingMessage) {
-        console.log(`메시지 ID ${messageId}가 이미 존재합니다. 중복 저장을 방지합니다.`);
         return NextResponse.json({
           newMessage: existingMessage,
           conversationUsers: { users: [] },
@@ -69,8 +68,6 @@ export async function POST(req: NextRequest) {
         conversation: { select: { isGroup: true, userIds: true } },
       }
     });
-
-    console.log(`메시지가 성공적으로 저장되었습니다. ID: ${newMessage.id}, Type: ${isAIResponse ? 'AI' : 'User'}`);
 
     // MessageReadStatus 생성 (모든 사용자에 대해)
     const messageReadStatuses = await prisma.messageReadStatus.createMany({

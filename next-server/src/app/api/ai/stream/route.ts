@@ -142,7 +142,6 @@ async function handleStreamingResponse(response: Response, controller: ReadableS
           conversation: { select: { isGroup: true, userIds: true } },
         }
       });
-      console.log('AI 에러 메시지가 저장되었습니다.');
     } catch (error) {
       console.error('AI 에러 메시지 저장 오류:', error);
     }
@@ -211,7 +210,6 @@ async function handleStreamingResponse(response: Response, controller: ReadableS
             conversation: { select: { isGroup: true, userIds: true } },
           }
         });
-        console.log('AI 응답 메시지가 성공적으로 저장되었습니다.');
       } catch (error) {
         console.error('AI 메시지 저장 오류:', error);
         // AI 메시지 저장 실패는 스트리밍을 중단하지 않음
@@ -246,7 +244,6 @@ async function handleStreamingResponse(response: Response, controller: ReadableS
           conversation: { select: { isGroup: true, userIds: true } },
         }
       });
-      console.log('AI 스트리밍 에러 메시지가 저장되었습니다.');
     } catch (saveError) {
       console.error('AI 에러 메시지 저장 오류:', saveError);
     }
@@ -337,9 +334,6 @@ export async function POST(req: NextRequest) {
       // ✅ API 키가 없어도 사용자 메시지는 이미 저장되었으므로 추가 저장하지 않음
       return new NextResponse('AI 서비스를 사용할 수 없습니다.', { status: 500 });
     }
-
-    // ✅ 사용자 메시지는 이미 AIChatForm에서 저장되었으므로 여기서는 저장하지 않음
-    console.log('사용자 메시지는 이미 저장되었습니다. AI 응답을 생성합니다.');
 
     // 6. 대화 컨텍스트 준비
     const conversationHistory = await getConversationHistory(conversationId);

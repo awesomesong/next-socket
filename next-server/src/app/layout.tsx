@@ -8,6 +8,7 @@ import { HeroUIProvider } from "@heroui/react";
 import RQProviders from "@/src/app/context/RQProvider";
 import SocketComponents from "@/src/app/components/SocketComponents";
 import UserActiveStatus from "@/src/app/components/ActiveStatus";
+import SocketState from "@/src/app/components/SocketState";
 import ApolloProviders from "./context/ApolloProviders";
 import { SocketProvider } from "./context/socketContext";
 
@@ -16,6 +17,8 @@ const nanumGothic = Nanum_Gothic({
   weight: ['400', '700', '800'],
   subsets: ['latin'],
   variable: '--font-nanum-gothic',
+  preload: false,
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -85,6 +88,7 @@ export default async function RootLayout({
                 <ThemeProvider>
                   <SocketProvider>
                     <SocketComponents />
+                    <SocketState />
                     <UserActiveStatus />
                     {children}
                   </SocketProvider>

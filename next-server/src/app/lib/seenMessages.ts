@@ -10,9 +10,6 @@ export const seenMessages = async ({ conversationId, messageId }: seenMessagesPr
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            messageId
-        })
     });
 
     return res.json();
