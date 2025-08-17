@@ -337,6 +337,29 @@ const MessageView:React.FC<MessageBoxProps> = ({
     return () => clearInterval(interval);
   }, [isWaiting, isTyping]);
 
+  // Firefox/Windows에서 smooth 스크롤 버벅임 대응: 마지막 메시지 렌더 시 즉시 스크롤
+  useEffect(() => {
+    if (!isLast) return;
+    const container = bottomRef.current?.parentElement as HTMLElement | null;
+    if (!container) return;
+    // 이미 맨 아래에 있을 때만 자동 스크롤 수행
+    const atBottom = isAtBottom(container);
+    if (!atBottom) return;
+    const isFirefox = /Firefox/i.test(navigator.userAgent);
+    const isWindows = /Windows/i.test(navigator.userAgent);
+    const reduceMotion = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false;
+    const useInstant = (isFirefox && isWindows) || reduceMotion;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (typeof container.scrollTo === 'function') {
+          container.scrollTo({ top: container.scrollHeight, behavior: useInstant ? 'auto' : 'smooth' });
+        } else {
+          container.scrollTop = container.scrollHeight;
+        }
+      });
+    });
+  }, [isLast]);
+
   return (
     data?.type === 'system' 
       ? 

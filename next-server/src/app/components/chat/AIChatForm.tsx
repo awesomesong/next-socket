@@ -25,12 +25,27 @@ const AIChatForm = ({ scrollRef, bottomRef, conversationId, aiAgentType = 'assis
     const { data: session } = useSession();
 
     const scrollToBottom = useCallback(() => {
-        if (!autoScrollEnabled.current) return; // 자동 스크롤이 비활성화되어 있으면 스크롤하지 않음
-        
+        if (!autoScrollEnabled.current) return;
+        const el = scrollRef.current;
+        const isFirefox = /Firefox/i.test(navigator.userAgent);
+        const isWindows = /Windows/i.test(navigator.userAgent);
+        const reduceMotion = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false;
+
         requestAnimationFrame(() => {
-            bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            requestAnimationFrame(() => {
+                if (el && typeof el.scrollTo === 'function') {
+                    const useInstant = (isFirefox && isWindows) || reduceMotion;
+                    el.scrollTo({ top: el.scrollHeight, behavior: useInstant ? 'auto' : 'smooth' });
+                    return;
+                }
+                if (el) {
+                    el.scrollTop = el.scrollHeight;
+                    return;
+                }
+                bottomRef.current?.scrollIntoView({ behavior: (isFirefox && isWindows) || reduceMotion ? 'auto' : 'smooth', block: 'end' });
+            });
         });
-    }, [bottomRef]);
+    }, [bottomRef, scrollRef]);
 
     // ✅ 스크롤 상태 감지 (throttle 적용)
     useEffect(() => {

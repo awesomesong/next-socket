@@ -37,15 +37,31 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const isAndroid = /Android/i.test(navigator.userAgent);
 
     const scrollToBottom = useCallback(() => {
+        const el = scrollRef.current;
+        const isFirefox = /Firefox/i.test(navigator.userAgent);
+        const isWindows = /Windows/i.test(navigator.userAgent);
+        const reduceMotion = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false;
+
+        // 두 번의 rAF로 레이아웃/페인팅 이후 확실하게 스크롤 적용
         requestAnimationFrame(() => {
-            if (bottomRef.current) {
-                bottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            }
-            // if (scrollRef.current) {
-            //     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-            // }
+            requestAnimationFrame(() => {
+                if (el && typeof el.scrollTo === 'function') {
+                    const useInstant = (isFirefox && isWindows) || reduceMotion;
+                    el.scrollTo({ top: el.scrollHeight, behavior: useInstant ? 'auto' : 'smooth' });
+                    return;
+                }
+
+                if (el) {
+                    el.scrollTop = el.scrollHeight;
+                    return;
+                }
+
+                if (bottomRef.current) {
+                    bottomRef.current.scrollIntoView({ behavior: (isFirefox && isWindows) || reduceMotion ? 'auto' : 'smooth', block: 'end' });
+                }
+            });
         });
-    }, [bottomRef]);
+    }, [bottomRef, scrollRef]);
 
     // ✅ 안정적인 메시지 정렬 함수 (createdAt 1차, 동시간대는 id로 보조 정렬)
     const compareMessages = useCallback((a: FullMessageType, b: FullMessageType) => {
