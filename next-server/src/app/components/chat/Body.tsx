@@ -217,7 +217,8 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
 
             if (isAtBottom(scrollRef.current)) {
                 requestAnimationFrame(() => {
-                    scrollToBottom();
+                    // 두 번의 rAF로 Firefox/Windows에서도 안정적으로 동작
+                    requestAnimationFrame(() => scrollToBottom());
                     setIsScrolledUp(false);
                 });
             } else {

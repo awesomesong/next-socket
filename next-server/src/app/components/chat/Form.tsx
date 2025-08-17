@@ -30,13 +30,28 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
     const { data: session } =useSession();
 
     const scrollToBottom = useCallback(() => {
+        const el = scrollRef.current;
+        const isFirefox = /Firefox/i.test(navigator.userAgent);
+        const isWindows = /Windows/i.test(navigator.userAgent);
+        const reduceMotion = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false;
+
         requestAnimationFrame(() => {
-            if (bottomRef.current) {
-                // 현재 스크롤이 맨 아래에 있을 때만 자동으로 스크롤
-                bottomRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            }
+            requestAnimationFrame(() => {
+                if (el && typeof el.scrollTo === 'function') {
+                    const useInstant = (isFirefox && isWindows) || reduceMotion;
+                    el.scrollTo({ top: el.scrollHeight, behavior: useInstant ? 'auto' : 'smooth' });
+                    return;
+                }
+                if (el) {
+                    el.scrollTop = el.scrollHeight;
+                    return;
+                }
+                if (bottomRef.current) {
+                    bottomRef.current.scrollIntoView({ behavior: (isFirefox && isWindows) || reduceMotion ? 'auto' : 'smooth', block: 'end' });
+                }
+            });
         });
-    }, [bottomRef]);
+    }, [bottomRef, scrollRef]);
 
     const { 
         mutateAsync, 
