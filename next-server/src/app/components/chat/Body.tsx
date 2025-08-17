@@ -34,6 +34,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const [isFirstLoad, setIsFirstLoad] = useState(true); // 처음 로딩 여부
     const [isScrolledUp, setIsScrolledUp] = useState(false); // 스크롤이 위에 있을 때 true
     const wasAtBottomRef = useRef(false);
+    const lastScrollHeightRef = useRef(0);
     const isAndroid = /Android/i.test(navigator.userAgent);
 
     const scrollToBottom = useCallback(() => {
@@ -119,6 +120,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
             requestAnimationFrame(() => {
                 setTimeout(() => {
                     scrollToBottom();
+                    wasAtBottomRef.current = true;
                 }, 50); // 약간의 지연으로 렌더링 완료 후 스크롤
             });
             setIsFirstLoad(false);
@@ -141,6 +143,8 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
         };
 
         const handleReceiveMessage = (message: FullMessageType) => {
+            // 추가 전, 사용자가 이미 맨 아래에 있었는지 기록 (스크롤 이벤트로 추적된 값이 더 안정적)
+            const wasAtBottom = wasAtBottomRef.current || isAtBottom(scrollRef.current);
             // **핵심 로직 변경:** 옵티미스틱 메시지를 서버 메시지로 "교체"하거나 새 메시지를 "추가"
             queryClient.setQueriesData(
                 { queryKey: ['messages', conversationId] },
@@ -215,14 +219,22 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
                 return { conversations: updated };
             });
 
-            if (isAtBottom(scrollRef.current)) {
+            // 이전에 맨 아래였으면, 새 메시지 반영 후 자동 스크롤
+            if (wasAtBottom) {
                 requestAnimationFrame(() => {
                     // 두 번의 rAF로 Firefox/Windows에서도 안정적으로 동작
                     requestAnimationFrame(() => scrollToBottom());
                     setIsScrolledUp(false);
+                    wasAtBottomRef.current = true;
                 });
+                // 레이아웃 지연에 대비한 보강 스크롤
+                setTimeout(() => {
+                    scrollToBottom();
+                    wasAtBottomRef.current = true;
+                }, 50);
             } else {
                 setIsScrolledUp(true);
+                wasAtBottomRef.current = false;
             }
 
             // 내가 보낸 메시지가 아닐 경우에만 읽음 처리 (AI 채팅방 제외)
@@ -282,6 +294,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
             const atTop = el.scrollTop === 0;
             const isBottom = isAtBottom(scrollRef.current, isAndroid);
             setIsScrolledUp(!isBottom);
+            wasAtBottomRef.current = isBottom;
 
             if (atTop && hasNextPage && !isFetchingNextPage) {
                 const previousScrollHeight = el.scrollHeight;
@@ -300,6 +313,32 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
         return () => container?.removeEventListener('scroll', handleScroll);
     }, [fetchNextPage, hasNextPage, isFetchingNextPage, isAndroid, scrollRef]);
 
+    // ✅ 콘텐츠 높이 변화 감지(이미지 로딩/렌더 지연 포함): 하단에 있을 때만 자동 스크롤
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el || typeof ResizeObserver === 'undefined') return;
+
+        lastScrollHeightRef.current = el.scrollHeight;
+
+        const observer = new ResizeObserver(() => {
+            const target = scrollRef.current;
+            if (!target) return;
+            const newHeight = target.scrollHeight;
+            if (newHeight > lastScrollHeightRef.current && wasAtBottomRef.current) {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        scrollToBottom();
+                        setIsScrolledUp(false);
+                    });
+                });
+            }
+            lastScrollHeightRef.current = newHeight;
+        });
+
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [scrollRef, scrollToBottom]);
+
     // ✅ 클릭 맨 아래로 스크롤하는 함수
     const clickToBottom = useCallback(() => {
         setIsScrolledUp(false);
@@ -317,6 +356,24 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
         );
     }, [data?.pages, compareMessages]);
       
+    // ✅ 메시지 목록 길이가 변할 때, 이전에 맨 아래였다면 확실하게 자동 스크롤
+    useEffect(() => {
+        if (!scrollRef.current) return;
+        if (!allMessages.length) return;
+        if (!wasAtBottomRef.current) return;
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                scrollToBottom();
+                setIsScrolledUp(false);
+            });
+        });
+        // 지연된 보강 스크롤 (레이아웃/이미지 로딩 등 변동 대비)
+        setTimeout(() => {
+            scrollToBottom();
+            setIsScrolledUp(false);
+        }, 80);
+    }, [allMessages.length, scrollToBottom]);
+
     const lastMessageId = allMessages.at(-1)?.id;
 
     return (
