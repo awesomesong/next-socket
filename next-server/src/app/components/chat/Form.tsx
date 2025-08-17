@@ -206,10 +206,15 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
         sendingRef.current = true;
         try {
             while (queueRef.current.length > 0) {
-                const vars = queueRef.current[0];
-                // 직렬 전송: 이전 요청 완료까지 대기
-                await mutateAsync(vars as any);
-                queueRef.current.shift();
+                // 큐에서 먼저 꺼내 실패해도 다음 항목이 진행되도록 함
+                const vars = queueRef.current.shift();
+                if (!vars) continue;
+                try {
+                    // 직렬 전송: 이전 요청 완료까지 대기
+                    await mutateAsync(vars as any);
+                } catch (_err) {
+                    // 에러는 상단 onError에서 처리됨. 다음 항목 진행
+                }
             }
         } finally {
             sendingRef.current = false;
