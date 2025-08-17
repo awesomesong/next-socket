@@ -47,6 +47,20 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
         });
     }, [bottomRef]);
 
+    // ✅ 안정적인 메시지 정렬 함수 (createdAt 1차, 동시간대는 id로 보조 정렬)
+    const compareMessages = useCallback((a: FullMessageType, b: FullMessageType) => {
+        const aTime = new Date(a.createdAt).getTime();
+        const bTime = new Date(b.createdAt).getTime();
+        if (aTime !== bTime) return aTime - bTime; // 오래된 → 최신
+
+        // 동시간대에는 ObjectId(혹은 문자열 id) 사전순으로 보조 정렬
+        // Mongo ObjectId는 사전순이 생성 시간 순과 일치
+        const aId = (a.id ?? '').toString();
+        const bId = (b.id ?? '').toString();
+        if (aId && bId) return aId.localeCompare(bId);
+        return 0;
+    }, []);
+
     // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
     const {
         data,
@@ -150,9 +164,8 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
                         messagesInFirstPage.push(message); 
                     }
 
-                    // 첫 페이지 내에서 메시지를 createdAt 기준으로 정렬합니다. (최신 메시지 순서 유지)
-                    // 오래된 -> 최신 순으로 정렬되어야 스크롤 상단에 오래된 메시지가 나타납니다.
-                    messagesInFirstPage.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                    // 첫 페이지 내에서 메시지를 안정적으로 정렬
+                    messagesInFirstPage.sort(compareMessages);
 
                     // 업데이트된 첫 페이지를 기존 페이지 배열에 다시 할당합니다.
                     updatedPages[0] = {
@@ -282,10 +295,10 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
         return (
             data?.pages
               .flatMap(page => page.messages)
-              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // 오래된 → 최신
+              .sort(compareMessages) // 오래된 → 최신, 동시간대는 id로 안정 정렬
             || []
         );
-    }, [data?.pages]);
+    }, [data?.pages, compareMessages]);
       
     const lastMessageId = allMessages.at(-1)?.id;
 

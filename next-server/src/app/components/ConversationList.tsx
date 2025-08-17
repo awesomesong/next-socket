@@ -28,6 +28,19 @@ const ConversationList = () => {
     const { theme, setTheme } = useTheme();
     const { setUnreadCount } = useUnreadStore();
 
+    // ✅ 안정적인 정렬: 최근 메시지 시간 내림차순, 동시간대는 마지막 메시지 id → 대화방 id로 보조 정렬
+    const compareConversationsDesc = useCallback((a: FullConversationType, b: FullConversationType) => {
+        const aTime = new Date(a.lastMessageAt || a.messages?.[0]?.createdAt || 0).getTime();
+        const bTime = new Date(b.lastMessageAt || b.messages?.[0]?.createdAt || 0).getTime();
+        if (aTime !== bTime) return bTime - aTime;
+
+        const aMsgId = a.messages?.[0]?.id ? String(a.messages[0].id) : '';
+        const bMsgId = b.messages?.[0]?.id ? String(b.messages[0].id) : '';
+        if (aMsgId && bMsgId && aMsgId !== bMsgId) return bMsgId.localeCompare(aMsgId);
+
+        return String(b.id).localeCompare(String(a.id));
+    }, []);
+
     // AI 채팅방 생성 mutation
     const aiConversationMutation = useCreateAIConversation();
 
@@ -64,13 +77,8 @@ const ConversationList = () => {
             queryClient.setQueryData(['conversationList'], (oldData: ConversationProps | undefined) => {
                 const updatedConversations = [conversation, ...(oldData?.conversations ?? [])];
                 
-                // ✅ lastMessageAt 기준으로 정렬 (최신 메시지가 있는 대화를 맨 위로)
-                const reorderedConversations = [...updatedConversations]
-                    .sort((a, b) => {
-                        const aTime = new Date(a.lastMessageAt || 0).getTime();
-                        const bTime = new Date(b.lastMessageAt || 0).getTime();
-                        return bTime - aTime; // 내림차순 (최신이 위)
-                    });
+                // ✅ 안정적인 정렬
+                const reorderedConversations = [...updatedConversations].sort(compareConversationsDesc);
                 
                 return { conversations: reorderedConversations };
             });
@@ -98,7 +106,8 @@ const ConversationList = () => {
                 </div>
             );
         }
-        return conversations.map((conversation: FullConversationType) => (
+        const ordered = [...conversations].sort(compareConversationsDesc);
+        return ordered.map((conversation: FullConversationType) => (
             <ConversationBox
                 key={conversation.id}
                 data={conversation}
@@ -106,7 +115,7 @@ const ConversationList = () => {
                 currentUser={session?.user}
             />
         ));
-    }, [conversations, conversationId, session]);
+    }, [conversations, conversationId, session, compareConversationsDesc]);
 
     return (
         <>
