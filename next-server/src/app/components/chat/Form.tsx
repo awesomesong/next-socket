@@ -7,7 +7,7 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";
-import { RefObject, useCallback, useEffect, useState } from "react";
+import { RefObject, useCallback, useEffect, useRef } from "react";
 import ImageUploadButton from "@/src/app/components/ImageUploadButton";
 import { useSocket } from "../../context/socketContext";
 import useComposition from "@/src/app/hooks/useComposition";
@@ -24,7 +24,6 @@ interface Props  {
 
 const Form = ({ scrollRef, bottomRef }: Props) => {
     const socket = useSocket();
-    const [ isDisabled, setIsDisabled ] = useState(false);
     const { conversationId } = useConversation();
     const { conversationUsers } = useConversationUserList();
     const queryClient = useQueryClient();
@@ -40,7 +39,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
     }, [bottomRef]);
 
     const { 
-        mutate, 
+        mutateAsync, 
         isSuccess
     }  = useMutation({
         mutationFn: sendMessage,
@@ -182,6 +181,32 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
         }
     });
 
+    // ✅ 전송 직렬화를 위한 큐
+    type SendVariables = { conversationId: string; data?: FieldValues; image?: string; messageId: string };
+    const queueRef = useRef<SendVariables[]>([]);
+    const sendingRef = useRef(false);
+
+    const processQueue = useCallback(async () => {
+        if (sendingRef.current) return;
+        sendingRef.current = true;
+        try {
+            while (queueRef.current.length > 0) {
+                const vars = queueRef.current[0];
+                // 직렬 전송: 이전 요청 완료까지 대기
+                await mutateAsync(vars as any);
+                queueRef.current.shift();
+            }
+        } finally {
+            sendingRef.current = false;
+        }
+    }, [mutateAsync]);
+
+    const enqueueSend = useCallback((vars: SendVariables) => {
+        queueRef.current.push(vars);
+        // 즉시 처리 시도 (진행 중이면 반환)
+        void processQueue();
+    }, [processQueue]);
+
     const {
         register,
         handleSubmit,
@@ -205,12 +230,10 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
     const { ref: inputRef, ...rest } = register('message', { required: true });
 
     const onSubmit:SubmitHandler<FieldValues> = async (data) => {
-        if(!data || isDisabled) return;
+        if(!data) return;
 
-        // setIsDisabled(true);
         const messageId = new ObjectId().toHexString(); 
-        mutate({conversationId, data, messageId });
-        setIsDisabled(false);
+        enqueueSend({ conversationId, data, messageId });
         setValue('message', '', { shouldValidate : true});
         setFocus("message");
         if(socket) socket.emit('join:room', conversationId);
@@ -220,7 +243,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
         if(!result?.info?.secure_url) return;
 
         const messageId = new ObjectId().toHexString(); 
-        mutate({conversationId, image: result?.info?.secure_url, messageId});
+        enqueueSend({ conversationId, image: result?.info?.secure_url, messageId });
     };
 
     // ✅ 조합 입력 훅 적용
@@ -234,13 +257,11 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
         if (isComposing()) return;
         if (e.key === 'Enter' && !e.shiftKey ) {
             e.preventDefault(); 
-            if (isDisabled) return;
             // trigger(); // execute react-hook-form submit programmatically 
             
             const value = getValues('message'); // get user input value
             if (value.trim().length === 0) return; // 빈 메시지 방지
 
-            setIsDisabled(true);
             await onSubmit({ message: value }, e);
         }
     };
@@ -283,7 +304,6 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
                     onKeyDown={handleKeyPress}
                     onCompositionStart={handleCompositionStart}
                     onCompositionEnd={handleCompositionEnd}
-                    disabled={isDisabled}
                     className='
                         w-full 
                         bg-default
