@@ -9,6 +9,8 @@ const UnavailableChatForm = () => {
       items-center
       gap-2
       py-4
+      bg-white
+      dark:bg-neutral-900
     ">
       <div className="
             flex

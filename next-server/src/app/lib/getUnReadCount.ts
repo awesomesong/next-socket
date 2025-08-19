@@ -17,7 +17,7 @@ const getUnReadCount = async (conversationId: string) => {
 const getTotalUnreadCount = async (excludeConversationId?: string) => {
     const query = excludeConversationId ? `?exclude=${excludeConversationId}` : '';
     
-    const res = await fetch(`/api/conversations/totalUnreadCount${query}`, {
+    const res = await fetch(`/api/messages/unReadCount${query}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',

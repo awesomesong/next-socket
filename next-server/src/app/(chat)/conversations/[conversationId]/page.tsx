@@ -31,11 +31,19 @@ const Conversation = ({ params }: { params : Promise<IParams> }) => {
         enabled: !!conversationId,
     });
 
-    if(!!data?.message) {
+    if(status === 'pending') {
+        return (
+            <div className="grow h-full flex items-center justify-center">
+                <progress className="pure-material-progress-circular"/>
+            </div>
+        )
+    }
+
+    if(status === 'success' && !data?.conversation) {
         return (
             <div className="grow h-full">
                 <div className="flex flex-col w-full h-full">
-                    <EmptyState message={data?.message} />
+                    <EmptyState message={data?.message} isError />
                 </div>
             </div>
         )
@@ -46,8 +54,8 @@ const Conversation = ({ params }: { params : Promise<IParams> }) => {
 
     return (
         <div className="flex flex-col w-full">
-            {status === 'success' 
-                ? (<div className="flex flex-col flex-1 overflow-hidden relative">
+            {status === 'success' && (
+                <div className="flex flex-col flex-1 overflow-hidden relative">
                     <Header conversation={data?.conversation} currentUser={session?.user}/>
                     <Body scrollRef={scrollRef} bottomRef={bottomRef} isAIChat={!!isAIChat} />
                     {isAIChat ? (
@@ -62,11 +70,8 @@ const Conversation = ({ params }: { params : Promise<IParams> }) => {
                     ) : (
                         <UnavailableChatForm />
                     )}
-                </div>)
-                : (<div className="flex-1 flex justify-center items-center">
-                    <progress className="pure-material-progress-circular"/>
-                </div>)
-            }
+                </div>
+            )}
         </div>
     )
 }

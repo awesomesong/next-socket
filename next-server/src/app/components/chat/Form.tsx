@@ -70,6 +70,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
 
             const body = newMessage.data?.message?.trim() || null;
             const image = newMessage.image || null;
+            const optimisticType = image ? 'image' : 'text';
 
             const previousData = queryClient.getQueryData<
                 InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }>
@@ -85,7 +86,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
                 body,
                 image,
                 createdAt: new Date().toISOString(),
-                type: 'text',
+                type: optimisticType,
                 conversationId,
                 senderId: user?.id!,
                 sender: {
@@ -145,6 +146,7 @@ const Form = ({ scrollRef, bottomRef }: Props) => {
                                 {
                                     id: messageId,
                                     body: body || '이미지를 보냈습니다.',
+                                    type: optimisticType,
                                     createdAt: new Date(),
                                     updatedAt: new Date(),
                                     isAIResponse: false

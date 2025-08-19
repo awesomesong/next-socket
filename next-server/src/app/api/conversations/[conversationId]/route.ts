@@ -34,22 +34,34 @@ export async function GET (
             });
         
             if (!isParticipating) {
-                return NextResponse.json({ message: "해당 대화방에 접근할 수 없습니다." }, { status: 403 });
+                return NextResponse.json({ conversation: null, message: "해당 대화방에 접근할 수 없습니다." }, { status: 403 });
             }
         }
         
         const conversation = await prisma.conversation.findUnique({
-            where: {
-                id: conversationId
-            },
-            include: {
-                users: true
+            where: { id: conversationId },
+            select: {
+                id: true,
+                name: true,
+                isGroup: true,
+                isAIChat: true,
+                aiAgentType: true,
+                userIds: true,
+                lastMessageAt: true,
+                users: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        image: true,
+                    }
+                }
             }
         });
 
         return NextResponse.json({ conversation }, {status: 200});
     } catch (error) {
-        return NextResponse.json({message: "해당 대화방을 불러오지 못했습니다."})
+        return NextResponse.json({conversation: null, message: "해당 대화방을 불러오지 못했습니다."})
     }
 }
 

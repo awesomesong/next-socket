@@ -1,6 +1,6 @@
 'use client';
 import useConversation from '@/src/app/hooks/useConversation';
-import { Fragment, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import MessageView from './MessageView';
 import { FullMessageType } from '@/src/app/types/conversation';
 import { InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -36,6 +36,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const wasAtBottomRef = useRef(false);
     const lastScrollHeightRef = useRef(0);
     const isAndroid = /Android/i.test(navigator.userAgent);
+    const hasLeftRef = useRef(false);
 
     const scrollToBottom = useCallback(() => {
         const el = scrollRef.current;
@@ -43,7 +44,6 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
         const isWindows = /Windows/i.test(navigator.userAgent);
         const reduceMotion = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false;
 
-        // 두 번의 rAF로 레이아웃/페인팅 이후 확실하게 스크롤 적용
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 if (el && typeof el.scrollTo === 'function') {
@@ -85,31 +85,44 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-        refetch
     } = useInfiniteQuery({
         queryKey: ['messages', conversationId],
         queryFn: ({ pageParam = null }) => getMessages({ conversationId, pageParam }),
         initialPageParam: null, // 최신 메시지부터 로드 
         getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
+        enabled: true,
     });
 
     const { mutate: readMessageMutaion } = useMutation({
         mutationFn: readMessages,
-        onSuccess: () => {
-            if (socket) socket.emit('read:messages', { conversationId });
-            // 'conversationList' 쿼리를 무효화하여 읽지 않은 메시지 카운트 등을 업데이트
+        onMutate: async (targetConversationId: string) => {
+            await queryClient.cancelQueries({ queryKey: ['conversationList'] });
+
+            const prevList = queryClient.getQueryData(['conversationList']) as any;
+            const prevTotal = (useUnreadStore as any).getState().unReadCount as number;
+
+            const prevUnRead = prevList?.conversations?.find((c: any) => c.id === targetConversationId)?.unReadCount || 0;
+
+            // 낙관적: 해당 대화방 미읽음 0, 전역 뱃지 감소
             queryClient.setQueryData(['conversationList'], (old: any) => {
                 if (!old?.conversations) return old;
-                const conversations = old.conversations.map((c: any) =>
-                    c.id === conversationId ? { ...c, unReadCount: 0 } : c
-                );
-
-                // 총합 계산 → 전역 뱃지 갱신
-                const total = conversations.reduce((sum: number, c: any) => sum + (c.unReadCount || 0), 0);
-                setUnreadCount(total);
-
-                return { conversations };
+                return {
+                    conversations: old.conversations.map((c: any) =>
+                        c.id === targetConversationId ? { ...c, unReadCount: 0 } : c
+                    ),
+                };
             });
+            setUnreadCount(Math.max(0, prevTotal - prevUnRead));
+
+            return { prevList, prevTotal };
+        },
+        onSuccess: () => {
+            if (socket) socket.emit('read:messages', { conversationId });
+        },
+        onError: (_err, _vars, context) => {
+            if (!context) return;
+            queryClient.setQueryData(['conversationList'], context.prevList);
+            setUnreadCount(context.prevTotal);
         },
     });
 
@@ -125,21 +138,22 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
             });
             setIsFirstLoad(false);
 
-            // 항상 메시지를 읽음 처리 (대화방 진입 시) - AI 채팅방 제외
+            // 메시지가 없으면 호출하지 않음. 최신 메시지가 상대방 메시지일 때만 읽음 처리 (AI 채팅방 제외)
             if (!isAIChat) {
-                readMessageMutaion(conversationId);
+                const latest = (data?.pages?.[0]?.messages ?? []).slice(-1)[0] as FullMessageType | undefined;
+                if (latest && latest.senderId && latest.senderId !== session?.user?.id) {
+                    readMessageMutaion(conversationId);
+                }
             }
         }
-    }, [status, data?.pages, isAIChat]);
-
+    }, [status, data?.pages, isAIChat, session?.user?.id]);
 
     // ✅ 소켓 메시지 수신 시 최신 메시지를 리스트에 추가 또는 업데이트
     useEffect(() => {
         if (!socket) return;
 
         const handleReconnect = () => {
-            socket.emit('join:room', conversationId); // 방 재입장
-            // refetch(); // 메시지 다시 불러오기는 setQueriesData에서 처리하므로 여기서 호출하지 않아도 됨
+            socket.emit('join:room', conversationId);
         };
 
         const handleReceiveMessage = (message: FullMessageType) => {
@@ -157,10 +171,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
                         };
                     }
 
-                    // 기존 페이지 배열을 복사합니다.
                     const updatedPages = [...oldData.pages];
-
-                    // 가장 최신 메시지가 있는 첫 번째 페이지를 가져옵니다. (oldData.pages[0]가 가장 최신 메시지 페이지라고 가정)
                     const firstPage = { ...updatedPages[0] };
                     let messagesInFirstPage = [...firstPage.messages];
 
@@ -271,16 +282,24 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     // 채팅방 참여 & 미참여 (beforeunload 이벤트)
     // 이 useEffect는 window 레벨 이벤트를 다루므로, conversationId의 변화보다는 컴포넌트 마운트/언마운트에 집중합니다.
     useEffect(() => {
-        const handleBeforeUnload = () => {
-          if(socket) socket.emit("leave:room", conversationId);
+        const leaveOnce = () => {
+          if (!socket) return;
+          if (hasLeftRef.current) return;
+          hasLeftRef.current = true;
+          socket.emit("leave:room", conversationId);
         };
 
+        const handleBeforeUnload = () => leaveOnce();
+        const handlePageHide = () => leaveOnce();
+
         window.addEventListener("beforeunload", handleBeforeUnload);
+        window.addEventListener("pagehide", handlePageHide);
 
         return () => {
           window.removeEventListener("beforeunload", handleBeforeUnload);
+          window.removeEventListener("pagehide", handlePageHide);
           // 컴포넌트 언마운트 시 명시적으로 leave:room 전송
-          if(socket) socket.emit("leave:room", conversationId);
+          leaveOnce();
         };
     }, [socket, conversationId]);
 
@@ -290,7 +309,6 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
         const handleScroll = async () => {
             if (!scrollRef.current) return;
             const el = scrollRef.current;
-
             const atTop = el.scrollTop === 0;
             const isBottom = isAtBottom(scrollRef.current, isAndroid);
             setIsScrolledUp(!isBottom);
@@ -317,7 +335,6 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     useEffect(() => {
         const el = scrollRef.current;
         if (!el || typeof ResizeObserver === 'undefined') return;
-
         lastScrollHeightRef.current = el.scrollHeight;
 
         const observer = new ResizeObserver(() => {
@@ -334,7 +351,6 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
             }
             lastScrollHeightRef.current = newHeight;
         });
-
         observer.observe(el);
         return () => observer.disconnect();
     }, [scrollRef, scrollToBottom]);
@@ -343,7 +359,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const clickToBottom = useCallback(() => {
         setIsScrolledUp(false);
         scrollToBottom();
-    }, [scrollToBottom]); 
+    }, [scrollToBottom]);
 
 
     // 모든 페이지의 메시지를 FlatMap으로 합친 후 정렬하여 반환 (UI 렌더링용)
@@ -378,32 +394,25 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
 
     return (
         <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
-            {isFetchingNextPage && (
-                <CircularProgress aria-label="메시지 로딩중"/>
-            )}
+            {isFetchingNextPage && <CircularProgress aria-label="메시지 로딩중" />}
             {status === 'success'
                 ? allMessages.map((message: FullMessageType, idx: number) => {
-                    const prevMessage = idx > 0 ? allMessages[idx - 1] : null;
-    
-                    const currentDate = new Date(message.createdAt).toDateString();
-                    const prevDate = prevMessage ? new Date(prevMessage.createdAt).toDateString() : null;
-                    const showDateDivider = currentDate !== prevDate;
-    
-                    return (
-                        <MessageView
-                            key={message.id}
-                            data={message}
-                            isLast={message.id === lastMessageId}
-                            currentUser={session?.user}
-                            conversationId={conversationId}
-                            showDateDivider={showDateDivider}
-                        />
-                    );
-                })
-                : (<ChatSkeleton />)
-            }
-
-            {/* ✅ 아래로 이동 버튼 */}
+                      const prevMessage = idx > 0 ? allMessages[idx - 1] : null;
+                      const currentDate = new Date(message.createdAt).toDateString();
+                      const prevDate = prevMessage ? new Date(prevMessage.createdAt).toDateString() : null;
+                      const showDateDivider = currentDate !== prevDate;
+                      return (
+                          <MessageView
+                              key={message.id}
+                              data={message}
+                              isLast={message.id === lastMessageId}
+                              currentUser={session?.user}
+                              conversationId={conversationId}
+                              showDateDivider={showDateDivider}
+                          />
+                      );
+                  })
+                : <ChatSkeleton />}
             {isScrolledUp && (
                 <button
                     type='button'
@@ -425,7 +434,6 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
                     <PiArrowFatDownFill size="20" />
                 </button>
             )}
-
             <div ref={bottomRef} />
         </div>
     );

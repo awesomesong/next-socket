@@ -75,11 +75,15 @@ const ConversationList = () => {
 
         const handleNewConversation = (conversation: FullConversationType) => {
             queryClient.setQueryData(['conversationList'], (oldData: ConversationProps | undefined) => {
-                const updatedConversations = [conversation, ...(oldData?.conversations ?? [])];
-                
+                const prev = oldData?.conversations ?? [];
+                // 중복 방지: 같은 id가 이미 있으면 교체/병합, 없으면 추가
+                const existsIdx = prev.findIndex((c: any) => c.id === conversation.id);
+                const next = existsIdx !== -1
+                    ? prev.map((c: any, i: number) => i === existsIdx ? { ...c, ...conversation } : c)
+                    : [conversation, ...prev];
+
                 // ✅ 안정적인 정렬
-                const reorderedConversations = [...updatedConversations].sort(compareConversationsDesc);
-                
+                const reorderedConversations = [...next].sort(compareConversationsDesc);
                 return { conversations: reorderedConversations };
             });
         };

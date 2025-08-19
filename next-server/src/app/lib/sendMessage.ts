@@ -8,6 +8,7 @@ type sendMessageProps = {
 }
 
 export const sendMessage = async ({ conversationId, data, image, messageId }: sendMessageProps) => {
+    const inferredType = image ? 'image' : 'text';
     const res = await fetch(`/api/messages`, {
         method: 'POST',
         headers: {
@@ -18,6 +19,7 @@ export const sendMessage = async ({ conversationId, data, image, messageId }: se
             image,
             conversationId,
             messageId,
+            type: (data as any)?.type || inferredType,
         }),
     });
 

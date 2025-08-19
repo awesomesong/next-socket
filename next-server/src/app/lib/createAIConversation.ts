@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
+import { useSocket } from '@/src/app/context/socketContext';
 
 interface UseCreateAIConversationOptions {
     onSettled?: () => void;
@@ -11,6 +12,7 @@ export const useCreateAIConversation = (options?: UseCreateAIConversationOptions
     const router = useRouter();
     const queryClient = useQueryClient();
     const { data: session } = useSession();
+    const socket = useSocket();
 
     // 공유 upsert 유틸: 대화 하나를 conversationList 캐시에 낙관적으로 반영
     const upsertConversation = (payload: any) => {
@@ -61,6 +63,11 @@ export const useCreateAIConversation = (options?: UseCreateAIConversationOptions
             // 인플라이트를 취소하지 않고 낙관적 갱신 → 이후 서버 데이터로 전체 목록 동기화
             upsertConversation(data);
 
+            // 다른 탭/페이지(리스트) 동기화를 위해 소켓 브로드캐스트
+            if (socket) {
+                socket.emit('conversation:new', data);
+            }
+
             // AI 채팅방으로 이동
             router.push(`/conversations/${data.id}`);
         },
@@ -70,8 +77,6 @@ export const useCreateAIConversation = (options?: UseCreateAIConversationOptions
         onSettled: async (data) => {
             // 재-upsert로 레이스 방지
             if (data) upsertConversation(data);
-            // 최종적으로 서버 원본으로 전체 목록 동기화 (기존 대화방 포함)
-            await queryClient.invalidateQueries({ queryKey: ['conversationList'], exact: true });
             options?.onSettled?.();
         },
     });

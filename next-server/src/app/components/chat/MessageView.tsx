@@ -234,7 +234,7 @@ const MessageView:React.FC<MessageBoxProps> = ({
 
       resendMessage({
         conversationId,
-        data: data.body ? { message: data.body } : undefined,
+        data: data.body ? { message: data.body, type: 'text' } : undefined,
         image: data.image || undefined,
         messageId: data.id,
       });
@@ -267,13 +267,15 @@ const MessageView:React.FC<MessageBoxProps> = ({
   // 마지막 메시지 확인
   useEffect(() => {
     const messageId = data.id;
-    if ( messageId 
-        && data.sender.email !== currentUser?.email
-        && isLast
+    if (
+      messageId &&
+      data.type !== 'system' &&
+      data.sender.email !== currentUser?.email &&
+      isLast
     ) {
       seenMessageMutation({ conversationId, messageId });
     }
-  }, [isLast, data.id, conversationId, data.sender.email, currentUser?.email, seenMessageMutation]);
+  }, [isLast, data.id, data.type, conversationId, data.sender.email, currentUser?.email, seenMessageMutation]);
 
   // 마지막 메시지를 확인한 사용자 이름 리스트
   useEffect(() => {
@@ -411,7 +413,7 @@ const MessageView:React.FC<MessageBoxProps> = ({
           <div className={clsx(
             "flex flex-col flex-1",
             isOwn && !isAIMessage && "items-end",
-            data.image && 'max-[360px]:w-full'
+            data.type === 'image' && 'max-[360px]:w-full'
           )}>
             {isError && (
               <div className="flex flex-row items-center mb-1">
@@ -432,18 +434,20 @@ const MessageView:React.FC<MessageBoxProps> = ({
               isError ? 'bg-red-100 border-l-4 border-red-400' :
               isAIMessage ? 'bg-gray-100' : 
               isOwn ? 'bg-sky-300' : 'bg-sky-100',
-              data.image ? 'max-[360px]:w-full rounded-md p-0' : 'py-2 px-3 rounded-2xl'
+              data.type === 'image' ? 'max-[360px]:w-full rounded-md p-0' : 'py-2 px-3 rounded-2xl'
             )}>
-              {data.image && <ImageModal
-                src={data.image}
-                isOpen={imageModalOpen}
-                onClose={() => setImageModalOpen(false)}
-              />}
-              {data.image ? (
+              {data.type === 'image' && data.image && (
+                <ImageModal
+                  src={data.image}
+                  isOpen={imageModalOpen}
+                  onClose={() => setImageModalOpen(false)}
+                />
+              )}
+              {data.type === 'image' ? (
                 <div className="max-[360px]:w-full w-[288px] h-[288px] relative">
                   <FallbackNextImage
                     onClick={() => setImageModalOpen(true)}
-                    src={data.image}
+                    src={data.image || ''}
                     alt=""
                     fill
                     sizes="288"

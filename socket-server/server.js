@@ -110,6 +110,19 @@ app.get("/", (req, res) => {
 
 io.on("connection", (socket) => {
   console.log("A user connected: ", socket.data.user);
+
+  // 연결 시 한 번: 현재 io의 소켓 목록과 비교하여 stale socket 엔트리 정리
+  try {
+    const activeSocketIds = new Set([...io.sockets.sockets.keys()]);
+    const before = onlineUsersList.length;
+    onlineUsersList = onlineUsersList.filter((u) => activeSocketIds.has(u.socketId));
+    const after = onlineUsersList.length;
+    if (before !== after) {
+      console.log(`🧹 Pruned stale socket entries: ${before - after} removed. Active: ${after}`);
+    }
+  } catch (e) {
+    console.log('Prune on connection failed:', e);
+  }
   
   // 클라이언트가 로그인하여 온라인 사용자 목록에 등록될 때 호출됩니다.
   socket.on("online:user", ({ useremail, userId }) => {
@@ -117,8 +130,20 @@ io.on("connection", (socket) => {
     socket.data.useremail = useremail;
     socket.data.userId = userId; // userId도 저장하여 removeUser에서 활용
 
+    // 이미 온라인으로 감지된 유저인지(이메일 기준) 확인 → 최초 온라인 진입일 때만 브로드캐스트
+    const wasKnownUser = onlineUsersList.some((u) => u.useremail === useremail);
+
+    // online 진입 시에도 한번 더 정리 (네트워크 스파이크/지연 대비)
+    try {
+      const activeSocketIds = new Set([...io.sockets.sockets.keys()]);
+      onlineUsersList = onlineUsersList.filter((u) => activeSocketIds.has(u.socketId));
+    } catch {}
+
     addUser(useremail, socket.id, userId);
-    io.emit('register:user', useremail); // 모든 클라이언트에게 새 유저 등록 알림
+
+    if (!wasKnownUser) {
+      io.emit('register:user', useremail); // 모든 클라이언트에게 '신규 온라인 유저' 알림
+    }
 
     // 현재 접속 중인 모든 온라인 사용자 목록을 전송 (userId, useremail, socketId 포함)
     socket.emit('get:onlineUsers', onlineUsersList); 
@@ -146,56 +171,38 @@ io.on("connection", (socket) => {
     console.log(`User ${socket.data.useremail} (Socket: ${socket.id}) left room: ${roomId}`);
   });
 
-  // 사용자가 채팅방을 삭제하고 나갈 때 (영구적으로)
+  // 사용자가 채팅방을 삭제/나갈 때: 남아있는 사용자에게만 알림
   socket.on("exit:room", (data) => {
-    const { existingUsers, conversationId, userIds } = data; // userIds는 user.id의 배열로 가정
+    const { conversationId, userIds } = data; // userIds: 남아있는 사용자들의 userId 배열
 
-    // 관련된 모든 유저들에게 알림 전송 (existingUsers는 이메일, userIds는 ID)
-    const allRelevantUserEmails = new Set();
-    existingUsers.forEach(user => allRelevantUserEmails.add(user.email));
-
-    // userIds를 통해 이메일을 찾아 추가 (필요하다면)
-    // 이 부분은 클라이언트에서 userEmails를 명시적으로 보내는 것이 더 명확할 수 있습니다.
-    // 현재 코드에서는 userId만 가지고 onlineUsersList에서 이메일을 찾아야 하는데,
-    // onlineUsersList가 userId-useremail 매핑을 직접 제공하지는 않으므로
-    // 모든 onlineUsersList를 순회해야 합니다.
-    userIds.forEach(uid => {
-      const userSockets = getUserSocketIdsById(uid); // userId로 소켓 찾기
-      userSockets.forEach(socketId => {
-        const user = onlineUsersList.find(u => u.socketId === socketId);
-        if (user) allRelevantUserEmails.add(user.useremail);
+    // 남아있는 사용자들의 모든 소켓만 수집 (현재 보낸 소켓/나간 사용자는 제외됨)
+    const recipientSocketIds = new Set();
+    userIds.forEach((uid) => {
+      const sockets = getUserSocketIdsById(uid);
+      sockets.forEach((sid) => {
+        if (sid !== socket.id) recipientSocketIds.add(sid);
       });
     });
 
-
-    allRelevantUserEmails.forEach(uemail => {
-      const socketsToSend = getUserSocketIdsByEmail(uemail); 
-      socketsToSend.forEach(socketId => {
-        io.to(socketId).emit('exit:user', { conversationId, userIds }); // userIds를 그대로 보냄
-      });
+    recipientSocketIds.forEach((sid) => {
+      io.to(sid).emit('exit:user', { conversationId, userIds });
     });
-    console.log(`Exit room event for conversation ${conversationId}. Notifying ${allRelevantUserEmails.size} relevant users.`);
+
+    console.log(`Exit room event for conversation ${conversationId}. Sent to ${recipientSocketIds.size} sockets. recipients=`, Array.from(recipientSocketIds));
   });
 
   // 메시지 전송 시
   socket.on("send:message", (data) => {
     const { newMessage, conversationUsers } = data;
     
-    // 1) 현재 대화방에 참여 중인 소켓(보낸 소켓 제외)에게만 메시지 이벤트 전송
+    // 1) 현재 대화방에 참여 중인 소켓(내가 보낸 소켓 제외)에게만 메시지 이벤트 전송
     socket.to(newMessage.conversationId).emit('receive:message', newMessage);
     console.log(`Message sent to room ${newMessage.conversationId}.`);
 
-    // 2) 같은 사용자의 다른 탭/디바이스 중, 현재 해당 대화방에 참여하지 않은 소켓에게만
-    //    대화 목록 갱신 이벤트 전송 (receive:conversation)
-    const roomSockets = io.sockets.adapter.rooms.get(newMessage.conversationId) || new Set();
-
+    // 2) 모든 참여자 소켓에 대화 목록 갱신 이벤트 전송 (receive:conversation)
     conversationUsers.users.forEach(user => {
       const userSockets = getUserSocketIdsByEmail(user.email);
-
-      // 현재 방에 참여 중인 이 사용자의 소켓들은 제외 (이미 receive:message를 받음)
-      const socketsOutOfRoom = userSockets.filter((sid) => !roomSockets.has(sid));
-
-      socketsOutOfRoom.forEach((userSocketId) => {
+      userSockets.forEach((userSocketId) => {
         io.to(userSocketId).emit('receive:conversation', newMessage, user.email);
       });
     });
@@ -236,6 +243,16 @@ io.on("connection", (socket) => {
 
   // 소켓 연결 해제 시
   socket.on("disconnect", () => {
+    try {
+      // socket.io는 disconnect 시 자동으로 모든 room에서 소켓을 제거합니다.
+      // 안전 로그: 남아있는 room 목록을 출력하여 디버깅에 도움을 줍니다.
+      const joinedRooms = [...socket.rooms].filter((r) => r !== socket.id);
+      if (joinedRooms.length > 0) {
+        console.log(`ℹ️ Disconnect cleanup for ${socket.id}, rooms still referenced:`, joinedRooms);
+      }
+    } catch (e) {
+      console.log('Room cleanup inspection failed:', e);
+    }
     // socket.data에 저장된 사용자 이메일과 userId 정보를 가져옵니다.
     const disconnectedUserEmail = socket?.data?.useremail; 
     const disconnectedUserId = socket?.data?.userId;

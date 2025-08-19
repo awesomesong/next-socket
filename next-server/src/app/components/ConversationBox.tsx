@@ -21,7 +21,6 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
     selected,
     currentUser
 }) => {
-    const { conversationId } = useConversation();
     const { otherUser } = useOtherUser(data, currentUser);
     const router = useRouter();
 
@@ -31,14 +30,7 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
 
     const unReadMessageLength = data.unReadCount ?? 0;
 
-    const userEmail = currentUser?.email;
-
     const lastMessage = data.messages?.[0] ?? null;
-
-    const hasSeen = useMemo(() => {
-        if(!lastMessage || !userEmail) return false;
-        return lastMessage.seen?.some((user) => user.email === userEmail) ?? false;
-    }, [userEmail, lastMessage]);
 
     const lastMessageText = useMemo(() => {
         // AI 채팅방인 경우 마지막 메시지 요약 표시
@@ -58,9 +50,9 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
             
             return "하이트진로 AI 어시스턴트와 대화해보세요. 술에 대한 질문이나 추천을 받을 수 있습니다.";
         }
-        
-        if(lastMessage?.type === 'system') return;
-        if(lastMessage?.image) return '사진을 보냈습니다.';
+        // 시스템 메시지는 리스트 미리보기에서 숨김 처리(서버에서도 제외되지만 가드)
+        if(lastMessage?.type === 'system') return undefined;
+        if(lastMessage?.type === 'image') return '사진을 보냈습니다.';
         if(lastMessage?.body) return lastMessage.body;
         return '대화방이 생성되었습니다.'
     }, [lastMessage, data.isAIChat, data.messages]);
@@ -136,8 +128,7 @@ const ConversationBox:React.FC<ConversationBoxProps> = ({
                                 text-neutral-600 
                                 dark:text-neutral-400
                             `,
-                            hasSeen || conversationId || !lastMessage || lastMessage.type === 'system' 
-                                ? 'font-normal' : 'font-bold'
+                            (!selected && unReadMessageLength > 0) ? 'font-bold' : 'font-normal'
                         )}
                         >
                             {lastMessageText}

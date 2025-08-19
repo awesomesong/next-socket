@@ -38,7 +38,6 @@ const ConfirmModal:React.FC<ModalProps> = ({
         .then((res) => res.json())
         .then((result) => {
             onCloseModal();
-            router.push('/conversations');
 
             queryClient.setQueryData(['conversationList'], (old: any) => {
                 if (!old?.conversations) return old;
@@ -49,24 +48,30 @@ const ConfirmModal:React.FC<ModalProps> = ({
                 return { conversations };
               });
 
-            if(socket) {
-                const targetUserList = conversationUsers.find((item) => 
-                    item.conversationId === conversationId
-                );
-            
-                if (!targetUserList || !result?.existingConversationUsers) return;
-            
-                const filteredUserIds = targetUserList.userIds.filter(id => 
-                    id !== session?.user?.id
-                );
-
-                socket.emit("exit:room", {
-                        existingUsers: result.existingConversationUsers,
-                        conversationId,
-                        userIds: filteredUserIds
+            // 다른 참여자들에게 소켓으로 나가기 이벤트 전파 (서버는 남아있는 userIds만 필요)
+            if (socket) {
+                let remainingUserIds: string[] | null = null;
+                if (result?.existingConversationUsers) {
+                    remainingUserIds = result.existingConversationUsers
+                        .map((u: any) => u.id)
+                        .filter((id: string) => id !== session?.user?.id);
+                } else {
+                    // 서버 응답이 없을 경우 로컬 스토어로 fallback
+                    const target = conversationUsers.find((item) => item.conversationId === conversationId);
+                    if (target?.userIds) {
+                        remainingUserIds = target.userIds.filter((id: string) => id !== session?.user?.id);
                     }
-                );
+                }
+
+                if (Array.isArray(remainingUserIds)) {
+                    socket.emit("exit:room", {
+                        conversationId,
+                        userIds: remainingUserIds
+                    });
+                }
             }
+
+            router.push('/conversations');
             remove(conversationId);
         })
         .catch(() => {})

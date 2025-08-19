@@ -1,6 +1,6 @@
 'use client';
 import { IUserList } from "@/src/app/types/common";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import getUsers from "@/src/app/lib/getUsers";
 import UserBox from "./UserBox";
@@ -11,6 +11,7 @@ import { IoBeerOutline } from "react-icons/io5";
 const UserList = () => {
     const socket = useSocket();
     const queryClient = useQueryClient();
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const { 
         data, 
@@ -26,18 +27,29 @@ const UserList = () => {
     useEffect(() => {
         if(!socket) return;
 
-        const handelRegisterUser = () => {
-            refetch();
+        const handleRegisterUser = () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            debounceRef.current = setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: ['chatMember'], refetchType: 'active', exact: true });
+            }, 120);
         };
         
-        socket.on("register:user", handelRegisterUser);
+        socket.on("register:user", handleRegisterUser);
 
         return () => {
-            socket.off("register:user", handelRegisterUser);
+            socket.off("register:user", handleRegisterUser);
+            if (debounceRef.current) clearTimeout(debounceRef.current);
         }
-    }, [ socket ]);
+    }, [ socket, queryClient ]);
 
-    const memoizedUsers = useMemo(() => data?.users || [], [data?.users]);
+    const memoizedUsers = useMemo(() => {
+        const list: IUserList[] = (data?.users ?? []) as IUserList[];
+        const map = new Map<string, IUserList>();
+        list.forEach((u: IUserList) => {
+            if (u?.id) map.set(u.id, u);
+        });
+        return Array.from(map.values());
+    }, [data?.users]);
 
     return status === 'error' 
         ?   (<div className='flex justify-center align-middle mt-10'>

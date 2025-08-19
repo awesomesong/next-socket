@@ -1,11 +1,13 @@
 'use client'
+import clsx from 'clsx';
 import AIChatButton from './AIChatButton';
 
 type messageProps = {
   message: string;
+  isError?: boolean;
 }
 
-const EmptyState = ({ message }: messageProps) => {
+const EmptyState = ({ message, isError }: messageProps) => {
   return (
     <div 
         className="
@@ -26,7 +28,10 @@ const EmptyState = ({ message }: messageProps) => {
             >
                 {message}
             </h3>
-            <div className="flex flex-col items-center">
+            <div className={clsx(
+              "flex flex-col items-center", 
+              isError && "hidden"
+            )}>
               <h3 className="text-lg text-neutral-700 dark:text-neutral-400 mt-4 mb-2">
                   아래 버튼을 클릭해서, 하이트진로 AI와 대화를 시작해보세요.
               </h3>

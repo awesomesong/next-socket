@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/src/app/lib/session";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../prisma/db";
 import { pusherServer } from "@/src/app/lib/_pusher";
+import { ObjectId } from 'bson';
 
 export async function GET(req: NextRequest){
     const user = await getCurrentUser();
@@ -38,28 +39,66 @@ export async function GET(req: NextRequest){
 
         const conversationIds = conversations.map((c) => c.id);
 
-        // 2. 각 대화방의 마지막 메시지만 한번에 가져오기 (MongoDB aggregate)
-        // Prisma Mongo에서는 $runCommandRaw를 사용해 집계를 수행합니다.
-        // 각 대화방의 마지막 메시지를 간단히 개별 조회 (안정적)
+        // 모든 대화방에 대해 한 번에 "비-시스템" 최신 메시지 조회 (Mongo aggregateRaw: 대화방당 1개만 반환)
+        const convObjectIds = conversationIds.map((id) => {
+            try { return new ObjectId(id); } catch { return null; }
+        }).filter(Boolean) as ObjectId[];
+
+        const grouped = await prisma.message.aggregateRaw({
+            pipeline: [
+                { $match: { conversationId: { $in: convObjectIds }, $or: [ { type: null }, { type: { $exists: false } }, { type: { $ne: 'system' } } ] } },
+                { $sort: { createdAt: -1 } },
+                { $group: {
+                    _id: "$conversationId",
+                    id: { $first: "$_id" },
+                    body: { $first: "$body" },
+                    type: { $first: "$type" },
+                    createdAt: { $first: "$createdAt" },
+                    conversationId: { $first: "$conversationId" },
+                }},
+            ]
+        }) as unknown as Array<{ _id: any; id: any; body: string | null; type: string | null; createdAt: Date; conversationId: ObjectId }>;
+
         const lastMessageMap = new Map<string, any>();
-        await Promise.all(
-            conversations.map(async (c) => {
-                const m = await prisma.message.findFirst({
-                    where: { conversationId: c.id },
-                    orderBy: { createdAt: 'desc' },
-                    select: {
-                        id: true,
-                        body: true,
-                        image: true,
-                        createdAt: true,
-                        type: true,
-                        conversationId: true,
-                        seen: { select: { email: true } },
-                    },
+        for (const m of grouped) {
+            const cid = String(m.conversationId);
+            if (!lastMessageMap.has(cid)) {
+                lastMessageMap.set(cid, {
+                    id: String(m.id ?? m._id ?? ''),
+                    body: m.body ?? null,
+                    type: m.type ?? null,
+                    createdAt: m.createdAt,
                 });
-                if (m) lastMessageMap.set(c.id, m);
-            })
-        );
+            }
+        }
+
+        // 보강: aggregateRaw로 누락된 대화방은 Prisma findFirst로 개별 보완
+        const missingIds = conversationIds.filter((id) => !lastMessageMap.has(id));
+        if (missingIds.length > 0) {
+            await Promise.all(
+                missingIds.map(async (cid) => {
+                    const fallback = await prisma.message.findFirst({
+                        where: {
+                            conversationId: cid,
+                            OR: [
+                                { type: null },
+                                { type: { not: 'system' } },
+                            ],
+                        },
+                        orderBy: { createdAt: 'desc' },
+                        select: {
+                            id: true,
+                            body: true,
+                            createdAt: true,
+                            type: true,
+                        },
+                    });
+                    if (fallback) {
+                        lastMessageMap.set(cid, fallback);
+                    }
+                })
+            );
+        }
 
         // 3. 모든 안 읽은 메시지 status 가져오기 (AI 대화방 제외)
         const unreadStatuses = await prisma.messageReadStatus.findMany({
@@ -152,6 +191,7 @@ export async function POST(req: Request){
                             name: true,
                             nickname: true,
                             email: true,
+                            image: true,
                         }
                     }
                 }
@@ -205,6 +245,7 @@ export async function POST(req: Request){
                             name: true,
                             nickname: true,
                             email: true,
+                            image: true,
                         }
                     }
                 }

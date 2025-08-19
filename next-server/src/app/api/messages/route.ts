@@ -43,12 +43,13 @@ export async function POST(req: NextRequest) {
     }
 
     // 메시지 저장 (발신자는 자동으로 읽음 처리)
+    const inferredType = image ? 'image' : 'text';
     const newMessage = await prisma.message.create({
       data: {
         id: messageId || new ObjectId().toHexString(),
         body: body || message,
         image, // 이미지 URL 저장
-        type,
+        type: type || inferredType,
         conversation: { connect: { id: conversationId } },
         sender: { connect: { id: user.id } },
         seen: { connect: { id: user.id } }, // 발신자는 자동으로 읽음
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
         id: true,
         body: true,
         image: true, // 이미지 필드 포함
+        type: true,
         createdAt: true,
         conversationId: true,
         sender: {

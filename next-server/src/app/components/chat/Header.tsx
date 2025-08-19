@@ -81,10 +81,10 @@ const Header:React.FC<HeaderProps> = ({
                         <HiChevronLeft size={32} />
                     </Link>
                     <div className="shrink">
-                        {conversation?.isGroup && conversation.userIds.length > 2? (
+                        {conversation?.isGroup && conversation?.userIds?.length > 2 ? (
                             <AvatarGroup users={conversation.users} />
                         ) : (
-                            <Avatar user={otherUser} isAIChat={!!conversation.isAIChat} />
+                            <Avatar user={otherUser} isAIChat={!!conversation?.isAIChat} />
                         )}
                     </div>
                     <div className="flex flex-col">
