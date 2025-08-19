@@ -15,9 +15,9 @@ const ButtonLogout = () => {
     };
 
     return (
-        <div 
+        <button 
+            type='button'
             className='
-                cursor-pointer 
                 hover:underline 
                 drop-shadow-lg
                 dark:text-slate-200 
@@ -26,7 +26,7 @@ const ButtonLogout = () => {
             onClick={onClick}
         >
             Logout
-        </div>
+        </button>
     )
 }
 
