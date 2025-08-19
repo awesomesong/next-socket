@@ -161,8 +161,6 @@ const FormReview = ({
                         );
                     }
 
-                    // 서버 원본으로 재검증 (백그라운드)
-                    queryClient.invalidateQueries({ queryKey: ['drinkReviews', id], exact: true });
                     onCancel?.();
                 })
                 .finally(() => setIsSubmitting(false));

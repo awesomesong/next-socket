@@ -30,6 +30,18 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
     const queryClient = useQueryClient();
     const [editingId, setEditingId] = useState<string | null>(null);
 
+    const isAllReviewsLoaded = (): boolean => {
+        const cached = queryClient.getQueryData<any>(['drinkReviews', id]);
+        if (!(cached && Array.isArray(cached.pages))) return false;
+        const totalLoaded = cached.pages.reduce((acc: number, page: any) => {
+            const p = page.find((item: any) => 'reviews' in item) as { reviews: { id: string }[] } | undefined;
+            return acc + (p?.reviews?.length ?? 0);
+        }, 0);
+        const countObj = cached.pages[0]?.find((item: any) => 'reviewsCount' in item) as { reviewsCount: number } | undefined;
+        const totalCount = countObj?.reviewsCount ?? undefined;
+        return typeof totalCount === 'number' && totalLoaded >= totalCount;
+    };
+
     const {
         data,
         status,
@@ -40,12 +52,23 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
         queryKey: ['drinkReviews', id],
         queryFn: getDrinkReviews,
         initialPageParam: '',
-        getNextPageParam: (lastPage) => {
+        getNextPageParam: (lastPage, allPages) => {
             if (!lastPage) return undefined;
             const reviewsPage = lastPage.find((item) => 'reviews' in item) as { reviews: { id: string }[] } | undefined;
-            if (!reviewsPage || !reviewsPage.reviews?.length) return undefined;
-            const lastReviewId = reviewsPage.reviews?.at(-1)?.id;
-            return lastReviewId || undefined;
+            const countObj = lastPage.find((item) => 'reviewsCount' in item) as { reviewsCount: number } | undefined;
+            if (!reviewsPage) return undefined;
+
+            // 지금까지 로드된 총 리뷰 개수
+            const loadedCount = (allPages ?? []).reduce((acc: number, page: any) => {
+                const p = page.find((it: any) => 'reviews' in it) as { reviews: { id: string }[] } | undefined;
+                return acc + (p?.reviews?.length ?? 0);
+            }, 0);
+
+            // 총 개수만큼 모두 로드했다면 다음 페이지 없음
+            if (typeof countObj?.reviewsCount === 'number' && loadedCount >= countObj.reviewsCount) return undefined;
+
+            // 다음 페이지 커서 반환
+            return reviewsPage.reviews.at(-1)?.id || undefined;
         }
     });
 
@@ -55,23 +78,32 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
         mutationFn: updateDrinkReview,
         onSuccess: (updated) => {
             setEditingId(null);
-            // 낙관적 갱신: 첫 페이지의 해당 리뷰 텍스트만 갱신
+            // 서버 응답 형태 정규화: { updateReview } 또는 바로 객체
+            const updatedReview = (updated && typeof updated === 'object' && 'updateReview' in updated)
+                ? (updated as any).updateReview
+                : updated;
+
+            // 낙관적 갱신: 모든 페이지에서 해당 리뷰 텍스트 갱신
             queryClient.setQueriesData(
                 { queryKey: ['drinkReviews', id] },
                 (oldData: any) => {
-                    if (!oldData || oldData.pages.length === 0) return oldData;
-                    const pages = [...oldData.pages];
-                    const currentPage = pages[0];
-                    const reviewsObj = currentPage.find((p: any) => 'reviews' in p) as { reviews: DrinkReviewType[] };
-                    const countObj = currentPage.find((p: any) => 'reviewsCount' in p) ?? { reviewsCount: 0 };
-                    const nextReviews = reviewsObj.reviews.map((r) =>
-                        r.id === updated?.id ? { ...r, ...updated } : r
-                    );
-                    const updatedPage = [ { reviews: nextReviews }, countObj ];
-                    return { ...oldData, pages: [updatedPage, ...pages.slice(1)] };
+                    if (!oldData || oldData.pages.length === 0 || !updatedReview?.id) return oldData;
+                    const nextPages = oldData.pages.map((page: any) => {
+                        const reviewsObj = page.find((p: any) => 'reviews' in p) as { reviews: DrinkReviewType[] } | undefined;
+                        const countObj = page.find((p: any) => 'reviewsCount' in p) ?? { reviewsCount: 0 };
+                        if (!reviewsObj) return page;
+                        const nextReviews = reviewsObj.reviews.map((r: DrinkReviewType) =>
+                            r.id === updatedReview.id ? { ...r, ...updatedReview } : r
+                        );
+                        return [ { reviews: nextReviews }, countObj ];
+                    });
+                    return { ...oldData, pages: nextPages };
                 }
             );
-            // 서버 원본 재검증
+
+            // 모든 페이지가 이미 로드된 경우에는 불필요한 재검증을 생략
+            if (isAllReviewsLoaded()) return; // 이미 전체 로드 완료 → 재검증 불필요
+            // 일부 페이지만 로드된 경우에만 서버 원본 재검증
             queryClient.invalidateQueries({ queryKey: ['drinkReviews', id], exact: true });
         }
     });
@@ -79,21 +111,30 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
     const { mutate: deleteReview } = useMutation({
         mutationFn: deleteDrinkReview,
         onSuccess: (result, deletedId) => {
-            // 낙관적 갱신: 해당 리뷰 제거 및 카운트 -1
+            // 낙관적 갱신: 모든 페이지에서 해당 리뷰 제거 및 총 카운트 -1
             queryClient.setQueriesData(
                 { queryKey: ['drinkReviews', id] },
                 (oldData: any) => {
                     if (!oldData || oldData.pages.length === 0) return oldData;
-                    const pages = [...oldData.pages];
-                    const currentPage = pages[0];
-                    const reviewsObj = currentPage.find((p: any) => 'reviews' in p) as { reviews: DrinkReviewType[] };
-                    const countObj = currentPage.find((p: any) => 'reviewsCount' in p) as { reviewsCount: number };
-                    const nextReviews = reviewsObj.reviews.filter((r) => r.id !== deletedId);
-                    const updatedPage = [ { reviews: nextReviews }, { reviewsCount: Math.max(0, (countObj.reviewsCount || 0) - 1) } ];
-                    return { ...oldData, pages: [updatedPage, ...pages.slice(1)] };
+
+                    const firstPage = oldData.pages[0];
+                    const countObj = firstPage.find((p: any) => 'reviewsCount' in p) as { reviewsCount: number } | undefined;
+                    const nextPages = oldData.pages.map((page: any) => {
+                        const reviewsObj = page.find((p: any) => 'reviews' in p) as { reviews: DrinkReviewType[] } | undefined;
+                        const cObj = page.find((p: any) => 'reviewsCount' in p) as { reviewsCount: number } | undefined;
+                        if (!reviewsObj) return page;
+                        const nextReviews = reviewsObj.reviews.filter((r: DrinkReviewType) => r.id !== deletedId);
+                        const nextCount = Math.max(0, (cObj?.reviewsCount ?? countObj?.reviewsCount ?? 0) - 1);
+                        return [ { reviews: nextReviews }, { reviewsCount: nextCount } ];
+                    });
+                    return { ...oldData, pages: nextPages };
                 }
             );
-            // 서버 원본 재검증
+
+            // 모든 페이지가 이미 로드되었으면 재검증 생략
+            if (isAllReviewsLoaded()) return; // 전체 로드 → 재검증 불필요
+
+            // 일부 페이지만 로드된 경우에만 서버 원본 재검증
             queryClient.invalidateQueries({ queryKey: ['drinkReviews', id], exact: true });
         }
     });
