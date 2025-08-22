@@ -36,7 +36,10 @@ const Comments = ({ blogId } : CommentsProps) => {
             if (!commentsPage || !commentsPage.comments.length) return undefined;
             const lastCommentId = commentsPage.comments.at(-1)?.id;
             return lastCommentId || undefined;
-        }
+        },
+        staleTime: 60 * 1000,
+        refetchOnMount: false,
+        refetchOnReconnect: true,
     });
   
     const { ref, inView } = useInView({
@@ -46,10 +49,10 @@ const Comments = ({ blogId } : CommentsProps) => {
     });
 
     useEffect(() => {
-        if (inView && hasNextPage) {
-            fetchNextPage();
-        }
-    }, [inView]);
+        if (!inView || isFetching || !hasNextPage) return;
+            
+        fetchNextPage();
+    }, [inView, isFetching, hasNextPage, fetchNextPage]);
     
     return (
         <>

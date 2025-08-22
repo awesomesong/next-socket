@@ -75,7 +75,7 @@ export async function POST(
         });
         return NextResponse.json({ newReview }, { status: 200 });
     } catch (error) {
-        return NextResponse.json({ message: 'Something went wrong!' }, { status: 500 });
+        return NextResponse.json({ message: '리뷰 등록에 실패했습니다.' }, { status: 500 });
     }
 }
 

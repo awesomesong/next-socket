@@ -3,8 +3,9 @@ import TextareaAutosize from 'react-textarea-autosize';
 import React, { ChangeEvent, FormEvent, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createBlogsComments } from '@/src/app/lib/createBlogsComments';
-import { Author, BlogCommentPage, BlogCommentsDataProps, BlogOldComments, BlogOldCommentsCount, CommentType } from '@/src/app/types/blog';
-import { text } from 'stream/consumers';
+import { BlogCommentsDataProps, CommentType } from '@/src/app/types/blog';
+import { prependBlogCommentFirstPage, incrementBlogDetailCommentsCount, incrementBlogCommentsCountById, blogsCommentsKey, replaceTempCommentFirstPage } from '@/src/app/lib/blogsCache';
+import { useSocket } from "../context/socketContext";
 
 type FormCommentProps = {
     blogId: String;
@@ -23,45 +24,53 @@ const FormComment = ({ blogId, user } : FormCommentProps) => {
     const [stateComment, setStateComment] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const queryClient = useQueryClient();
+    const socket = useSocket();
 
     const { 
         mutate : createBlogsCommentsMutation,
         data: BlogCommets,
     } = useMutation({
         mutationFn: createBlogsComments,
-        onSuccess: (newData) => {
+        onMutate: async ({ blogId, comment }) => {
+            const blogIdStr = String(blogId);
+            await queryClient.cancelQueries({ queryKey: blogsCommentsKey(blogIdStr), exact: true });
+            const prev = queryClient.getQueryData(blogsCommentsKey(blogIdStr)) as BlogCommentsDataProps | undefined;
+            const optimistic: CommentType = {
+                id: `temp-${Date.now()}`,
+                text: comment,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                authorEmail: user.email ?? null,
+                blogId: blogIdStr,
+                author: user as any,
+            };
+            // 댓글 첫 페이지에 낙관적 prepend 및 카운트 증가
+            prependBlogCommentFirstPage(queryClient, blogIdStr, optimistic);
+            incrementBlogDetailCommentsCount(queryClient, blogIdStr, 1);
+            incrementBlogCommentsCountById(queryClient, blogIdStr, 1);
+            return { prev };
+        },
+        onError: (_err, variables, ctx) => {
+            // 롤백
+            const bid = String(variables.blogId);
+            if (ctx?.prev) queryClient.setQueryData(blogsCommentsKey(bid), ctx.prev);
+            // 카운트 롤백은 다음 refetch/소켓으로 정합 복구되므로 생략 가능
+        },
+        onSuccess: (newData, variables) => {
             setComment('');
-            queryClient.setQueriesData({ queryKey: ['blogsComments', blogId]},
-                (oldData: BlogCommentsDataProps | undefined): BlogCommentsDataProps => {
-                    const newCommentData = newData.newComment;
-                    newCommentData.author = user;
-
-                    // 만약 oldData가 없으면 초기 구조 반환
-                    if (!oldData || oldData.pages.length === 0) {
-                        return {
-                          pages: [[
-                            { comments: [newCommentData] },
-                            { commentsCount: 1 }
-                          ]],
-                          pageParams: [undefined],
-                        };
-                      }
-
-                    const currentPage = oldData.pages[0];
-                    const commentsObj = currentPage.find((p) => 'comments' in p) as { comments: CommentType[] };
-                    const countObj = currentPage.find((p) => 'commentsCount' in p) as { commentsCount: number };
-                
-                    const updatedPage: [ { comments: CommentType[] }, { commentsCount: number } ] = [
-                        { comments: [newCommentData, ...commentsObj.comments] },
-                        { commentsCount: countObj.commentsCount + 1 }
-                    ];
-                  
-                    return {
-                        ...oldData,
-                        pages: [updatedPage, ...oldData.pages.slice(1)],
-                    };
-                }
-            )
+            // temp → 서버 데이터 치환
+            const bid = String(variables.blogId);
+            replaceTempCommentFirstPage(queryClient, bid, { ...newData.newComment, author: user });
+            // 소켓 브로드캐스트(본문 포함)
+            try {
+                socket?.emit('blog:comment:new', 
+                    { 
+                        blogId: bid, 
+                        senderId: user.id, 
+                        comment: { ...newData.newComment, author: user } 
+                    }
+                );
+            } catch {}
         },
     })
 

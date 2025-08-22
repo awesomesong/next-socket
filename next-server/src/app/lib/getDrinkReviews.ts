@@ -1,16 +1,9 @@
 import toast from "react-hot-toast";
-
-type QueryKeyProps = {
-    [key: string]: string
-};
-
-type ParamProps = {
-    queryKey: any[] | QueryKeyProps[];
-    pageParam?: any;
-};
+import type { QueryFunctionContext } from '@tanstack/react-query';
+import { drinkReviewsKey } from '@/src/app/lib/reviewsCache';
 
 export const getDrinkReviews = async (
-    { queryKey, pageParam }: ParamProps
+    { queryKey, pageParam }: QueryFunctionContext<ReturnType<typeof drinkReviewsKey>, string>
 ) => {
     const [_key, id ] = queryKey;
     const cursor = pageParam ?? null;

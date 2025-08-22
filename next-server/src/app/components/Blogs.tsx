@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { getBlogs } from '@/src/app/lib/getBlogs';
 import { Blog as IBlog  } from "@/src/app/types/blog";
@@ -17,8 +17,6 @@ const Blogs = () => {
         fetchNextPage,
         hasNextPage,
         isFetching,
-        isPending,
-        isLoading, // isPending && isFetching
         isFetchingNextPage,
         error, 
     } = useInfiniteQuery({
@@ -28,6 +26,9 @@ const Blogs = () => {
         getNextPageParam: (lastPage) => { 
             return lastPage?.at(-1)?.id
         },
+        staleTime: 60 * 1000,
+        refetchOnMount: false,
+        refetchOnReconnect: true,
     });
 
     const { ref, inView } = useInView({
@@ -37,9 +38,9 @@ const Blogs = () => {
     });
 
     useEffect(() => {
-        if (inView && !isFetching && hasNextPage) {
-            fetchNextPage();
-        }
+        if (!inView || isFetching || !hasNextPage) return;
+
+        fetchNextPage();
     }, [inView, isFetching, hasNextPage, fetchNextPage]);
 
     return status === 'error' ? (

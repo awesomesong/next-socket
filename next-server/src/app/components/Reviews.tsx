@@ -8,11 +8,15 @@ import { useInView } from 'react-intersection-observer';
 import { DrinkReviewType } from '@/src/app/types/drink';
 import { updateDrinkReview } from '@/src/app/lib/updateDrinkReview';
 import { deleteDrinkReview } from '@/src/app/lib/deleteDrinkReview';
+import { prependReview, replaceReviewById, removeReviewById, drinkReviewsKey } from '@/src/app/lib/reviewsCache';
+import type { ReviewsInfinite } from '@/src/app/lib/reviewsCache';
 import FormReview from './FormReview';
+import { useSocket } from '../context/socketContext';
 import CommentSkeleton from './skeleton/CommentSkeleton';
 import CircularProgress from './CircularProgress';
 import FallbackNextImage from './FallbackNextImage';
 import DOMPurify from 'dompurify';
+import toast from 'react-hot-toast';
 
 type ReviewsProps = {
     id: string;
@@ -28,16 +32,17 @@ type ReviewsProps = {
 
 const Reviews = ({ id, name, user } : ReviewsProps) => {
     const queryClient = useQueryClient();
+    const socket = useSocket();
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const isAllReviewsLoaded = (): boolean => {
-        const cached = queryClient.getQueryData<any>(['drinkReviews', id]);
+        const cached = queryClient.getQueryData(drinkReviewsKey(id)) as ReviewsInfinite | undefined;
         if (!(cached && Array.isArray(cached.pages))) return false;
-        const totalLoaded = cached.pages.reduce((acc: number, page: any) => {
-            const p = page.find((item: any) => 'reviews' in item) as { reviews: { id: string }[] } | undefined;
+        const totalLoaded = cached.pages.reduce((acc: number, page) => {
+            const p = (page as any[]).find((item: any) => 'reviews' in item) as { reviews: { id: string }[] } | undefined;
             return acc + (p?.reviews?.length ?? 0);
         }, 0);
-        const countObj = cached.pages[0]?.find((item: any) => 'reviewsCount' in item) as { reviewsCount: number } | undefined;
+        const countObj = (cached.pages[0] as any[])?.find((item: any) => 'reviewsCount' in item) as { reviewsCount: number } | undefined;
         const totalCount = countObj?.reviewsCount ?? undefined;
         return typeof totalCount === 'number' && totalLoaded >= totalCount;
     };
@@ -49,7 +54,7 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
         hasNextPage,
         isFetchingNextPage,
     } = useInfiniteQuery({
-        queryKey: ['drinkReviews', id],
+        queryKey: drinkReviewsKey(id),
         queryFn: getDrinkReviews,
         initialPageParam: '',
         getNextPageParam: (lastPage, allPages) => {
@@ -76,6 +81,13 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
 
     const { mutateAsync: updateReview } = useMutation({
         mutationFn: updateDrinkReview,
+        onMutate: async ({ id: reviewId, text }) => {
+            await queryClient.cancelQueries({ queryKey: drinkReviewsKey(id), exact: true });
+            const prev = queryClient.getQueryData(drinkReviewsKey(id));
+            // 낙관적 텍스트 반영
+            replaceReviewById(queryClient, id, reviewId, { text } as any);
+            return { prev };
+        },
         onSuccess: (updated) => {
             setEditingId(null);
             // 서버 응답 형태 정규화: { updateReview } 또는 바로 객체
@@ -83,61 +95,83 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
                 ? (updated as any).updateReview
                 : updated;
 
-            // 낙관적 갱신: 모든 페이지에서 해당 리뷰 텍스트 갱신
-            queryClient.setQueriesData(
-                { queryKey: ['drinkReviews', id] },
-                (oldData: any) => {
-                    if (!oldData || oldData.pages.length === 0 || !updatedReview?.id) return oldData;
-                    const nextPages = oldData.pages.map((page: any) => {
-                        const reviewsObj = page.find((p: any) => 'reviews' in p) as { reviews: DrinkReviewType[] } | undefined;
-                        const countObj = page.find((p: any) => 'reviewsCount' in p) ?? { reviewsCount: 0 };
-                        if (!reviewsObj) return page;
-                        const nextReviews = reviewsObj.reviews.map((r: DrinkReviewType) =>
-                            r.id === updatedReview.id ? { ...r, ...updatedReview } : r
-                        );
-                        return [ { reviews: nextReviews }, countObj ];
-                    });
-                    return { ...oldData, pages: nextPages };
-                }
-            );
+            // 최종 서버 데이터로 해당 리뷰만 치환
+            if (updatedReview?.id) {
+                replaceReviewById(queryClient, id, updatedReview.id, updatedReview as any);
+            }
 
-            // 모든 페이지가 이미 로드된 경우에는 불필요한 재검증을 생략
-            if (isAllReviewsLoaded()) return; // 이미 전체 로드 완료 → 재검증 불필요
             // 일부 페이지만 로드된 경우에만 서버 원본 재검증
-            queryClient.invalidateQueries({ queryKey: ['drinkReviews', id], exact: true });
+            if (!isAllReviewsLoaded()) {
+                queryClient.invalidateQueries({ queryKey: drinkReviewsKey(id), exact: true });
+            }
+
+            // 소켓 브로드캐스트(리뷰 수정)
+            try {
+                socket?.emit('drink:review:updated', { drinkSlug: id, review: updatedReview });
+            } catch {}
+        },
+        onError: (err: any, _vars, ctx) => {
+            if (ctx?.prev) queryClient.setQueryData(drinkReviewsKey(id), ctx.prev as any);
+            const message = err?.message || '리뷰 수정에 실패했습니다.';
+            toast.error(message);
         }
     });
 
     const { mutate: deleteReview } = useMutation({
         mutationFn: deleteDrinkReview,
-        onSuccess: (result, deletedId) => {
-            // 낙관적 갱신: 모든 페이지에서 해당 리뷰 제거 및 총 카운트 -1
-            queryClient.setQueriesData(
-                { queryKey: ['drinkReviews', id] },
-                (oldData: any) => {
-                    if (!oldData || oldData.pages.length === 0) return oldData;
-
-                    const firstPage = oldData.pages[0];
-                    const countObj = firstPage.find((p: any) => 'reviewsCount' in p) as { reviewsCount: number } | undefined;
-                    const nextPages = oldData.pages.map((page: any) => {
-                        const reviewsObj = page.find((p: any) => 'reviews' in p) as { reviews: DrinkReviewType[] } | undefined;
-                        const cObj = page.find((p: any) => 'reviewsCount' in p) as { reviewsCount: number } | undefined;
-                        if (!reviewsObj) return page;
-                        const nextReviews = reviewsObj.reviews.filter((r: DrinkReviewType) => r.id !== deletedId);
-                        const nextCount = Math.max(0, (cObj?.reviewsCount ?? countObj?.reviewsCount ?? 0) - 1);
-                        return [ { reviews: nextReviews }, { reviewsCount: nextCount } ];
-                    });
-                    return { ...oldData, pages: nextPages };
-                }
-            );
-
+        onMutate: async (deletedId: string) => {
+            await queryClient.cancelQueries({ queryKey: drinkReviewsKey(id), exact: true });
+            const prev = queryClient.getQueryData(drinkReviewsKey(id));
+            // 낙관적 제거 + 카운트 -1
+            removeReviewById(queryClient, id, deletedId);
+            return { prev };
+        },
+        onSuccess: (_result, deletedId) => {
             // 모든 페이지가 이미 로드되었으면 재검증 생략
-            if (isAllReviewsLoaded()) return; // 전체 로드 → 재검증 불필요
+            if (!isAllReviewsLoaded()) {
+                queryClient.invalidateQueries({ queryKey: drinkReviewsKey(id), exact: true });
+            }
 
-            // 일부 페이지만 로드된 경우에만 서버 원본 재검증
-            queryClient.invalidateQueries({ queryKey: ['drinkReviews', id], exact: true });
+            // 소켓 브로드캐스트(리뷰 삭제)
+            try {
+                socket?.emit('drink:review:deleted', { drinkSlug: id, reviewId: deletedId });
+            } catch {}
+        },
+        onError: (err: any, _vars, ctx) => {
+            if (ctx?.prev) queryClient.setQueryData(drinkReviewsKey(id), ctx.prev as any);
+            const message = err?.message || '리뷰 삭제에 실패했습니다.';
+            toast.error(message);
         }
     });
+
+    // 소켓 수신: 리뷰 생성/수정/삭제 실시간 반영
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNew = (payload: { drinkSlug: string; review: DrinkReviewType }) => {
+            if (payload.drinkSlug !== id) return;
+            prependReview(queryClient, id, payload.review as any);
+        };
+
+        const handleUpdated = (payload: { drinkSlug: string; review: DrinkReviewType }) => {
+            if (payload.drinkSlug !== id) return;
+            replaceReviewById(queryClient, id, payload.review.id, payload.review as any);
+        };
+
+        const handleDeleted = (payload: { drinkSlug: string; reviewId: string }) => {
+            if (payload.drinkSlug !== id) return;
+            removeReviewById(queryClient, id, payload.reviewId);
+        };
+
+        socket.on('drink:review:new', handleNew);
+        socket.on('drink:review:updated', handleUpdated);
+        socket.on('drink:review:deleted', handleDeleted);
+        return () => {
+            socket.off('drink:review:new', handleNew);
+            socket.off('drink:review:updated', handleUpdated);
+            socket.off('drink:review:deleted', handleDeleted);
+        };
+    }, [socket, id, queryClient]);
 
     useEffect(() => {
         if (inView && hasNextPage) {

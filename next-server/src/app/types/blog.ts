@@ -101,3 +101,30 @@ export type BlogCommentPage = [
   
 
 export type BlogCommentsDataProps = InfiniteData<BlogCommentPage>;
+
+// ===== Socket payload types for blog events =====
+export type BlogCardForPrependPayload = {
+    id: string;
+    title: string;
+    image: string;
+    createdAt: string | Date;
+    author: { name: string | null; image: string | null } | null;
+    _count: { comments: number };
+    viewCount: number;
+};
+
+export type BlogCommentNewPayload = { blogId: string; senderId?: string; comment?: CommentType };
+export type BlogNewPayload = { blog: BlogCardForPrependPayload };
+export type BlogUpdatedPayload = {
+    blog: {
+        id: string;
+        title?: string;
+        content?: string;
+        image?: string;
+        createdAt?: string | Date;
+        author?: { name: string | null; image: string | null } | null;
+        _count?: { comments: number };
+        viewCount?: number;
+    };
+};
+export type BlogDeletedPayload = { blogId: string };

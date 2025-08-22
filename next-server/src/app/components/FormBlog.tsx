@@ -2,6 +2,9 @@
 import { FormEvent, useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSocket } from "../context/socketContext";
+import { prependBlogCard, upsertBlogCardById, upsertBlogDetailPartial } from "@/src/app/lib/blogsCache";
 import { BlogProps } from "@/src/app/types/blog";
 import toast from "react-hot-toast";
 import PointsLoading from "./PointsLoading";
@@ -49,6 +52,8 @@ export const FormBlog = ({ id, initialData, message, isEdit }: FormBlogProps ) =
   const formTitle = useRef<HTMLInputElement>(null);
   const quillRef = useRef<ReactQuillOriginal>(null);
   const { data: session, status } = useSession();
+  const queryClient = useQueryClient();
+  const socket = useSocket();
 
   // 초기 데이터 설정 (isEdit 모드일 때만 실행)
   useEffect(() => {
@@ -246,10 +251,70 @@ export const FormBlog = ({ id, initialData, message, isEdit }: FormBlogProps ) =
         // 성공 시 삭제 대기 중인 이미지들 처리
         if (isEdit) {
           await Promise.all(imageDelete.map(img => deleteImage(img.url)));
+          // 낙관적 업데이트: 상세/목록 캐시 동기화 (추가 네트워크 호출 방지)
+          try {
+            const updated = data.updateBlog;
+            if (updated?.id) {
+              // 목록 카드 갱신 (제목/이미지 등)
+              upsertBlogCardById(queryClient, {
+                id: updated.id,
+                title: updated.title,
+                image: updated.image,
+              });
+
+              // 상세 본문/타이틀/이미지 갱신 (유틸 사용)
+              upsertBlogDetailPartial(queryClient, String(updated.id), {
+                title: updated.title,
+                content: quillRef.current?.getEditor()?.root.innerHTML || '',
+                image: JSON.stringify(images.map((it, i) => ({ index: i, url: it.url }))),
+              });
+
+              // 소켓 브로드캐스트: 블로그 수정
+              try {
+                const payload = {
+                  blog: {
+                    id: updated.id,
+                    title: updated.title,
+                    image: updated.image,
+                    content: quillRef.current?.getEditor()?.root.innerHTML || '',
+                  }
+                };
+                socket?.emit('blog:updated', payload);
+              } catch {}
+            }
+          } catch {}
           setIsDirty(false);
           router.push(`/blogs/${data.updateBlog.id}`);
         } else {
           setIsDirty(false);
+          // 목록 캐시에 새 글을 즉시 prepend (공통 유틸 사용)
+          prependBlogCard(queryClient, {
+            id: data?.newBlog?.id,
+            title: data?.newBlog?.title,
+            image: data?.newBlog?.image,
+            createdAt: data?.newBlog?.createdAt,
+            author: { name: session?.user?.name ?? '', image: session?.user?.image ?? null },
+            _count: { comments: 0 },
+            viewCount: 0,
+          });
+
+          // 소켓 브로드캐스트: 블로그 신규 생성 (카드용 최소 필드)
+          try {
+            const nb = data?.newBlog;
+            const payload = {
+              blog: {
+                id: nb?.id,
+                title: nb?.title,
+                image: nb?.image,
+                createdAt: nb?.createdAt,
+                author: { name: session?.user?.name ?? '', image: session?.user?.image ?? null },
+                _count: { comments: 0 },
+                viewCount: 0,
+              }
+            };
+            socket?.emit('blog:new', payload);
+          } catch {}
+
           router.replace(`/blogs/${data.newBlog.id}`);
         }
 

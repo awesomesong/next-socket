@@ -6,6 +6,8 @@ import { useEffect, useRef } from "react";
 import { useSocket } from "../context/socketContext";
 import useConversation from "../hooks/useConversation";
 import useConversationUserList from "../hooks/useConversationUserList";
+import { prependBlogCard, upsertBlogCardById, removeBlogCardById, incrementBlogCommentsCountById, upsertBlogDetailPartial, incrementBlogDetailCommentsCount, prependBlogCommentFirstPage, blogDetailKey } from "@/src/app/lib/blogsCache";
+import type { BlogCommentNewPayload, BlogNewPayload, BlogUpdatedPayload, BlogDeletedPayload, BlogCardForPrependPayload } from "@/src/app/types/blog";
 
 const SocketState = () => {
     const socket = useSocket();
@@ -139,14 +141,75 @@ const SocketState = () => {
             // invalidate 직후, 캐시가 있다면 즉시 전역 unReadCount를 재계산하여 깜빡임/복원 방지
             updateUnreadFromCache();
         };
+
+        // 블로그 댓글 신규 생성 이벤트 → 목록/상세 댓글 수 동기화
+        const handleBlogCommentNew = (payload: BlogCommentNewPayload) => {
+            if (!payload?.blogId) return;
+            // 목록 카드 댓글 수 +1
+            incrementBlogCommentsCountById(queryClient, String(payload.blogId), 1);
+
+            // 상세 페이지 댓글 수 +1
+            incrementBlogDetailCommentsCount(queryClient, String(payload.blogId), 1);
+
+            // 댓글 목록 첫 페이지만 prepend (무한스크롤 비용 절감)
+            if (payload?.comment) {
+                prependBlogCommentFirstPage(queryClient, String(payload.blogId), payload.comment);
+            }
+        };
+
+        // 블로그 신규 생성 → 목록 첫 페이지 prepend
+        const handleBlogNew = (payload: BlogNewPayload) => {
+            const blog = payload?.blog;
+            if (!blog?.id) return;
+            const createdAt = blog.createdAt instanceof Date ? blog.createdAt : new Date(blog.createdAt);
+            prependBlogCard(queryClient, { ...blog, createdAt });
+        };
+
+        // 블로그 수정 → 목록/상세 갱신
+        const handleBlogUpdated = (payload: BlogUpdatedPayload) => {
+            const blog = payload?.blog;
+            if (!blog?.id) return;
+            // 목록 upsert (카드 필드만)
+            const patch: any = { id: String(blog.id) };
+            if (blog.title !== undefined) patch.title = blog.title;
+            if (blog.image !== undefined) patch.image = blog.image;
+            if (blog.createdAt !== undefined) patch.createdAt = blog.createdAt;
+            if (blog.author !== undefined) patch.author = blog.author;
+            if (blog._count !== undefined) patch._count = blog._count;
+            if (blog.viewCount !== undefined) patch.viewCount = blog.viewCount;
+            upsertBlogCardById(queryClient, patch);
+            // 상세 upsert
+            const partial: Record<string, any> = {};
+            if (blog.title !== undefined) partial.title = blog.title;
+            if (blog.content !== undefined) partial.content = blog.content;
+            if (blog.image !== undefined) partial.image = blog.image;
+            if (Object.keys(partial).length > 0) {
+                upsertBlogDetailPartial(queryClient, String(blog.id), partial);
+            }
+        };
+
+        const handleBlogDeleted = (payload: BlogDeletedPayload) => {
+            if (!payload?.blogId) return;
+            const id = String(payload.blogId);
+            removeBlogCardById(queryClient, id);
+            queryClient.removeQueries({ queryKey: blogDetailKey(id), exact: true });
+        };
       
         socket.on("receive:conversation", handleReceiveConversation);
         socket.on("exit:user", handleExit);
         socket.on("read:message", handleReadMessage);
+        socket.on("blog:comment:new", handleBlogCommentNew);
+        socket.on("blog:new", handleBlogNew);
+        socket.on("blog:updated", handleBlogUpdated);
+        socket.on("blog:deleted", handleBlogDeleted);
         return() => {
             socket.off("receive:conversation", handleReceiveConversation);
             socket.off("exit:user", handleExit);
             socket.off("read:message", handleReadMessage);
+            socket.off("blog:comment:new", handleBlogCommentNew);
+            socket.off("blog:new", handleBlogNew);
+            socket.off("blog:updated", handleBlogUpdated);
+            socket.off("blog:deleted", handleBlogDeleted);
         }
     }, [socket, conversationId, queryClient, set]);
 

@@ -216,6 +216,49 @@ io.on("connection", (socket) => {
     console.log(`Read messages event for room ${conversationId}.`);
   });
 
+  // 블로그 신규 생성 브로드캐스트 (보낸 본인 제외 전체에 전송)
+  socket.on("blog:new", (payload) => {
+    try {
+      socket.broadcast.emit('blog:new', payload);
+    } catch (e) {
+    }
+  });
+
+  // 블로그 수정 브로드캐스트 (보낸 본인 제외 전체에 전송)
+  socket.on("blog:updated", (payload) => {
+    try {
+      socket.broadcast.emit('blog:updated', payload);
+    } catch (e) {
+    }
+  });
+
+  // 블로그 삭제 브로드캐스트 (보낸 본인 제외 전체에 전송)
+  socket.on("blog:deleted", (payload) => {
+    try {
+      socket.broadcast.emit('blog:deleted', payload);
+    } catch (e) {
+    }
+  });
+
+  // 블로그 댓글 신규 생성 브로드캐스트 (보낸 본인 제외 전체에 전송)
+  socket.on("blog:comment:new", (payload) => {
+    try {
+      socket.broadcast.emit('blog:comment:new', payload);
+    } catch (e) {
+    }
+  });
+
+  // 리뷰: 생성/수정/삭제 브로드캐스트 (보낸 본인 제외 전체)
+  socket.on('drink:review:new', (payload) => {
+    try { socket.broadcast.emit('drink:review:new', payload); } catch (e) {}
+  });
+  socket.on('drink:review:updated', (payload) => {
+    try { socket.broadcast.emit('drink:review:updated', payload); } catch (e) {}
+  });
+  socket.on('drink:review:deleted', (payload) => {
+    try { socket.broadcast.emit('drink:review:deleted', payload); } catch (e) {}
+  });
+
   // 메시지 확인(seen) 처리 시
   socket.on("seen:message", (data) => {
     const { seenMessageUser, userEmail } = data;

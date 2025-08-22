@@ -11,6 +11,9 @@ export const createDrinkReviews = async ({ id, text }: Props) => {
         },
         body: JSON.stringify({ text }),
     });
-
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) {
+        throw new Error((data && (data.message || data.error)) || '리뷰 등록에 실패했습니다.');
+    }
+    return data;
 };

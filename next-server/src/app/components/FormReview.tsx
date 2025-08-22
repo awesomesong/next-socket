@@ -4,6 +4,9 @@ import React, { useRef, useState, FormEvent, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createDrinkReviews } from '@/src/app/lib/createDrinkReviews';
 import { DrinkReviewsDataProps, DrinkReviewType } from '@/src/app/types/drink';
+import { useSocket } from "../context/socketContext";
+import toast from 'react-hot-toast';
+import { prependReview, replaceReviewById, upsertPrependReview, drinkReviewsKey } from '@/src/app/lib/reviewsCache';
 
 type FormReviewProps = {
     id: string;
@@ -40,6 +43,7 @@ const FormReview = ({
     const [stateReview, setStateReview] = useState(Boolean(onSubmit) ? true : false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const queryClient = useQueryClient();
+    const socket = useSocket();
 
     useEffect(() => {
         if (autoFocus) {
@@ -48,47 +52,58 @@ const FormReview = ({
         }
     }, [autoFocus]);
 
-    const { mutate: createDrinkReviewsMutation } = useMutation({
+    const { mutate: createDrinkReviewsMutation } = useMutation<
+        { newReview: DrinkReviewType },
+        Error,
+        { id: string; text: string },
+        { prev?: DrinkReviewsDataProps; optimisticId: string }
+    >({
         mutationFn: createDrinkReviews,
-        onSuccess: (newData) => {
+        onMutate: async ({ id, text }) => {
+            await queryClient.cancelQueries({ queryKey: drinkReviewsKey(id), exact: true });
+            const prev = queryClient.getQueryData(drinkReviewsKey(id)) as DrinkReviewsDataProps | undefined;
+            const optimistic: DrinkReviewType = {
+                id: `temp-${Date.now()}`,
+                drinkSlug: id,
+                text,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                authorEmail: user.email ?? null,
+                author: { id: user.id, name: user.name ?? '', email: user.email ?? '', image: user.image ?? null },
+            };
+            prependReview(queryClient, id, optimistic);
+            return { prev, optimisticId: optimistic.id };
+        },
+        onSuccess: (newData, _vars, ctx) => {
             setReview('');
-            queryClient.setQueriesData({ queryKey: ['drinkReviews', id] },
-                (oldData: DrinkReviewsDataProps | undefined): DrinkReviewsDataProps => {
-                    const newReviewData = newData.newReview;
-                    newReviewData.author = user;
-
-                    if (!oldData || oldData.pages.length === 0) {
-                        return {
-                            pages: [[
-                                { reviews: [newReviewData] },
-                                { reviewsCount: 1 }
-                            ]],
-                            pageParams: [undefined],
-                        };
-                    }
-
-                    const currentPage = oldData.pages[0];
-                    const reviewsObj = currentPage.find((p) => 'reviews' in p) as { reviews: DrinkReviewType[] };
-                    const countObj = currentPage.find((p) => 'reviewsCount' in p) as { reviewsCount: number };
-
-                    const updatedPage: [ { reviews: DrinkReviewType[] }, { reviewsCount: number } ] = [
-                        { reviews: [newReviewData, ...reviewsObj.reviews] },
-                        { reviewsCount: countObj.reviewsCount + 1 }
-                    ];
-
-                    return {
-                        ...oldData,
-                        pages: [updatedPage, ...oldData.pages.slice(1)],
-                    };
-                }
-            );
+            // temp 치환
+            replaceReviewById(queryClient, id, ctx?.optimisticId!, { ...newData.newReview, author: user });
             const reviewId = newData.newReview.id;
+            // 소켓 브로드캐스트(리뷰 생성)
+            try {
+                socket?.emit('drink:review:new', {
+                    drinkSlug: id,
+                    review: {
+                        ...newData.newReview,
+                        author: {
+                            name: user.name ?? '',
+                            email: user.email ?? '',
+                            image: user.image ?? null,
+                        },
+                    },
+                });
+            } catch {}
             setTimeout(() => {
                 document.getElementById(`review-${reviewId}`)?.scrollIntoView({
                     behavior: 'smooth',
                     block: 'end'
                 });
             }, 100);
+        },
+        onError: (err, _vars, ctx) => {
+            if (ctx?.prev) queryClient.setQueryData(drinkReviewsKey(id), ctx.prev);
+            const message = err?.message || '리뷰 등록에 실패했습니다.';
+            toast.error(message);
         },
     });
 
@@ -108,12 +123,9 @@ const FormReview = ({
 
         if (onSubmit) {
             Promise.resolve(onSubmit(review))
-                .then((result: any) => {
-                    const savedReview: DrinkReviewType | undefined = (
-                        result && typeof result === 'object'
-                            ? (result.newReview ?? result)
-                            : undefined
-                    );
+                .then((result: unknown) => {
+                    const saved = (result && typeof result === 'object') ? (result as any) : undefined;
+                    const savedReview: DrinkReviewType | undefined = saved?.newReview ?? saved;
 
                     if (savedReview?.id) {
                         const normalized: DrinkReviewType = {
@@ -131,34 +143,7 @@ const FormReview = ({
                           },
                         };
                     
-                        queryClient.setQueriesData(
-                          { queryKey: ['drinkReviews', id] },
-                          (oldData: DrinkReviewsDataProps | undefined): DrinkReviewsDataProps | undefined => {
-                            if (!oldData || oldData.pages.length === 0) {
-                              return {
-                                pages: [[{ reviews: [normalized] }, { reviewsCount: 1 }]],
-                                pageParams: [undefined],
-                              };
-                            }
-                    
-                            const currentPage = oldData.pages[0];
-                            const reviewsObj = currentPage.find((p) => 'reviews' in p) as { reviews: DrinkReviewType[] };
-                            const countObj = currentPage.find((p) => 'reviewsCount' in p) as { reviewsCount: number };
-                    
-                            const idx = reviewsObj.reviews.findIndex((r) => r.id === normalized.id);
-                            const nextReviews = idx === -1
-                              ? [normalized, ...reviewsObj.reviews]
-                              : reviewsObj.reviews.map((r) => (r.id === normalized.id ? { ...r, ...normalized } : r));
-                    
-                            const nextCount = idx === -1 ? countObj.reviewsCount + 1 : countObj.reviewsCount;
-                            const updatedPage: [{ reviews: DrinkReviewType[] }, { reviewsCount: number }] = [
-                              { reviews: nextReviews },
-                              { reviewsCount: nextCount },
-                            ];
-                    
-                            return { ...oldData, pages: [updatedPage, ...oldData.pages.slice(1)] };
-                          }
-                        );
+                        upsertPrependReview(queryClient, id, normalized);
                     }
 
                     onCancel?.();

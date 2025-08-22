@@ -7,10 +7,11 @@ import BlogEdit from '@/src/app/components/BlogEdit';
 import getBlog from '@/src/app/lib/getBlog';
 import BlogList from '@/src/app/components/BlogList';
 import dayjs from '@/src/app/lib/day';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { addBlogViewCount } from '@/src/app/lib/addBlogViewCount';
+import { upsertBlogCardById, blogDetailKey, BLOG_LIST_KEY } from '@/src/app/lib/blogsCache';
 import { PiUserCircleFill } from 'react-icons/pi';
 import { BlogSkeleton } from '@/src/app/components/skeleton/BlogSkeleton';
 import FallbackNextImage from '@/src/app/components/FallbackNextImage';
@@ -21,6 +22,7 @@ const BlogDetailPage = ({ params } : {
 }) => { 
     const { id } = use(params);
     const [ viewCount, setViewCount] = useState(0);
+    const queryClient = useQueryClient();
     const { data: session } = useSession();
 
     const { 
@@ -30,23 +32,63 @@ const BlogDetailPage = ({ params } : {
     } = useQuery({
         queryKey: ['blogDetail', id],
         queryFn: () => getBlog(id),
+        staleTime: 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: true,
     });
 
     const { mutate: addBlogViewCountMutaion } = useMutation({
         mutationFn: addBlogViewCount,
-        onSettled: (newData) => {
-            if( newData?.viewCountIncremented ) {
-                setViewCount((prevViewCount => prevViewCount + 1));
-            }
+        onMutate: async ({ id: blogId }: { id: string; viewCount?: number }) => {
+            await Promise.all([
+                queryClient.cancelQueries({ queryKey: blogDetailKey(blogId), exact: true }),
+                queryClient.cancelQueries({ queryKey: BLOG_LIST_KEY, exact: true }),
+            ]);
+
+            const prevDetail = queryClient.getQueryData(blogDetailKey(blogId));
+            const prevList = queryClient.getQueryData(BLOG_LIST_KEY);
+            const prevViewCount = viewCount;
+
+            const base = (prevViewCount || data?.blog?.viewCount || 0);
+            const next = base + 1;
+            setViewCount(next);
+            try { upsertBlogCardById(queryClient, { id: blogId, viewCount: next }); } catch {}
+            try {
+                queryClient.setQueryData(blogDetailKey(blogId), (old: any) => {
+                    if (!old?.blog) return old;
+                    return { ...old, blog: { ...old.blog, viewCount: next } };
+                });
+            } catch {}
+
+            return { prevDetail, prevList, prevViewCount } as const;
+        },
+        onError: (_err, _vars, ctx) => {
+            if (ctx?.prevDetail) queryClient.setQueryData(blogDetailKey(id), ctx.prevDetail);
+            if (ctx?.prevList) queryClient.setQueryData(BLOG_LIST_KEY, ctx.prevList as any);
+            setViewCount(ctx?.prevViewCount || (data?.blog?.viewCount || 0));
         },
     });
 
     useEffect(() => {
-        if (isSuccess && data?.blog?.viewCount >= 0 && viewCount === 0) {
+        if (!isSuccess || !data?.blog) return;
+        // 초기 렌더에서 서버 값 동기화
+        if (data.blog.viewCount >= 0 && viewCount === 0) {
           setViewCount(data.blog.viewCount);
-          addBlogViewCountMutaion({ id, viewCount: data.blog.viewCount });
         }
-    }, [isSuccess, data?.blog?.viewCount, viewCount]);
+        // 내 글이면 증가 호출 스킵
+        const isAuthorSelf = !!session?.user?.email && session.user.email === data.blog.author?.email;
+        if (isAuthorSelf) return;
+        // 하루 1회만 증가 (로컬 스토리지 기준, 날짜 문자열을 값으로 저장)
+        const key = `vc:${id}`;
+        const today = dayjs().format('YYYY-MM-DD');
+        if (typeof window !== 'undefined') {
+          const last = localStorage.getItem(key);
+          if (last !== today) {
+            addBlogViewCountMutaion({ id, viewCount: data.blog.viewCount });
+            try { localStorage.setItem(key, today); } catch {}
+          }
+        }
+    }, [isSuccess, id, data?.blog, viewCount, session?.user?.email]);
 
     const isAuthor = session?.user?.email && session?.user?.email === data?.blog?.author.email;
     const isAdmin = session?.user?.role === 'admin';

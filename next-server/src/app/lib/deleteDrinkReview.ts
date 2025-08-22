@@ -5,6 +5,9 @@ export const deleteDrinkReview = async (id: string) => {
             'Content-Type': 'application/json',
         },
     });
-
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) {
+        throw new Error((data && (data.message || data.error)) || '리뷰 삭제에 실패했습니다.');
+    }
+    return data;
 };
