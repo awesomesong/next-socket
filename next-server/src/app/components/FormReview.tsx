@@ -1,12 +1,14 @@
 'use client';
 import TextareaAutosize from 'react-textarea-autosize';
-import React, { useRef, useState, FormEvent, useEffect } from 'react';
+import React, { useRef, useState, FormEvent, useEffect, useCallback } from 'react';
+import useComposition from '@/src/app/hooks/useComposition';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createDrinkReviews } from '@/src/app/lib/createDrinkReviews';
 import { DrinkReviewsDataProps, DrinkReviewType } from '@/src/app/types/drink';
 import { useSocket } from "../context/socketContext";
 import toast from 'react-hot-toast';
-import { prependReview, replaceReviewById, upsertPrependReview, drinkReviewsKey } from '@/src/app/lib/reviewsCache';
+import { prependReview, replaceReviewById, removeReviewById, drinkReviewsKey } from '@/src/app/lib/reviewsCache';
+import { SOCKET_EVENTS } from '@/src/app/lib/utils';
 
 type FormReviewProps = {
     id: string;
@@ -41,9 +43,15 @@ const FormReview = ({
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [review, setReview] = useState<string>(initialText);
     const [stateReview, setStateReview] = useState(Boolean(onSubmit) ? true : false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const queryClient = useQueryClient();
     const socket = useSocket();
+    
+    // 한글 입력 조합 상태 관리
+    const {
+        isComposing,
+        handleCompositionStart,
+        handleCompositionEnd
+    } = useComposition();
 
     useEffect(() => {
         if (autoFocus) {
@@ -52,18 +60,14 @@ const FormReview = ({
         }
     }, [autoFocus]);
 
-    const { mutate: createDrinkReviewsMutation } = useMutation<
-        { newReview: DrinkReviewType },
-        Error,
-        { id: string; text: string },
-        { prev?: DrinkReviewsDataProps; optimisticId: string }
-    >({
+    const { mutate: createDrinkReviewsMutation } = useMutation({
         mutationFn: createDrinkReviews,
         onMutate: async ({ id, text }) => {
             await queryClient.cancelQueries({ queryKey: drinkReviewsKey(id), exact: true });
             const prev = queryClient.getQueryData(drinkReviewsKey(id)) as DrinkReviewsDataProps | undefined;
+            const optimisticId = `temp-${Date.now()}-${Math.random()}`;
             const optimistic: DrinkReviewType = {
-                id: `temp-${Date.now()}`,
+                id: optimisticId,
                 drinkSlug: id,
                 text,
                 createdAt: new Date(),
@@ -72,16 +76,22 @@ const FormReview = ({
                 author: { id: user.id, name: user.name ?? '', email: user.email ?? '', image: user.image ?? null },
             };
             prependReview(queryClient, id, optimistic);
-            return { prev, optimisticId: optimistic.id };
+
+            setTimeout(() => {
+                document.getElementById(`review-${optimisticId}`)?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'end'
+                });
+            }, 100);
+            
+            return { prev, optimisticId };
         },
         onSuccess: (newData, _vars, ctx) => {
-            setReview('');
-            // temp 치환
+            if (!ctx?.optimisticId) return;
             replaceReviewById(queryClient, id, ctx?.optimisticId!, { ...newData.newReview, author: user });
-            const reviewId = newData.newReview.id;
-            // 소켓 브로드캐스트(리뷰 생성)
+            // 소켓 브로드캐스트(리뷰 생성) - 다른 사용자들에게만 전송
             try {
-                socket?.emit('drink:review:new', {
+                socket?.emit(SOCKET_EVENTS.DRINK_REVIEW_NEW, {
                     drinkSlug: id,
                     review: {
                         ...newData.newReview,
@@ -93,73 +103,74 @@ const FormReview = ({
                     },
                 });
             } catch {}
-            setTimeout(() => {
-                document.getElementById(`review-${reviewId}`)?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'end'
-                });
-            }, 100);
         },
-        onError: (err, _vars, ctx) => {
-            if (ctx?.prev) queryClient.setQueryData(drinkReviewsKey(id), ctx.prev);
-            const message = err?.message || '리뷰 등록에 실패했습니다.';
+        onError: (error, { id, text }, context) => {
+            // 에러 시 롤백
+            if (context?.prev) {
+                queryClient.setQueryData(drinkReviewsKey(id), context.prev);
+            }
+            if (context?.optimisticId) {
+                // 낙관적 업데이트로 추가된 리뷰 제거
+                removeReviewById(queryClient, id, context.optimisticId);
+            }
+            
+            // 입력창 복원
+            setReview(text);
+            
+            const message = error instanceof Error ? error.message : '리뷰 등록에 실패했습니다.';
             toast.error(message);
         },
     });
 
-    const onFocus = () => {
+    const onFocus = useCallback(() => {
         if(!user.email) return;
         setStateReview(true);
-    };
+    }, [user?.email]);
 
-    const handleSubmitReview = (e: FormEvent<HTMLButtonElement>) => {
-        e.preventDefault();
-        if (review.trim() === '') {
+    // 리뷰 제출 로직 (공통 함수)
+    const submitReview = useCallback((text: string) => {
+        if (text.trim() === '') {
             textareaRef.current?.focus();
             return alert('리뷰를 입력해주세요.');
         }
-        if (isSubmitting) return;
-        setIsSubmitting(true);
+
+        setReview(''); // 즉시 입력창 비우기
 
         if (onSubmit) {
-            Promise.resolve(onSubmit(review))
-                .then((result: unknown) => {
-                    const saved = (result && typeof result === 'object') ? (result as any) : undefined;
-                    const savedReview: DrinkReviewType | undefined = saved?.newReview ?? saved;
-
-                    if (savedReview?.id) {
-                        const normalized: DrinkReviewType = {
-                          id: savedReview.id,
-                          drinkSlug: savedReview.drinkSlug ?? id,
-                          text: savedReview.text ?? '',
-                          createdAt: savedReview.createdAt instanceof Date ? savedReview.createdAt : new Date(savedReview.createdAt ?? Date.now()),
-                          updatedAt: new Date(),
-                          authorEmail: savedReview.authorEmail ?? user.email ?? null,
-                          author: savedReview.author ?? {
-                            id: user.id,
-                            name: user.name ?? '',
-                            email: user.email ?? '',
-                            image: user.image ?? null,
-                          },
-                        };
-                    
-                        upsertPrependReview(queryClient, id, normalized);
-                    }
-
+            // 커스텀 onSubmit 함수 사용
+            Promise.resolve()
+                .then(() => onSubmit(text))
+                .then(() => {
                     onCancel?.();
                 })
-                .finally(() => setIsSubmitting(false));
+                .catch((error) => {
+                    // 실패 시 입력창 복원
+                    setReview(text);
+                    console.error('리뷰 저장 실패:', error);
+                });
         } else {
-            createDrinkReviewsMutation(
-                { id, text: review },
-                {
-                    onSettled: () => {
-                        setIsSubmitting(false);
-                    }
-                }
-            );
+            // useMutation을 사용한 낙관적 업데이트
+            createDrinkReviewsMutation({ id, text });
         }
-    };
+    }, [onSubmit, onCancel, createDrinkReviewsMutation, queryClient, id, user]);
+
+    // 버튼 클릭 이벤트 핸들러
+    const handleSubmitReview = useCallback((e: FormEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        submitReview(review);
+    }, [review, submitReview]);
+
+    // Enter 키 이벤트 핸들러
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // 한글 입력 조합 중이면 제출하지 않음
+        if (isComposing()) return;
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            
+            // 이벤트 객체에서 직접 값을 가져와서 정확한 텍스트 전달
+            submitReview(e.currentTarget.value);
+        }
+    }, [submitReview, isComposing]);
 
     return (
         <div className='my-4'>
@@ -170,6 +181,9 @@ const FormReview = ({
                 value={review}
                 onChange={e => setReview(e.target.value)}
                 onFocus={onFocus}
+                onKeyDown={handleKeyDown}
+                onCompositionStart={handleCompositionStart}
+                onCompositionEnd={handleCompositionEnd}
                 className='w-full p-2 box-border border-solid border-b-[1px]'
             />
             {stateReview && (
@@ -179,7 +193,7 @@ const FormReview = ({
                         type='submit'
                         className='bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md'
                     >
-                        {isSubmitting ? '등록 중' : submitLabel}
+                        {submitLabel}
                     </button>
                     {onCancel && (
                         <button

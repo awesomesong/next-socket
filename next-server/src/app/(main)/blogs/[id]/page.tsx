@@ -88,7 +88,7 @@ const BlogDetailPage = ({ params } : {
             try { localStorage.setItem(key, today); } catch {}
           }
         }
-    }, [isSuccess, id, data?.blog, viewCount, session?.user?.email]);
+    }, [isSuccess, id, data?.blog, viewCount, session?.user?.email, addBlogViewCountMutaion]);
 
     const isAuthor = session?.user?.email && session?.user?.email === data?.blog?.author.email;
     const isAdmin = session?.user?.role === 'admin';
@@ -166,7 +166,7 @@ const BlogDetailPage = ({ params } : {
                     />
 
                     <FormComment blogId={id} user={session?.user!} />
-                    <Comments blogId={id} />
+                    <Comments blogId={id} user={session?.user!}/>
                 </>)}
         </div>
     )

@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, useEffect, useRef } from "react";
+import { Fragment, useEffect, memo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { getBlogs } from '@/src/app/lib/getBlogs';
 import { Blog as IBlog  } from "@/src/app/types/blog";
@@ -38,10 +38,10 @@ const Blogs = () => {
     });
 
     useEffect(() => {
-        if (!inView || isFetching || !hasNextPage) return;
+        if (!inView || isFetching || !hasNextPage || isFetchingNextPage) return;
 
         fetchNextPage();
-    }, [inView, isFetching, hasNextPage, fetchNextPage]);
+    }, [inView, isFetching, hasNextPage, fetchNextPage, isFetchingNextPage]);
 
     return status === 'error' ? (
         <p>Error: {error?.message}</p>
@@ -68,4 +68,4 @@ const Blogs = () => {
     
 }
 
-export default Blogs
+export default memo(Blogs);

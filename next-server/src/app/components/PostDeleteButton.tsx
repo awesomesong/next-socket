@@ -53,7 +53,7 @@ const PostDeleteButton = ({
         deletePost({ variables: { id: postId ?? ids } });
         setCheckItems?.([]);
         if(variant === 'text') router.push('/posts');
-    }, [deletePost, postId, postTitle, ids, setCheckItems, selectedPosts, myEmail, router]);
+    }, [deletePost, postId, postTitle, ids, setCheckItems, selectedPosts, myEmail, router, variant]);
 
     return postId ? (
         // ✅ 단일 삭제 버튼 (아이콘)

@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import { forwardRef } from "react";
+import { forwardRef, memo } from "react";
 import type ReactQuillOriginal from 'react-quill-new';
 import ShapesSkeleton from "./skeleton/ShapesSkeleton";
 
@@ -52,4 +52,4 @@ const MyQuillEditor = forwardRef<ReactQuillOriginal, MyQuillEditorProps>(
 
 MyQuillEditor.displayName = 'MyQuillEditor';
 
-export default MyQuillEditor;
+export default memo(MyQuillEditor);

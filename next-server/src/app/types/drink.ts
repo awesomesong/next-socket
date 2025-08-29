@@ -1,5 +1,4 @@
 import type { DrinkReview } from '@prisma/client';
-import { IUser } from '@/src/app/types/common';
 import { InfiniteData } from '@tanstack/react-query';
 
 export type DrinkReviewType = DrinkReview & {

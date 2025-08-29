@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import DrinksName from './DrinksName';
 import Link from 'next/link';
 import drinksData from '@/src/app/data/drinks';
@@ -14,17 +14,20 @@ const ProductDrink = () => {
   const [initialXGroup1, setInitialXGroup1] = useState<number[]>([]);
   const [initialXGroup2, setInitialXGroup2] = useState<number[]>([]);
 
-  useEffect(() => {
+  const setInitialPositions = useCallback(() => {
     if (isPC !== null) {
       setInitialXGroup1(isPC ? [-60, -200, -340, -480] : [-50, -70, -50, -70]);
       setInitialXGroup2(isPC ? [480, 340, 200, 60] : [50, 70, 50, 70]);
     }
   }, [isPC]);
 
-  const drinks = drinksData;
+  useEffect(() => {
+    setInitialPositions();
+  }, [setInitialPositions]);
+
   const otherDrinks = useMemo(() => {
-    return drinks.filter((drink) => drink.type === 'others');
-  }, []);
+    return drinksData.filter((drink) => drink.type === 'others');
+  }, [drinksData]);
 
   if (initialXGroup1.length === 0 || initialXGroup2.length === 0) {
     return null;

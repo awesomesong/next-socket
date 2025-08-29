@@ -1,5 +1,5 @@
 'use client';
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useForm, FieldValues, SubmitHandler } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
@@ -35,7 +35,7 @@ const RegisterForm = () => {
         }
     });
 
-    const onSubmit:SubmitHandler<FieldValues> = async (data) => {
+    const onSubmit:SubmitHandler<FieldValues> = useCallback(async (data) => {
         setIsLoading(true);
         // clearErrors();
 
@@ -69,7 +69,7 @@ const RegisterForm = () => {
             reset();
             router.push(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
         }
-    };
+    }, [router, callbackUrl, setError, clearErrors, reset, setIsLoading]);
 
     return (
         <AuthForm title="회원가입">

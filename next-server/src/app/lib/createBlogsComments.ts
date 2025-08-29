@@ -1,5 +1,5 @@
 type Props = {
-    blogId: String;
+    blogId: string;
     comment: string;
 }
 

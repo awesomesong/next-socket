@@ -1,6 +1,5 @@
 import { Skeleton } from "@heroui/skeleton";
 import { Card } from "@heroui/react";
-import clsx from "clsx";
 
 type ShapesSkeletonProps  = {
     width: string;

@@ -8,10 +8,11 @@ import { useInView } from 'react-intersection-observer';
 import { DrinkReviewType } from '@/src/app/types/drink';
 import { updateDrinkReview } from '@/src/app/lib/updateDrinkReview';
 import { deleteDrinkReview } from '@/src/app/lib/deleteDrinkReview';
-import { prependReview, replaceReviewById, removeReviewById, drinkReviewsKey } from '@/src/app/lib/reviewsCache';
+import { replaceReviewById, removeReviewById, drinkReviewsKey } from '@/src/app/lib/reviewsCache';
 import type { ReviewsInfinite } from '@/src/app/lib/reviewsCache';
 import FormReview from './FormReview';
 import { useSocket } from '../context/socketContext';
+import { SOCKET_EVENTS } from '@/src/app/lib/utils';
 import CommentSkeleton from './skeleton/CommentSkeleton';
 import CircularProgress from './CircularProgress';
 import FallbackNextImage from './FallbackNextImage';
@@ -79,7 +80,7 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
 
     const { ref, inView } = useInView({ threshold: 0.2, delay: 100 });
 
-    const { mutateAsync: updateReview } = useMutation({
+    const { mutateAsync: updateReview, isPending: isUpdatingReview } = useMutation({
         mutationFn: updateDrinkReview,
         onMutate: async ({ id: reviewId, text }) => {
             await queryClient.cancelQueries({ queryKey: drinkReviewsKey(id), exact: true });
@@ -107,7 +108,7 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
 
             // 소켓 브로드캐스트(리뷰 수정)
             try {
-                socket?.emit('drink:review:updated', { drinkSlug: id, review: updatedReview });
+                socket?.emit(SOCKET_EVENTS.DRINK_REVIEW_UPDATED, { drinkSlug: id, review: updatedReview });
             } catch {}
         },
         onError: (err: any, _vars, ctx) => {
@@ -134,7 +135,7 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
 
             // 소켓 브로드캐스트(리뷰 삭제)
             try {
-                socket?.emit('drink:review:deleted', { drinkSlug: id, reviewId: deletedId });
+                socket?.emit(SOCKET_EVENTS.DRINK_REVIEW_DELETED, { drinkSlug: id, reviewId: deletedId });
             } catch {}
         },
         onError: (err: any, _vars, ctx) => {
@@ -144,40 +145,11 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
         }
     });
 
-    // 소켓 수신: 리뷰 생성/수정/삭제 실시간 반영
     useEffect(() => {
-        if (!socket) return;
-
-        const handleNew = (payload: { drinkSlug: string; review: DrinkReviewType }) => {
-            if (payload.drinkSlug !== id) return;
-            prependReview(queryClient, id, payload.review as any);
-        };
-
-        const handleUpdated = (payload: { drinkSlug: string; review: DrinkReviewType }) => {
-            if (payload.drinkSlug !== id) return;
-            replaceReviewById(queryClient, id, payload.review.id, payload.review as any);
-        };
-
-        const handleDeleted = (payload: { drinkSlug: string; reviewId: string }) => {
-            if (payload.drinkSlug !== id) return;
-            removeReviewById(queryClient, id, payload.reviewId);
-        };
-
-        socket.on('drink:review:new', handleNew);
-        socket.on('drink:review:updated', handleUpdated);
-        socket.on('drink:review:deleted', handleDeleted);
-        return () => {
-            socket.off('drink:review:new', handleNew);
-            socket.off('drink:review:updated', handleUpdated);
-            socket.off('drink:review:deleted', handleDeleted);
-        };
-    }, [socket, id, queryClient]);
-
-    useEffect(() => {
-        if (inView && hasNextPage) {
+        if (inView && hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
         }
-    }, [inView]);
+    }, [inView, hasNextPage, fetchNextPage, isFetchingNextPage]);
 
     return (
         <>
@@ -198,10 +170,9 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
             ) : (
                 <>
                     <ul className='mt-2'>
-                        {data?.pages?.flat().map((page, i) => (
-                            <li key={i}>
-                                {page?.reviews && page.reviews.length > 0 && Object.keys(page)[0] === 'reviews' &&
-                                    page.reviews?.map((review: DrinkReviewType) => (
+                        {data?.pages?.map((page, pageIndex) => (
+                            <li key={`page-${pageIndex}`}>
+                                {page?.find(item => 'reviews' in item)?.reviews?.map((review: DrinkReviewType) => (
                                         <div 
                                             key={review.id}
                                             id={`review-${review.id}`}
@@ -228,7 +199,7 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
                                                     <span className='text-gray-400 mr-2'>
                                                         {dayjs(review.createdAt).fromNow()}
                                                     </span>
-                                                    {user?.role === 'admin' || user?.email === review.author?.email && (
+                                                    {(user?.role === 'admin' || user?.email === review.author?.email) && (
                                                         <span className='text-gray-500'>
                                                             <button 
                                                                 onClick={() => {setEditingId(review.id);}}
@@ -270,15 +241,21 @@ const Reviews = ({ id, name, user } : ReviewsProps) => {
                                                     )}
                                                 </div>
                                                 {editingId === review.id ? (
-                                                    <FormReview
-                                                        id={id}
-                                                        user={user!}
-                                                        initialText={review.text}
-                                                        submitLabel='저장'
-                                                        autoFocus
-                                                        onSubmit={(text) => updateReview({ id: review.id, text })}
-                                                        onCancel={() => setEditingId(null)}
-                                                    />
+                                                    isUpdatingReview ? (
+                                                        <div className="flex items-center justify-center py-4">
+                                                            <CircularProgress aria-label="리뷰 저장 중 입니다" />
+                                                        </div>
+                                                    ) : (
+                                                        <FormReview
+                                                            id={id}
+                                                            user={user!}
+                                                            initialText={review.text}
+                                                            submitLabel='저장'
+                                                            autoFocus
+                                                            onSubmit={(text) => updateReview({ id: review.id, text })}
+                                                            onCancel={() => setEditingId(null)}
+                                                        />
+                                                    )
                                                 ) : (
                                                     <>
                                                         <pre

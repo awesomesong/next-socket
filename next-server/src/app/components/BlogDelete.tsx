@@ -5,6 +5,7 @@ import LargeButton from './LargeButton';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSocket } from '../context/socketContext';
 import { removeBlogCardById, snapshotBlogCardPosition, restoreBlogCardPosition, snapshotBlogDetail, restoreBlogDetail, BLOG_LIST_KEY, blogDetailKey, type BlogListInfinite } from '@/src/app/lib/blogsCache';
+import { SOCKET_EVENTS } from "@/src/app/lib/utils";
 
 type BlogTitleProps = {
     blogTitle: String;
@@ -40,7 +41,7 @@ const BlogDelete = ({ blogId, blogTitle } : BlogIdProps & BlogTitleProps) => {
             // 상세 캐시 제거
             queryClient.removeQueries({ queryKey: blogDetailKey(blogIdStr), exact: true });
             // 소켓 브로드캐스트: 삭제 알림
-            try { socket?.emit('blog:deleted', { blogId: blogIdStr }); } catch {}
+            try { socket?.emit(SOCKET_EVENTS.BLOG_DELETED, { blogId: blogIdStr }); } catch {}
             router.push(`/blogs`);
         }else {
             // 롤백: 목록/상세 복원

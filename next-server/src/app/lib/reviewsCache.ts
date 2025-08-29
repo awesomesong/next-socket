@@ -11,26 +11,32 @@ export type ReviewsInfinite = { pages: ReviewPage[]; pageParams?: unknown[] };
 
 export const drinkReviewsKey = (drinkSlug: string) => ['drinkReviews', drinkSlug] as const;
 
-function withDrinkReviewsCache(
+// ===== Internal Utils =====
+type PageData = { reviews?: Review[]; reviewsCount?: number };
+
+function extractPageData(page: unknown): { reviewsObj: { reviews: Review[] } | undefined; countObj: { reviewsCount: number } | undefined } {
+  if (!Array.isArray(page)) return { reviewsObj: undefined, countObj: undefined };
+  
+  const arr = page as unknown as Array<PageData>;
+  const reviewsObj = arr.find((p) => 'reviews' in p) as { reviews: Review[] } | undefined;
+  const countObj = arr.find((p) => 'reviewsCount' in p) as { reviewsCount: number } | undefined;
+  
+  return { reviewsObj, countObj };
+}
+
+function createUpdatedPage(reviews: Review[], count: number): ReviewPage {
+  return [
+    { reviews },
+    { reviewsCount: count }
+  ];
+}
+
+function withReviewsCache(
   queryClient: QueryClient,
   drinkSlug: string,
-  transform: (reviews: Review[], count: number) => { reviews: Review[]; count: number }
+  updater: (old: ReviewsInfinite | undefined) => ReviewsInfinite | undefined
 ): void {
-  queryClient.setQueriesData({ queryKey: drinkReviewsKey(drinkSlug), exact: true }, (old: ReviewsInfinite | undefined) => {
-    if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
-
-    const nextPages = old.pages.map((page) => {
-      const arr = page as unknown as Array<{ reviews?: Review[]; reviewsCount?: number }>;
-      const reviewsObj = arr.find((p) => 'reviews' in p) as { reviews: Review[] } | undefined;
-      const countObj = arr.find((p) => 'reviewsCount' in p) as { reviewsCount: number } | undefined;
-      if (!reviewsObj) return page;
-
-      const res = transform(reviewsObj.reviews ?? [], countObj?.reviewsCount ?? 0);
-      return [{ reviews: res.reviews }, { reviewsCount: res.count }];
-    });
-
-    return { ...old, pages: nextPages };
-  });
+  queryClient.setQueriesData({ queryKey: drinkReviewsKey(drinkSlug), exact: true }, updater);
 }
 
 export function prependReview(
@@ -38,10 +44,22 @@ export function prependReview(
   drinkSlug: string,
   review: Review
 ): void {
-  withDrinkReviewsCache(queryClient, drinkSlug, (reviews, count) => ({
-    reviews: [review, ...reviews],
-    count: count + 1,
-  }));
+  withReviewsCache(queryClient, drinkSlug, (old) => {
+    if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
+
+    const { reviewsObj, countObj } = extractPageData(old.pages[0]);
+    if (!reviewsObj) return old;
+
+    const updatedFirstPage = createUpdatedPage(
+      [review, ...reviewsObj.reviews],
+      (countObj?.reviewsCount ?? 0) + 1
+    );
+
+    return {
+      ...old,
+      pages: [updatedFirstPage, ...old.pages.slice(1)]
+    };
+  });
 }
 
 export function replaceReviewById(
@@ -50,10 +68,25 @@ export function replaceReviewById(
   matchId: string,
   serverReview: Review
 ): void {
-  withDrinkReviewsCache(queryClient, drinkSlug, (reviews, count) => ({
-    reviews: reviews.map((r) => (r.id === matchId ? { ...r, ...serverReview } : r)),
-    count,
-  }));
+  withReviewsCache(queryClient, drinkSlug, (old) => {
+    if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
+
+    const updatedPages = old.pages.map(page => {
+      const { reviewsObj, countObj } = extractPageData(page);
+      if (!reviewsObj) return page;
+
+      const updatedReviews = reviewsObj.reviews.map((r) => 
+        r.id === matchId ? { ...r, ...serverReview } : r
+      );
+
+      return createUpdatedPage(updatedReviews, countObj?.reviewsCount ?? 0);
+    });
+
+    return {
+      ...old,
+      pages: updatedPages
+    };
+  });
 }
 
 export function removeReviewById(
@@ -61,23 +94,25 @@ export function removeReviewById(
   drinkSlug: string,
   reviewId: string
 ): void {
-  withDrinkReviewsCache(queryClient, drinkSlug, (reviews, count) => ({
-    reviews: reviews.filter((r) => r.id !== reviewId),
-    count: Math.max(0, count - 1),
-  }));
-}
+  withReviewsCache(queryClient, drinkSlug, (old) => {
+    if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
 
-export function upsertPrependReview(
-  queryClient: QueryClient,
-  drinkSlug: string,
-  review: Review
-): void {
-  withDrinkReviewsCache(queryClient, drinkSlug, (reviews, count) => {
-    const idx = reviews.findIndex((r) => r.id === review.id);
-    if (idx === -1) {
-      return { reviews: [review, ...reviews], count: count + 1 };
-    }
-    const next = reviews.map((r, i) => (i === idx ? { ...r, ...review } : r));
-    return { reviews: next, count };
+    const updatedPages = old.pages.map(page => {
+      const { reviewsObj, countObj } = extractPageData(page);
+      if (!reviewsObj) return page;
+
+      const filteredReviews = reviewsObj.reviews.filter((r) => r.id !== reviewId);
+      const removedCount = reviewsObj.reviews.length - filteredReviews.length;
+
+      return createUpdatedPage(
+        filteredReviews,
+        Math.max(0, (countObj?.reviewsCount ?? 0) - removedCount)
+      );
+    });
+
+    return {
+      ...old,
+      pages: updatedPages
+    };
   });
 }

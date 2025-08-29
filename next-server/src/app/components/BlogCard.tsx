@@ -1,13 +1,20 @@
+'use client';
 import Link from "next/link";
 import { Blog } from "@/src/app/types/blog";
 import dayjs from '@/src/app/lib/day';
-import Image from "next/image";
 import { PiUserCircleFill } from "react-icons/pi";
 import { formatNumber } from "@/src/app/utils/formatNumber";
 import FallbackNextImage from "./FallbackNextImage";
+import { memo, useMemo } from "react";
 
 const BlogCard = ({ blog } : { blog: Blog }) => {
-    const blogImage = JSON.parse(blog?.image);
+    const blogImage = useMemo(() => {
+        try {
+            return JSON.parse(blog?.image || '[]');
+        } catch {
+            return [];
+        }
+    }, [blog?.image]);
 
     return (<Link
                 key={blog.id} 
@@ -90,4 +97,11 @@ const BlogCard = ({ blog } : { blog: Blog }) => {
         </Link>)
 }
 
-export default BlogCard
+export default memo(BlogCard, (prevProps, nextProps) => {
+    return prevProps.blog.id === nextProps.blog.id &&
+           prevProps.blog.title === nextProps.blog.title &&
+           prevProps.blog.viewCount === nextProps.blog.viewCount &&
+           prevProps.blog._count.comments === nextProps.blog._count.comments &&
+           prevProps.blog.image === nextProps.blog.image &&
+           prevProps.blog.author?.image === nextProps.blog.author?.image;
+});

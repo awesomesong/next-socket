@@ -8,10 +8,9 @@ import drinksData from '@/src/app/data/drinks';
 
 const ProductSoju: React.FC = () => {
     const scrollRef = useRef<HTMLDivElement>(null);
-    const drinks = drinksData;
     const sojus = useMemo(() => {
-        return drinks.filter((drink) => drink.type === 'soju');
-    }, []); 
+        return drinksData.filter((drink) => drink.type === 'soju');
+    }, [drinksData]); 
 
     return (
         <div 

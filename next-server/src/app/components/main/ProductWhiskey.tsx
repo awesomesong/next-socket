@@ -10,10 +10,9 @@ import clsx from 'clsx';
 const ProductWhiskey = () => {
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    const drinks = drinksData;
     const whiskeys = useMemo(() => {
-        return drinks.filter((drink) => drink.type === 'whiskey');
-     }, []); 
+        return drinksData.filter((drink) => drink.type === 'whiskey');
+     }, [drinksData]); 
     
     return (
         <div ref={scrollRef} className="product-layout">

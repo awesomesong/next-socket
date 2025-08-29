@@ -2,7 +2,7 @@
 import useRouteNav from '@/src/app/hooks/useRouterNav';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import useWindowSize from '@/src/app/hooks/useWindowSize';
 
 const DesktopNav = () => {
@@ -17,7 +17,7 @@ const DesktopNav = () => {
         marker.style.width = e.target.offsetWidth + "px";
     };
 
-    const HandleIndicatorActive = () => {
+    const HandleIndicatorActive = useCallback(() => {
         const marker = document.querySelector(".marker") as HTMLElement;
         const navBar =  document.querySelectorAll('.navBar');
         let routerNavActiveNum = 0;
@@ -39,11 +39,11 @@ const DesktopNav = () => {
                 marker.style.width = '0';
             }
         });
-    };
+    }, [pathname, routerNav]);
 
     useEffect(() => {
         HandleIndicatorActive();
-    }, [pathname, windowSize]);
+    }, [pathname, windowSize, HandleIndicatorActive]);
 
 
     return (

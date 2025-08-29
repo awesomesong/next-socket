@@ -153,14 +153,37 @@ export function incrementBlogDetailCommentsCount(
   blogId: string,
   delta: number = 1
 ): void {
+  // 블로그 상세페이지 댓글 수 업데이트
   queryClient.setQueryData(blogDetailKey(blogId), (old: any) => {
     if (!old?.blog) return old;
     const prev = old.blog?._count?.comments ?? 0;
-    return { ...old, blog: { ...old.blog, _count: { ...(old.blog._count || {}), comments: Math.max(0, prev + delta) } } };
+    const newCount = Math.max(0, prev + delta);
+    if (newCount === prev) return old; // 변경사항이 없으면 업데이트하지 않음
+    return { ...old, blog: { ...old.blog, _count: { ...(old.blog._count || {}), comments: newCount } } };
+  });
+
+  // 블로그 리스트 페이지 댓글 수 업데이트
+  queryClient.setQueryData(BLOG_LIST_KEY, (old: any) => {
+    if (!old?.pages || !Array.isArray(old.pages)) return old;
+    
+    const updatedPages = old.pages.map((page: any) => {
+      if (!page?.blogs || !Array.isArray(page.blogs)) return page;
+      
+      const updatedBlogs = page.blogs.map((blog: any) => {
+        if (String(blog.id) !== String(blogId)) return blog;
+        const prev = blog._count?.comments ?? 0;
+        const newCount = Math.max(0, prev + delta);
+        if (newCount === prev) return blog; // 변경사항이 없으면 업데이트하지 않음
+        return { ...blog, _count: { ...(blog._count || {}), comments: newCount } };
+      });
+      
+      return { ...page, blogs: updatedBlogs };
+    });
+    
+    return { ...old, pages: updatedPages };
   });
 }
-
-// ===== blogsComments helpers (first page only to reduce cost) =====
+// --------------블로그 댓글 캐시 업데이트 함수 --------------  
 function withBlogsCommentsFirstPage(
   queryClient: QueryClient,
   blogId: string,
@@ -169,13 +192,9 @@ function withBlogsCommentsFirstPage(
   queryClient.setQueriesData({ queryKey: blogsCommentsKey(blogId), exact: true }, (old: BlogCommentsDataProps | undefined) => {
     if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
     const first = old.pages[0] as BlogCommentPage;
-    const commentsObj = first.find((p) => 'comments' in p) as { comments: CommentType[] } | undefined;
-    const countObj = first.find((p) => 'commentsCount' in p) as { commentsCount: number } | undefined;
+    const { commentsObj, countObj } = extractPageData(first);
     const res = transform(commentsObj?.comments ?? [], countObj?.commentsCount ?? 0);
-    const nextFirst: BlogCommentPage = [
-      { comments: res.comments },
-      { commentsCount: res.count },
-    ];
+    const nextFirst: BlogCommentPage = createUpdatedPage(res.comments, res.count);
     return { ...old, pages: [nextFirst, ...old.pages.slice(1)] };
   });
 }
@@ -192,24 +211,74 @@ export function prependBlogCommentFirstPage(
   }));
 }
 
-export function incrementBlogCommentsCountFirstPage(
+
+// 공통 헬퍼 함수: 댓글 캐시 업데이트
+function withBlogsCommentsCache(
   queryClient: QueryClient,
   blogId: string,
-  delta: number = 1
+  transform: (old: BlogCommentsDataProps | undefined) => BlogCommentsDataProps | undefined
 ): void {
-  withBlogsCommentsFirstPage(queryClient, blogId, (comments, count) => ({
-    comments,
-    count: Math.max(0, count + delta),
-  }));
+  queryClient.setQueriesData({ queryKey: blogsCommentsKey(blogId), exact: true }, transform);
 }
 
-export function replaceTempCommentFirstPage(
+// 공통 헬퍼 함수: 페이지 데이터 추출
+function extractPageData(page: BlogCommentPage) {
+  const commentsObj = page.find((p) => 'comments' in p) as { comments: CommentType[] } | undefined;
+  const countObj = page.find((p) => 'commentsCount' in p) as { commentsCount: number } | undefined;
+  return { commentsObj, countObj };
+}
+
+// 공통 헬퍼 함수: 업데이트된 페이지 생성
+function createUpdatedPage(comments: CommentType[], count: number): BlogCommentPage {
+  return [
+    { comments },
+    { commentsCount: count }
+  ] as BlogCommentPage;
+}
+
+export function replaceCommentById(
   queryClient: QueryClient,
   blogId: string,
+  matchId: string,
   serverComment: CommentType
 ): void {
-  withBlogsCommentsFirstPage(queryClient, blogId, (comments, count) => {
-    const next = comments.map((c) => (typeof c?.id === 'string' && c.id.startsWith('temp-') ? serverComment : c));
-    return { comments: next, count };
+  withBlogsCommentsCache(queryClient, blogId, (old) => {
+    if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
+
+    const pages = old.pages.map((page: BlogCommentPage) => {
+      const { commentsObj, countObj } = extractPageData(page);
+      if (!commentsObj) return page;
+
+      const updatedComments = commentsObj.comments.map((comment) => 
+        String(comment.id) === String(matchId) ? { ...comment, ...serverComment } : comment
+      );
+
+      return createUpdatedPage(updatedComments, countObj?.commentsCount ?? 0);
+    });
+
+    return { ...old, pages };
+  });
+}
+
+export function removeCommentById(
+  queryClient: QueryClient,
+  blogId: string,
+  matchId: string
+): void {
+  withBlogsCommentsCache(queryClient, blogId, (old) => {
+    if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
+
+    const pages = old.pages.map((page: BlogCommentPage) => {
+      const { commentsObj, countObj } = extractPageData(page);
+      if (!commentsObj) return page;
+
+      const updatedComments = commentsObj.comments.filter((comment) => 
+        String(comment.id) !== String(matchId)
+      );
+
+      return createUpdatedPage(updatedComments, Math.max(0, (countObj?.commentsCount ?? 0) - 1));
+    });
+
+    return { ...old, pages };
   });
 }

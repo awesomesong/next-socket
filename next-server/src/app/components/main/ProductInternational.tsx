@@ -10,10 +10,9 @@ import drinksData from '@/src/app/data/drinks';
 const ProductInternational = () => {
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    const drinks = drinksData;
     const international = useMemo(() => {
-        return drinks.filter((drink) => drink.type === 'international');
-    }, []); 
+        return drinksData.filter((drink) => drink.type === 'international');
+    }, [drinksData]); 
 
     const positionGroup = useMemo(() => ['3vw', '6vw', '9vw'], []);
 

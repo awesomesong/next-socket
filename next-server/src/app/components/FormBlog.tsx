@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSocket } from "../context/socketContext";
 import { prependBlogCard, upsertBlogCardById, upsertBlogDetailPartial } from "@/src/app/lib/blogsCache";
+import { SOCKET_EVENTS } from "@/src/app/lib/utils";
 import { BlogProps } from "@/src/app/types/blog";
 import toast from "react-hot-toast";
 import PointsLoading from "./PointsLoading";
@@ -30,20 +31,24 @@ type ImageProps = {
 const inputClass = `w-full py-2 px-3 border border-gray-300 rounded-md 
                     focus:outline-none focus:ring focus:border-blue-300`;
 
-export const FormBlog = ({ id, initialData, message, isEdit }: FormBlogProps ) => {
+export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps ) => {
   const folderName = 'blogs';
   const router = useRouter();
-  const initialDataImage: ImageProps[] = useMemo(() => 
-    initialData?.image ? JSON.parse(initialData.image) : [],
-    [initialData?.image]
-  );
+  const initialDataImage: ImageProps[] = useMemo(() => {
+    if (!initialData?.image) return [];
+    try {
+      return JSON.parse(initialData.image);
+    } catch {
+      return [];
+    }
+  }, [initialData?.image]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setloadingMessage] = useState('');
 
-  const [title, setTitle] = useState<string>('');
-  const [content, setContent] = useState<string>(''); // QuillEditor에서 onChange를 통해 업데이트
-  const [images, setImages] = useState<ImageProps[]>([]); 
+  const [title, setTitle] = useState<string>(initialData?.title || '');
+  const [content, setContent] = useState<string>(initialData?.content || ''); // QuillEditor에서 onChange를 통해 업데이트
+  const [images, setImages] = useState<ImageProps[]>(initialDataImage); 
   const [imageDelete, setImageDelete] = useState<ImageProps[]>([]); // 삭제될 이미지 목록 (수정 모드에서만 관련)
 
   const [isDirty, setIsDirty] = useState(false);
@@ -54,15 +59,6 @@ export const FormBlog = ({ id, initialData, message, isEdit }: FormBlogProps ) =
   const { data: session, status } = useSession();
   const queryClient = useQueryClient();
   const socket = useSocket();
-
-  // 초기 데이터 설정 (isEdit 모드일 때만 실행)
-  useEffect(() => {
-    if (isEdit && initialData) {
-      setTitle(initialData.title || '');
-      setContent(initialData.content || '');
-      setImages(initialData.image ? JSON.parse(initialData.image) : []);
-    }
-  }, [isEdit, initialData]);
 
   // 이미지 업로드 핸들러
   const imageHandler = useCallback(() => {
@@ -279,7 +275,7 @@ export const FormBlog = ({ id, initialData, message, isEdit }: FormBlogProps ) =
                     content: quillRef.current?.getEditor()?.root.innerHTML || '',
                   }
                 };
-                socket?.emit('blog:updated', payload);
+                socket?.emit(SOCKET_EVENTS.BLOG_UPDATED, payload);
               } catch {}
             }
           } catch {}
@@ -312,7 +308,7 @@ export const FormBlog = ({ id, initialData, message, isEdit }: FormBlogProps ) =
                 viewCount: 0,
               }
             };
-            socket?.emit('blog:new', payload);
+            socket?.emit(SOCKET_EVENTS.BLOG_NEW, payload);
           } catch {}
 
           router.replace(`/blogs/${data.newBlog.id}`);
@@ -328,7 +324,7 @@ export const FormBlog = ({ id, initialData, message, isEdit }: FormBlogProps ) =
     } finally {
       setIsLoading(false);
     }
-  }, [title, content, images, id, imageDelete, isEdit, initialData, router, deleteImage]);
+  }, [title, content, images, id, imageDelete, isEdit, initialData, router, deleteImage, queryClient, session?.user?.image, session?.user?.name, socket]);
 
   // 페이지 이탈 시 임시 이미지 정리
   const resetImage = useCallback(async () => {
@@ -462,13 +458,11 @@ export const FormBlog = ({ id, initialData, message, isEdit }: FormBlogProps ) =
   }, [isDirty, images, resetImage]);
 
 
-  // Quill 에디터의 'text-change' 이벤트 리스너: 이미지 추가/제거 감지 및 상태 동기화
-  useEffect(() => {
+  const handleTextChange = useCallback((delta: any, oldDelta: any, source: string) => {
     if (!quillRef.current) return;
     const editor = quillRef.current.getEditor();
-
-    const handleTextChange = (delta: any, oldDelta: any, source: string) => {
-      if (source === 'user') { // 사용자 동작으로 인한 변경만 감지
+    
+    if (source === 'user') { // 사용자 동작으로 인한 변경만 감지
         const currentContent = editor.root.innerHTML;
 
         const currentImageUrlsInContent: string[] = [];
@@ -517,14 +511,19 @@ export const FormBlog = ({ id, initialData, message, isEdit }: FormBlogProps ) =
           return updatedImages.sort((a, b) => a.index - b.index); // 다시 정렬 (선택 사항)
         });
       }
-    };
+  }, [images, isEdit, deleteImage, setImageDelete, setImages]);
+
+  // Quill 에디터의 'text-change' 이벤트 리스너: 이미지 추가/제거 감지 및 상태 동기화
+  useEffect(() => {
+    if (!quillRef.current) return;
+    const editor = quillRef.current.getEditor();
 
     editor.on('text-change', handleTextChange);
 
     return () => {
       editor.off('text-change', handleTextChange); // 컴포넌트 언마운트 시 리스너 제거
     };
-  }, [images, isEdit, deleteImage]); // `content` 대신 `images`와 `isEdit`, `deleteImage`에 의존
+  }, [handleTextChange]);
 
 
   // `quillRef.current?.lastDeltaChangeSet?.ops`를 사용하는 부분은 `text-change` 리스너로 대체되었으므로 삭제합니다.

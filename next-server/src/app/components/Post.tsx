@@ -1,5 +1,5 @@
 import { IPost } from '@/typings';
-import Image from 'next/image';
+import { memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Checkbox } from "@heroui/react";
 import dayjs from '@/src/app/lib/day';
@@ -16,7 +16,7 @@ type Props = {
     isChecked: boolean;
 }
 
-export const Post = ({ post, HandlerCheckItem, isChecked }: Props) => {
+const Post = ({ post, HandlerCheckItem, isChecked }: Props) => {
     const router = useRouter();
     const { data:session } = useSession();
 
@@ -101,3 +101,5 @@ export const Post = ({ post, HandlerCheckItem, isChecked }: Props) => {
         </article >
     )
 }
+
+export default memo(Post);

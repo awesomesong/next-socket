@@ -1,5 +1,3 @@
-import { image } from "@heroui/react";
-import { info } from "console";
 
 const drinksDetailData = [
     {

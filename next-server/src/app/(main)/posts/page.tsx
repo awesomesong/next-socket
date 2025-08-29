@@ -3,32 +3,32 @@ import { GET_POSTS } from '@/graphql/queries';
 import { IPost } from '@/typings';
 import { useQuery } from '@apollo/client';
 import { useRouter } from 'next/navigation';
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useRef, useState, useCallback, useMemo } from 'react';
 import { Button } from '@heroui/react';
 import StatusMessage from '@/src/app/components/StatusMessage';
 import PostDeleteButton from '@/src/app/components/PostDeleteButton';
-import { Post } from '@/src/app/components/Post';
+import Post from '@/src/app/components/Post';
 import PostPreviewSkeleton from '@/src/app/components/skeleton/PostPreviewSkeleton';
 import { useSession } from 'next-auth/react';
 
 const PostsDetailpage = () => {
   const { data: session } = useSession();
   const router = useRouter();
-  const [checkItems, setCheckItems] = useState<String[]>([]);
+  const [checkItems, setCheckItems] = useState<string[]>([]);
   const allCheckedRef = useRef<HTMLInputElement>(null);
   
   const { data, loading, error } = useQuery(GET_POSTS);
   const posts: IPost[] = data?.posts;
   
-  const HandlerCheckItem = (id : String, isChecked : boolean) => {
+  const HandlerCheckItem = useCallback((id : string, isChecked : boolean) => {
       if (isChecked) {
           setCheckItems((prev) => [...prev, `${id}`])
       } else {
-          setCheckItems(checkItems.filter((item) => item !== id))
+          setCheckItems((prev) => prev.filter((item) => item !== id))
       }
-  };
+  }, []);
   
-  const handlerAllChecked = (e : ChangeEvent<HTMLInputElement>) => {
+  const handlerAllChecked = useCallback((e : ChangeEvent<HTMLInputElement>) => {
       const { checked } = e.target;
 
       if (checked) { 
@@ -36,13 +36,14 @@ const PostsDetailpage = () => {
       } else {
           setCheckItems([]);
       }
-  };
+  }, [posts]);
 
-    const selectedPosts = posts?.filter((post) => checkItems.includes(post.id))
-        .map((post) => ({
-            id: post.id,
-            writerEmail: post.writer.email,
-    }));
+    const selectedPosts = useMemo(() => 
+        posts?.filter((post) => checkItems.includes(post.id))
+            .map((post) => ({
+                id: post.id,
+                writerEmail: post.writer.email,
+            })) || [], [posts, checkItems]);
 
   return (
       <>

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useForm, FieldValues, SubmitHandler } from "react-hook-form";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -32,7 +32,7 @@ const SignInForm = () => {
       }
   });
 
-  const onSubmit:SubmitHandler<FieldValues> = async (data) => {
+  const onSubmit:SubmitHandler<FieldValues> = useCallback(async (data) => {
     setIsLoading(true);
 
     signIn('credentials', {
@@ -51,7 +51,7 @@ const SignInForm = () => {
     .finally(() => {
         setIsLoading(false);
     });
-  };
+  }, [router, callbackUrl, reset, setIsLoading]);
 
   return (
     <AuthForm title="로그인">
