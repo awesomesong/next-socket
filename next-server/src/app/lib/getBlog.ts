@@ -7,7 +7,6 @@ const getBlog = async ( id : string) => {
         headers: {
             'Content-Type': 'application/json',
         },
-        // cache: 'no-store'
     }); 
 
     const { blog, message } = await res.json();

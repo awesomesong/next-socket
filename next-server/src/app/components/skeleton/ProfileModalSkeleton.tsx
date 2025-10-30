@@ -1,5 +1,4 @@
-import {Card, Skeleton} from "@heroui/react";
-import { Fragment } from "react";
+import {Skeleton} from "@heroui/react";
 
 const ProfileModalSkeleton = () => {
     

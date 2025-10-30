@@ -1,17 +1,25 @@
 'use client';
-import React, { useMemo, useRef } from 'react';
+import React, { useRef } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import DrinksName from './DrinksName';
 import drinksData from '@/src/app/data/drinks';
 
+// ✅ 정적 데이터 및 motion variants를 외부로 추출 (한 번만 생성)
+const SOJUS_DATA =  drinksData.filter((drink) => drink.type === 'soju');
+const SOJU_MOTION_VARIANTS = {
+  initial: { opacity: 0, scale: 0.8 },
+  whileInView: { opacity: 1, scale: 1 },
+  transition: {
+    opacity: { duration: 0.4, ease: 'easeOut' as any },
+  },
+  viewport: { amount: 0.5, once: true },
+};
+
 const ProductSoju: React.FC = () => {
     const scrollRef = useRef<HTMLDivElement>(null);
-    const sojus = useMemo(() => {
-        return drinksData.filter((drink) => drink.type === 'soju');
-    }, [drinksData]); 
-
+    
     return (
         <div 
             ref={scrollRef} 
@@ -32,7 +40,7 @@ const ProductSoju: React.FC = () => {
                 items-end
                 w-fit
             ">
-                {sojus.map((soju) => (
+                {SOJUS_DATA.map((soju) => (
                     <Link
                         key={soju.name}
                         href={soju.link} 
@@ -45,12 +53,7 @@ const ProductSoju: React.FC = () => {
                         "
                     >
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ amount: 0.5, once: true }}
-                            transition={{
-                                opacity: { duration: 0.4, ease: 'easeOut' },
-                            }}
+                            {...SOJU_MOTION_VARIANTS}
                             className="w-full aspect-[3/4]"
                         >
                             <Image

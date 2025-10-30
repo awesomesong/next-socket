@@ -1,123 +1,178 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/src/app/lib/session';
-import prisma from '@/prisma/db';
-import { ObjectId } from 'bson';
+import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUser } from "@/src/app/lib/session";
+import prisma from "@/prisma/db";
+import { ObjectId as BSONObjectId } from "bson";
+import { containsProhibited } from "@/src/app/utils/aiPolicy";
+
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
-    
+
     if (!user?.id || !user?.email) {
-      return new NextResponse('로그인이 필요합니다.', { status: 401 });
+      return new NextResponse("로그인이 필요합니다.", { status: 401 });
     }
 
-    const { conversationId, body, message, type, isAIResponse, messageId, image, isError } = await req.json();
+    const {
+      conversationId,
+      body,
+      message,
+      type,
+      isAIResponse,
+      messageId,
+      image,
+      isError,
+    } = await req.json();
 
-    // ✅ messageId가 제공된 경우 중복 체크
-    if (messageId) {
-      const existingMessage = await prisma.message.findUnique({
-        where: { id: messageId }
+    // 간단 유효성
+    if (!conversationId || typeof conversationId !== "string") {
+      return new NextResponse("conversationId가 유효하지 않습니다.", { status: 400 });
+    }
+
+    // ObjectId 형식 검증
+    if (!BSONObjectId.isValid(conversationId)) {
+      return new NextResponse("conversationId 형식이 올바르지 않습니다.", { status: 400 });
+    }
+
+    // 빈 메시지 방지 (텍스트/이미지 둘 다 없음)
+    const hasContent = !!(image || (body ?? message)?.trim());
+    if (!hasContent && !isAIResponse && !isError) {
+      return new NextResponse("메시지 내용이 없습니다.", { status: 400 });
+    }
+
+    // 금칙어(일반 채팅)
+    const text = (body || message || "").toString();
+    if (text && containsProhibited(text)) {
+      return new NextResponse("부적절한 내용은 허용되지 않습니다.", { status: 400 });
+    }
+
+    // (선택) 대화방 존재/참여자 확인 — userIds만 필요
+    const conv = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { id: true, userIds: true },
+    });
+    if (!conv) {
+      return new NextResponse("대화방을 찾을 수 없습니다.", { status: 404 });
+    }
+    // (선택) 권한: 요청자가 참여자인지 확인
+    if (!conv.userIds.includes(user.id)) {
+      return new NextResponse("대화방 참여자가 아닙니다.", { status: 403 });
+    }
+
+    // === 메시지 생성 (AI 응답이면 트랜잭션 분리) ===
+    const msgId = messageId || new BSONObjectId().toHexString();
+    const inferredType = image ? "image" : "text";
+
+    let result;
+    if (isAIResponse) {
+      // AI 응답은 트랜잭션 없이 단순 생성 (AI 스트림에서 처리)
+      result = await prisma.message.create({
+        data: {
+          id: msgId,
+          body: body || message,
+          image,
+          type: type || inferredType,
+          conversation: { connect: { id: conversationId } },
+          sender: { connect: { id: user.id } },
+          isAIResponse: true,
+          isError: !!isError,
+        },
+        select: {
+          id: true,
+          body: true,
+          image: true,
+          type: true,
+          createdAt: true,
+          conversationId: true,
+          sender: { select: { id: true, name: true, email: true, image: true } },
+        },
       });
       
-      if (existingMessage) {
-        return NextResponse.json({
-          newMessage: existingMessage,
-          conversationUsers: { users: [] },
-          readStatuses: { count: 0 }
-        });
-      }
-    }
-
-    // 대화방의 모든 사용자 가져오기 (MessageReadStatus 생성을 위해)
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-      select: { 
-        users: { 
-          select: { id: true, email: true } 
-        } 
-      }
-    });
-
-    if (!conversation) {
-      return new NextResponse('대화방을 찾을 수 없습니다.', { status: 404 });
-    }
-
-    // 메시지 저장 (발신자는 자동으로 읽음 처리)
-    const inferredType = image ? 'image' : 'text';
-    const newMessage = await prisma.message.create({
-      data: {
-        id: messageId || new ObjectId().toHexString(),
-        body: body || message,
-        image, // 이미지 URL 저장
-        type: type || inferredType,
-        conversation: { connect: { id: conversationId } },
-        sender: { connect: { id: user.id } },
-        seen: { connect: { id: user.id } }, // 발신자는 자동으로 읽음
-        isAIResponse: isAIResponse || false,
-        isError: isError || false,
-      },
-      select: {
-        id: true,
-        body: true,
-        image: true, // 이미지 필드 포함
-        type: true,
-        createdAt: true,
-        conversationId: true,
-        sender: {
-          select: { id: true, name: true, email: true, image: true },
+      // ✅ AI 응답도 대화방 최신시각 갱신 (일반 메시지와 동일)
+      await prisma.conversation.updateMany({
+        where: { id: conversationId, lastMessageAt: { lt: result.createdAt } },
+        data: { 
+          lastMessageAt: result.createdAt,
+          lastMessageId: result.id,
         },
-        seen: { select: { name: true, email: true } },
-        conversation: { select: { isGroup: true, userIds: true } },
-      }
-    });
-
-    // MessageReadStatus 생성 (모든 사용자에 대해)
-    const messageReadStatuses = await prisma.messageReadStatus.createMany({
-      data: conversation.users.map((_user) => ({
-        userId: _user.id,
-        messageId: newMessage.id,
-        isRead: _user.id === user.id, // 발신자는 자동으로 읽음 처리
-      })),
-    });
-
-    // 대화방 업데이트 & 최신 유저 목록 가져오기 (병렬 실행)
-    const [updatedConversation, conversationUsersData] = await Promise.all([
-      prisma.conversation.update({
-        where: { id: conversationId },
-        data: { lastMessageAt: new Date() }, // 최근 메시지 시간 업데이트
-      }),
-      prisma.conversation.findUnique({
-        where: { id: conversationId },
-        select: { 
-          users: { 
-            select: { 
+      });
+    } else {
+      // 일반 메시지는 트랜잭션으로 처리
+      result = await prisma.$transaction(async (tx) => {
+        // 1) 메시지 생성 (멱등: P2002면 회수)
+        let newMessage;
+        try {
+          newMessage = await tx.message.create({
+            data: {
+              id: msgId,
+              body: body || message,
+              image,
+              type: type || inferredType,
+              conversation: { connect: { id: conversationId } },
+              sender: { connect: { id: user.id } },
+              isAIResponse: false,
+              isError: !!isError,
+            },
+            select: {
               id: true,
-              name: true, 
-              email: true,
-              image: true 
-            } 
-          } 
-        },
-      })
-    ]);
+              body: true,
+              image: true,
+              type: true,
+              createdAt: true,
+              conversationId: true,
+              sender: { select: { id: true, name: true, email: true, image: true } },
+            },
+          });
+        } catch (e: any) {
+          if (e?.code === "P2002") {
+            newMessage = await tx.message.findUniqueOrThrow({
+              where: { id: msgId },
+              select: {
+                id: true,
+                body: true,
+                image: true,
+                type: true,
+                createdAt: true,
+                conversationId: true,
+                sender: { select: { id: true, name: true, email: true, image: true } },
+              },
+            });
+          } else {
+            throw e;
+          }
+        }
 
-    // conversationUsersData가 null이면 기본값 할당
-    const safeConversationUsers = conversationUsersData ?? { users: [] };
+        // 2) 대화방 최신시각 갱신 (조건부, 충돌 없음)
+        await tx.conversation.updateMany({
+          where: { id: conversationId, lastMessageAt: { lt: newMessage.createdAt } },
+          data: { 
+            lastMessageAt: newMessage.createdAt,
+            lastMessageId: newMessage.id,
+          },
+        });
 
-    return NextResponse.json({
-      newMessage,
-      conversationUsers: safeConversationUsers,
-      readStatuses: messageReadStatuses
-    });
-  } catch (error) {
-    console.error('메시지 저장 오류:', error);
-    
-    // ✅ 더 자세한 에러 정보 로깅
-    if (error instanceof Error) {
-      console.error('에러 메시지:', error.message);
-      console.error('에러 스택:', error.stack);
+        return newMessage;
+      }, {
+        maxWait: 5000, // 5초 대기
+        timeout: 10000, // 10초 타임아웃
+      });
     }
-    
-    return new NextResponse('서버 오류', { status: 500 });
+
+    // 응답
+    return NextResponse.json({
+      newMessage: {
+        ...result,
+        serverCreatedAtMs: new Date(result.createdAt).getTime(),
+        // ✅ conversation 정보 포함
+        conversation: {
+          isGroup: conv.userIds.length > 2,
+          userIds: conv.userIds,
+        },
+      },
+    });
+  } catch (err) {
+    console.error("[POST /api/messages] error:", err);
+    return new NextResponse("서버 오류", { status: 500 });
   }
 }

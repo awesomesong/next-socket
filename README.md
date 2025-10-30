@@ -3,7 +3,6 @@
 하이트 맥주를 좋아하는 사람들이 실시간으로 소통하고, 다양한 주제를 공유할 수 있는 커뮤니티 서비스를 만들고자 했습니다.  
 기술적인 학습 목적과 사용자 중심의 구조 설계를 함께 고려하여 다음과 같은 기능들을 구현했습니다.
 
-
 ## 🚀 사용 기술 스택 (Tech Stack)
 
 ---
@@ -56,14 +55,15 @@
 
 ## ⚙️ Getting Started
 
-### 1.  폴더 구조
-
+### 1. 폴더 구조
 
 #### 최상위 폴더 구조
-- next-server/ – Next.js 기반 프론트엔드와 API 서버 
+
+- next-server/ – Next.js 기반 프론트엔드와 API 서버
 - socket-server/ – 실시간 채팅을 처리하는 Socket.io 서버
 
 #### 🖥️ next-server
+
 ```
 next-server
 ├── config.ts                # 환경변수 활용에 필요한 설정
@@ -96,10 +96,11 @@ next-server
 │       └── not-found.tsx    # Next.js 404 페이지
 ├── server.js                # 필요 시 커스텀 서버 로직
 ├── tsconfig.json            # TypeScript 설정
-└── .env                     # 환경 변수 예시 
+└── .env                     # 환경 변수 예시
 ```
 
 #### 🌐 socket-server
+
 ```
 socket-server
 ├── server.js        # Socket.io 이벤트 핸들러와 Express 서버
@@ -110,15 +111,15 @@ socket-server
 └── .env             # 소켓 서버용 환경 변수
 ```
 
-
 ### 2. 배포 정보
 
-
 #### Vercel (프론트엔드)
-- **GitHub 연동으로 자동 배포
-- **환경 변수는 Vercel 대시보드에서 설정
-- **next.config.js에서 이미지 및 API 도메인 설정
+
+- \*\*GitHub 연동으로 자동 배포
+- \*\*환경 변수는 Vercel 대시보드에서 설정
+- \*\*next.config.js에서 이미지 및 API 도메인 설정
 
 #### Fly.io (소켓 서버)
-- **fly.toml로 배포 설정
-- **flyctl deploy 명령어로 배포
+
+- \*\*fly.toml로 배포 설정
+- \*\*flyctl deploy 명령어로 배포

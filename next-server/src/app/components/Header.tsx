@@ -71,16 +71,5 @@ export const Header = async () => {
                 </ul>
             </div>
         </header>
-        /*
-            <nav className='flex flex-col p-2 max-w-5xl mx-auto'>
-                <h1 className='text-5xl  text-center'>
-                    Top{" "}
-                    <span className='text-nxl  text-center'>
-                        Books{" "}
-                    </span>
-                    of All Time
-                </h1>
-            </nav>
-        */
     )
 }

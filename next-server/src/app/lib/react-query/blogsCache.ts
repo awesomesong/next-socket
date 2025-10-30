@@ -1,26 +1,46 @@
-import type { QueryClient } from '@tanstack/react-query';
-import type { Blog as IBlog, BlogCommentsDataProps, BlogCommentPage, CommentType } from '@/src/app/types/blog';
+import type { QueryClient } from "@tanstack/react-query";
+import type {
+  Blog as IBlog,
+  BlogCommentsDataProps,
+  BlogCommentPage,
+  CommentType,
+} from "@/src/app/types/blog";
 
-export const BLOG_LIST_KEY = ['blogs', 'recommends'] as const;
-export const blogDetailKey = (blogId: string) => ['blogDetail', String(blogId)] as const;
-export const blogsCommentsKey = (blogId: string) => ['blogsComments', String(blogId)] as const;
+export const BLOG_LIST_KEY = ["blogs", "recommends"] as const;
+export const blogDetailKey = (blogId: string) =>
+  ["blogDetail", String(blogId)] as const;
+export const blogsCommentsKey = (blogId: string) =>
+  ["blogsComments", String(blogId)] as const;
 
-type BlogCard = Pick<IBlog, 'id' | 'title' | 'image' | 'createdAt' | 'author' | '_count' | 'viewCount'> & Record<string, unknown>;
+type BlogCard = Pick<
+  IBlog,
+  "id" | "title" | "image" | "createdAt" | "author" | "_count" | "viewCount"
+> &
+  Record<string, unknown>;
 
-type BlogCardPatch = { id: string } & Partial<Pick<IBlog, 'title' | 'image' | 'createdAt' | 'author' | '_count' | 'viewCount'>> & Record<string, unknown>;
+type BlogCardPatch = { id: string } & Partial<
+  Pick<
+    IBlog,
+    "title" | "image" | "createdAt" | "author" | "_count" | "viewCount"
+  >
+> &
+  Record<string, unknown>;
 
 export type BlogListInfinite = { pages: BlogCard[][]; pageParams?: unknown[] };
 
 function withBlogListCache(
   queryClient: QueryClient,
-  updater: (old: BlogListInfinite | undefined) => BlogListInfinite | undefined
+  updater: (old: BlogListInfinite | undefined) => BlogListInfinite | undefined,
 ): void {
-  queryClient.setQueriesData({ queryKey: BLOG_LIST_KEY, exact: true }, (old: BlogListInfinite | undefined) => updater(old));
+  queryClient.setQueriesData(
+    { queryKey: BLOG_LIST_KEY, exact: true },
+    (old: BlogListInfinite | undefined) => updater(old),
+  );
 }
 
 function withBlogListCacheAllPages(
   queryClient: QueryClient,
-  transform: (pages: BlogCard[][]) => BlogCard[][]
+  transform: (pages: BlogCard[][]) => BlogCard[][],
 ): void {
   withBlogListCache(queryClient, (old) => {
     if (!old || !Array.isArray(old.pages)) return old;
@@ -32,11 +52,14 @@ function withBlogListCacheAllPages(
 
 export function prependBlogCard(
   queryClient: QueryClient,
-  blog: BlogCard
+  blog: BlogCard,
 ): void {
   withBlogListCache(queryClient, (old) => {
     if (!old || !Array.isArray(old.pages)) {
-      return { pages: [[blog]], pageParams: Array.isArray(old?.pageParams) ? old.pageParams : [''] } as BlogListInfinite;
+      return {
+        pages: [[blog]],
+        pageParams: Array.isArray(old?.pageParams) ? old.pageParams : [""],
+      } as BlogListInfinite;
     }
     const first = Array.isArray(old.pages[0]) ? old.pages[0] : [];
     return { ...old, pages: [[blog, ...first], ...old.pages.slice(1)] };
@@ -45,7 +68,7 @@ export function prependBlogCard(
 
 export function upsertBlogCardById(
   queryClient: QueryClient,
-  blog: BlogCardPatch
+  blog: BlogCardPatch,
 ): void {
   withBlogListCacheAllPages(queryClient, (pages) => {
     const nextPages = pages.map((page) => {
@@ -61,35 +84,42 @@ export function upsertBlogCardById(
 
 export function removeBlogCardById(
   queryClient: QueryClient,
-  blogId: string
+  blogId: string,
 ): void {
-  withBlogListCacheAllPages(queryClient, (pages) => pages.map((p) => p.filter((b) => b?.id !== blogId)));
+  withBlogListCacheAllPages(queryClient, (pages) =>
+    pages.map((p) => p.filter((b) => b?.id !== blogId)),
+  );
 }
 
 export function incrementBlogCommentsCountById(
   queryClient: QueryClient,
   blogId: string,
-  delta: number = 1
+  delta: number = 1,
 ): void {
   withBlogListCacheAllPages(queryClient, (pages) =>
     pages.map((page) =>
       page.map((b) => {
         if (!b || b.id !== String(blogId)) return b;
         const prev = b?._count?.comments ?? 0;
-        return { ...b, _count: { ...(b._count || {}), comments: Math.max(0, prev + delta) } };
-      })
-    )
+        return {
+          ...b,
+          _count: { ...(b._count || {}), comments: Math.max(0, prev + delta) },
+        };
+      }),
+    ),
   );
 }
 
 // ===== Snapshot / Restore utilities for optimistic delete =====
-export type BlogCardBackup = { pageIndex: number; itemIndex: number; item: BlogCard } | undefined;
+export type BlogCardBackup =
+  | { pageIndex: number; itemIndex: number; item: BlogCard }
+  | undefined;
 
 export function snapshotBlogCardPosition(
   queryClient: QueryClient,
-  blogId: string
+  blogId: string,
 ): BlogCardBackup {
-  const snapshot = queryClient.getQueryData(BLOG_LIST_KEY) as BlogListInfinite | undefined;
+  const snapshot = queryClient.getQueryData(BLOG_LIST_KEY) as | BlogListInfinite | undefined;
   if (!snapshot?.pages || !Array.isArray(snapshot.pages)) return undefined;
   for (let pi = 0; pi < snapshot.pages.length; pi++) {
     const page = snapshot.pages[pi];
@@ -103,7 +133,7 @@ export function snapshotBlogCardPosition(
 export function restoreBlogCardPosition(
   queryClient: QueryClient,
   backup: BlogCardBackup,
-  fallbackSnapshot?: BlogListInfinite
+  fallbackSnapshot?: BlogListInfinite,
 ): void {
   if (!backup) {
     if (fallbackSnapshot) {
@@ -130,7 +160,7 @@ export function snapshotBlogDetail(queryClient: QueryClient, blogId: string) {
 export function restoreBlogDetail(
   queryClient: QueryClient,
   blogId: string,
-  prevDetail: unknown
+  prevDetail: unknown,
 ): void {
   if (!prevDetail) return;
   queryClient.setQueryData(blogDetailKey(blogId), prevDetail);
@@ -140,7 +170,7 @@ export function restoreBlogDetail(
 export function upsertBlogDetailPartial(
   queryClient: QueryClient,
   blogId: string,
-  partial: Record<string, unknown>
+  partial: Record<string, unknown>,
 ): void {
   queryClient.setQueryData(blogDetailKey(blogId), (old: any) => {
     if (!old?.blog) return old;
@@ -151,7 +181,7 @@ export function upsertBlogDetailPartial(
 export function incrementBlogDetailCommentsCount(
   queryClient: QueryClient,
   blogId: string,
-  delta: number = 1
+  delta: number = 1,
 ): void {
   // 블로그 상세페이지 댓글 수 업데이트
   queryClient.setQueryData(blogDetailKey(blogId), (old: any) => {
@@ -159,50 +189,50 @@ export function incrementBlogDetailCommentsCount(
     const prev = old.blog?._count?.comments ?? 0;
     const newCount = Math.max(0, prev + delta);
     if (newCount === prev) return old; // 변경사항이 없으면 업데이트하지 않음
-    return { ...old, blog: { ...old.blog, _count: { ...(old.blog._count || {}), comments: newCount } } };
+    return {
+      ...old,
+      blog: {
+        ...old.blog,
+        _count: { ...(old.blog._count || {}), comments: newCount },
+      },
+    };
   });
 
   // 블로그 리스트 페이지 댓글 수 업데이트
-  queryClient.setQueryData(BLOG_LIST_KEY, (old: any) => {
-    if (!old?.pages || !Array.isArray(old.pages)) return old;
-    
-    const updatedPages = old.pages.map((page: any) => {
-      if (!page?.blogs || !Array.isArray(page.blogs)) return page;
-      
-      const updatedBlogs = page.blogs.map((blog: any) => {
-        if (String(blog.id) !== String(blogId)) return blog;
-        const prev = blog._count?.comments ?? 0;
-        const newCount = Math.max(0, prev + delta);
-        if (newCount === prev) return blog; // 변경사항이 없으면 업데이트하지 않음
-        return { ...blog, _count: { ...(blog._count || {}), comments: newCount } };
-      });
-      
-      return { ...page, blogs: updatedBlogs };
-    });
-    
-    return { ...old, pages: updatedPages };
-  });
+  incrementBlogCommentsCountById(queryClient, blogId, delta);
 }
-// --------------블로그 댓글 캐시 업데이트 함수 --------------  
+// --------------블로그 댓글 캐시 업데이트 함수 --------------
 function withBlogsCommentsFirstPage(
   queryClient: QueryClient,
   blogId: string,
-  transform: (comments: CommentType[], count: number) => { comments: CommentType[]; count: number }
+  transform: (
+    comments: CommentType[],
+    count: number,
+  ) => { comments: CommentType[]; count: number },
 ): void {
-  queryClient.setQueriesData({ queryKey: blogsCommentsKey(blogId), exact: true }, (old: BlogCommentsDataProps | undefined) => {
-    if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
-    const first = old.pages[0] as BlogCommentPage;
-    const { commentsObj, countObj } = extractPageData(first);
-    const res = transform(commentsObj?.comments ?? [], countObj?.commentsCount ?? 0);
-    const nextFirst: BlogCommentPage = createUpdatedPage(res.comments, res.count);
-    return { ...old, pages: [nextFirst, ...old.pages.slice(1)] };
-  });
+  queryClient.setQueriesData({ queryKey: blogsCommentsKey(blogId), exact: true },
+    (old: BlogCommentsDataProps | undefined) => {
+      if (!old || !Array.isArray(old.pages) || old.pages.length === 0)
+        return old;
+      const first = old.pages[0] as BlogCommentPage;
+      const { commentsObj, countObj } = extractPageData(first);
+      const res = transform(
+        commentsObj?.comments ?? [],
+        countObj?.commentsCount ?? 0,
+      );
+      const nextFirst: BlogCommentPage = createUpdatedPage(
+        res.comments,
+        res.count,
+      );
+      return { ...old, pages: [nextFirst, ...old.pages.slice(1)] };
+    },
+  );
 }
 
 export function prependBlogCommentFirstPage(
   queryClient: QueryClient,
   blogId: string,
-  comment: any
+  comment: any,
 ): void {
   if (!comment) return;
   withBlogsCommentsFirstPage(queryClient, blogId, (comments, count) => ({
@@ -211,36 +241,44 @@ export function prependBlogCommentFirstPage(
   }));
 }
 
-
 // 공통 헬퍼 함수: 댓글 캐시 업데이트
 function withBlogsCommentsCache(
   queryClient: QueryClient,
   blogId: string,
-  transform: (old: BlogCommentsDataProps | undefined) => BlogCommentsDataProps | undefined
+  transform: (
+    old: BlogCommentsDataProps | undefined,
+  ) => BlogCommentsDataProps | undefined,
 ): void {
-  queryClient.setQueriesData({ queryKey: blogsCommentsKey(blogId), exact: true }, transform);
+  queryClient.setQueriesData(
+    { queryKey: blogsCommentsKey(blogId), exact: true },
+    transform,
+  );
 }
 
 // 공통 헬퍼 함수: 페이지 데이터 추출
 function extractPageData(page: BlogCommentPage) {
-  const commentsObj = page.find((p) => 'comments' in p) as { comments: CommentType[] } | undefined;
-  const countObj = page.find((p) => 'commentsCount' in p) as { commentsCount: number } | undefined;
+  const commentsObj = page.find((p) => "comments" in p) as
+    | { comments: CommentType[] }
+    | undefined;
+  const countObj = page.find((p) => "commentsCount" in p) as
+    | { commentsCount: number }
+    | undefined;
   return { commentsObj, countObj };
 }
 
 // 공통 헬퍼 함수: 업데이트된 페이지 생성
-function createUpdatedPage(comments: CommentType[], count: number): BlogCommentPage {
-  return [
-    { comments },
-    { commentsCount: count }
-  ] as BlogCommentPage;
+function createUpdatedPage(
+  comments: CommentType[],
+  count: number,
+): BlogCommentPage {
+  return [{ comments }, { commentsCount: count }] as BlogCommentPage;
 }
 
 export function replaceCommentById(
   queryClient: QueryClient,
   blogId: string,
   matchId: string,
-  serverComment: CommentType
+  serverComment: CommentType,
 ): void {
   withBlogsCommentsCache(queryClient, blogId, (old) => {
     if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
@@ -249,8 +287,10 @@ export function replaceCommentById(
       const { commentsObj, countObj } = extractPageData(page);
       if (!commentsObj) return page;
 
-      const updatedComments = commentsObj.comments.map((comment) => 
-        String(comment.id) === String(matchId) ? { ...comment, ...serverComment } : comment
+      const updatedComments = commentsObj.comments.map((comment) =>
+        String(comment.id) === String(matchId)
+          ? { ...comment, ...serverComment }
+          : comment,
       );
 
       return createUpdatedPage(updatedComments, countObj?.commentsCount ?? 0);
@@ -263,7 +303,7 @@ export function replaceCommentById(
 export function removeCommentById(
   queryClient: QueryClient,
   blogId: string,
-  matchId: string
+  matchId: string,
 ): void {
   withBlogsCommentsCache(queryClient, blogId, (old) => {
     if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
@@ -272,11 +312,14 @@ export function removeCommentById(
       const { commentsObj, countObj } = extractPageData(page);
       if (!commentsObj) return page;
 
-      const updatedComments = commentsObj.comments.filter((comment) => 
-        String(comment.id) !== String(matchId)
+      const updatedComments = commentsObj.comments.filter(
+        (comment) => String(comment.id) !== String(matchId),
       );
 
-      return createUpdatedPage(updatedComments, Math.max(0, (countObj?.commentsCount ?? 0) - 1));
+      return createUpdatedPage(
+        updatedComments,
+        Math.max(0, (countObj?.commentsCount ?? 0) - 1),
+      );
     });
 
     return { ...old, pages };

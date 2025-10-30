@@ -35,23 +35,25 @@ const SignInForm = () => {
   const onSubmit:SubmitHandler<FieldValues> = useCallback(async (data) => {
     setIsLoading(true);
 
-    signIn('credentials', {
+    try {
+      const result = await signIn('credentials', {
         ...data,
         redirect: false,
-    }).then((res) => {
-        if(res?.error) {
-            toast.error(res?.error);
-        } else {
-          toast.success('로그인이 되었습니다.');
-          router.push(callbackUrl);
-          router.refresh();
-          reset();
-        }
-    })
-    .finally(() => {
-        setIsLoading(false);
-    });
-  }, [router, callbackUrl, reset, setIsLoading]);
+      });
+
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        toast.success('로그인이 되었습니다.');
+        router.replace(callbackUrl);
+        reset();
+      }
+    } catch (error) {
+      toast.error('로그인 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [router, callbackUrl, reset]);
 
   return (
     <AuthForm title="로그인">
@@ -107,7 +109,7 @@ const SignInForm = () => {
       </form>
 
       <AuthSocial 
-        onClick={(value) => setIsLoading(value)} 
+        onClick={(value) => setIsLoading(value)}
         disabled={isLoading}
       />
 

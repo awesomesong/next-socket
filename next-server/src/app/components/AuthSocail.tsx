@@ -16,39 +16,53 @@ const AuthSocial:React.FC<AuthSocialProps> = ({
     const searchParams = useSearchParams();
     const callbackUrl = searchParams?.get('callbackUrl') || '/';
 
-    const handleLoginResult = (res: any) => {
+    const handleLoginResult = async (res: any) => {
         if (res?.error) {
             toast.error(res.error);
+            return;
         }
     
         if (res?.ok && !res?.error) {
             toast.success("로그인이 되었습니다.");
-            router.push(callbackUrl);
-            router.refresh();
+            router.replace(callbackUrl);  // replace로 히스토리 스택 최적화
         }
     };
 
-    const socialAction = (provider: string) => {
+    const socialAction = async (provider: string) => {
         onClick(true); // 로딩 시작
     
-        signIn(provider, {
-            callbackUrl: `${callbackUrl}`,
-            redirect: false, // 자동 이동 방지
-        }).then(handleLoginResult)
-          .finally(() => onClick(false));
+        try {
+            const result = await signIn(provider, {
+                callbackUrl: `${callbackUrl}`,
+                redirect: false, // 자동 이동 방지
+            });
+            
+            await handleLoginResult(result);
+        } catch (error) {
+            toast.error('소셜 로그인 중 오류가 발생했습니다.');
+        } finally {
+            onClick(false); // 로딩 종료
+        }
     };
 
-    // 데모 계정 로그인 핸들러
-    const demoLogin = () => {
+    // ✅ 데모 계정 로그인 핸들러 최적화
+    const demoLogin = async () => {
         onClick(true); // 로딩 시작
 
-        signIn("credentials", {
-            email: "demo@example.com",
-            password: "demo1234!",
-            callbackUrl,
-            redirect: false,
-        }).then(handleLoginResult)
-          .finally(() => onClick(false));
+        try {
+            const result = await signIn("credentials", {
+                email: "demo@example.com",
+                password: "demo1234!",
+                callbackUrl,
+                redirect: false,
+            });
+            
+            await handleLoginResult(result);
+        } catch (error) {
+            toast.error('데모 로그인 중 오류가 발생했습니다.');
+        } finally {
+            onClick(false); // 로딩 종료
+        }
     };
 
     return (

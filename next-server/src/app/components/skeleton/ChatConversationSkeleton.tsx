@@ -1,4 +1,4 @@
-import {Card, Skeleton} from "@heroui/react";
+import {Skeleton} from "@heroui/react";
 import { Fragment } from "react";
 
 const ChatConversationSkeleton = () => {

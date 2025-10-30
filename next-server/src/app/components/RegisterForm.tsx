@@ -9,6 +9,7 @@ import AuthForm from "./AuthForm";
 import Input from "./Input";
 import Button from "./Button";
 import AuthSocial from "./AuthSocail";
+import { registerUser } from "@/src/app/lib/register";
 
 const RegisterForm = () => {
     const router = useRouter();
@@ -37,8 +38,8 @@ const RegisterForm = () => {
 
     const onSubmit:SubmitHandler<FieldValues> = useCallback(async (data) => {
         setIsLoading(true);
-        // clearErrors();
 
+        // ✅ 비밀번호 확인 검증
         if (data.password !== data.passwordConfirm) {      
             setIsLoading(false);
             setError(
@@ -48,28 +49,28 @@ const RegisterForm = () => {
             );
             return;
         }
-        const res = await fetch(`/api/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                ...data
-            }),
-        });
-        setIsLoading(false);
-        const { message } = await res.json();
-        if( res.status === 500 ) {
-            toast.error(message);
-        }
 
-        if(res.ok) {
-            toast.success(message);
+        try {
+            // ✅ lib 함수 사용으로 코드 간소화 (타입 안전성 보장)
+            const result = await registerUser({
+                name: data.name,
+                email: data.email,
+                password: data.password,
+                passwordConfirm: data.passwordConfirm,
+            });
+            
+            toast.success(result.message);
             clearErrors();
             reset();
-            router.push(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+            
+            router.replace(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+            
+        } catch (error: any) {
+            toast.error(error.message || '회원가입 중 오류가 발생했습니다.');
+        } finally {
+            setIsLoading(false);
         }
-    }, [router, callbackUrl, setError, clearErrors, reset, setIsLoading]);
+    }, [router, callbackUrl, setError, clearErrors, reset]);
 
     return (
         <AuthForm title="회원가입">

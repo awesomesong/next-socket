@@ -1,17 +1,38 @@
 'use client'
-import React, { useMemo, useRef } from 'react';
+import React, { useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import drinksData from '@/src/app/data/drinks';
 import DrinksName from './DrinksName';
 
+// ✅ 정적 데이터 및 motion variants를 외부로 추출 (한 번만 생성)
+const BEERS_DATA = drinksData.filter((drink) => drink.type === 'beer');
+const FIRST_BEER_DATA = BEERS_DATA[0];
+const OTHER_BEERS_DATA = BEERS_DATA.slice(1);
+
+// ✅ Motion variants를 외부로 추출하여 객체 재생성 방지
+const FIRST_BEER_MOTION = {
+  initial: { scale: 1 },
+  whileInView: { scale: [1, 1.05, 1] },
+  transition: { duration: 1 },
+};
+
+const TEXT_MOTION_BASE = {
+  initial: { opacity: 0.3 },
+  whileInView: { opacity: 1 },
+  viewport: { amount: 0.3, once: true },
+};
+
+const OTHER_BEER_MOTION = {
+  initial: { scale: 0.7, opacity: 0 },
+  whileInView: { scale: [0.7, 1], opacity: 1 },
+  viewport: { once: true },
+  transition: { duration: 0.5, ease: "easeOut" as any },
+};
+
 const ProductBeer = () => {
     const scrollRef = useRef<HTMLDivElement>(null);
-
-    const beers = useMemo(() => drinksData.filter((drink) => drink.type === 'beer'), [drinksData]); 
-    const otherBeers = useMemo(() => beers.slice(1), [beers]);
-    const firstBeer = beers[0];
 
     return (
         <div 
@@ -31,15 +52,13 @@ const ProductBeer = () => {
                     mt-16
                 '>
                     <motion.div
-                        initial={{ scale: 1 }}
-                        whileInView={{ scale: [1, 1.05, 1] }}
+                        {...FIRST_BEER_MOTION}
                         viewport={{ root: scrollRef, once: true }}
-                        transition={{ duration: 1 }}
                         className='flex'
                     >
                         <Link 
-                            href={firstBeer.link} 
-                            title={firstBeer.name}
+                            href={FIRST_BEER_DATA.link} 
+                            title={FIRST_BEER_DATA.name}
                             className={`
                                 relative
                                 overflow-hidden
@@ -49,8 +68,8 @@ const ProductBeer = () => {
                                 md:h-[460px]
                         `}>
                             <Image 
-                                src={firstBeer.image} 
-                                alt={firstBeer.name } 
+                                src={FIRST_BEER_DATA.image} 
+                                alt={FIRST_BEER_DATA.name } 
                                 width={0}
                                 height={0}
                                 priority
@@ -65,25 +84,17 @@ const ProductBeer = () => {
                         gap-5 
                         hite-text
                     '>
-                        <motion.span
-                            initial={{ opacity: .3 }}
-                            whileInView={{ opacity: 1 }}
-                            viewport={{ amount: .3, once: true }}
-                        >
+                        <motion.span {...TEXT_MOTION_BASE}>
                             <span>hite</span>
                         </motion.span>
-                        <motion.span
-                            initial={{ opacity: .3 }}
-                            whileInView={{ opacity: 1 }}
-                            viewport={{ amount: .3, once: true }}
+                        <motion.span 
+                            {...TEXT_MOTION_BASE}
                             transition={{ delay: .3 }}
                         >
                             <span>EXTRA</span>
                         </motion.span>
-                        <motion.span
-                            initial={{ opacity: .3 }}
-                            whileInView={{ opacity: 1 }}
-                            viewport={{ amount: .3, once: true }}
+                        <motion.span 
+                            {...TEXT_MOTION_BASE}
                             transition={{ delay: .5 }}
                         >
                             <span>GOLD</span>    
@@ -100,13 +111,10 @@ const ProductBeer = () => {
                     my-24
                     max-[480px]:mb-16
                 ">
-                    {otherBeers.map((beer) => (
+                    {OTHER_BEERS_DATA.map((beer) => (
                         <motion.div
                             key={beer.name}
-                            initial={{ scale: .7, opacity: 0 }}
-                            whileInView={{ scale: [.7, 1], opacity: 1 }}
-                            viewport={{ once: true }}  
-                            transition={{ duration: .5, ease: "easeOut" }}
+                            {...OTHER_BEER_MOTION}
                             className='flex w-full'
                         >
                             <Link 
@@ -129,7 +137,7 @@ const ProductBeer = () => {
                                             alt={beer.name } 
                                             width={150}
                                             height={0}
-                                            className="object-contain w-full h-autoㅇ"
+                                            className="object-contain w-full h-auto"
                                         />
                                     </div>
                                     {beer.image2 && (

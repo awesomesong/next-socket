@@ -58,13 +58,12 @@ model User {
   postComments    PostComment[]
   blogs           Blog[]
   drinkReviews   DrinkReview[]
-  messageReadStatus MessageReadStatus[]
 
   conversationsIds String[]      @db.ObjectId
   conversations   Conversation[] @relation(fields: [conversationsIds], references: [id])
 
-  seenMesssageIds String[]        @db.ObjectId
-  seenMesssage    Message[]       @relation("Seen", fields: [seenMesssageIds], references: [id])
+  // 읽음 상태 관리
+  conversationReads ConversationRead[]
 }
 
 model Conversation {
@@ -75,12 +74,30 @@ model Conversation {
   isGroup       Boolean? 
   isAIChat      Boolean?  @default(false)
   aiAgentType   String?
+  lastMessageId       String?  @db.ObjectId
 
-  messagesIds   String[]   @db.ObjectId
   messages      Message[]
 
   userIds    String[]    @db.ObjectId
   users      User[]  @relation(fields: [userIds], references: [id])
+  
+  // 읽음 상태 관리
+  conversationReads ConversationRead[]
+}
+
+model ConversationRead {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId String   @db.ObjectId
+  userId         String   @db.ObjectId
+  lastSeenAt     DateTime @default(now())
+  lastSeenMsgId  String?  @db.ObjectId
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([conversationId, lastSeenMsgId])
+  @@index([conversationId, lastSeenAt])
 }
 
 model Message{
@@ -92,26 +109,17 @@ model Message{
   isAIResponse Boolean? @default(false)
   isError Boolean? @default(false)
 
-  seenId String[]  @db.ObjectId
-  seen User[] @relation("Seen", fields: [seenId], references: [id])
-
   conversationId  String @db.ObjectId
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   senderId String   @db.ObjectId
   sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
-  readStatuses MessageReadStatus[]
+  @@index([conversationId, createdAt(sort: Desc)])  // 최신 메시지 조회 최적화
+  @@index([conversationId, senderId, createdAt])
+  @@index([conversationId, isAIResponse, createdAt])
 }
 
-model MessageReadStatus {
-  id  String  @id   @map("_id")  @default(auto())  @db.ObjectId
-  userId    String   @db.ObjectId
-  user      User     @relation(fields: [userId], references: [id])
-  messageId String   @db.ObjectId
-  message   Message  @relation(fields: [messageId], references: [id])
-  isRead    Boolean  @default(false)
-}
 
 model VerificationToken {
   id  String  @id   @map("_id")  @default(auto())  @db.ObjectId

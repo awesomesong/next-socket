@@ -3,6 +3,7 @@ import { IoClose } from "react-icons/io5";
 import clsx from "clsx";
 import { ModalProps } from "@/src/app/types/common";
 import useIsMobileDevice from "../hooks/useIsMobileDevice";
+import { useEffect } from "react";
 
 const Modal:React.FC<ModalProps> = ({
     isOpen,
@@ -10,6 +11,23 @@ const Modal:React.FC<ModalProps> = ({
     children,
 }) => {
     const isMobileDevice = useIsMobileDevice();
+
+    useEffect(() => {
+        if (!isOpen) return;
+      
+        const onKey = (e: KeyboardEvent) => {
+          if (e.key === "Escape") onCloseModal();
+        };
+        window.addEventListener("keydown", onKey);
+      
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+      
+        return () => {
+          window.removeEventListener("keydown", onKey);
+          document.body.style.overflow = prev;
+        };
+    }, [isOpen, onCloseModal]);
 
     return (
             <div

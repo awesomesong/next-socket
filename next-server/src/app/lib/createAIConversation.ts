@@ -1,83 +1,94 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
-import { useSession } from 'next-auth/react';
-import { useSocket } from '@/src/app/context/socketContext';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { ConversationListData, conversationListKey } from "@/src/app/lib/react-query/chatCache";
+import { formatErrorMessage, SOCKET_EVENTS } from "@/src/app/lib/react-query/utils";
+import { useCallback } from "react";
+import { isReusableEmptyAiRoom } from "../utils/chat";
+import { useSocket } from "../context/socketContext";
 
 interface UseCreateAIConversationOptions {
-    onSettled?: () => void;
+  onSettled?: () => void;
 }
 
-export const useCreateAIConversation = (options?: UseCreateAIConversationOptions) => {
-    const router = useRouter();
-    const queryClient = useQueryClient();
-    const { data: session } = useSession();
-    const socket = useSocket();
+type CreateArgs = { aiAgentType: string };
 
-    // 공유 upsert 유틸: 대화 하나를 conversationList 캐시에 낙관적으로 반영
-    const upsertConversation = (payload: any) => {
-        if (!payload) return;
-        queryClient.setQueryData(['conversationList'], (old: any) => {
-            const lastMessageAt = payload?.lastMessageAt ? new Date(payload.lastMessageAt) : new Date();
-            const normalized = {
-                id: payload.id,
-                lastMessageAt,
-                isAIChat: payload.isAIChat ?? true,
-                aiAgentType: payload.aiAgentType ?? 'assistant',
-                userIds: payload.userIds ?? [session?.user?.id],
-                users: payload.users ?? [],
-                messages: Array.isArray(payload.messages) ? payload.messages : [],
-                unReadCount: 0,
-                name: payload.name ?? '',
-            };
-            if (!old?.conversations) return { conversations: [normalized] };
-            const exists = old.conversations.some((c: any) => c.id === payload.id);
-            const conversations = exists
-                ? old.conversations.map((c: any) => (c.id === payload.id ? { ...c, ...normalized } : c))
-                : [normalized, ...old.conversations];
-            conversations.sort(
-                (a: any, b: any) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime()
-            );
-            return { conversations };
-        });
-    };
+// ─── 1) 순수 "생성" 훅: 생성 성공 시 새 방으로 라우팅만 담당 ─────────────────
+export const useCreateAIConversation = (
+  options?: UseCreateAIConversationOptions,
+) => {
+  const router = useRouter();
+  const socket = useSocket();
 
-    return useMutation({
-        mutationFn: async ({ aiAgentType }: { aiAgentType: string }) => {
-            const response = await fetch('/api/conversations/ai', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ aiAgentType }),
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'AI 채팅방 생성 중 오류가 발생했습니다.');
-            }
-
-            return response.json();
+  return useMutation({
+    mutationFn: async ({ aiAgentType }: CreateArgs) => {
+      const response = await fetch("/api/conversations/ai", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        onSuccess: (data) => {
-            // 인플라이트를 취소하지 않고 낙관적 갱신 → 이후 서버 데이터로 전체 목록 동기화
-            upsertConversation(data);
+        body: JSON.stringify({ aiAgentType }),
+      });
 
-            // 다른 탭/페이지(리스트) 동기화를 위해 소켓 브로드캐스트
-            if (socket) {
-                socket.emit('conversation:new', data);
-            }
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(
+          error.message || "AI 채팅방 생성 중 오류가 발생했습니다.",
+        );
+      }
 
-            // AI 채팅방으로 이동
-            router.push(`/conversations/${data.id}`);
-        },
-        onError: (error: any) => {
-            toast.error(error.message || 'AI 채팅방 생성 중 오류가 발생했습니다.');
-        },
-        onSettled: async (data) => {
-            // 재-upsert로 레이스 방지
-            if (data) upsertConversation(data);
-            options?.onSettled?.();
-        },
-    });
-}; 
+      return response.json();
+    },
+    onSuccess: (data, _vars, context) => {
+      const id = String(data?.id ?? "");
+      if (!id) return;
+      
+      // ✅ 소켓 이벤트 발송 (본인 포함 모든 탭/기기에 전달됨)
+      if (socket) {
+        socket.emit(SOCKET_EVENTS.CONVERSATION_NEW, data);
+      }
+      
+      router.push(`/conversations/${id}`);
+    },
+    onError: (error: any, _vars, context) => {
+      toast.error(
+        formatErrorMessage(error, "AI 채팅방 생성 중 오류가 발생했습니다."),
+      );
+    },
+    onSettled: () => {
+      options?.onSettled?.();
+    },
+  });
+};
+
+
+// ─── 2) 런처 훅: "재사용 방으로 이동, 없으면 생성" 로직을 캡슐화 ───────────────
+export function useLaunchAiConversation(options?: UseCreateAIConversationOptions) {
+  const router = useRouter();
+  const qc = useQueryClient();
+  const create = useCreateAIConversation(options);
+
+  const launch = useCallback(async ({ aiAgentType }: CreateArgs) => {
+      if (create.isPending) return { reused: false, id: "" as const }; // 중복 가드
+      // 1) 캐시에서 재사용 가능한 빈 AI방 찾기
+      const list = qc.getQueryData(conversationListKey) as ConversationListData | undefined;
+      const convs = list?.conversations ?? [];
+      const reusable = convs.find((c: any) => isReusableEmptyAiRoom(c));
+
+      if (reusable?.id) {
+        router.push(`/conversations/${reusable.id}`);
+        return { reused: true, id: String(reusable.id) };
+      }
+
+      // 2) 없으면 생성 (성공 시 useCreateAIConversation의 onSuccess가 push)
+      const data = await create.mutateAsync({ aiAgentType });
+      return { reused: false, id: String(data?.id ?? "") };
+    },
+    [qc, router, create],
+  );
+
+  return {
+    launch,                 // 호출: launch({ aiAgentType: "assistant" })
+    isPending: create.isPending, // 버튼 disabled 등에 사용
+  };
+}

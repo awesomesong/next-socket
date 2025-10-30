@@ -1,12 +1,21 @@
 'use client';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import DrinksName from './DrinksName';
 import Link from 'next/link';
 import drinksData from '@/src/app/data/drinks';
 import useMediaQuery from '@/src/app/hooks/useMediaQuery';
 import clsx from 'clsx';
+
+// ✅ 정적 데이터 외부 추출
+const OTHER_DRINKS_DATA = drinksData.filter((drink) => drink.type === 'others');
+
+// ✅ Motion transition 외부 추출
+const DRINK_MOTION_TRANSITION = {
+  duration: 0.5,
+  ease: "easeOut" as any,
+};
 
 const ProductDrink = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -24,10 +33,6 @@ const ProductDrink = () => {
   useEffect(() => {
     setInitialPositions();
   }, [setInitialPositions]);
-
-  const otherDrinks = useMemo(() => {
-    return drinksData.filter((drink) => drink.type === 'others');
-  }, [drinksData]);
 
   if (initialXGroup1.length === 0 || initialXGroup2.length === 0) {
     return null;
@@ -50,13 +55,13 @@ const ProductDrink = () => {
           my-24
         "
       >
-        {otherDrinks.slice(0, 4).map((drink, index) => (
+        {OTHER_DRINKS_DATA.slice(0, 4).map((drink, index) => (
           <motion.div
             key={drink.name}
             initial={{ x: initialXGroup1[index], opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
             viewport={{ amount: 0.3, once: true }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
+            transition={DRINK_MOTION_TRANSITION}
             className="relative aspect-[3/4]"
           >
             <Link
@@ -82,13 +87,13 @@ const ProductDrink = () => {
             </Link>
           </motion.div>
         ))}
-        {otherDrinks.slice(4).map((drink, index) => (
+        {OTHER_DRINKS_DATA.slice(4).map((drink, index) => (
           <motion.div
             key={drink.name}
             initial={{ x: initialXGroup2[index], opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
             viewport={{ amount: 0.3, once: true }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
+            transition={DRINK_MOTION_TRANSITION}
             className="relative"
           >
             <Link

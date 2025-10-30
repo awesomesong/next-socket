@@ -31,7 +31,7 @@ export async function GET( req: NextRequest ){
             }
         });
 
-        return NextResponse.json({users}, {status: 200});;
+        return NextResponse.json({users}, {status: 200});
     } catch(error) {
         return NextResponse.json({message: '채팅 멤버를 찾지 못했습니다.'}, { status: 500 });
     }

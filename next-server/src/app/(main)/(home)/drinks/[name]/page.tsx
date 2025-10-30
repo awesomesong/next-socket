@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, use } from 'react';
+import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import drinksDetailData from '@/src/app/data/drinksDetail';
 import clsx from 'clsx';
@@ -9,15 +9,29 @@ import { useSession } from 'next-auth/react';
 import FormReview from '@/src/app/components/FormReview';
 import Reviews from '@/src/app/components/Reviews';
 
+// ✅ Motion variants 외부 추출 (객체 재생성 방지)
+const DESCRIPTION_MOTION = {
+  initial: { top: '60%' },
+  whileInView: { top: '50%' },
+  viewport: { amount: 0.4 },
+  transition: { ease: "easeOut" as any },
+};
+
+const INFO_MOTION = {
+  initial: { top: '70%' },
+  whileInView: { top: '50%' },
+  viewport: { amount: 0 },
+  transition: { ease: "easeOut" as any },
+};
+
 const DrinksPage = ({params } : { params: Promise<{ name: string }> }) => {
     const router = useRouter();
     const { data: session } = useSession();
 
     const { name } = use(params);
 
-    const drink = useMemo(() => {
-        return drinksDetailData.find(drink => drink.slug === name);
-    }, [name]);
+    // ✅ useMemo 제거: find는 O(n)이지만 배열이 작고, name이 자주 변경되므로 useMemo 불필요
+    const drink = drinksDetailData.find(drink => drink.slug === name);
 
     if (!drink) {
         return router.push('/not_found');
@@ -62,10 +76,7 @@ const DrinksPage = ({params } : { params: Promise<{ name: string }> }) => {
                     />
                 </p>
                 <motion.div
-                    initial={{ top: '60%' }}
-                    whileInView={{ top: '50%' }} 
-                    viewport={{ amount: 0.4 }}
-                    transition={{ ease: "easeOut" }} 
+                    {...DESCRIPTION_MOTION} 
                     className={clsx(`absolute
                                     top-1/2
                                     -translate-y-1/2`,
@@ -110,10 +121,7 @@ const DrinksPage = ({params } : { params: Promise<{ name: string }> }) => {
                     />
                 </p>
                 <motion.div
-                    initial={{ top: '70%' }}
-                    whileInView={{ top: '50%' }} 
-                    viewport={{ amount: 0 }}
-                    transition={{ ease: "easeOut" }} 
+                    {...INFO_MOTION} 
                     className='
                         basis-1/2 
                         absolute 

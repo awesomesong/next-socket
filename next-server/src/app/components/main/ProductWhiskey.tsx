@@ -1,5 +1,5 @@
 'use client'; 
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import drinksData from '@/src/app/data/drinks';
@@ -7,12 +7,22 @@ import DrinksName from './DrinksName';
 import Link from 'next/link';
 import clsx from 'clsx';
 
-const ProductWhiskey = () => {
-    const scrollRef = useRef<HTMLDivElement>(null);
+// ✅ 정적 데이터 외부 추출
+const WHISKEYS_DATA = drinksData.filter((drink) => drink.type === 'whiskey');
 
-    const whiskeys = useMemo(() => {
-        return drinksData.filter((drink) => drink.type === 'whiskey');
-     }, [drinksData]); 
+// ✅ Motion transition 외부 추출
+const WHISKEY_MOTION_TRANSITION = {
+  duration: 0.5,
+  ease: "easeOut" as any,
+};
+
+const WHISKEY_MOTION_VIEWPORT = {
+  amount: 0.6,
+  once: true,
+};
+
+const ProductWhiskey = () => {
+    const scrollRef = useRef<HTMLDivElement>(null); 
     
     return (
         <div ref={scrollRef} className="product-layout">
@@ -30,13 +40,13 @@ const ProductWhiskey = () => {
                     my-20
                 "
             >
-                {whiskeys.map((whiskey, index) => (
+                {WHISKEYS_DATA.map((whiskey, index) => (
                     <motion.div
                         key={whiskey.name}
                         initial={{ left: index === 0 ? '0' : '0' }}
                         whileInView={{ left: index === 0 ? '14%' : '-12%' }} 
-                        viewport={{ amount: 0.6, once: true }}  
-                        transition={{ duration: .5, ease: "easeOut" }} 
+                        viewport={WHISKEY_MOTION_VIEWPORT}
+                        transition={WHISKEY_MOTION_TRANSITION} 
                         className='relative'
                     >
                         <Link 

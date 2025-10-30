@@ -1,4 +1,4 @@
-import { Files, Author, Post, PostComment } from "@prisma/client";
+import { Post, PostComment, User } from "@prisma/client";
 
 interface PostCommentsWithWriter extends PostComment {
     writer: Pick<User, "name" | "image" | "email"> | null;

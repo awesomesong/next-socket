@@ -9,6 +9,7 @@ import Body from "@/src/app/components/chat/Body";
 import Form from "@/src/app/components/chat/Form";
 import AIChatForm from "@/src/app/components/chat/AIChatForm";
 import { useRef, use } from "react";
+import { conversationKey } from "@/src/app/lib/react-query/chatCache";
 
 interface IParams {
     conversationId: string;
@@ -23,12 +24,17 @@ const Conversation = ({ params }: { params : Promise<IParams> }) => {
     const { 
         data, 
         status,
-        refetch,
-        error
     } = useQuery({
-        queryKey: ['conversation', conversationId],
+        queryKey: conversationKey(conversationId),
         queryFn: () => getConversationById(conversationId),
         enabled: !!conversationId,
+        gcTime: 5 * 60_000,
+        staleTime: 30_000,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+        refetchOnMount: true,
+        retry: 1,
+        retryOnMount: true,
     });
 
     if(status === 'pending') {
@@ -59,14 +65,12 @@ const Conversation = ({ params }: { params : Promise<IParams> }) => {
                     <Header conversation={data?.conversation} currentUser={session?.user}/>
                     <Body scrollRef={scrollRef} bottomRef={bottomRef} isAIChat={!!isAIChat} />
                     {isAIChat ? (
-                        <AIChatForm 
-                            scrollRef={scrollRef} 
-                            bottomRef={bottomRef} 
+                        <AIChatForm
                             conversationId={conversationId}
                             aiAgentType={data?.conversation?.aiAgentType}
                         />
                     ) : isForm ? (
-                        <Form scrollRef={scrollRef} bottomRef={bottomRef} />
+                        <Form />
                     ) : (
                         <UnavailableChatForm />
                     )}

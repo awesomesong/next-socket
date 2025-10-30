@@ -3,7 +3,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { HiChat } from 'react-icons/hi';
 import { HiUser} from "react-icons/hi2";
 import { IoHomeSharp } from "react-icons/io5";
-import { RiLoginBoxFill, RiLogoutBoxFill } from "react-icons/ri";
+import { RiLogoutBoxFill } from "react-icons/ri";
 import useConversation from "./useConversation";
 import { signOut } from "next-auth/react";
 
@@ -41,7 +41,7 @@ const useRouterChat = () => {
             },
             icon: RiLogoutBoxFill
         }
-    ], [pathname, conversationId]);
+    ], [pathname, conversationId, router]);
 
     return routerChat;
 };

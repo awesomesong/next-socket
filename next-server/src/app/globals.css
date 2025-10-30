@@ -28,7 +28,23 @@
   color: white !important;
 }
 
-:root, [data-theme] {
+blockquote{
+  border-left: 4px solid #ccc;
+  margin-bottom: 5px;
+  margin-top: 5px;
+  padding-left: 16px;
+}
+
+.ql-align-center {
+  text-align: center;
+}
+
+.ql-align-right {
+  text-align: right;
+}
+
+:root,
+[data-theme] {
   background-color: transparent;
 }
 
@@ -105,23 +121,23 @@ h6 {
 }
 
 .border-default {
-  @apply border-[1px] border-neutral-300 shadow-sm dark:border-neutral-800 
+  @apply border-[1px] border-neutral-300 shadow-sm dark:border-neutral-800;
 }
 
 .border-l-default {
-  @apply border-l-[1px] border-neutral-300 shadow-sm dark:border-neutral-800 
+  @apply border-l-[1px] border-neutral-300 shadow-sm dark:border-neutral-800;
 }
 
 .border-r-default {
-  @apply border-r-[1px] border-neutral-300 shadow-sm dark:border-neutral-800 
+  @apply border-r-[1px] border-neutral-300 shadow-sm dark:border-neutral-800;
 }
 
 .border-t-default {
-  @apply border-t-[1px] border-neutral-300 shadow-sm dark:border-neutral-800 
+  @apply border-t-[1px] border-neutral-300 shadow-sm dark:border-neutral-800;
 }
 
 .border-b-default {
-  @apply border-b-[1px] border-neutral-300 shadow-sm dark:border-neutral-800 
+  @apply border-b-[1px] border-neutral-300 shadow-sm dark:border-neutral-800;
 }
 
 .btn-bg {
@@ -134,13 +150,13 @@ h6 {
 }
 
 .layout-card {
-    @apply grid 
+  @apply grid 
     grid-flow-row 
     grid-cols-1 
     gap-4
     min-[580px]:grid-cols-2 
     xl:grid-cols-3 
-    2xl:grid-cols-4 
+    2xl:grid-cols-4;
 }
 
 .layout-card--post {
@@ -149,7 +165,7 @@ h6 {
   lg:grid-cols-3
   sm:grid-cols-2
   gap-4
-  lg:gap-8
+  lg:gap-8;
 }
 
 .page-container {
@@ -170,7 +186,7 @@ h6 {
   width: 30px;
   height: 30px;
   padding: 4px;
-  transition: all .5s ease;
+  transition: all 0.5s ease;
   cursor: pointer;
 }
 .hamburger-menu > div {
@@ -178,7 +194,7 @@ h6 {
   height: 3px;
   @apply bg-[#0d0d0d] dark:bg-white;
   border-radius: 2px;
-  transition: all .55s cubic-bezier(0.075, 0.82, 0.165, 1);
+  transition: all 0.55s cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
 .hamburger-menu.animate div:first-child {
@@ -193,8 +209,7 @@ h6 {
 
 /* main page */
 .hite-text {
-  @apply 
-  max-[300px]:text-[18px]
+  @apply max-[300px]:text-[18px]
   max-[360px]:text-2xl
   max-[420px]:text-[30px]
   max-[480px]:text-[36px]
@@ -209,7 +224,9 @@ h6 {
   tracking-tight;
 }
 
-.product-layout {@apply relative w-full mx-auto }
+.product-layout {
+  @apply relative w-full mx-auto;
+}
 
 .product-title-layout {
   @apply flex 
@@ -221,10 +238,10 @@ h6 {
 }
 
 .product-title {
-  @apply w-[1440px] mx-auto font-bold text-2xl text-neutral-200
+  @apply w-[1440px] mx-auto font-bold text-2xl text-neutral-200;
 }
 
-.product-scroll { 
+.product-scroll {
   @apply flex 
   justify-center 
   absolute 
@@ -235,20 +252,20 @@ h6 {
   sm:text-lg
   text-neutral-200
   -translate-x-1/2
-  -translate-y-1/3 
+  -translate-y-1/3;
 }
 
 .product-box {
-  @apply relative max-w-[1440px] mx-auto
+  @apply relative max-w-[1440px] mx-auto;
 }
 
 @media (max-width: 380px) {
   .product-title-layout {
-    @apply flex flex-col h-auto px-3
+    @apply flex flex-col h-auto px-3;
   }
 
   .product-title {
-    @apply text-xl py-3
+    @apply text-xl py-3;
   }
   .product-scroll {
     @apply static  
@@ -263,19 +280,20 @@ h6 {
 
 /* drink detail */
 .text-top {
-  @apply font-bold text-[clamp(20px,2.5vw,30px)]
+  @apply font-bold text-[clamp(20px,2.5vw,30px)];
 }
 
 .text-bottom {
-  @apply text-[clamp(11px,2.5vw,20px)]
+  @apply text-[clamp(11px,2.5vw,20px)];
 }
 
-.text-top, .text-bottom {
+.text-top,
+.text-bottom {
   @apply break-keep;
 }
 
 .drink-info {
-  @apply flex flex-col gap-2 sm:gap-6 whitespace-pre-wrap
+  @apply flex flex-col gap-2 sm:gap-6 whitespace-pre-wrap;
 }
 
 /* HeroUI dropdown */
@@ -284,11 +302,11 @@ div[data-slot="content"] {
 }
 
 .effect-rightLeft {
-  animation: rightLeft .2s;
+  animation: rightLeft 0.2s;
 }
 
 @keyframes rightLeft {
-  from{
+  from {
     transform: translateX(20px);
   }
   to {
@@ -297,11 +315,11 @@ div[data-slot="content"] {
 }
 
 .effect-downUp {
-  animation: downUp .2s;
+  animation: downUp 0.2s;
 }
 
 @keyframes downUp {
-  from{
+  from {
     transform: translateY(10px);
   }
   to {
@@ -326,7 +344,7 @@ div[data-slot="content"] {
   .sm\:bg-h-4 {
     --bg-h: 4px;
   }
-  
+
   .sm\:bg-h-2 {
     --bg-h: 2px;
   }
@@ -337,7 +355,7 @@ div[data-slot="content"] {
     line-height: 1.4;
     transition: background-size 200ms;
   }
-  
+
   .sm\:link-effect-underline:where(:hover, :focus-visible) {
     background-size: 100% var(--bg-h);
     background-position-x: left;
@@ -349,7 +367,7 @@ div[data-slot="content"] {
   background: rgba(20, 20, 20, 0.92);
   border: 2px solid #444;
   border-radius: 18px;
-  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.18);
+  box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.18);
   padding: 2.5rem 2.5rem 2rem 2.5rem;
   min-width: 320px;
   min-height: 180px;
@@ -365,7 +383,7 @@ div[data-slot="content"] {
   color: #fff;
   font-weight: 600;
   letter-spacing: 0.02em;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 .dark .points-loading-text {
   color: #fff;
@@ -403,20 +421,20 @@ div[data-slot="content"] {
 
 @keyframes wave {
   0%, 100% {
-      transform: translateY(6px);
+    transform: translateY(6px);
   }
   50% {
-      transform: translateY(-6px);
+    transform: translateY(-6px);
   }
 }
 
 /* profile Modal */
 .user-list {
-  @apply grid grid-cols-2 gap-3
+  @apply grid grid-cols-2 gap-3;
 }
 
 .user-list > dt {
-  @apply text-neutral-700 dark:text-neutral-300 font-semibold
+  @apply text-neutral-700 dark:text-neutral-300 font-semibold;
 }
 
 /* react-select dark mode */
@@ -424,7 +442,7 @@ div[data-slot="content"] {
   /* .my-react-select-container {
   } */
   .my-react-select-container .my-react-select__control {
-    @apply bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-200 rounded-lg; 
+    @apply bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-200 rounded-lg;
   }
 
   .my-react-select-container .my-react-select__control--is-focused {
@@ -444,7 +462,7 @@ div[data-slot="content"] {
 
   .my-react-select-container .my-react-select__clear-indicator,
   .my-react-select-container .my-react-select__dropdown-indicator {
-    @apply cursor-pointer
+    @apply cursor-pointer;
   }
 
   .my-react-select-container .my-react-select__indicator-separator {
@@ -457,13 +475,13 @@ div[data-slot="content"] {
     @apply text-neutral-600 dark:text-neutral-200;
   }
 
-    /* Multi-value container and labels */
+  /* Multi-value container and labels */
   .my-react-select-container .my-react-select__multi-value {
     @apply bg-neutral-200 rounded-md;
   }
 
   .my-react-select-container .my-react-select__multi-value__label {
-    @apply text-neutral-800
+    @apply text-neutral-800;
   }
 
   /* Multi-value remove button and SVG */
@@ -471,7 +489,9 @@ div[data-slot="content"] {
     @apply bg-neutral-600 hover:bg-neutral-700 rounded-sm;
   }
 
-  .my-react-select-container .my-react-select__multi-value__remove .css-tj5bde-Svg {
+  .my-react-select-container
+  .my-react-select__multi-value__remove
+  .css-tj5bde-Svg {
     @apply text-neutral-200 dark:text-neutral-400;
   }
 
@@ -487,7 +507,9 @@ div[data-slot="content"] {
   }
 
   .my-react-select-container .my-react-select__clear-indicator .css-tj5bde-Svg,
-  .my-react-select-container .my-react-select__dropdown-indicator .css-tj5bde-Svg {
+  .my-react-select-container
+  .my-react-select__dropdown-indicator
+  .css-tj5bde-Svg {
     @apply fill-current;
   }
 }
@@ -515,12 +537,18 @@ div[data-slot="content"] {
 
 /* Indeterminate */
 .pure-material-progress-circular:indeterminate {
-  -webkit-mask-image: linear-gradient(transparent 50%, black 50%), linear-gradient(to right, transparent 50%, black 50%);
-  mask-image: linear-gradient(transparent 50%, black 50%), linear-gradient(to right, transparent 50%, black 50%);
-  animation: pure-material-progress-circular 6s infinite cubic-bezier(0.3, 0.6, 1, 1);
+  -webkit-mask-image:
+    linear-gradient(transparent 50%, black 50%),
+    linear-gradient(to right, transparent 50%, black 50%);
+  mask-image:
+    linear-gradient(transparent 50%, black 50%),
+    linear-gradient(to right, transparent 50%, black 50%);
+  animation: pure-material-progress-circular 6s infinite
+    cubic-bezier(0.3, 0.6, 1, 1);
 }
 
-:-ms-lang(x), .pure-material-progress-circular:indeterminate {
+:-ms-lang(x),
+.pure-material-progress-circular:indeterminate {
   animation: none;
 }
 
@@ -556,58 +584,58 @@ div[data-slot="content"] {
 
 @keyframes pure-material-progress-circular {
   0% {
-      transform: rotate(0deg);
+    transform: rotate(0deg);
   }
   12.5% {
-      transform: rotate(180deg);
-      animation-timing-function: linear;
+    transform: rotate(180deg);
+    animation-timing-function: linear;
   }
   25% {
-      transform: rotate(630deg);
+    transform: rotate(630deg);
   }
   37.5% {
-      transform: rotate(810deg);
-      animation-timing-function: linear;
+    transform: rotate(810deg);
+    animation-timing-function: linear;
   }
   50% {
-      transform: rotate(1260deg);
+    transform: rotate(1260deg);
   }
   62.5% {
-      transform: rotate(1440deg);
-      animation-timing-function: linear;
+    transform: rotate(1440deg);
+    animation-timing-function: linear;
   }
   75% {
-      transform: rotate(1890deg);
+    transform: rotate(1890deg);
   }
   87.5% {
-      transform: rotate(2070deg);
-      animation-timing-function: linear;
+    transform: rotate(2070deg);
+    animation-timing-function: linear;
   }
   100% {
-      transform: rotate(2520deg);
+    transform: rotate(2520deg);
   }
 }
 
 @keyframes pure-material-progress-circular-pseudo {
   0% {
-      transform: rotate(-30deg);
+    transform: rotate(-30deg);
   }
   29.4% {
-      border-left-color: transparent;
+    border-left-color: transparent;
   }
   29.41% {
-      border-left-color: currentColor;
+    border-left-color: currentColor;
   }
   64.7% {
-      border-bottom-color: transparent;
+    border-bottom-color: transparent;
   }
   64.71% {
-      border-bottom-color: currentColor;
+    border-bottom-color: currentColor;
   }
   100% {
-      border-left-color: currentColor;
-      border-bottom-color: currentColor;
-      transform: rotate(225deg);
+    border-left-color: currentColor;
+    border-bottom-color: currentColor;
+    transform: rotate(225deg);
   }
 }
 
@@ -645,5 +673,7 @@ div[data-slot="content"] {
   background: transparent;
   padding: 0 10px;
   margin: 0;
-  font-family: 'Fira Mono', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  font-family:
+    "Fira Mono", "Menlo", "Monaco", "Consolas", "Liberation Mono",
+    "Courier New", monospace;
 }

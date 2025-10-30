@@ -40,8 +40,8 @@ export const authOptions: AuthOptions = {
                     email: profile.email,
                     name: profile.name,
                     image: profile.picture,
-                    role: profile.role ?? "user", 
-                    provider: 'google',
+                    role: "user", 
+                    provider: "google",
                 }
             },
         }),
@@ -59,8 +59,8 @@ export const authOptions: AuthOptions = {
                     email: profile.kakao_account.email,
                     name: profile.kakao_account.profile.nickname,
                     image: profile.kakao_account.profile.profile_image_url,
-                    role: profile.kakao_account.role ?? "user", 
-                    provider: 'kakao',
+                    role: "user",
+                    provider: "kakao",
                 }
             },
         }),      
@@ -133,11 +133,11 @@ export const authOptions: AuthOptions = {
             if (account) {
               return {
                 // provider: account.provider,
-                role: user?.role ?? token.role,
-                email: user?.email ?? token.email,
-                id: user?.id ?? token.id,
-                image: user?.image ?? token.image,
-                name: user?.name ?? token.name,
+                role: user?.role ?? token.role ?? "user",
+                email: user?.email ?? token.email ?? "",
+                id: user?.id ?? token.id ?? "",
+                image: user?.image ?? token.image ?? null,
+                name: user?.name ?? token.name ?? null,
               }
             }
             
@@ -150,17 +150,16 @@ export const authOptions: AuthOptions = {
             return token;
 
         },
-        session: async ({ session, user, token }) => {
+        session: async ({ session, token }) => {
             return {
                 ...session,
                 user: {
-                        ...session.user,
-                        // provider: token.provider as string,
-                        id: token.id as string,
-                        email: token.email as string,
-                        name: token.name as string,
-                        image: token.image as string,
-                        role: token.role as string,
+                    ...session.user,
+                    id: token.id ? String(token.id) : "",
+                    email: token.email ? String(token.email) : "",
+                    name: token.name ? String(token.name) : null,
+                    image: token.image ? String(token.image) : null,
+                    role: token.role ? String(token.role) : "user",
                 },
             };
         },

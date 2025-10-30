@@ -13,9 +13,9 @@ const getMessages = async ({conversationId, pageParam} :getMessagesProps) => {
         },
     }); 
     
-    const { messages, nextCursor, message } = await res.json();
+    const { messages, nextCursor, message, seenUsersForLastMessage } = await res.json();
 
-    return { messages, nextCursor, message };
+    return { messages, nextCursor, message, seenUsersForLastMessage };
 };
 
 export default getMessages;

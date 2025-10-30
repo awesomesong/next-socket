@@ -25,7 +25,6 @@ const getBlogData = cache(async (id: string) => {
     const { blog } = await res.json();
     return blog;
   } catch (error) {
-    console.error('블로그 데이터 가져오기 오류:', error);
     return null;
   }
 });
@@ -64,9 +63,7 @@ const createMetadata = async (id: string) => {
         imageUrl = imageData[0].url;
       }
     }
-  } catch (error) {
-    console.error('이미지 파싱 오류:', error);
-  }
+  } catch (error) {}
   
   const metadata = {
     metadataBase: new URL(base),
@@ -107,8 +104,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return await createMetadata(id);
 }
 
-export default async function BlogLayout({ children, params }: Props) {
-  const { id } = await getParams(params);
+export default async function BlogLayout({ children }: Props) {
   
   return <>{children}</>;
 }

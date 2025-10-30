@@ -1,20 +1,21 @@
 import toast from "react-hot-toast";
 
 const getConversations = async () => {
-    const res = await fetch(`/api/conversations`,{
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    }); 
 
-    const { conversations, message } = await res.json();
+  const res = await fetch(`/api/conversations`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 
-    if (!res.ok) {
-        toast.error(message);
-    }
+  const { conversations, message } = await res.json();
 
-    return { conversations, message };
-}
+  if (!res.ok) {
+    toast.error(message);
+  }
+
+  return { conversations, message };
+};
 
 export default getConversations;

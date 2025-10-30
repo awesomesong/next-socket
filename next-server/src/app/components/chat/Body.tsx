@@ -1,442 +1,544 @@
-'use client';
-import useConversation from '@/src/app/hooks/useConversation';
-import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import MessageView from './MessageView';
-import { FullMessageType } from '@/src/app/types/conversation';
-import { InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
-import getMessages from '@/src/app/lib/getMessages';
-import { readMessages } from '@/src/app/lib/readMessages';
-import ChatSkeleton from '@/src/app/components/skeleton/ChatSkeleton';
+"use client";
+import useConversation from "@/src/app/hooks/useConversation";
+import {
+  RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  memo,
+} from "react";
+import MessageView from "./MessageView";
+import { FullMessageType } from "@/src/app/types/conversation";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import getMessages from "@/src/app/lib/getMessages";
+import { readState } from "@/src/app/lib/readState";
+import ChatSkeleton from "@/src/app/components/skeleton/ChatSkeleton";
 import { PiArrowFatDownFill } from "react-icons/pi";
-import CircularProgress from '@/src/app/components/CircularProgress';
-import { useSocket } from '../../context/socketContext';
-import { isAtBottom } from '../../utils/isAtBottom';
-import useUnreadStore from '@/src/app/hooks/useUnReadStore';
+import CircularProgress from "@/src/app/components/CircularProgress";
+import { useSocket } from "../../context/socketContext";
+import { useChatScroller } from "@/src/app/hooks/useChatScroller";
+import { useInitialScroll } from "@/src/app/hooks/useInitialScroll";
+import useUnreadStore from "@/src/app/hooks/useUnReadStore";
+import {
+  conversationListKey,
+  messagesKey,
+  markConversationRead,
+  setTotalUnreadFromList,
+} from "@/src/app/lib/react-query/chatCache";
+import { resetSeenUsersForLastMessage, setSeenUsersForLastMessage } from "@/src/app/lib/react-query/chatCache";
 
-interface PageData {
-    messages: FullMessageType[];  // 각 페이지에서 메시지 배열
-    nextCursor: string | null;    // 다음 페이지의 커서 (있다면)
+interface Props {
+  scrollRef: RefObject<HTMLDivElement | null>;
+  bottomRef: RefObject<HTMLDivElement | null>;
+  isAIChat?: boolean;
 }
 
-interface Props  {
-    scrollRef: RefObject<HTMLDivElement | null>;
-    bottomRef: RefObject<HTMLDivElement | null>;
-    isAIChat?: boolean;
+interface seenUser { 
+  id: string; 
+  name: string | null; 
+  email: string | null; 
+  image: string | null 
 }
+
+// ✅ 빈 배열 상수 - 참조 안정화를 위해
+const EMPTY_SEEN_USERS: Array<seenUser> = [];
 
 const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
-    const socket = useSocket();
-    const queryClient = useQueryClient();
-    const { data: session } = useSession();
-    const { conversationId } = useConversation();
-    const { setUnreadCount } = useUnreadStore();
-    const [isFirstLoad, setIsFirstLoad] = useState(true); // 처음 로딩 여부
-    const [isScrolledUp, setIsScrolledUp] = useState(false); // 스크롤이 위에 있을 때 true
-    const wasAtBottomRef = useRef(false);
-    const lastScrollHeightRef = useRef(0);
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    const hasLeftRef = useRef(false);
+  const socket = useSocket();
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const { conversationId } = useConversation();
+  const { setUnreadCount } = useUnreadStore();
+  const getEl = useCallback(() => scrollRef.current, [scrollRef]);
+  const isScrollingInitialRef = useRef(true); // 초기값 true
+  const pendingJoinReadRef = useRef(false);
 
-    const scrollToBottom = useCallback(() => {
-        const el = scrollRef.current;
-        const isFirefox = /Firefox/i.test(navigator.userAgent);
-        const isWindows = /Windows/i.test(navigator.userAgent);
-        const reduceMotion = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false;
+  // ✅ 스크롤 관리 훅 (여기서 모든 판정/버튼 노출/자동 스크롤 처리)
+  const {
+    showArrow,
+    wasAtBottomRef,
+    onUserScroll,
+    onNewContent,
+    scrollToBottom,
+    refreshFlags,
+  } = useChatScroller(getEl);
 
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                if (el && typeof el.scrollTo === 'function') {
-                    const useInstant = (isFirefox && isWindows) || reduceMotion;
-                    el.scrollTo({ top: el.scrollHeight, behavior: useInstant ? 'auto' : 'smooth' });
-                    return;
-                }
+  // ✅ 대화방 변경 시 초기 스크롤 플래그 리셋
+  useEffect(() => {
+    isScrollingInitialRef.current = true;
+    hasProcessedReadRef.current.clear(); // 읽음 처리 Set 초기화
+    pendingJoinReadRef.current = false;
+  }, [conversationId]);
 
-                if (el) {
-                    el.scrollTop = el.scrollHeight;
-                    return;
-                }
+  // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
+  const { data, status, fetchNextPage, hasNextPage, isFetchingNextPage, dataUpdatedAt } = useInfiniteQuery({
+    queryKey: messagesKey(conversationId),
+    queryFn: ({ pageParam = null }) =>
+      getMessages({ conversationId, pageParam }),
+    initialPageParam: null, // 최신 메시지부터 로드
+    getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
+    enabled: true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 
-                if (bottomRef.current) {
-                    bottomRef.current.scrollIntoView({ behavior: (isFirefox && isWindows) || reduceMotion ? 'auto' : 'smooth', block: 'end' });
-                }
-            });
-        });
-    }, [bottomRef, scrollRef]);
+  // ✅ seenUsersForLastMessage 데이터 추출 (항상 계산되지만, 실제 전달은 메시지별로 필터링)
+  const seenUsersForLastMessageRaw = useMemo(() => {
+    if (!data?.pages?.[0]?.seenUsersForLastMessage) return [];
+    return data.pages[0].seenUsersForLastMessage;
+  }, [data?.pages]);
 
-    // ✅ 안정적인 메시지 정렬 함수 (createdAt 1차, 동시간대는 id로 보조 정렬)
-    const compareMessages = useCallback((a: FullMessageType, b: FullMessageType) => {
-        const aTime = new Date(a.createdAt).getTime();
-        const bTime = new Date(b.createdAt).getTime();
-        if (aTime !== bTime) return aTime - bTime; // 오래된 → 최신
+  // ✅ 안정적인 메시지 정렬 함수 (createdAt 1차, 동시간대는 id로 보조 정렬)
+  const compareMessages = useCallback((a: FullMessageType, b: FullMessageType) => {
+    const aTime = new Date(a.createdAt).getTime();
+    const bTime = new Date(b.createdAt).getTime();
+    if (aTime !== bTime) return aTime - bTime; // ✅ 오래된 → 최신 (올바름)
 
-        // 동시간대에는 ObjectId(혹은 문자열 id) 사전순으로 보조 정렬
-        // Mongo ObjectId는 사전순이 생성 시간 순과 일치
-        const aId = (a.id ?? '').toString();
-        const bId = (b.id ?? '').toString();
-        if (aId && bId) return aId.localeCompare(bId);
-        return 0;
-    }, []);
+    // 동시간대에는 ObjectId(혹은 문자열 id) 순으로 보조 정렬
+    const aId = (a.id ?? "").toString();
+    const bId = (b.id ?? "").toString();
+    if (aId && bId) return aId.localeCompare(bId); // ✅ 순서대로
+    return 0;
+  },[]);
 
-    // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
-    const {
-        data,
-        status,
-        fetchNextPage,
-        hasNextPage,
-        isFetchingNextPage,
-    } = useInfiniteQuery({
-        queryKey: ['messages', conversationId],
-        queryFn: ({ pageParam = null }) => getMessages({ conversationId, pageParam }),
-        initialPageParam: null, // 최신 메시지부터 로드 
-        getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
-        enabled: true,
-    });
+  // === 1) readStateMutation: onMutate에서 낙관적 워터마크 반영 유지 ===
+  const { mutate: readStateMutation } = useMutation({
+    mutationFn: readState,
+    onMutate: async (vars: { conversationId: string; seenUntilMs: number; lastMessageId?: string; includeSeenUsers?: boolean }) => {
+      const { conversationId: targetConversationId, seenUntilMs } = vars;
 
-    const { mutate: readMessageMutaion } = useMutation({
-        mutationFn: readMessages,
-        onMutate: async (targetConversationId: string) => {
-            await queryClient.cancelQueries({ queryKey: ['conversationList'] });
+      const prevList = queryClient.getQueryData(conversationListKey);
+      const prevTotal = (useUnreadStore as any).getState().unReadCount as number;
+      const prevUnRead = (prevList as any)?.conversations?.find((c: any) => c.id === targetConversationId)?.unReadCount || 0;
+      markConversationRead(queryClient, targetConversationId);
+      setUnreadCount(Math.max(0, prevTotal - prevUnRead));
 
-            const prevList = queryClient.getQueryData(['conversationList']) as any;
-            const prevTotal = (useUnreadStore as any).getState().unReadCount as number;
+      return { prevList, prevTotal };
+    },
+    onSuccess: (data, vars) => {
+      const { conversationId: targetConversationId, includeSeenUsers, lastMessageId } = vars;
 
-            const prevUnRead = prevList?.conversations?.find((c: any) => c.id === targetConversationId)?.unReadCount || 0;
-
-            // 낙관적: 해당 대화방 미읽음 0, 전역 뱃지 감소
-            queryClient.setQueryData(['conversationList'], (old: any) => {
-                if (!old?.conversations) return old;
-                return {
-                    conversations: old.conversations.map((c: any) =>
-                        c.id === targetConversationId ? { ...c, unReadCount: 0 } : c
-                    ),
-                };
-            });
-            setUnreadCount(Math.max(0, prevTotal - prevUnRead));
-
-            return { prevList, prevTotal };
-        },
-        onSuccess: () => {
-            if (socket) socket.emit('read:messages', { conversationId });
-        },
-        onError: (_err, _vars, context) => {
-            if (!context) return;
-            queryClient.setQueryData(['conversationList'], context.prevList);
-            setUnreadCount(context.prevTotal);
-        },
-    });
-
-    // 컴포넌트 마운트 시 및 conversationId 변경 시, 첫 로드 처리 및 메시지 읽음 처리
-    useEffect(() => {
-        if (status === 'success' && data?.pages?.length && isFirstLoad) {
-            // 처음 로드될 때만 스크롤 맨 아래로
-            requestAnimationFrame(() => {
-                setTimeout(() => {
-                    scrollToBottom();
-                    wasAtBottomRef.current = true;
-                }, 50); // 약간의 지연으로 렌더링 완료 후 스크롤
-            });
-            setIsFirstLoad(false);
-
-            // 메시지가 없으면 호출하지 않음. 최신 메시지가 상대방 메시지일 때만 읽음 처리 (AI 채팅방 제외)
-            if (!isAIChat) {
-                const latest = (data?.pages?.[0]?.messages ?? []).slice(-1)[0] as FullMessageType | undefined;
-                if (latest && latest.senderId && latest.senderId !== session?.user?.id) {
-                    readMessageMutaion(conversationId);
-                }
-            }
-        }
-    }, [status, data?.pages, isAIChat, session?.user?.id]);
-
-    // ✅ 소켓 메시지 수신 시 최신 메시지를 리스트에 추가 또는 업데이트
-    useEffect(() => {
-        if (!socket) return;
-
-        const handleReconnect = () => {
-            socket.emit('join:room', conversationId);
-        };
-
-        const handleReceiveMessage = (message: FullMessageType) => {
-            // 추가 전, 사용자가 이미 맨 아래에 있었는지 기록 (스크롤 이벤트로 추적된 값이 더 안정적)
-            const wasAtBottom = wasAtBottomRef.current || isAtBottom(scrollRef.current);
-            // **핵심 로직 변경:** 옵티미스틱 메시지를 서버 메시지로 "교체"하거나 새 메시지를 "추가"
-            queryClient.setQueriesData(
-                { queryKey: ['messages', conversationId] },
-                (oldData: InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }> | undefined) => {
-                    if (!oldData || !oldData.pages.length) {
-                        // 데이터가 없거나 페이지가 없으면 새 메시지로 새 페이지를 만듭니다.
-                        return {
-                            pageParams: [null], // 초기 페이지 파라미터는 null로 유지
-                            pages: [{ messages: [message], nextCursor: null }],
-                        };
-                    }
-
-                    const updatedPages = [...oldData.pages];
-                    const firstPage = { ...updatedPages[0] };
-                    let messagesInFirstPage = [...firstPage.messages];
-
-                    // 서버 ID (message.id)로 기존 메시지를 찾습니다.
-                    const existingMessageIndex = messagesInFirstPage.findIndex(
-                        (msg) => msg.id === message.id
-                    );
-
-                    if (existingMessageIndex !== -1) {
-                        // ✅ 이미 해당 ID를 가진 메시지가 있다면 부드럽게 업데이트 (낙관적 → 서버 데이터)
-                        messagesInFirstPage[existingMessageIndex] = {
-                            ...messagesInFirstPage[existingMessageIndex],
-                            ...message,
-                            // 낙관적 업데이트의 일부 속성은 유지 (UX 흔들림 방지)
-                            createdAt: messagesInFirstPage[existingMessageIndex].createdAt,
-                        };
-                    } else {
-                        // 첫 페이지에 없는 새로운 메시지라면 추가합니다.
-                        // 이 메시지는 소켓으로 수신된 메시지이므로, 가장 최신 메시지일 가능성이 높습니다.
-                        // createdAt 기준으로 정렬될 것이므로 일단 추가합니다.
-                        messagesInFirstPage.push(message); 
-                    }
-
-                    // 첫 페이지 내에서 메시지를 안정적으로 정렬
-                    messagesInFirstPage.sort(compareMessages);
-
-                    // 업데이트된 첫 페이지를 기존 페이지 배열에 다시 할당합니다.
-                    updatedPages[0] = {
-                        ...firstPage,
-                        messages: messagesInFirstPage,
-                    };
-
-                    return {
-                        ...oldData,
-                        pages: updatedPages, // 이전 페이지들은 그대로 유지
-                    };
-                }
-            );
-
-            queryClient.setQueryData(['conversationList'], (old: any) => {
-                if (!old?.conversations) return old;
-                const updated = old.conversations.map((c: any) =>
-                  c.id === conversationId
-                    ? {
-                        ...c,
-                        lastMessageAt: new Date(message.createdAt), // 정렬 갱신
-                        unReadCount: 0, // 현재 방이므로 즉시 읽음 처리
-                        messages: c.messages ? [message, ...c.messages] : [message],
-                      }
-                    : c
-                );
-                // 최신 순 정렬 유지
-                updated.sort((a: any, b: any) =>
-                  new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime()
-                );
-                return { conversations: updated };
-            });
-
-            // 이전에 맨 아래였으면, 새 메시지 반영 후 자동 스크롤
-            if (wasAtBottom) {
-                requestAnimationFrame(() => {
-                    // 두 번의 rAF로 Firefox/Windows에서도 안정적으로 동작
-                    requestAnimationFrame(() => scrollToBottom());
-                    setIsScrolledUp(false);
-                    wasAtBottomRef.current = true;
-                });
-                // 레이아웃 지연에 대비한 보강 스크롤
-                setTimeout(() => {
-                    scrollToBottom();
-                    wasAtBottomRef.current = true;
-                }, 50);
-            } else {
-                setIsScrolledUp(true);
-                wasAtBottomRef.current = false;
-            }
-
-            // 내가 보낸 메시지가 아닐 경우에만 읽음 처리 (AI 채팅방 제외)
-            if (!isAIChat && message.sender.id !== session?.user?.id) {
-                readMessageMutaion(conversationId);
-            }
-        };
-
-
-        const handleReadMessages = (payload: { conversationId: string; seenUser: FullMessageType['seen'] }) => {
-            if (payload?.conversationId === conversationId) {
-                queryClient.setQueryData(['conversationList'], (old: any) =>
-                    !old?.conversations ? old : {
-                        conversations: old.conversations.map((c: any) =>
-                            c.id === conversationId ? { ...c, unReadCount: 0 } : c
-                        ),
-                    }
-                );
-            }
-        };
-
-        socket.emit('join:room', conversationId);
-        socket.on('connect', handleReconnect);
-        socket.on("receive:message", handleReceiveMessage);
-        socket.on("read:message", handleReadMessages);
-
-        return () => {
-            socket.off('connect', handleReconnect);
-            socket.off("receive:message", handleReceiveMessage);
-            socket.off("read:message", handleReadMessages);
-        };
-    }, [socket, conversationId, queryClient, session?.user?.id, readMessageMutaion, scrollToBottom, scrollRef, isAIChat]); 
-
-    // 채팅방 참여 & 미참여 (beforeunload 이벤트)
-    // 이 useEffect는 window 레벨 이벤트를 다루므로, conversationId의 변화보다는 컴포넌트 마운트/언마운트에 집중합니다.
-    useEffect(() => {
-        const leaveOnce = () => {
-          if (!socket) return;
-          if (hasLeftRef.current) return;
-          hasLeftRef.current = true;
-          socket.emit("leave:room", conversationId);
-        };
-
-        const handleBeforeUnload = () => leaveOnce();
-        const handlePageHide = () => leaveOnce();
-
-        window.addEventListener("beforeunload", handleBeforeUnload);
-        window.addEventListener("pagehide", handlePageHide);
-
-        return () => {
-          window.removeEventListener("beforeunload", handleBeforeUnload);
-          window.removeEventListener("pagehide", handlePageHide);
-          // 컴포넌트 언마운트 시 명시적으로 leave:room 전송
-          leaveOnce();
-        };
-    }, [socket, conversationId]);
-
-
-    // ✅ 스크롤 이벤트 리스너 (이전 메시지 로드)
-    useEffect(() => {
-        const handleScroll = async () => {
-            if (!scrollRef.current) return;
-            const el = scrollRef.current;
-            const atTop = el.scrollTop === 0;
-            const isBottom = isAtBottom(scrollRef.current, isAndroid);
-            setIsScrolledUp(!isBottom);
-            wasAtBottomRef.current = isBottom;
-
-            if (atTop && hasNextPage && !isFetchingNextPage) {
-                const previousScrollHeight = el.scrollHeight;
-                await fetchNextPage(); // 다음 페이지 로드
-                requestAnimationFrame(() => { // 로드 후 스크롤 위치 유지
-                    if (scrollRef.current) {
-                        const newScrollHeight = scrollRef.current.scrollHeight;
-                        scrollRef.current.scrollTop = newScrollHeight - previousScrollHeight;
-                    }
-                });
-            }
-        };
-
-        const container = scrollRef.current;
-        container?.addEventListener('scroll', handleScroll);
-        return () => container?.removeEventListener('scroll', handleScroll);
-    }, [fetchNextPage, hasNextPage, isFetchingNextPage, isAndroid, scrollRef]);
-
-    // ✅ 콘텐츠 높이 변화 감지(이미지 로딩/렌더 지연 포함): 하단에 있을 때만 자동 스크롤
-    useEffect(() => {
-        const el = scrollRef.current;
-        if (!el || typeof ResizeObserver === 'undefined') return;
-        lastScrollHeightRef.current = el.scrollHeight;
-
-        const observer = new ResizeObserver(() => {
-            const target = scrollRef.current;
-            if (!target) return;
-            const newHeight = target.scrollHeight;
-            if (newHeight > lastScrollHeightRef.current && wasAtBottomRef.current) {
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        scrollToBottom();
-                        setIsScrolledUp(false);
-                    });
-                });
-            }
-            lastScrollHeightRef.current = newHeight;
-        });
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, [scrollRef, scrollToBottom]);
-
-    // ✅ 클릭 맨 아래로 스크롤하는 함수
-    const clickToBottom = useCallback(() => {
-        setIsScrolledUp(false);
-        scrollToBottom();
-    }, [scrollToBottom]);
-
-
-    // 모든 페이지의 메시지를 FlatMap으로 합친 후 정렬하여 반환 (UI 렌더링용)
-    const allMessages = useMemo(() => {
-        return (
-            data?.pages
-              .flatMap(page => page.messages)
-              .sort(compareMessages) // 오래된 → 최신, 동시간대는 id로 안정 정렬
-            || []
-        );
-    }, [data?.pages, compareMessages]);
+      // 총합 갱신 / 소켓 통지 등 기존 코드 유지
+      const totalUnread = setTotalUnreadFromList(queryClient);
+      if (totalUnread !== undefined) setUnreadCount(totalUnread);
       
-    // ✅ 메시지 목록 길이가 변할 때, 이전에 맨 아래였다면 확실하게 자동 스크롤
-    useEffect(() => {
-        if (!scrollRef.current) return;
-        if (!allMessages.length) return;
-        if (!wasAtBottomRef.current) return;
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                scrollToBottom();
-                setIsScrolledUp(false);
-            });
+      // ✅ 서버가 includeSeenUsers로 계산해준 최신 읽은 사용자 목록 반영
+      if (includeSeenUsers && lastMessageId && Array.isArray(data.seenUsers)) {
+        setSeenUsersForLastMessage(
+          queryClient,
+          targetConversationId,
+          lastMessageId,
+          data.seenUsers
+        );
+      }
+      
+      if (socket) {
+        // ✅ API에서 전달받은 메시지 발신자 ID 사용 (효율적)
+        const messageSenderId = data.messageSenderId;
+        
+        socket?.emit("read:state", {
+          conversationId: targetConversationId,
+          lastMessageId: vars.lastMessageId, // ✅ lastMessageId 포함
+          readerId: session?.user?.id, // ✅ readerId 추가
+          seenUsers: includeSeenUsers ? data.seenUsers : undefined, // ✅ 읽은 사용자 정보 포함
+          messageSenderId, // ✅ API에서 전달받은 메시지 발신자 ID
         });
-        // 지연된 보강 스크롤 (레이아웃/이미지 로딩 등 변동 대비)
-        setTimeout(() => {
-            scrollToBottom();
-            setIsScrolledUp(false);
-        }, 80);
-    }, [allMessages.length, scrollToBottom]);
+      }
+    },
+    onError: (_err, _vars, context) => {
+      if (!context) return;
+      queryClient.setQueryData(conversationListKey, context.prevList);
+      setUnreadCount(context.prevTotal);
+    },
+  });
 
-    const lastMessageId = allMessages.at(-1)?.id;
+  // ✅ 방 입장/퇴장: 대화방 들어올 때 1회 join, 나갈 때 leave
+  useEffect(() => {
+    if (!socket || !conversationId) return;
+    
+    const join = () => {
+      socket.emit("join:room", conversationId);
+    };
 
-    return (
-        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
-            {isFetchingNextPage && <CircularProgress aria-label="메시지 로딩중" />}
-            {status === 'success'
-                ? allMessages.map((message: FullMessageType, idx: number) => {
-                      const prevMessage = idx > 0 ? allMessages[idx - 1] : null;
-                      const currentDate = new Date(message.createdAt).toDateString();
-                      const prevDate = prevMessage ? new Date(prevMessage.createdAt).toDateString() : null;
-                      const showDateDivider = currentDate !== prevDate;
-                      return (
-                          <MessageView
-                              key={message.id}
-                              data={message}
-                              isLast={message.id === lastMessageId}
-                              currentUser={session?.user}
-                              conversationId={conversationId}
-                              showDateDivider={showDateDivider}
-                          />
-                      );
-                  })
-                : <ChatSkeleton />}
-            {isScrolledUp && (
-                <button
-                    type='button'
-                    className="
-                        absolute
-                        md:bottom-24
-                        bottom-28
-                        right-1/2
-                        p-2
-                        bg-default-reverse
-                        text-default-reverse
-                        rounded-full
-                        shadow-lg
-                        opacity-70
-                        translate-x-[50%]
-                    "
-                    onClick={clickToBottom}
-                >
-                    <PiArrowFatDownFill size="20" />
-                </button>
-            )}
-            <div ref={bottomRef} />
-        </div>
-    );
+    socket.off("connect", join);
+    socket.on("connect", join);
+    if (socket.connected) join();
+    
+    return () => {
+      socket.emit("leave:room", conversationId);
+      socket.off("connect", join);
+    };
+  }, [socket, conversationId]);
+
+  // 모든 페이지의 메시지를 FlatMap으로 합친 후 정렬하여 반환 (UI 렌더링용)
+  const allMessages = useMemo(() => {
+    const serverMessages = data?.pages.flatMap((page) => page.messages) || [];
+    
+    // ✅ undefined 메시지 필터링
+    const validServerMessages = serverMessages.filter((m) => m && m.id);
+    
+    // 서버 메시지만 정렬
+    return validServerMessages.sort(compareMessages);
+  }, [data?.pages, compareMessages]);
+
+  // ✅ 전체 마지막 메시지 ID - 읽음 UI 표시 여부 결정에 사용
+  const lastMessageId = useMemo(() => {
+    return allMessages[allMessages.length - 1]?.id;
+  }, [allMessages]);
+  
+  const myId = String(session?.user?.id ?? "");
+
+  // 2) liveUsersKey 계산 (참여자 키) - 실제 대화방 참여자 목록 사용
+  const liveUsersKey = useMemo(() => {
+    // ✅ 최신 메시지의 conversation.userIds 사용 (소켓 이벤트로 항상 최신 상태 유지됨)
+    // SocketState.tsx에서 member.left 이벤트 시 messagesKey가 업데이트되면
+    // allMessages가 자동으로 재계산되어 liveUsersKey도 재계산됨
+    const latestMessage = allMessages[allMessages.length - 1];
+    if (latestMessage?.conversation?.userIds?.length) {
+      return latestMessage.conversation.userIds
+        .map((id: string) => String(id))
+        .sort()
+        .join(",");
+    }
+    
+    // 메시지가 없는 경우 (빈 대화방) - 현재 사용자만 포함
+    // 메시지가 생기면 자동으로 동기화됨
+    return myId ? myId : "";
+  }, [allMessages, myId]);
+
+  const lastOwnMessageId = useMemo(() => {
+    const me = String(session?.user?.id ?? "");
+    for (let i = allMessages.length - 1; i >= 0; i--) {
+      const m = allMessages[i];
+      const senderId = String(m?.sender?.id ?? "");
+      if (!m.isAIResponse && senderId && me && senderId === me) {
+        const result = String(m.id);
+        return result;
+      }
+    }
+    return undefined;
+  }, [allMessages, session?.user?.id]);
+
+
+  // === 2) allMessagesRef 최신화 (초기/수신 공용) ===
+  const allMessagesRef = useRef<FullMessageType[]>([]);
+  const lastMessageCountRef = useRef(0);
+  
+  useEffect(() => {
+    allMessagesRef.current = allMessages;
+    const currentCount = allMessages.length;
+    
+    // ✅ 메시지 추가됐을 때만 스크롤 (업데이트는 스크롤 안 함)
+    if (currentCount > 0 && currentCount > lastMessageCountRef.current) {
+      lastMessageCountRef.current = currentCount;
+      
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // ✅ 초기 로딩: 무조건 하단으로 (낙관적 메시지 포함)
+          if (isScrollingInitialRef.current) {
+            scrollToBottom({ force: true });
+          } else {
+            // ✅ 실시간: 하단이면 자동 스크롤, 위에 있으면 화살표만
+            onNewContent({ isScrollingInitial: false });
+          }
+        });
+      });
+    } else {
+      lastMessageCountRef.current = currentCount;
+    }
+  }, [allMessages, scrollToBottom, onNewContent]);
+  
+  // === 3) 통합된 읽음 처리 로직 ===
+  const hasProcessedReadRef = useRef<Set<string>>(new Set()); // read-state api 중복 처리 방지
+  const readThrottleRef = useRef<number | null>(null); // 재호출 방지
+
+  const processReadState = useCallback((messageId: string, reason: string, messageData?: FullMessageType) => {
+    // ✅ conversationId가 없으면 읽음 처리 스킵
+    if (!conversationId) return;
+
+    // ✅ 경량 스로틀로 과호출 방지 (120ms)
+    if (readThrottleRef.current && Date.now() - readThrottleRef.current < 120) return;
+    readThrottleRef.current = Date.now();
+
+    const key = `${conversationId}-${messageId}`;
+    // 중복 처리 방지
+    if (hasProcessedReadRef.current.has(key)) return;
+    
+    // ✅ 실시간 메시지인 경우 받은 데이터 직접 사용, 아니면 allMessagesRef에서 찾기
+    const message = messageData || allMessagesRef.current.find(m => m.id === messageId);
+    if (!message) return;
+
+    const lastSenderId = message.sender?.id ?? (message as any).senderId;
+    const myId = session?.user?.id;
+    const isFromMe = lastSenderId && myId && String(lastSenderId) === String(myId);
+    const isGroup = message.conversation?.isGroup;
+    
+    if (isFromMe || isAIChat) {
+      hasProcessedReadRef.current.add(key);
+      return;
+    }
+
+    hasProcessedReadRef.current.add(key); 
+    readStateMutation({
+      conversationId,
+      seenUntilMs: Date.now(),
+      lastMessageId: messageId,
+      includeSeenUsers: !!isGroup,
+    });
+  }, [conversationId, isAIChat, session?.user?.id, readStateMutation]);
+
+  const attemptJoinSuccessRead = useCallback(() => {
+    if (!pendingJoinReadRef.current) return;
+    if (!conversationId) return;
+
+    const messages = allMessagesRef.current;
+    if (!messages?.length) return;
+
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage?.id) return;
+
+    const myId = session?.user?.id;
+    const myMail = session?.user?.email;
+    const senderId = lastMessage.sender?.id;
+    const senderMail = lastMessage.sender?.email;
+    const isFromMe =
+      (senderId && myId && String(senderId) === String(myId)) ||
+      (senderMail && myMail && String(senderMail) === String(myMail));
+    const isHuman = !lastMessage.isAIResponse && lastMessage.type !== "system";
+
+    if (!isHuman || isFromMe || isAIChat) {
+      pendingJoinReadRef.current = false;
+      return;
+    }
+
+    pendingJoinReadRef.current = false;
+    processReadState(lastMessage.id, "join:success 후 초기 진입", lastMessage);
+  }, [conversationId, isAIChat, processReadState, session?.user?.email, session?.user?.id]);
+
+  // ✅ join:room 성공 이벤트 리스너
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleJoinSuccess = (roomId: string) => {
+      if (roomId !== conversationId) return;
+      pendingJoinReadRef.current = true;
+      attemptJoinSuccessRead();
+    };
+
+    socket.on("join:success", handleJoinSuccess);
+    return () => {
+      socket.off("join:success", handleJoinSuccess);
+    };
+  }, [socket, conversationId, attemptJoinSuccessRead]);
+
+  useEffect(() => {
+    attemptJoinSuccessRead();
+  }, [attemptJoinSuccessRead, dataUpdatedAt]);
+
+  // === 4) "실시간 수신" : 새 메시지 수신 시 즉시 읽음 처리 ===
+  const handleReceiveMessage = useCallback((m: FullMessageType) => {
+    const cid = String(m.conversationId ?? "");
+    if (cid && cid !== String(conversationId)) return;
+
+    // ✅ conversationId가 없으면 읽음 처리 스킵
+    if (!conversationId) return;
+
+    const senderId   = m.sender?.id ?? (m as any).senderId;
+    const senderMail = m.sender?.email;
+    const myId       = session?.user?.id;
+    const myMail     = session?.user?.email;
+    const isFromMe = (senderId && myId && String(senderId) === String(myId))
+                  || (senderMail && myMail && String(senderMail) === String(myMail));
+    const isHuman  = !m.isAIResponse && m.type !== "system";
+
+    // ✅ 내 메시지 / AI / 시스템은 early return
+    if (!isHuman || isFromMe || isAIChat) return;
+
+    // ✅ 여기서만 reset (상대방 새 메시지에 대해서만)
+    resetSeenUsersForLastMessage(queryClient, conversationId, m.id);
+    processReadState(m.id, "실시간 수신", m);
+  }, [conversationId, queryClient, session?.user?.id, session?.user?.email, isAIChat, processReadState]);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+
+    socket.off("receive:message", handleReceiveMessage);
+    socket.on("receive:message", handleReceiveMessage);
+    return () => {
+      socket.off("receive:message", handleReceiveMessage);
+    };
+  }, [socket, handleReceiveMessage, conversationId]);
+
+
+  // 채팅방 참여 & 미참여 (beforeunload 이벤트)
+  // 이 useEffect는 window 레벨 이벤트를 다루므로, conversationId의 변화보다는 컴포넌트 마운트/언마운트에 집중합니다.
+  useEffect(() => {
+    const leaveOnce = () => {
+      if (!socket) return;
+      socket.emit("leave:room", conversationId);
+    };
+
+    const handleBeforeUnload = () => leaveOnce();
+    const handlePageHide = () => leaveOnce();
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("pagehide", handlePageHide);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, [socket, conversationId]);
+
+  // ✅ 스크롤 이벤트 리스너 (이전 메시지 로드)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const handleScroll = async () => {
+      onUserScroll(); // ← 버튼 노출/하단 상태 동기화
+
+      if (el.scrollTop === 0 && hasNextPage && !isFetchingNextPage) {
+        const prevH = el.scrollHeight;
+        await fetchNextPage();
+        requestAnimationFrame(() => {
+          if (scrollRef.current) {
+            const newH = scrollRef.current.scrollHeight;
+            scrollRef.current.scrollTop = newH - prevH;
+          }
+        });
+      }
+    };
+
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, scrollRef, onUserScroll]);
+
+  // ✅ 클릭 맨 아래로 스크롤하는 함수
+  const handleClickToBottom = useCallback(() => {
+    scrollToBottom({ force: true });
+  }, [scrollToBottom]);
+
+  useEffect(() => {
+    const handleNewContent = () => onNewContent();
+    window.addEventListener("chat:new-content", handleNewContent);
+    return () => window.removeEventListener("chat:new-content", handleNewContent);
+  }, [onNewContent]);
+
+  // ✅ 리사이즈 이벤트 처리
+  useEffect(() => {
+    const onResize = () => refreshFlags();
+
+    window.visualViewport?.addEventListener("resize", onResize);
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [refreshFlags]);
+
+  const shouldShowArrow =
+    !isScrollingInitialRef.current && 
+    status === "success" && 
+    !isFetchingNextPage && 
+    showArrow; // ✅ 자동 스크롤 중일 때 화살표 숨김  
+
+  // 안정적인 getLastMessageId 함수 (dependency 변경 없음)
+  const getLastMessageId = useCallback(() => {
+    return allMessagesRef.current[allMessagesRef.current.length - 1]?.id;
+  }, []); // 빈 배열 - 함수 재생성 안됨!
+
+  const scrollTrigger = useMemo(() => {
+    return status === "success" && !!data?.pages?.length;
+  }, [status, conversationId, data?.pages?.length]);
+  
+  // ✅ 초기 진입 시 마지막 메시지 렌더링 완료 후 스크롤
+  useInitialScroll({
+    scrollRef,
+    getLastMessageId,
+    conversationId,
+    triggerScroll: scrollTrigger,
+    wasAtBottomRef,
+    isScrollingInitialRef,
+  });
+
+  // ✅ 메시지 리스트 렌더링 - useMemo로 최적화 (의존성 변경 시에만 재계산)
+  const messageListElements = useMemo(() => {
+    return allMessages.map((message: FullMessageType, idx: number) => {
+      const prevMessage = idx > 0 ? allMessages[idx - 1] : null;
+      const currentDate = new Date(message.createdAt).toDateString();
+      const prevDate = prevMessage
+        ? new Date(prevMessage.createdAt).toDateString()
+        : null;
+      const showDateDivider = currentDate !== prevDate;
+      
+        const isLastOwnForThisMessage = String(message.id) === String(lastOwnMessageId);
+        // ✅ 핵심: 내 마지막 메시지가 전체 대화의 마지막 메시지일 때만 읽음 UI 표시
+        const isMyLastAndOverallLast = isLastOwnForThisMessage && String(lastOwnMessageId) === String(lastMessageId);
+        
+        // ✅ 핵심: 마지막 내 메시지일 때만 seenUsersForLastMessage 전달, 아니면 빈 배열 상수 사용
+        const seenUsersForThisMessage = isMyLastAndOverallLast 
+          ? seenUsersForLastMessageRaw 
+          : EMPTY_SEEN_USERS;
+      
+        return (
+          <MessageView
+            key={message.id}
+            data={message}
+            currentUser={session?.user}
+            conversationId={conversationId}
+            showDateDivider={showDateDivider}
+            isAIChat={isAIChat}
+            seenUsersForLastMessage={seenUsersForThisMessage} // 읽은 사용자 목록 전달
+            isLastOwnForThisMessage={isMyLastAndOverallLast} // 내 마지막 메시지 여부
+            liveUsersKey={liveUsersKey} // 참여자 ID 문자열
+          />
+        );
+    });
+  }, [allMessages, lastOwnMessageId, lastMessageId, seenUsersForLastMessageRaw, session?.user, conversationId, isAIChat, liveUsersKey]);
+
+  return (
+    <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
+      {isFetchingNextPage && <CircularProgress aria-label="메시지 로딩중" />}
+      {status === "success" ? messageListElements : <ChatSkeleton />}
+      {shouldShowArrow && (
+        <button
+          type="button"
+          className="
+            absolute
+            md:bottom-24
+            bottom-28
+            right-1/2
+            p-2
+            bg-default-reverse
+            text-default-reverse
+            rounded-full
+            shadow-lg
+            opacity-70
+            translate-x-[50%]
+          "
+          onClick={handleClickToBottom}
+          title="맨 아래로 스크롤"
+        >
+          <PiArrowFatDownFill size="20" />
+        </button>
+      )}
+      <div ref={bottomRef} />
+    </div>
+  );
 };
 
-export default Body;
+export default memo(Body, (prevProps, nextProps) => {
+  return (
+    prevProps.scrollRef === nextProps.scrollRef &&
+    prevProps.bottomRef === nextProps.bottomRef &&
+    prevProps.isAIChat === nextProps.isAIChat
+  );
+});
