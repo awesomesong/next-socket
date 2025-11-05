@@ -57,7 +57,7 @@ export async function GET(
             }
         });
         return NextResponse.json({comments, commentsCount}, { status: 200 });
-    } catch(error){
+    } catch {
         return NextResponse.json({message: '댓글을 불러오지 못했습니다.'}, { status: 500 });
     }
 }
@@ -84,7 +84,7 @@ export async function POST(
         });
         return NextResponse.json({newComment}, {status: 200});
 
-    } catch(error){
+    } catch {
         return NextResponse.json({message: 'Something went wrong!'}, { status: 500 });
     }
 }

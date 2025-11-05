@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 import { Urbanist } from 'next/font/google';
 import clsx from 'clsx';
 
@@ -18,7 +18,7 @@ const container = {
   },
 };
 
-const item = {
+const item: Variants = {
   hidden: { y: 12, opacity: 0 },
   visible: {
     y: 0,
@@ -87,7 +87,7 @@ const AnimatedLogo: React.FC<AnimatedLogoProps> = ({ responsive = true }) => {
           {letters.map((char, index) => (
             <motion.span
               key={index}
-              variants={item as any}
+              variants={item}
               className="inline-block"
             >
               {char}

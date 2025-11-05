@@ -1,12 +1,12 @@
 'use client';
-import { CldUploadButton } from 'next-cloudinary';
+import { CldUploadButton, CloudinaryUploadWidgetResults } from 'next-cloudinary';
 import { HiPhoto } from 'react-icons/hi2';
 import { FaFileUpload } from "react-icons/fa";
 
 type Variant = 'default' | 'compact';
 
 type ImageUploadButtonProps = {
-  onUploadSuccess: (result: any) => void;
+  onUploadSuccess: (result: CloudinaryUploadWidgetResults) => void;
   variant?: Variant;
   maxFiles?: number;
   isLoading?: boolean;
@@ -16,7 +16,6 @@ const ImageUploadButton = ({
   onUploadSuccess,
   variant = 'default',
   maxFiles = 1,
-  isLoading = false,
 }: ImageUploadButtonProps) => {
 
   const icon =

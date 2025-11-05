@@ -10,7 +10,6 @@ interface AIChatButtonProps {
 
 const AIChatButton = ({
   aiAgentType = "assistant",
-  className = "",
 }: AIChatButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { launch, isPending } = useLaunchAiConversation({

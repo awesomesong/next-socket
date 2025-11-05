@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
-import { AuthOptions, DefaultSession, DefaultUser, User } from "next-auth";
+import { AuthOptions } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import type { Adapter } from "@auth/core/adapters";
 import prisma from "@/prisma/db";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
@@ -21,7 +22,7 @@ declare module "next-auth" {
 }
 
 export const authOptions: AuthOptions = {
-    adapter: PrismaAdapter(prisma) as any,
+    adapter: PrismaAdapter(prisma) as Adapter,
     // Configure one or more authentication providers
     providers: [
         GoogleProvider({
@@ -120,10 +121,10 @@ export const authOptions: AuthOptions = {
     },
     secret: process.env.NEXTAUTH_SECRET,
     events: {
-        signIn: async (message) => { 
+        signIn: async () => { 
             /* user updated - e.g. their email was verified */ 
         },
-        signOut: async (token) => {
+        signOut: async () => {
             // add here
         },
     },

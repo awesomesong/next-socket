@@ -1,7 +1,7 @@
 'use client'; 
 import { useRef } from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, type Transition } from 'framer-motion';
 import drinksData from '@/src/app/data/drinks';
 import DrinksName from './DrinksName';
 import Link from 'next/link';
@@ -13,8 +13,8 @@ const WHISKEYS_DATA = drinksData.filter((drink) => drink.type === 'whiskey');
 // ✅ Motion transition 외부 추출
 const WHISKEY_MOTION_TRANSITION = {
   duration: 0.5,
-  ease: "easeOut" as any,
-};
+  ease: "easeOut",
+} satisfies Transition;
 
 const WHISKEY_MOTION_VIEWPORT = {
   amount: 0.6,

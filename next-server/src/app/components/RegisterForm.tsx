@@ -65,8 +65,9 @@ const RegisterForm = () => {
             
             router.replace(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
             
-        } catch (error: any) {
-            toast.error(error.message || '회원가입 중 오류가 발생했습니다.');
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : '회원가입 중 오류가 발생했습니다.';
+            toast.error(errorMessage);
         } finally {
             setIsLoading(false);
         }

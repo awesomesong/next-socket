@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, type Transition } from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
 import DrinksName from "./DrinksName";
@@ -14,8 +14,8 @@ const POSITION_GROUP = ["3vw", "6vw", "9vw"];
 // ✅ Motion transition 외부 추출
 const INTERNATIONAL_MOTION_TRANSITION = {
   duration: 0.5,
-  ease: "easeOut" as any,
-};
+  ease: "easeOut",
+} satisfies Transition;
 
 const INTERNATIONAL_MOTION_VIEWPORT = {
   once: true,

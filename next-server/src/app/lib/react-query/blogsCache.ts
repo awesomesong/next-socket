@@ -1,10 +1,16 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type {
   Blog as IBlog,
-  BlogCommentsDataProps,
-  BlogCommentPage,
-  CommentType,
+  BlogDetailQueryData,
 } from "@/src/app/types/blog";
+import type {
+  CommentType,
+  CommentPage,
+  PartialCommentType,
+} from "@/src/app/types/comments";
+
+// 타입 별칭 정의
+type BlogCommentsDataProps = { pages: CommentPage[]; pageParams?: unknown[] };
 
 export const BLOG_LIST_KEY = ["blogs", "recommends"] as const;
 export const blogDetailKey = (blogId: string) =>
@@ -153,14 +159,14 @@ export function restoreBlogCardPosition(
   });
 }
 
-export function snapshotBlogDetail(queryClient: QueryClient, blogId: string) {
-  return queryClient.getQueryData(blogDetailKey(blogId));
+export function snapshotBlogDetail(queryClient: QueryClient, blogId: string): BlogDetailQueryData {
+  return queryClient.getQueryData(blogDetailKey(blogId)) as BlogDetailQueryData;
 }
 
 export function restoreBlogDetail(
   queryClient: QueryClient,
   blogId: string,
-  prevDetail: unknown,
+  prevDetail: BlogDetailQueryData,
 ): void {
   if (!prevDetail) return;
   queryClient.setQueryData(blogDetailKey(blogId), prevDetail);
@@ -172,7 +178,7 @@ export function upsertBlogDetailPartial(
   blogId: string,
   partial: Record<string, unknown>,
 ): void {
-  queryClient.setQueryData(blogDetailKey(blogId), (old: any) => {
+  queryClient.setQueryData(blogDetailKey(blogId), (old: BlogDetailQueryData) => {
     if (!old?.blog) return old;
     return { ...old, blog: { ...old.blog, ...partial } };
   });
@@ -184,7 +190,7 @@ export function incrementBlogDetailCommentsCount(
   delta: number = 1,
 ): void {
   // 블로그 상세페이지 댓글 수 업데이트
-  queryClient.setQueryData(blogDetailKey(blogId), (old: any) => {
+  queryClient.setQueryData(blogDetailKey(blogId), (old: BlogDetailQueryData) => {
     if (!old?.blog) return old;
     const prev = old.blog?._count?.comments ?? 0;
     const newCount = Math.max(0, prev + delta);
@@ -214,13 +220,13 @@ function withBlogsCommentsFirstPage(
     (old: BlogCommentsDataProps | undefined) => {
       if (!old || !Array.isArray(old.pages) || old.pages.length === 0)
         return old;
-      const first = old.pages[0] as BlogCommentPage;
+      const first = old.pages[0] as CommentPage;
       const { commentsObj, countObj } = extractPageData(first);
       const res = transform(
         commentsObj?.comments ?? [],
         countObj?.commentsCount ?? 0,
       );
-      const nextFirst: BlogCommentPage = createUpdatedPage(
+      const nextFirst: CommentPage = createUpdatedPage(
         res.comments,
         res.count,
       );
@@ -232,7 +238,7 @@ function withBlogsCommentsFirstPage(
 export function prependBlogCommentFirstPage(
   queryClient: QueryClient,
   blogId: string,
-  comment: any,
+  comment: CommentType,
 ): void {
   if (!comment) return;
   withBlogsCommentsFirstPage(queryClient, blogId, (comments, count) => ({
@@ -256,7 +262,7 @@ function withBlogsCommentsCache(
 }
 
 // 공통 헬퍼 함수: 페이지 데이터 추출
-function extractPageData(page: BlogCommentPage) {
+function extractPageData(page: CommentPage) {
   const commentsObj = page.find((p) => "comments" in p) as
     | { comments: CommentType[] }
     | undefined;
@@ -270,20 +276,20 @@ function extractPageData(page: BlogCommentPage) {
 function createUpdatedPage(
   comments: CommentType[],
   count: number,
-): BlogCommentPage {
-  return [{ comments }, { commentsCount: count }] as BlogCommentPage;
+): CommentPage {
+  return [{ comments }, { commentsCount: count }] as CommentPage;
 }
 
 export function replaceCommentById(
   queryClient: QueryClient,
   blogId: string,
   matchId: string,
-  serverComment: CommentType,
+  serverComment: PartialCommentType,
 ): void {
   withBlogsCommentsCache(queryClient, blogId, (old) => {
     if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
 
-    const pages = old.pages.map((page: BlogCommentPage) => {
+    const pages = old.pages.map((page: CommentPage) => {
       const { commentsObj, countObj } = extractPageData(page);
       if (!commentsObj) return page;
 
@@ -308,7 +314,7 @@ export function removeCommentById(
   withBlogsCommentsCache(queryClient, blogId, (old) => {
     if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
 
-    const pages = old.pages.map((page: BlogCommentPage) => {
+    const pages = old.pages.map((page: CommentPage) => {
       const { commentsObj, countObj } = extractPageData(page);
       if (!commentsObj) return page;
 

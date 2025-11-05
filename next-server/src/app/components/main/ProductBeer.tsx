@@ -2,7 +2,7 @@
 import React, { useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, type Transition } from 'framer-motion';
 import drinksData from '@/src/app/data/drinks';
 import DrinksName from './DrinksName';
 
@@ -28,7 +28,7 @@ const OTHER_BEER_MOTION = {
   initial: { scale: 0.7, opacity: 0 },
   whileInView: { scale: [0.7, 1], opacity: 1 },
   viewport: { once: true },
-  transition: { duration: 0.5, ease: "easeOut" as any },
+  transition: { duration: 0.5, ease: "easeOut" } satisfies Transition,
 };
 
 const ProductBeer = () => {

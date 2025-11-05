@@ -1,7 +1,7 @@
 import toast from "react-hot-toast";
 
 type ParamProps = {
-    pageParam?: any;
+    pageParam: string;
 }
 
 export const getBlogs = async (

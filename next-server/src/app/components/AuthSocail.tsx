@@ -16,7 +16,7 @@ const AuthSocial:React.FC<AuthSocialProps> = ({
     const searchParams = useSearchParams();
     const callbackUrl = searchParams?.get('callbackUrl') || '/';
 
-    const handleLoginResult = async (res: any) => {
+    const handleLoginResult = async (res: Awaited<ReturnType<typeof signIn>>) => {
         if (res?.error) {
             toast.error(res.error);
             return;
@@ -38,7 +38,7 @@ const AuthSocial:React.FC<AuthSocialProps> = ({
             });
             
             await handleLoginResult(result);
-        } catch (error) {
+        } catch {
             toast.error('소셜 로그인 중 오류가 발생했습니다.');
         } finally {
             onClick(false); // 로딩 종료
@@ -58,7 +58,7 @@ const AuthSocial:React.FC<AuthSocialProps> = ({
             });
             
             await handleLoginResult(result);
-        } catch (error) {
+        } catch {
             toast.error('데모 로그인 중 오류가 발생했습니다.');
         } finally {
             onClick(false); // 로딩 종료

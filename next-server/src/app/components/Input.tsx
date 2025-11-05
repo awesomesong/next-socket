@@ -30,7 +30,6 @@ const Input: React.FC<InputProps> = ({
   label,
   id,
   type,
-  required,
   register,
   rules,
   errors,

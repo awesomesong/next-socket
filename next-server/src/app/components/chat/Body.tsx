@@ -9,7 +9,7 @@ import {
   memo,
 } from "react";
 import MessageView from "./MessageView";
-import { FullMessageType } from "@/src/app/types/conversation";
+import { FullMessageType, getUnreadCountFromList, getMessageSenderId } from "@/src/app/types/conversation";
 import {
   useInfiniteQuery,
   useMutation,
@@ -30,6 +30,7 @@ import {
   messagesKey,
   markConversationRead,
   setTotalUnreadFromList,
+  ConversationListData,
 } from "@/src/app/lib/react-query/chatCache";
 import { resetSeenUsersForLastMessage, setSeenUsersForLastMessage } from "@/src/app/lib/react-query/chatCache";
 
@@ -111,11 +112,11 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   const { mutate: readStateMutation } = useMutation({
     mutationFn: readState,
     onMutate: async (vars: { conversationId: string; seenUntilMs: number; lastMessageId?: string; includeSeenUsers?: boolean }) => {
-      const { conversationId: targetConversationId, seenUntilMs } = vars;
+      const { conversationId: targetConversationId } = vars;
 
-      const prevList = queryClient.getQueryData(conversationListKey);
-      const prevTotal = (useUnreadStore as any).getState().unReadCount as number;
-      const prevUnRead = (prevList as any)?.conversations?.find((c: any) => c.id === targetConversationId)?.unReadCount || 0;
+      const prevList = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
+      const prevTotal = useUnreadStore.getState().unReadCount;
+      const prevUnRead = getUnreadCountFromList(prevList, targetConversationId);
       markConversationRead(queryClient, targetConversationId);
       setUnreadCount(Math.max(0, prevTotal - prevUnRead));
 
@@ -216,7 +217,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const me = String(session?.user?.id ?? "");
     for (let i = allMessages.length - 1; i >= 0; i--) {
       const m = allMessages[i];
-      const senderId = String(m?.sender?.id ?? "");
+      const senderId = getMessageSenderId(m);
       if (!m.isAIResponse && senderId && me && senderId === me) {
         const result = String(m.id);
         return result;
@@ -274,7 +275,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const message = messageData || allMessagesRef.current.find(m => m.id === messageId);
     if (!message) return;
 
-    const lastSenderId = message.sender?.id ?? (message as any).senderId;
+    const lastSenderId = getMessageSenderId(message);
     const myId = session?.user?.id;
     const isFromMe = lastSenderId && myId && String(lastSenderId) === String(myId);
     const isGroup = message.conversation?.isGroup;
@@ -305,7 +306,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
 
     const myId = session?.user?.id;
     const myMail = session?.user?.email;
-    const senderId = lastMessage.sender?.id;
+    const senderId = getMessageSenderId(lastMessage);
     const senderMail = lastMessage.sender?.email;
     const isFromMe =
       (senderId && myId && String(senderId) === String(myId)) ||
@@ -349,7 +350,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     // ✅ conversationId가 없으면 읽음 처리 스킵
     if (!conversationId) return;
 
-    const senderId   = m.sender?.id ?? (m as any).senderId;
+    const senderId   = getMessageSenderId(m);
     const senderMail = m.sender?.email;
     const myId       = session?.user?.id;
     const myMail     = session?.user?.email;
@@ -457,7 +458,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
 
   const scrollTrigger = useMemo(() => {
     return status === "success" && !!data?.pages?.length;
-  }, [status, conversationId, data?.pages?.length]);
+  }, [status, data?.pages?.length]);
   
   // ✅ 초기 진입 시 마지막 메시지 렌더링 완료 후 스크롤
   useInitialScroll({

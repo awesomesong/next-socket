@@ -19,7 +19,7 @@ import { deleteBlog } from "@/src/app/lib/deleteBlog";
 import toast from "react-hot-toast";
 
 type BlogTitleProps = {
-  blogTitle: String;
+  blogTitle: string;
 };
 
 const BlogDelete = ({ blogId, blogTitle }: BlogIdProps & BlogTitleProps) => {
@@ -27,7 +27,7 @@ const BlogDelete = ({ blogId, blogTitle }: BlogIdProps & BlogTitleProps) => {
   const queryClient = useQueryClient();
   const socket = useSocket();
 
-  const handleDeleteBlog = async (blogId: String, blogTitle: String) => {
+  const handleDeleteBlog = async (blogId: string, blogTitle: string) => {
     const result = confirm(`"${blogTitle}" 글을 삭제하겠습니까?`);
     if (!result) return;
 
@@ -56,15 +56,15 @@ const BlogDelete = ({ blogId, blogTitle }: BlogIdProps & BlogTitleProps) => {
         toast.success(result.message!);
         router.push(`/blogs`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // 롤백: 목록/상세 복원
       restoreBlogCardPosition(queryClient, backup, snapshot);
       restoreBlogDetail(queryClient, blogIdStr, prevDetail);
       
-      if (error.message?.includes("권한")) {
+      if (error instanceof Error && error.message?.includes("권한")) {
         router.push("/blogs");
       }
-      toast.error(error.message || "블로그 삭제 중 오류가 발생했습니다.");
+      toast.error("블로그 삭제 중 오류가 발생했습니다.");
     }
   };
 

@@ -10,12 +10,6 @@ export const useConversationLoading = () => {
   const isChatPage = pathname?.startsWith('/conversations') ?? false;
   const queryClient = useQueryClient();
   
-  // ConversationList의 데이터를 공유 (중복 쿼리 방지)
-  const queryData = useMemo(() => {
-    if (!session?.user?.email || !isChatPage) return null;
-    return queryClient.getQueryData(conversationListKey);
-  }, [queryClient, session?.user?.email, isChatPage]);
-  
   const queryState = useMemo(() => {
     if (!session?.user?.email || !isChatPage) return { isLoading: false, isSuccess: false, status: 'idle' };
     

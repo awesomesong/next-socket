@@ -44,7 +44,7 @@ export async function GET( req: NextRequest ){
 
         return NextResponse.json({blogPosts}, {status: 200});
 
-    } catch(error){
+    } catch {
         return NextResponse.json({message: '블로그에 대한 내용을 찾지 못했습니다.'}, { status: 500 });
     }
 };
@@ -90,7 +90,7 @@ export async function POST(req: Request){
         }
         return response;
 
-    } catch(error){
+    } catch {
         return NextResponse.json({message: 'Something went wrong!'}, { status: 500 });
     }
 }

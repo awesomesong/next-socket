@@ -7,8 +7,6 @@ export const useKeyboardOrInputVisible = () => {
     useEffect(() => {
         const visual = window.visualViewport;
 
-        let lastHeight = visual?.height ?? 0;
-
         const onResize = () => {
             if (!visual) return;
 
@@ -16,7 +14,6 @@ export const useKeyboardOrInputVisible = () => {
             const keyboardLikelyVisible = heightDiff > 100;
 
             setKeyboardVisible(keyboardLikelyVisible);
-            lastHeight = visual.height;
         };
 
         const handleFocusIn = (e: FocusEvent) => {

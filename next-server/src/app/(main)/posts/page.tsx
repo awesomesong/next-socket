@@ -83,7 +83,7 @@ const PostsDetailpage = () => {
                           && <PostDeleteButton 
                                 ids={checkItems} 
                                 setCheckItems={setCheckItems} 
-                                myEmail={session?.user?.email!}
+                                myEmail={session?.user?.email ?? undefined}
                                 selectedPosts={selectedPosts}
                             />
                       }

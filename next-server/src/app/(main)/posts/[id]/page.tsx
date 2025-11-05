@@ -22,6 +22,7 @@ import FallbackNextImage from "@/src/app/components/FallbackNextImage";
 import { useSession } from "next-auth/react";
 import PostSkeleton from "@/src/app/components/skeleton/PostSkeleton";
 import StatusMessage from "@/src/app/components/StatusMessage";
+import DOMPurify from "dompurify";
 
 type Props = {
   id: string;
@@ -50,7 +51,6 @@ const Post = ({ params }: { params: Promise<Props> }) => {
     }
     
     try {
-      const DOMPurify = require('dompurify');
       return DOMPurify.sanitize(post?.description || '');
     } catch (error) {
       console.warn('DOMPurify 로드 실패:', error);
@@ -64,7 +64,6 @@ const Post = ({ params }: { params: Promise<Props> }) => {
       if (typeof window === 'undefined') return text || '';
       
       try {
-        const DOMPurify = require('dompurify');
         return DOMPurify.sanitize(text || '');
       } catch (error) {
         console.warn('DOMPurify 로드 실패:', error);

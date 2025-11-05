@@ -33,10 +33,6 @@ const useWindowSize = () => {
 
             // 이벤트 리스너를 제거하여 이벤트 리스너가 리사이즈될 때마다 계속해서 생겨나지 않도록 처리한다. (clean up)
             return () => window.removeEventListener("resize", handleResize);
-        } else {
-            return () => window.removeEventListener("resize", () => {
-                return null
-            });
         }
     }, []); 
     return windowSize;

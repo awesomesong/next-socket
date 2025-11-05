@@ -1,9 +1,9 @@
 import { getCurrentUser } from "@/src/app/lib/session";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import prisma from "../../../../prisma/db";
 
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const user = await getCurrentUser();
 
   if (!user?.email)
@@ -179,7 +179,7 @@ export async function GET(req: NextRequest) {
       { conversations: conversationsWithDetails },
       { status: 200 }
     );
-  } catch (error) {
+  } catch {
     return new NextResponse("대화방을 불러오는 중 오류가 발생하였습니다.", {
       status: 500,
     });
@@ -188,6 +188,8 @@ export async function GET(req: NextRequest) {
 
 // 공통 헬퍼
 const toSortedIds = (ids: string[]) => [...new Set(ids)].sort();
+
+type MemberType = string | { value: string };
 
 export async function POST(req: Request) {
   try {
@@ -201,7 +203,7 @@ export async function POST(req: Request) {
     // 그룹 채팅방 생성
     if (isGroup) {
       const memberIds = Array.isArray(members)
-        ? members.map((m: any) => (typeof m === "string" ? m : m?.value)).filter(Boolean)
+        ? members.map((m: MemberType) => (typeof m === "string" ? m : m?.value)).filter(Boolean)
         : [];
       const memberIdsSorted = toSortedIds([user.id, ...memberIds]);
       
@@ -237,7 +239,7 @@ export async function POST(req: Request) {
           { ...created, existingConversation: false },
           { status: 200 }
         );
-      } catch (e: any) {
+      } catch (e: unknown) {
         // 동시에 두 요청이 들어왔을 때를 대비해 한 번 더 조회
         const again = await prisma.conversation.findFirst({
           where: { isGroup: true, userIds: { equals: memberIdsSorted } },
@@ -284,7 +286,7 @@ export async function POST(req: Request) {
       { ...created, existingConversation: false },
       { status: 200 }
     );
-  } catch (error) {
+  } catch {
     return new NextResponse("대화방을 불러오는 중 오류가 발생하였습니다.", {
       status: 500,
     });

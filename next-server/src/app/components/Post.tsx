@@ -8,6 +8,7 @@ import AvatarWithName from "@/src/app/components/AvatarWithName";
 import FallbackNextImage from "@/src/app/components/FallbackNextImage";
 import PostDeleteButton from "./PostDeleteButton";
 import { useSession } from "next-auth/react";
+import DOMPurify from "dompurify";
 
 type Props = {
   post: IPost;
@@ -26,7 +27,6 @@ const Post = ({ post, HandlerCheckItem, isChecked }: Props) => {
     }
     
     try {
-      const DOMPurify = require('dompurify');
       return DOMPurify.sanitize(post.description || '');
     } catch (error) {
       console.warn('DOMPurify 로드 실패:', error);

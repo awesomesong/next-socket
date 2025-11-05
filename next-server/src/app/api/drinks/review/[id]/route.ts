@@ -48,7 +48,7 @@ export async function GET(
         });
 
         return NextResponse.json({ reviews, reviewsCount }, { status: 200 });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ message: '리뷰를 불러오지 못했습니다.' }, { status: 500 });
     }
 }
@@ -74,7 +74,7 @@ export async function POST(
             },
         });
         return NextResponse.json({ newReview }, { status: 200 });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ message: '리뷰 등록에 실패했습니다.' }, { status: 500 });
     }
 }
@@ -111,7 +111,7 @@ export async function PUT(
         });
 
         return NextResponse.json({ updateReview }, { status: 200 });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ message: 'Something went wrong!' }, { status: 500 });
     }
 }
@@ -146,7 +146,7 @@ export async function DELETE(
         });
 
         return NextResponse.json({ id }, { status: 200 });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ message: 'Something went wrong!' }, { status: 500 });
     }
 }

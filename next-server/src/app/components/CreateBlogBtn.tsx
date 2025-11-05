@@ -4,10 +4,6 @@ import LargeButton from "./LargeButton";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-type CreateBlogBtnProps = {
-  status?: string;
-};
-
 const CreateBlogBtn = () => {
   const router = useRouter();
   const { status } = useSession();

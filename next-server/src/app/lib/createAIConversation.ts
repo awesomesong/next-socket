@@ -6,7 +6,7 @@ import { formatErrorMessage, SOCKET_EVENTS } from "@/src/app/lib/react-query/uti
 import { useCallback } from "react";
 import { isReusableEmptyAiRoom } from "../utils/chat";
 import { useSocket } from "../context/socketContext";
-
+import { FullConversationType } from "../types/conversation";
 interface UseCreateAIConversationOptions {
   onSettled?: () => void;
 }
@@ -39,7 +39,7 @@ export const useCreateAIConversation = (
 
       return response.json();
     },
-    onSuccess: (data, _vars, context) => {
+    onSuccess: (data) => {
       const id = String(data?.id ?? "");
       if (!id) return;
       
@@ -50,7 +50,7 @@ export const useCreateAIConversation = (
       
       router.push(`/conversations/${id}`);
     },
-    onError: (error: any, _vars, context) => {
+    onError: (error: unknown) => {
       toast.error(
         formatErrorMessage(error, "AI 채팅방 생성 중 오류가 발생했습니다."),
       );
@@ -73,7 +73,7 @@ export function useLaunchAiConversation(options?: UseCreateAIConversationOptions
       // 1) 캐시에서 재사용 가능한 빈 AI방 찾기
       const list = qc.getQueryData(conversationListKey) as ConversationListData | undefined;
       const convs = list?.conversations ?? [];
-      const reusable = convs.find((c: any) => isReusableEmptyAiRoom(c));
+      const reusable = convs.find((c: FullConversationType) => isReusableEmptyAiRoom(c));
 
       if (reusable?.id) {
         router.push(`/conversations/${reusable.id}`);

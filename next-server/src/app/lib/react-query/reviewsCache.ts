@@ -75,7 +75,7 @@ export function replaceReviewById(
   queryClient: QueryClient,
   drinkSlug: string,
   matchId: string,
-  serverReview: Review,
+  serverReview: Partial<Review>,
 ): void {
   withReviewsCache(queryClient, drinkSlug, (old) => {
     if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;

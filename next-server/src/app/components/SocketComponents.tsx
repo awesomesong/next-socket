@@ -6,7 +6,9 @@ import { useEffect, useRef, useCallback } from "react";
 // ✅ iOS 판별 상수 (매번 계산할 필요 없음)
 const isiOS = typeof navigator !== 'undefined' && (
   /iPhone|iPad|iPod/.test(navigator.userAgent) ||
-  (navigator.userAgent.includes("Mac") && (navigator as any).maxTouchPoints > 1)
+  (navigator.userAgent.includes("Mac") && 
+   'maxTouchPoints' in navigator && 
+   navigator.maxTouchPoints > 1)
 );
 
 export default function SocketConnectionGuard() {

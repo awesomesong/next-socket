@@ -11,24 +11,19 @@ export interface RegisterResponse {
 }
 
 export const registerUser = async (data: RegisterRequest): Promise<RegisterResponse> => {
-  try {
-    const response = await fetch(`/api/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+  const response = await fetch(`/api/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
 
-    const result = await response.json();
+  const result = await response.json();
 
-    if (!response.ok) {
-      throw new Error('회원가입 중 오류가 발생했습니다.');
-    }
-
-    return result;
-  } catch (error) {
-    console.error("Register error:", error);
-    throw error;
+  if (!response.ok) {
+    throw new Error('회원가입 중 오류가 발생했습니다.');
   }
+
+  return result;
 };

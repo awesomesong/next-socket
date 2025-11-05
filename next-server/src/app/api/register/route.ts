@@ -61,14 +61,14 @@ export async function POST(req: Request){
             } else {
                 console.error(`[Register API] ❌ Socket.IO 서버 알림 전송 실패: ${response.status} ${response.statusText}`);
             }
-        } catch (httpError: any) {
+        } catch (httpError: unknown) {
             console.error(`[Register API] ❌ HTTP 알림 전송 실패:`, httpError);
         }
 
         return NextResponse.json({message: `${user.name} 계정이 등록되었습니다.`} , {status: 200});
-    } catch(error: any){
-        console.error('[Register API] Error:', error);
-        if (error.code === 'P2002') {
+    } catch(error: unknown){
+        const code = (error as { code?: string })?.code;
+        if (code === 'P2002') {
             return NextResponse.json({message: "이미 등록된 이메일입니다."}, {status: 409});            
         }
         return NextResponse.json({message: "계정을 생성하지 못했습니다."}, {status: 500});

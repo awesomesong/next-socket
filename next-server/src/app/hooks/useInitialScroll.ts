@@ -141,6 +141,6 @@ export function useInitialScroll({
     return () => {
       clearInterval(pollingInterval);
     };
-  }, [conversationId, triggerScroll]);
+  }, [conversationId, triggerScroll, getLastMessageId, scrollRef, isScrollingInitialRef, wasAtBottomRef, onComplete]);
 }
 

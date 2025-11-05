@@ -28,7 +28,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const myEmail = session?.user?.email ?? null;
-  const users = data?.users ?? [];
+  const users = useMemo(() => data?.users ?? [], [data?.users]);
   const sortedUser = useMemo(() => prioritizeArray(users, "email", myEmail),
     [users, myEmail]
   );

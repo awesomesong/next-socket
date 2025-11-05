@@ -7,6 +7,7 @@ import { Checkbox, Input, Textarea, Button, Select, SelectItem } from "@heroui/r
 import { ImFilesEmpty } from "react-icons/im";
 import { FaTrashAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { CloudinaryUploadWidgetResults } from "next-cloudinary";
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -39,11 +40,9 @@ const FormPost = ({ id, isEdit} : FormPostProps) => {
     const titleRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    const { data: dataPost, loading: loadingPost, error: errorPost } = useQuery(GET_POST, {
+    const { data: dataPost } = useQuery(GET_POST, {
         variables: {id},
         skip: !id,
-        onCompleted: (result) => {
-        },
     });
 
     useEffect(() => {
@@ -86,19 +85,20 @@ const FormPost = ({ id, isEdit} : FormPostProps) => {
         }));
     },[]);
 
-    const handleUpload = useCallback((result: any) => {
-        if (!result?.info?.secure_url) return;
+    const handleUpload = useCallback((result: CloudinaryUploadWidgetResults) => {
+        if (typeof result.info === 'string' || !result.info || !('secure_url' in result.info)) return;
       
+        const info = result.info;
         const uploaded = {
-          src: result.info.secure_url,
-          name: `${result.info.original_filename}.${result.info.format}`,
+          src: info.secure_url,
+          name: `${info.original_filename}.${info.format}`,
         };
       
         setPreviewImages([uploaded]);
         setFormData(prev => ({
-          ...prev,
-          image: result.info.secure_url,
-          imageName: uploaded.name,
+        ...prev,
+        image: info.secure_url,
+        imageName: uploaded.name,
         }));
     }, []);
 
@@ -162,8 +162,9 @@ const FormPost = ({ id, isEdit} : FormPostProps) => {
                 toast.success(`${shortTitle} 글이 등록되었습니다`);
                 setFormData(InitFormData);
             }
-        } catch (error: any) {
-            toast.error(error?.message || "작업 중 오류가 발생했습니다.");
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "작업 중 오류가 발생했습니다.";
+            toast.error(errorMessage);
             setIsLoading(false);
         }
     }, [formData, isEdit, id, addPost, updatePost]);

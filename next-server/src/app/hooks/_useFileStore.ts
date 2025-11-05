@@ -15,7 +15,7 @@ interface FileStateStore {
 const useFileStore = create<FileStateStore>((set) => ({
     files: [],
     addFile: (file: File) => set((state) => ({ files: [...state.files, file]})),
-    removeFile: (id) => ({}),
+    removeFile: () => ({}),
     setFile: (file: File[]) => ({file}),
 }));
 

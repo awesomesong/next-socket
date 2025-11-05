@@ -37,7 +37,6 @@ export async function generateMetadata({ params }: { params: Promise<{ name: str
   return createMetadata(name);
 }
 
-export default async function DrinkNameLayout({ children, params }: Props) {
-  const { name } = await getParams(params);
+export default async function DrinkNameLayout({ children }: Props) {
   return <>{children}</>;
 }

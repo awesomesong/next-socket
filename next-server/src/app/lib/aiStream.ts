@@ -3,7 +3,7 @@ const META_PREFIX = "[METADATA]";
 
 type StreamMeta = { messageId?: string; createdAt?: string } | undefined;
 
-const safeJSON = <T = any>(s: string): T | undefined => {
+const safeJSON = <T = unknown>(s: string): T | undefined => {
   try { return JSON.parse(s) as T; } catch { return undefined; }
 };
 

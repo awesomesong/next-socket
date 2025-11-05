@@ -124,8 +124,8 @@ export async function POST(req: NextRequest) {
               sender: { select: { id: true, name: true, email: true, image: true } },
             },
           });
-        } catch (e: any) {
-          if (e?.code === "P2002") {
+        } catch (e: {code?: string} | unknown) {
+          if ((e as {code?: string})?.code === "P2002") {
             newMessage = await tx.message.findUniqueOrThrow({
               where: { id: msgId },
               select: {

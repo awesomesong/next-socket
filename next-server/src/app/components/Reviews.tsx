@@ -10,12 +10,21 @@ import { getDrinkReviews } from "@/src/app/lib/getDrinkReviews";
 import { Fragment, useEffect, useState, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
 import { DrinkReviewType } from "@/src/app/types/drink";
+import type {
+  UpdateReviewResponse,
+  PartialReviewUpdate,
+  MutationContext,
+  MutationError,
+  ReviewsQueryData,
+  ReviewPageItem,
+} from "@/src/app/types/reviews";
 import { updateDrinkReview } from "@/src/app/lib/updateDrinkReview";
 import { deleteDrinkReview } from "@/src/app/lib/deleteDrinkReview";
 import {
   replaceReviewById,
   removeReviewById,
   drinkReviewsKey,
+  type ReviewPage,
 } from "@/src/app/lib/react-query/reviewsCache";
 import FormReview from "./FormReview";
 import { useSocket } from "../context/socketContext";
@@ -24,6 +33,7 @@ import CommentSkeleton from "./skeleton/CommentSkeleton";
 import CircularProgress from "./CircularProgress";
 import FallbackNextImage from "./FallbackNextImage";
 import toast from "react-hot-toast";
+import DOMPurify from "dompurify";
 
 type ReviewsProps = {
   id: string;
@@ -51,7 +61,6 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
       }
       
       try {
-        const DOMPurify = require('dompurify');
         return DOMPurify.sanitize(text || '');
       } catch (error) {
         console.warn('DOMPurify 로드 실패:', error);
@@ -77,8 +86,8 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
 
         // 지금까지 로드된 총 리뷰 개수
         const loadedCount = (allPages ?? []).reduce(
-          (acc: number, page: any) => {
-            const p = page.find((it: any) => "reviews" in it) as
+          (acc: number, page: ReviewPage) => {
+            const p = page.find((it: ReviewPageItem) => "reviews" in it) as
               | { reviews: { id: string }[] }
               | undefined;
             return acc + (p?.reviews?.length ?? 0);
@@ -108,19 +117,21 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
           queryKey: drinkReviewsKey(id),
           exact: true,
         });
-        const prev = queryClient.getQueryData(drinkReviewsKey(id));
+        const prev = queryClient.getQueryData<ReviewsQueryData>(drinkReviewsKey(id));
         // ✅ 낙관적 텍스트 반영 (InfiniteQuery의 모든 페이지 순회)
-        replaceReviewById(queryClient, id, reviewId, { text } as any);
-        return { prev, reviewId };
+        const partialUpdate: PartialReviewUpdate = { text };
+        // replaceReviewById는 matchId를 사용하여 리뷰를 찾고 병합하므로 id 없이도 안전함
+        replaceReviewById(queryClient, id, reviewId, partialUpdate);
+        return { prev, reviewId } as MutationContext;
       },
       onSuccess: (updated, _vars, ctx) => {
         setEditingId(null);
         
         // 서버 응답 형태 정규화
-        const updatedReview =
+        const updatedReview: DrinkReviewType | undefined =
           updated && typeof updated === "object" && "updateReview" in updated
-            ? (updated as any).updateReview
-            : updated;
+            ? (updated as UpdateReviewResponse).updateReview
+            : (updated as DrinkReviewType | undefined);
 
         // ✅ 최종 서버 데이터로 교체 (낙관적 업데이트를 서버 데이터로 덮어쓰기)
         // replaceReviewById가 모든 페이지를 순회하여 처리
@@ -129,7 +140,7 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
             queryClient,
             id,
             ctx?.reviewId ?? updatedReview.id, // 낙관적 업데이트한 ID 사용
-            updatedReview as any,
+            updatedReview,
           );
         }
 
@@ -141,9 +152,11 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
           });
         } catch {}
       },
-      onError: (err: any, _vars, ctx) => {
+      onError: (err: MutationError, _vars, ctx) => {
         // ✅ 롤백: 이전 데이터로 완전 복원
-        if (ctx?.prev) queryClient.setQueryData(drinkReviewsKey(id), ctx.prev as any);
+        if (ctx?.prev) {
+          queryClient.setQueryData<ReviewsQueryData>(drinkReviewsKey(id), ctx.prev);
+        }
         const message = err?.message || "리뷰 수정에 실패했습니다.";
         toast.error(message);
       },
@@ -156,10 +169,10 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
         queryKey: drinkReviewsKey(id),
         exact: true,
       });
-      const prev = queryClient.getQueryData(drinkReviewsKey(id));
+      const prev = queryClient.getQueryData<ReviewsQueryData>(drinkReviewsKey(id));
       // ✅ 낙관적 제거 + 카운트 -1 (InfiniteQuery의 모든 페이지 순회)
       removeReviewById(queryClient, id, deletedId);
-      return { prev };
+      return { prev } as MutationContext;
     },
     onSuccess: (_result, deletedId) => {
 
@@ -171,9 +184,11 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
         });
       } catch {}
     },
-    onError: (err: any, _vars, ctx) => {
+    onError: (err: MutationError, _vars, ctx) => {
       // ✅ 롤백: 이전 데이터로 완전 복원
-      if (ctx?.prev) queryClient.setQueryData(drinkReviewsKey(id), ctx.prev as any);
+      if (ctx?.prev) {
+        queryClient.setQueryData<ReviewsQueryData>(drinkReviewsKey(id), ctx.prev);
+      }
       const message = err?.message || "리뷰 삭제에 실패했습니다.";
       toast.error(message);
     },
@@ -189,7 +204,7 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
     <>
       {data?.pages[0]?.flat().map((page, i) => (
         <Fragment key={i}>
-          {Object.keys(page)[0] === "reviewsCount" && (
+          {"reviewsCount" in page && (
             <h4>
               {name} - 리뷰 {page.reviewsCount}개
             </h4>
@@ -208,8 +223,8 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
           <ul className="mt-2">
             {data?.pages?.map((page, pageIndex) => (
               <li key={`page-${pageIndex}`}>
-                {page
-                  ?.find((item) => "reviews" in item)
+                {(page
+                  ?.find((item) => "reviews" in item) as { reviews: DrinkReviewType[] } | undefined)
                   ?.reviews?.map((review: DrinkReviewType) => (
                     <div
                       key={review.id}

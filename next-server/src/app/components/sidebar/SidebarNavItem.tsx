@@ -1,12 +1,12 @@
 'use client';
 import clsx from "clsx";
 import Link from "next/link";
-import { memo, useCallback } from "react";
+import { useCallback } from "react";
 import ChatUnReadCount from "../ChatUnReadCount";
 
 interface SidebarNavItemProps {
   label: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   href: string;
   onClick?: () => void;
   active?: boolean;

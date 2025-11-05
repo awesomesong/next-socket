@@ -19,6 +19,8 @@ export function useChatScroller(getEl: () => HTMLElement | null) {
   const autoScrollingRef = useRef(false);
   const userInteractingRef = useRef(false); // 사용자가 직접 스크롤 중인지
   const rafIdRef = useRef<number | null>(null);
+  // ✅ setTimeout cleanup을 위한 ref 추가
+  const timeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setArrowVisibility = useCallback((next: boolean) => {
     showArrowRef.current = next;
@@ -42,7 +44,7 @@ export function useChatScroller(getEl: () => HTMLElement | null) {
   // ✅ 초기 플래그 1회 동기화 (UI 깜빡임 방지)
   useEffect(() => {
     refreshFlags();
-  }, []);
+  }, [refreshFlags]);
 
   // ✅ 애니메이션 안전 종료 (언마운트 시 RAF 취소)
   useEffect(() => {
@@ -119,7 +121,7 @@ export function useChatScroller(getEl: () => HTMLElement | null) {
     };
 
     rafIdRef.current = requestAnimationFrame(animateScroll);
-  }, [getEl, refreshFlags]);
+  }, [getEl, refreshFlags, setArrowVisibility]);
 
   // ✅ 이미지/콘텐츠 증가 보정 (상시 옵저버, 하단일 때만 반응)
   useEffect(() => { 
@@ -156,9 +158,14 @@ export function useChatScroller(getEl: () => HTMLElement | null) {
 
   const handleKeyUp = useCallback((e: KeyboardEvent) => {
     if (!SCROLL_KEYS.has(e.key)) return;
-    setTimeout(() => {
+    // ✅ 이전 timeout 정리
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+    }
+    timeoutIdRef.current = setTimeout(() => {
       userInteractingRef.current = false;
       refreshFlags();
+      timeoutIdRef.current = null;
     }, 200);
   }, [refreshFlags]);
 
@@ -178,6 +185,11 @@ export function useChatScroller(getEl: () => HTMLElement | null) {
     return () => {
       window.removeEventListener("keydown", handleKeyDownWithTimer);
       window.removeEventListener("keyup", handleKeyUpWithTimer);
+      // ✅ cleanup 시 pending timeout 정리
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
+      }
     };
   }, [handleKeyDown, handleKeyUp]);
 
@@ -276,7 +288,7 @@ export function useChatScroller(getEl: () => HTMLElement | null) {
       el.removeEventListener("wheel", handleInteractionStart);
       el.removeEventListener("touchstart", handleInteractionStart);
     };
-  }, [getEl]);
+  }, [getEl, setArrowVisibility]);
 
   // ✅ 탭 전환 감지 (브라우저 탭)
   const wasAtBottomOnTabLeaveRef = useRef<boolean | null>(null);

@@ -3,7 +3,7 @@ type Props = {
   viewCount: number;
 }
 
-export const addBlogViewCount = async ({ id, viewCount }: Props) => {
+export const addBlogViewCount = async ({ id }: Props) => {
     const res = await fetch(`/api/blogs/${id}/viewCount`, {
         method: 'POST',
         headers: {

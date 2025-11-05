@@ -2,15 +2,34 @@
 import dynamic from "next/dynamic";
 import { forwardRef, memo } from "react";
 import type ReactQuillOriginal from 'react-quill-new';
+import type { DeltaStatic, EmitterSource } from 'react-quill-new';
 import ShapesSkeleton from "./skeleton/ShapesSkeleton";
+
+interface UnprivilegedEditor {
+  getLength: () => number;
+  getText: (index?: number, length?: number) => string;
+  getHTML: () => string;
+  getSemanticHTML: (range?: { index: number; length: number } | number, length?: number) => string;
+  getBounds: (index: number | { index: number; length: number }, length?: number) => { top: number; bottom: number; left: number; right: number; width: number; height: number } | null;
+  getSelection: (focus?: boolean) => { index: number; length: number } | null;
+  getContents: (index?: number, length?: number) => DeltaStatic;
+}
+
+interface QuillModules {
+  toolbar?: unknown;
+  keyboard?: unknown;
+  history?: unknown;
+  clipboard?: unknown;
+  [key: string]: unknown;
+}
 
 interface MyQuillEditorProps {
   value: string;
-  onChange: (content: string, delta: any, source: string, editor: any) => void;
+  onChange: (content: string, delta: DeltaStatic, source: EmitterSource, editor: UnprivilegedEditor) => void;
   placeholder?: string;
-  modules?: any;  
+  modules?: QuillModules;  
   formats?: string[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const ReactQuill = dynamic(

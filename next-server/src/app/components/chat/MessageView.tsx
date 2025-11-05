@@ -2,9 +2,9 @@
 import { useEffect, useRef, useState, memo, useMemo, useCallback } from "react";
 import Avatar from "@/src/app/components/Avatar";
 import ImageModal from "@/src/app/components/ImageModal";
-import { FullMessageType } from "@/src/app/types/conversation";
+import { FullMessageType, normalizePreviewType } from "@/src/app/types/conversation";
+import { IUserList } from "@/src/app/types/common";
 import clsx from "clsx";
-import { DefaultSession } from "next-auth";
 import {
   useMutation,
   useQueryClient,
@@ -26,6 +26,7 @@ import {
 import { useFailedMessages } from "@/src/app/hooks/useFailedMessages";
 import { useAIStream } from "@/src/app/hooks/useAIStream";
 import { useConversationLoading } from "@/src/app/hooks/useConversationLoading";
+import DOMPurify from 'dompurify';
 
 type SeenUser = { 
   id: string; 
@@ -35,7 +36,7 @@ type SeenUser = {
 
 interface MessageBoxProps {
   data: FullMessageType;
-  currentUser: DefaultSession["user"];
+  currentUser: IUserList | null | undefined;
   conversationId: string;
   showDateDivider?: boolean;
   isAIChat?: boolean;
@@ -165,7 +166,6 @@ const MessageView: React.FC<MessageBoxProps> = ({
     }
     
     try {
-      const DOMPurify = require('dompurify');
       return DOMPurify.sanitize(data.body || '');
     } catch (error) {
       console.warn('DOMPurify 로드 실패:', error);
@@ -183,7 +183,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
   }, [liveUsersKey]);
 
   // 2) 현재 사용자/발신자 id도 문자열화
-  const currentUserId = useMemo(() => String((currentUser as any)?.id ?? ""), [currentUser]);
+  const currentUserId = useMemo(() => String(currentUser?.id ?? ""), [currentUser]);
   const senderId = useMemo(() => String(data?.sender?.id ?? ""), [data?.sender?.id]);
   const isAIMessage = useMemo(() => data.isAIResponse, [data.isAIResponse]);
   const isOwn = useMemo(() => !isAIMessage && currentUser?.email === data?.sender?.email,
@@ -309,7 +309,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
           id: responseData.newMessage.id,
           clientMessageId: data.id, // ✅ 재전송 시 원본 ID로 중복 체크
           body: data.type === "image" ? null : (data.body || ""),
-          type: data.type as "text" | "image",
+          type: normalizePreviewType(data.type),
           image: data.image || undefined,
           createdAt: responseData.newMessage.createdAt,
           isAIResponse: false,
@@ -382,7 +382,12 @@ const MessageView: React.FC<MessageBoxProps> = ({
         userCreatedAt: userCreatedAtToPass, // ✅ 기존 사용자 메시지 시간 전달
         isRetry: true,
         existingAIMessageId: data.id,
-        currentUser,
+        currentUser: currentUser ? {
+          id: currentUser.id,
+          name: currentUser.name,
+          email: currentUser.email,
+          image: currentUser.image,
+        } : undefined,
         conversation: data.conversation,
       });
     } else {
@@ -419,7 +424,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
           isRetry: true,
           existingAIMessageId: nextAIMessage?.id, // ✅ 바로 다음 AI만
           currentUser: {
-            id: (currentUser as any).id || data.sender.id,
+            id: currentUser?.id || data.sender.id,
             name: currentUser?.name,
             email: currentUser?.email,
             image: currentUser?.image,
@@ -438,6 +443,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
     data.body,
     data.image,
     data.conversation,
+    data.sender,
     resendMessage,
     requestAI,
   ]);

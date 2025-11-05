@@ -153,7 +153,14 @@ async function getConversationHistory(
 }
 
 // 대화 컨텍스트를 포함한 메시지 배열 생성 (최적화)
-function buildConversationContext(messages: any[], currentMessage: string) {
+type HistoryMessage = {
+  body: string | null;
+  isAIResponse: boolean | null;
+  createdAt: Date;
+  sender?: { name: string | null; email: string | null } | null;
+};
+
+function buildConversationContext(messages: HistoryMessage[], currentMessage: string) {
   const contextMessages: Array<{
     role: "system" | "user" | "assistant";
     content: string;
@@ -170,7 +177,7 @@ function buildConversationContext(messages: any[], currentMessage: string) {
   for (const msg of recentMessages) {
     contextMessages.push({
       role: msg.isAIResponse ? "assistant" : "user",
-      content: msg.body,
+      content: msg.body ?? "",
     });
   }
 
@@ -275,11 +282,24 @@ async function handleStreamingResponse(
         // ✅ 재시도 시: 기존 AI 메시지 삭제 (DB에서)
         if (existingAIMessageId) {
           try {
-            await prisma.message.delete({
+            // ✅ 먼저 메시지 존재 여부 확인 후 삭제
+            const existingMessage = await prisma.message.findUnique({
               where: { id: existingAIMessageId },
+              select: { id: true },
             });
-          } catch (error) {
-            console.error("기존 AI 메시지 삭제 오류:", error);
+            
+            if (existingMessage) {
+              await prisma.message.delete({
+                where: { id: existingAIMessageId },
+              });
+            }
+            // 메시지가 없으면 무시 (이미 삭제되었거나 존재하지 않음)
+          } catch (error: unknown) {
+            // ✅ P2025 에러(레코드 없음)는 정상적인 경우이므로 무시
+            const prismaError = error as { code?: string };
+            if (prismaError?.code !== 'P2025') {
+              console.error("기존 AI 메시지 삭제 오류:", error);
+            }
             // 삭제 실패해도 계속 진행 (메시지가 이미 없을 수 있음)
           }
         }
@@ -299,7 +319,7 @@ async function handleStreamingResponse(
         }
         
         // ✅ messageId가 있고 기존 메시지가 있으면 업데이트, 없으면 생성
-        let savedMessageId = messageId || new ObjectId().toHexString();
+        const savedMessageId = messageId || new ObjectId().toHexString();
         
         if (messageId) {
           const existingMessage = await prisma.message.findUnique({
@@ -396,7 +416,9 @@ async function handleStreamingResponse(
 }
 
 // OpenAI API 호출 함수
-async function callOpenAI(apiKey: string, contextMessages: any[]) {
+type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
+
+async function callOpenAI(apiKey: string, contextMessages: ChatMessage[]) {
   const requestBody = {
     model: "gpt-4",
     messages: contextMessages,
@@ -446,7 +468,7 @@ export async function POST(req: NextRequest) {
   let requestData;
   try {
     requestData = await req.json();
-  } catch (error) {
+  } catch {
     return new NextResponse("잘못된 요청 형식입니다.", { status: 400 });
   }
 

@@ -12,9 +12,10 @@ import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";
 import { useCallback, useEffect, useRef, memo } from "react";
 import ImageUploadButton from "@/src/app/components/ImageUploadButton";
+import { CloudinaryUploadWidgetResults } from "next-cloudinary";
 import { useSocket } from "../../context/socketContext";
 import useComposition from "@/src/app/hooks/useComposition";
-import { FullMessageType } from "../../types/conversation";
+import { FullMessageType, normalizePreviewType } from "../../types/conversation";
 import { useSession } from "next-auth/react";
 import {
   formatErrorMessage,
@@ -69,6 +70,11 @@ const Form = () => {
       >(messagesKey(conversationId));
 
       const user = session?.user;
+      // 로그인된 사용자가 없으면 낙관적 업데이트를 생성하지 않음
+      if (!user?.id) {
+        return { previousData: undefined };
+      }
+
       const userIds = conversationUsers.find((item) => item.conversationId === conversationId)
         ?.userIds ?? [];
 
@@ -82,12 +88,12 @@ const Form = () => {
         image,
         createdAt: new Date(),
         type: image ? "image" : "text",
-        senderId: user?.id!,
+        senderId: user.id,
         sender: {
-          id: user?.id!,
-          name: user?.name ?? null,
-          email: user?.email ?? null,
-          image: user?.image ?? null,
+          id: user.id,
+          name: user.name ?? null,
+          email: user.email ?? null,
+          image: user.image ?? null,
         },
         conversation: { 
           isGroup: isGroupChat, 
@@ -137,7 +143,7 @@ const Form = () => {
         id: tempId,
         clientMessageId: tempId, // ✅ 낙관적 업데이트용 중복 체크
         body: previewBody,
-        type: optimisticType as "text" | "image",
+        type: normalizePreviewType(optimisticType),
         image: image || undefined,
         createdAt: normalizedOptimistic.createdAt,
         isAIResponse: false,
@@ -173,7 +179,7 @@ const Form = () => {
           id: data.newMessage.id,
           clientMessageId: context.messageId, // ✅ 중복 체크용 임시 ID 추가
           body: context.previewBody, // ✅ 미리보기용 body (이미지일 때 null)
-          type: context.optimisticType as "text" | "image",
+          type: normalizePreviewType(context.optimisticType),
           image: context.image || undefined, // ✅ 이미지 URL 추가
           createdAt: data.newMessage.createdAt,
           isAIResponse: false,
@@ -230,11 +236,11 @@ const Form = () => {
         bumpConversationOnNewMessage(queryClient, _variables.conversationId, {
           id: context.prevPreview.id,
           body: context.prevPreview.body,
-          type: context.prevPreview.type,
+          type: normalizePreviewType(context.prevPreview.type),
           image: context.prevPreview.image,
           createdAt: context.prevPreview.createdAt,
           isAIResponse: context.prevPreview.isAIResponse || false,
-        } as any);
+        });
       }
 
       toast.error(
@@ -268,7 +274,7 @@ const Form = () => {
         try {
           // 직렬 전송: 이전 요청 완료까지 대기
           await mutateAsync(vars);
-        } catch (_err) {
+        } catch {
           // 에러는 상단 onError에서 처리됨. 다음 항목 진행
         }
       }
@@ -311,11 +317,11 @@ const Form = () => {
     enqueueSend({ conversationId, data: { message }, messageId });
   }, [conversationId, enqueueSend, setValue, setFocus]);
 
-  const handleUpload = async (result: { info?: { secure_url?: string } }) => {
-    if (!result?.info?.secure_url) return;
+  const handleUpload = async (result: CloudinaryUploadWidgetResults) => {
+    if (typeof result.info === 'string' || !result.info || !('secure_url' in result.info)) return;
 
     const messageId = new ObjectId().toHexString();
-    enqueueSend({ conversationId, image: result?.info?.secure_url, messageId });
+    enqueueSend({ conversationId, image: result.info.secure_url, messageId });
   };
 
   // 3) RHF 핸들러를 메모이즈해서 모든 제출 경로에서 사용

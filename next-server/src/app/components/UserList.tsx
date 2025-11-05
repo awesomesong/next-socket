@@ -1,6 +1,6 @@
 "use client";
 import { IUserList } from "@/src/app/types/common";
-import { useEffect, useRef, useCallback, memo } from "react";
+import { useEffect, useCallback, memo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import getUsers from "@/src/app/lib/getUsers";
 import UserBox from "./UserBox";

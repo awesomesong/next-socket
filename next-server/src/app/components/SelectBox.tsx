@@ -1,16 +1,17 @@
 "use client";
 import { FieldErrors } from "react-hook-form";
-import Select, { SelectInstance, GroupBase } from "react-select";
-import React, { forwardRef, useRef } from "react";
+import Select, { SelectInstance, GroupBase, MultiValue } from "react-select";
+
+type OptionType = { value: string; label: string };
 
 interface SelctProps {
     isOpen?: boolean;
     label: string;
-    value?: Record<string, any>;
-    onChange: (value: Record<string, any>) => void;
-    options: Record<string, any>[];
+    value?: MultiValue<OptionType>;
+    onChange: (value: MultiValue<OptionType> | null) => void;
+    options: OptionType[];
     disabled?: boolean;
-    selectRef: any;
+    selectRef: React.RefObject<SelectInstance<OptionType, true, GroupBase<OptionType>> | null>;
     errors: FieldErrors;
 }
 
@@ -38,7 +39,7 @@ const SelectBox:React.FC<SelctProps> = ({
         </label>
         <div className="mt-2">
         {isOpen && (
-            <Select 
+            <Select<OptionType, true>
                 className="my-react-select-container"
                 classNamePrefix="my-react-select"
                 ref={selectRef}

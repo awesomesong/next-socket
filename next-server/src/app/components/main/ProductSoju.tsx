@@ -1,7 +1,7 @@
 'use client';
 import React, { useRef } from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, type Transition } from 'framer-motion';
 import Link from 'next/link';
 import DrinksName from './DrinksName';
 import drinksData from '@/src/app/data/drinks';
@@ -12,7 +12,7 @@ const SOJU_MOTION_VARIANTS = {
   initial: { opacity: 0, scale: 0.8 },
   whileInView: { opacity: 1, scale: 1 },
   transition: {
-    opacity: { duration: 0.4, ease: 'easeOut' as any },
+    opacity: { duration: 0.4, ease: 'easeOut' } satisfies Transition,
   },
   viewport: { amount: 0.5, once: true },
 };

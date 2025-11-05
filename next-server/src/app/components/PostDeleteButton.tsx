@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 type Props = {
     postId?: string;
     postTitle?: string;
-    ids?: String[];
+    ids?: string[];
     setCheckItems?: (items: string[]) => void;
     variant?: 'icon' | 'text';
     isDisabled?: boolean;
@@ -88,7 +88,7 @@ const PostDeleteButton = ({
                     key="delete" 
                     className="text-danger" 
                     color="danger"
-                    onPress={(e) => {
+                    onPress={() => {
                         onPressDelete();
                     }}
                 >
@@ -105,7 +105,7 @@ const PostDeleteButton = ({
             variant='bordered'
             radius='sm'
             className='min-w-[30px] btn-bg'
-            onPress={(e) => {
+            onPress={() => {
                 onPressDelete();
             }}
         >

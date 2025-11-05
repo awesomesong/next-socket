@@ -1,11 +1,11 @@
-import Image from "next/image";
+import Image, { ImageProps } from "next/image";
 import { useEffect, useState } from "react";
 
 const FallbackNextImage = ({
   src,
   alt,
   ...props
-}: { src: string; alt: string } & any) => {
+}: { src: string; alt: string } & ImageProps) => {
   const [imgSrc, setImgSrc] = useState(src);
 
   useEffect(() => {

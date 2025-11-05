@@ -1,6 +1,6 @@
 import type { Comment, User } from "@prisma/client";
 import { IUser } from "@/src/app/types/common";
-import { InfiniteData } from "@tanstack/react-query";
+import type { CommentType } from "@/src/app/types/comments";
 
 export interface FormBlogData {
   [key: string]: string;
@@ -20,7 +20,7 @@ export interface FormPostData {
 export type FormPostFilesData = {
   name: string;
   lastModified: number;
-  lastModifiedDate: String;
+  lastModifiedDate: string;
   value: string | Blob;
   size: number;
   type: string;
@@ -82,7 +82,7 @@ export interface BlogImage {
 }
 
 export type BlogIdProps = {
-  blogId: String;
+  blogId: string;
 };
 
 export type BlogCommentsProps = {
@@ -103,22 +103,7 @@ export type BlogOldCommentsCount =
     }
   | undefined;
 
-export type CommentType = {
-  id: string;
-  text: string;
-  createdAt: string; // or Date if you're converting
-  updatedAt: string;
-  authorEmail: string | null;
-  blogId: string | null;
-  author: Author;
-};
 
-export type BlogCommentPage = [
-  { comments: CommentType[] },
-  { commentsCount: number },
-];
-
-export type BlogCommentsDataProps = InfiniteData<BlogCommentPage>;
 
 // ===== Socket payload types for blog events =====
 export type BlogCardForPrependPayload = {
@@ -179,3 +164,28 @@ export type DeleteBlogResponse = {
   success: boolean;
   message?: string;
 };
+
+// ===== Blog Detail Query Data Type =====
+// blogDetailKey로 쿼리되는 블로그 상세 데이터의 타입
+export interface BlogDetailData {
+  id: string;
+  title: string;
+  content: string;
+  image: string;
+  authorEmail: string;
+  createdAt: Date | string;
+  author: {
+    name: string | null;
+    email: string;
+    image: string | null;
+  } | null;
+  _count: {
+    comments: number;
+  };
+  viewCount: number;
+}
+
+// blogDetailKey의 queryData 타입
+export type BlogDetailQueryData = {
+  blog: BlogDetailData;
+} | undefined;

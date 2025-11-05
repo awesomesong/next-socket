@@ -10,11 +10,12 @@ const DesktopNav = () => {
     const routerNav = useRouteNav();
     const windowSize = useWindowSize();
     
-    const HandleIndicatorMotion = (e: any) => {
+    const HandleIndicatorMotion = (e: React.MouseEvent<HTMLAnchorElement> | React.FocusEvent<HTMLAnchorElement>) => {
         const marker = document.querySelector(".marker") as HTMLElement;
+        const target = e.currentTarget;
 
-        marker.style.left = e.target.offsetLeft + "px";
-        marker.style.width = e.target.offsetWidth + "px";
+        marker.style.left = target.offsetLeft + "px";
+        marker.style.width = target.offsetWidth + "px";
     };
 
     const HandleIndicatorActive = useCallback(() => {

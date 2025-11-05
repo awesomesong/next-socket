@@ -4,7 +4,8 @@ import { useRef, useState, FormEvent, useEffect, useCallback, useMemo } from "re
 import useComposition from "@/src/app/hooks/useComposition";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createBlogsComments } from "@/src/app/lib/createBlogsComments";
-import { CommentType } from "@/src/app/types/blog";
+import { CommentType } from "@/src/app/types/comments";
+import { Author } from "@/src/app/types/blog";
 import { useSocket } from "../context/socketContext";
 import toast from "react-hot-toast";
 import {
@@ -59,11 +60,11 @@ const FormComment = ({
     useComposition();
 
   // ✅ author 객체를 useMemo로 최적화 (중복 제거)
-  const authorData = useMemo(() => ({
+  const authorData: Author = useMemo(() => ({
     id: user?.id ?? "",
     name: user?.name ?? "",
     email: user?.email ?? "",
-    image: user?.image ?? null,
+    image: user?.image ?? "",
   }), [user?.id, user?.name, user?.email, user?.image]);
 
   // useMutation을 사용한 낙관적 업데이트
@@ -80,7 +81,7 @@ const FormComment = ({
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         authorEmail: user.email ?? null,
-        author: authorData as any, // ✅ 재사용
+        author: authorData, // ✅ 재사용
       };
 
       // 즉시 UI에 추가
@@ -104,7 +105,7 @@ const FormComment = ({
       // 임시 댓글을 실제 댓글로 교체
       replaceCommentById(queryClient, bid, context.optimisticId, {
         ...result.newComment,
-        author: user as any,
+        author: authorData,
       });
 
       // 소켓 브로드캐스트 (다른 사용자들에게만)
@@ -184,12 +185,12 @@ const FormComment = ({
         createCommentMutation({ blogId, comment: text });
       }
     },
-    [onSubmit, onCancel, createCommentMutation]
+    [onSubmit, onCancel, createCommentMutation, blogId]
   );
 
   // 버튼 클릭 이벤트 핸들러
   const handleSubmitComment = useCallback((e: FormEvent<HTMLButtonElement>) => {
-    e.preventDefault();
+  e.preventDefault();
     submitComment(comment);
   }, [comment, submitComment]);
 

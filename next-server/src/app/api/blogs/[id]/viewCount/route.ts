@@ -1,6 +1,5 @@
 import prisma from '../../../../../../prisma/db';
 import { NextRequest, NextResponse } from "next/server";
-import { NextApiResponse } from 'next';
 
 interface IParams {
     id?: string;
@@ -9,7 +8,6 @@ interface IParams {
 export async function POST(
     req: NextRequest,
     { params }: { params : Promise<IParams>},
-    res: NextApiResponse,
 ){
     const { id } = await params;
 
@@ -68,7 +66,7 @@ export async function POST(
         );
 
         return response;
-    } catch(error){
+    } catch {
         return NextResponse.json({message: 'Something went wrong!'}, { status: 500 });
     }
 }

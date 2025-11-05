@@ -11,9 +11,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { addBlogViewCount } from '@/src/app/lib/addBlogViewCount';
 import { upsertBlogCardById, blogDetailKey, BLOG_LIST_KEY } from '@/src/app/lib/react-query/blogsCache';
+import type { BlogDetailQueryData } from '@/src/app/types/blog';
 import { PiUserCircleFill } from 'react-icons/pi';
 import { BlogSkeleton } from '@/src/app/components/skeleton/BlogSkeleton';
 import FallbackNextImage from '@/src/app/components/FallbackNextImage';
+import DOMPurify from 'dompurify';
 
 const BlogDetailPage = ({ params } : {
     params: Promise<{ id: string }> 
@@ -55,7 +57,7 @@ const BlogDetailPage = ({ params } : {
             setViewCount(next);
             try { upsertBlogCardById(queryClient, { id: blogId, viewCount: next }); } catch {}
             try {
-                queryClient.setQueryData(blogDetailKey(blogId), (old: any) => {
+                queryClient.setQueryData(blogDetailKey(blogId), (old: BlogDetailQueryData) => {
                     if (!old?.blog) return old;
                     return { ...old, blog: { ...old.blog, viewCount: next } };
                 });
@@ -65,7 +67,7 @@ const BlogDetailPage = ({ params } : {
         },
         onError: (_err, _vars, ctx) => {
             if (ctx?.prevDetail) queryClient.setQueryData(blogDetailKey(id), ctx.prevDetail);
-            if (ctx?.prevList) queryClient.setQueryData(BLOG_LIST_KEY, ctx.prevList as any);
+            if (ctx?.prevList) queryClient.setQueryData(BLOG_LIST_KEY, ctx.prevList);
             setViewCount(ctx?.prevViewCount || (data?.blog?.viewCount || 0));
         },
     });
@@ -96,7 +98,7 @@ const BlogDetailPage = ({ params } : {
             try { localStorage.setItem(key, today); } catch {}
           }
         }
-    }, [isSuccess, id, data?.blog, session?.user?.email, addBlogViewCountMutaion]);
+    }, [isSuccess, id, data?.blog, session?.user?.email, addBlogViewCountMutaion, viewCount]);
 
     const hasEditPermission = useMemo(() => {
         // ✅ 더 안전한 권한 체크
@@ -119,7 +121,6 @@ const BlogDetailPage = ({ params } : {
         
         // 클라이언트에서만 DOMPurify 사용
         try {
-            const DOMPurify = require('dompurify');
             return DOMPurify.sanitize(data?.blog?.content || '', {
                 ADD_ATTR: ['target', 'rel'],
             });
@@ -131,7 +132,7 @@ const BlogDetailPage = ({ params } : {
 
     if (status === 'error') {
         return (<div className='flex justify-center align-middle mt-10'>
-            <h1 className='text-2xl'>{data?.message || '해당 글을 찾을 수 없습니다.'}</h1>
+            <h1 className='text-2xl'>해당 글을 찾을 수 없습니다.</h1>
         </div>)
     }
     
@@ -196,11 +197,11 @@ const BlogDetailPage = ({ params } : {
                                 [&_code]:text-sm
                             '
                         />
-                        <FormComment blogId={id} user={session?.user!} />
-                        <Comments blogId={id} user={session?.user!}/>
+                        {session?.user && <FormComment blogId={id} user={session.user} />}
+                        <Comments blogId={id} user={session?.user ?? undefined}/>
                     </>) 
                     : 
-                    <div className="flex justify-center items-center min-h-screen">블로그를 찾을 수 없습니다.</div>
+                    <div className="flex justify-center min-h-screen">블로그를 찾을 수 없습니다.</div>
                 }
         </div>
     )

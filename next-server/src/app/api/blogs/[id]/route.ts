@@ -41,7 +41,7 @@ export async function GET(req: Request, { params }: ParamsProp){
     
         return NextResponse.json({blog}, { status: 200 });
 
-    } catch(error) {
+    } catch {
         return NextResponse.json({message: '해당 글을 불러오지 못했습니다.'}, { status: 500 });
     }
 }
@@ -75,7 +75,7 @@ export async function DELETE(req: Request,  { params }: ParamsProp) {
 
         return NextResponse.json({message: '해당 글을 삭제하였습니다.'}, { status: 200 });
 
-    } catch(error) {
+    } catch {
         return NextResponse.json({message: '오류가 발생하여, 해당 글을 삭제하지 못했습니다.'}, { status: 500 });
     }
 }
@@ -119,7 +119,7 @@ export async function PUT(req: Request, { params }: ParamsProp){
         });
         return NextResponse.json({updateBlog}, {status: 200});
 
-    } catch(error){
+    } catch {
         return NextResponse.json({message: 'Something went wrong!'}, { status: 500 });
     }
 }

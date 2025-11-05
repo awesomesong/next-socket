@@ -49,37 +49,39 @@ import {
   replaceReviewById,
   removeReviewById,
 } from "@/src/app/lib/react-query/reviewsCache";
+import getConversations from "@/src/app/lib/getConversations";
 import {
   FullMessageType,
+  normalizePreviewType,
+  RoomEventPayload,
+  getMessageSenderId,
 } from "@/src/app/types/conversation";
 import type { 
   BlogCommentNewPayload,
   BlogNewPayload,
   BlogUpdatedPayload,
   BlogDeletedPayload,
-  CommentType,
   BlogData,
+  BlogDetailQueryData,
 } from "@/src/app/types/blog";
-import type { DrinkReviewType } from "@/src/app/types/drink";
+import type { 
+  BlogCommentUpdatedPayload,
+  BlogCommentDeletedPayload,
+} from "@/src/app/types/comments";
+import type { 
+  DrinkReviewPayload,
+  DrinkReviewDeletedPayload,
+} from "@/src/app/types/drink";
 import { lastMessageMs, serverLooksEmpty } from "../utils/chat";
-
-interface ConvSnap {
-  baseUnread: number;
-  isAI: boolean;
-  lastMessageAtMs: number;
-  lastId?: string;
-}
-
-type BufferedMsg = { 
-  id: string; 
-  ms: number; 
-  msg: any 
-};
+import type { ConvSnap, BufferedMsg } from "../types/socket";
+import type { QueryClient } from "@tanstack/react-query";
+import type { PartialConversationType, UnnormalizedMessage, FullConversationType } from "../types/conversation";
+import type { MessagesPage, MessagesInfinite } from "../lib/react-query/chatCache";
 
 // === AI 빈방 머지 헬퍼 === //
 const mergeOrUpsertAIConversation = (
-  qc: any,
-  conv: any,
+  qc: QueryClient,
+  conv: PartialConversationType & { id: string },
 ): { merged: boolean; oldId?: string; newId?: string } => {
   const newId = String(conv.id);
   // ✅ 메시지가 없는 AI 방만 머지 허용
@@ -89,7 +91,7 @@ const mergeOrUpsertAIConversation = (
   
   // 머지 불가능하면 업서트 (빈 AI 방이 아니거나 후보 없음)
   if (idx < 0) {
-    upsertConversation(qc, { ...conv, id: newId });
+    upsertConversation(qc, { ...conv, id: newId } as Partial<FullConversationType> & { id: string });
     return { merged: false, newId };
   }
   
@@ -99,7 +101,8 @@ const mergeOrUpsertAIConversation = (
     if (!prev?.conversations?.length) return prev;
     const next = { ...prev, conversations: [...prev.conversations] };
     oldId = String(next.conversations[idx]?.id ?? "");
-    next.conversations[idx] = { ...(next.conversations[idx] || {}), ...conv, id: newId };
+    const existing = next.conversations[idx] || {} as FullConversationType;
+    next.conversations[idx] = { ...existing, ...conv, id: newId } as FullConversationType;
     return next;
   });
   
@@ -112,13 +115,13 @@ const mergeOrUpsertAIConversation = (
 };
 
 // ✅ 래퍼 함수들 - 자주 쓰는 업데이트 패턴
-const zeroActiveUnread = (qc: any, convId: string) =>
+const zeroActiveUnread = (qc: QueryClient, convId: string) =>
   updateConversationInList(qc, convId, (conv) =>
     conv.unReadCount !== 0 ? { ...conv, unReadCount: 0 } : null
   );
 
 // ✅ 증가+클램프 한 번에 처리 (setQueryData 1회화)
-const addAndClampUnread = (qc: any, convId: string, delta: number) =>
+const addAndClampUnread = (qc: QueryClient, convId: string, delta: number) =>
   updateConversationInList(qc, convId, (conv) => {
     const curr = clampUnread(conv.unReadCount);
     const next = clampUnread(curr + delta);
@@ -127,7 +130,7 @@ const addAndClampUnread = (qc: any, convId: string, delta: number) =>
   });
 
 // ✅ 복합 래퍼 - 두 규칙을 한 번에 적용 (미세 최적화)
-const zeroAndClampUnread = (qc: any, convId: string, activeId?: string) =>
+const zeroAndClampUnread = (qc: QueryClient, convId: string, activeId?: string) =>
   updateConversationInList(qc, convId, (conv) => {
     const isActive = activeId && String(conv.id) === String(activeId);
     const nextUnread = isActive ? 0 : clampUnread(conv.unReadCount);
@@ -136,7 +139,7 @@ const zeroAndClampUnread = (qc: any, convId: string, activeId?: string) =>
   });
 
 // ✅ 스토어 배지 업데이트 (chatCache.ts의 setTotalUnreadFromList 사용)
-const updateTotalUnreadStore = (qc: any) => {
+const updateTotalUnreadStore = (qc: QueryClient) => {
   const next = setTotalUnreadFromList(qc);
   if (next !== undefined) {
     useUnreadStore.setState((s) => (s.unReadCount === next ? s : { unReadCount: next }));
@@ -144,41 +147,31 @@ const updateTotalUnreadStore = (qc: any) => {
 };
 
 // ✅ 단일 증가 유틸: 리스트 아이템 + 총배지 동기화까지 한 번에
-const incUnreadForConv = (qc: any, convId: string, delta: number) => {
+const incUnreadForConv = (qc: QueryClient, convId: string, delta: number) => {
   if (!delta) return;
   addAndClampUnread(qc, convId, delta);
   updateTotalUnreadStore(qc);
 };
 
-// ✅ 절대값 설정 유틸: unread를 특정 값으로 강제 설정 (회귀/폭증 방지)
-const setUnreadForConv = (qc: any, convId: string, value: number) => {
-  const next = clampUnread(value);
-  updateConversationInList(qc, convId, (conv) => {
-    if (conv.unReadCount === next) return null;
-    return { ...conv, unReadCount: next };
-  });
-  updateTotalUnreadStore(qc);
-};
-
 // ✅ 읽음 처리 통일 - 실수 예방을 위한 헬퍼
-const applyLocalRead = (qc: any, convId: string) => {
+const applyLocalRead = (qc: QueryClient, convId: string) => {
   try { markConversationRead(qc, convId); } catch {}
   zeroActiveUnread(qc, convId);
   updateTotalUnreadStore(qc);
 };
 
 // ✅ optimisticListUpdate: 미리보기 갱신 (ts/isBumpableType 유틸 사용)
-const optimisticListUpdate = (qc: any, msg: any, ts: (m: any) => number, isBumpableType: (t: string) => boolean) => {
+const optimisticListUpdate = (qc: QueryClient, msg: UnnormalizedMessage, ts: (m: UnnormalizedMessage) => number, isBumpableType: (t: string) => boolean) => {
   const convId = String(msg?.conversationId ?? '');
   if (!convId) return;
 
   upsertConversation(qc, { 
     id: convId, 
     lastMessageAt: new Date(ts(msg))  // ✅ serverCreatedAtMs 우선 (일관성)
-  } as any);
+  });
 
   const list = qc.getQueryData(conversationListKey) as ConversationListData | undefined;
-  const item = list?.conversations?.find((c: any) => String(c.id) === convId);
+  const item = list?.conversations?.find((c: FullConversationType) => String(c.id) === convId);
 
   // ✅ 안전한 비교: 시간 → ID 순
   const serverMs = item ? (lastMessageMs(item) || 0) : 0;
@@ -196,17 +189,27 @@ const optimisticListUpdate = (qc: any, msg: any, ts: (m: any) => number, isBumpa
   // ✅ 유틸 사용
   const t = (msg?.type || '').toLowerCase();
   if (!isBumpableType(t)) return; // 시스템 제외, text/image만
+  
   bumpConversationOnNewMessage(qc, convId, {
     id: msg.id,
     clientMessageId: msg.clientMessageId,
-    createdAt: msg.createdAt,
-    type: msg.type,
+    createdAt: msg.createdAt || new Date(),
+    type: normalizePreviewType(msg.type),
     body: msg.type === 'image' ? null : (msg.body ?? null),
     image: msg.image,
     sender: msg.sender,
-    senderId: msg.senderId,
+    senderId: getMessageSenderId(msg) || undefined,
     isAIResponse: !!msg.isAIResponse,
   });
+};
+
+const ensureSet = (store: Map<string, Set<string>>, key: string): Set<string> => {
+  let set = store.get(key);
+  if (!set) {
+    set = new Set<string>();
+    store.set(key, set);
+  }
+  return set;
 };
 
 // ===================================================================
@@ -219,21 +222,55 @@ const SocketState = () => {
   const queryClient = useQueryClient();
   const { data: session, status } = useSession();
   const conversationIdRef = useRef(conversationId);
-    
-  // ConversationList 캐시 GC 방지
+  // ✅ queryClient를 ref로 저장하여 핸들러 내부에서 안정적으로 참조
+  const queryClientRef = useRef(queryClient);
   useEffect(() => {
-    queryClient.setQueryDefaults(conversationListKey, { gcTime: Infinity, staleTime: 60_000 });
-  }, [queryClient]); // queryClient는 안정적이므로 dependency에서 제거
+    queryClientRef.current = queryClient;
+  }, [queryClient]);
+    
+  // ✅ ConversationList 캐시 설정 (gcTime: Infinity 제거 - 메모리 누수 방지)
+  useEffect(() => {
+    queryClient.setQueryDefaults(conversationListKey, { 
+      gcTime: 10 * 60 * 1000, // 10분 후 GC (메모리 누수 방지)
+      staleTime: 60_000 
+    });
+  }, [queryClient]);
 
   useEffect(() => {
       conversationIdRef.current = conversationId;
   }, [conversationId]);
 
+  // ✅ 모든 페이지에서 conversationList 로드 보장 (프로덕션 모드 대응)
+  // 세션이 authenticated되면 소켓 연결 여부와 관계없이 conversationList 로드
+  // 단, /conversations 페이지에서는 ConversationList 컴포넌트가 이미 호출하므로 중복 방지
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    
+    // ✅ /conversations 페이지에서는 ConversationList가 이미 호출하므로 스킵
+    const isConversationsPage = pathname?.startsWith('/conversations');
+    if (isConversationsPage) return;
+    
+    const existingList = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
+    const hasListNow = !!(existingList?.conversations?.length);
+    
+    // 캐시에 없으면 로드 (다른 페이지에서만 작동)
+    if (!hasListNow) {
+      queryClient.ensureQueryData({
+        queryKey: conversationListKey,
+        queryFn: getConversations,
+        staleTime: 30_000,
+        gcTime: 5 * 60_000,
+      }).catch(err => {
+        console.error('[SocketState] conversationList 로드 실패:', err);
+      });
+    }
+  }, [status, queryClient, pathname]);
+
   // 상태 refs
   const userIdRef = useRef<string | null>(null);
   const emailRef  = useRef<string | null>(null);
-  const lastSocketRef = useRef<any>(null);
-  const myHandlersRef = useRef<Map<string, (...args: any[]) => void>>(
+  const lastSocketRef = useRef<ReturnType<typeof useSocket> | null>(null);
+  const myHandlersRef = useRef<Map<string, (...args: unknown[]) => void>>(
     new Map(),
   );
   
@@ -241,9 +278,10 @@ const SocketState = () => {
   const roomRevRef = useRef<Map<string, {rev: number; ts: number}>>(new Map());
   const exitedByMeRef = useRef<Set<string>>(new Set());
   // 기타
-  const pendingNewConvsRef = useRef<Map<string, any>>(new Map());
+  const pendingNewConvsRef = useRef<Map<string, PartialConversationType & { id: string }>>(new Map());
   const pendingExitRef = useRef<Map<string, string[]>>(new Map());
   // 대화방 리스트 API 응답이 처리되었는지 여부
+  // ⚠️ 중요: 초기값을 false로 설정하여 새로고침 시에도 버퍼 저장이 시작되도록 함
   const listReadyRef = useRef(false);
   // React Query 구독 콜백의 재진입 방지 가드
   const listSyncGuardRef = useRef(false);
@@ -256,9 +294,9 @@ const SocketState = () => {
   const lastListVersionRef = useRef<number>(0);
 
   // ✅ 4) 타임스탬프 유틸: 중복 분기 제거
-  const ts = useCallback((m: any): number => 
+  const ts = useCallback((m: UnnormalizedMessage): number => 
     Number.isFinite(m?.serverCreatedAtMs)
-      ? m.serverCreatedAtMs
+      ? m.serverCreatedAtMs!
       : new Date(m?.createdAt || 0).getTime()
   , []);
 
@@ -293,7 +331,7 @@ const SocketState = () => {
             remapIfViewing(oldId, newId);
           }
         } else {
-          upsertConversation(queryClient, { ...conv, id: String(conv.id ?? cid) });
+          upsertConversation(queryClient, { ...conv, id: String(conv.id ?? cid) } as Partial<FullConversationType> & { id: string });
         }
       }
       
@@ -313,7 +351,7 @@ const SocketState = () => {
           const idx = next.conversations.findIndex(c => String(c.id) === id);
           if (idx < 0) return prev;
 
-          next.conversations[idx] = patchConvWithRemaining(next.conversations[idx] as any, remainingIds);
+          next.conversations[idx] = patchConvWithRemaining(next.conversations[idx], remainingIds);
 
           const amIExiting = !!myUserId && !remainingIds.includes(myUserId);
           if (amIExiting) {
@@ -337,13 +375,13 @@ const SocketState = () => {
       if (after?.conversations?.length) {
         updateTotalUnreadStore(queryClient);
       }
-    } catch (e) {
-
+    } catch {
+      // 에러 무시
     } finally {
       pendingNewConvsRef.current.clear();
       pendingExitRef.current.clear();
     }
-  }, [set, remapIfViewing]); // queryClient는 안정적이므로 dependency에서 제거
+  }, [set, remapIfViewing, queryClient]);
 
   // ✅ 활성 대화방 로컬 읽음 처리 (소켓 이벤트는 각 컴포넌트에서 처리)
   const syncActiveConversationRead = useCallback(() => {
@@ -372,7 +410,7 @@ const SocketState = () => {
     } catch (error) {
       console.error('[SocketState 초기화 에러]', error);
     }
-  }, [reconcileAfterList, syncActiveConversationRead]);
+  }, [reconcileAfterList, syncActiveConversationRead, queryClient]);
 
   // ✅ 소켓 핸들러들 (useEffect 밖에서 정의)
   const handleSocketConnect = useCallback(async () => {
@@ -391,11 +429,7 @@ const SocketState = () => {
       // ensureQueryData: 캐시에 없으면 fetch, 있으면 재사용
       queryClient.ensureQueryData({
         queryKey: conversationListKey,
-        queryFn: async () => {
-          const response = await fetch('/api/conversations');
-          if (!response.ok) throw new Error('Failed to fetch conversations');
-          return response.json();
-        },
+        queryFn: getConversations,
         staleTime: 30_000,
         gcTime: 5 * 60_000,
       }).catch(err => {
@@ -417,60 +451,8 @@ const SocketState = () => {
   }, []);
 
   // ✅ 소켓 이벤트 핸들러들 - useCallback으로 메모이제이션
-  // 페치 중 보류된 unread/미리보기 반영 대기열
-  const pendingUnreadRef = useRef(new Map<string, { items: Array<{ ms: number; id: string; msg: any }>; idSet: Set<string>; lastMsg: any }>());
-  const prevListFetchingRef = useRef(0);
   // 이미 처리(카운트)한 메시지 ID 집합 (대화방별)
   const countedIdSetRef = useRef(new Map<string, Set<string>>());
-
-  const flushPendingUnread = useCallback(() => {
-    const pending = pendingUnreadRef.current;
-    if (pending.size === 0) return;
-    pending.forEach((entry, convId) => {
-      try {
-        const list = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
-        const currItem = list?.conversations?.find((c: any) => String(c.id) === String(convId));
-        const serverBase = currItem?.unReadCount || 0;
-        const baseMs = currItem?.lastMessageAt ? new Date(currItem.lastMessageAt).getTime() : 0;
-        const baseId = currItem?.lastMessageId ? String(currItem.lastMessageId) : '';
-        const countedSet = countedIdSetRef.current.get(convId) ?? new Set<string>();
-        let newerCount = 0;
-
-        // 보류 큐 내 최댓값(HWM) 계산
-        let maxMs = baseMs;
-        let maxId = baseId;
-        for (const it of (entry.items || [])) {
-          if (countedSet.has(it.id)) continue;
-          const isNewer = it.ms > baseMs || (it.ms === baseMs && !!baseId && it.id > baseId);
-          if (isNewer) {
-            newerCount += 1;
-            countedSet.add(it.id);
-          }
-          // HWM 업데이트 후보
-          if (it.ms > maxMs || (it.ms === maxMs && it.id > maxId)) {
-            maxMs = it.ms;
-            maxId = it.id;
-          }
-        }
-        if (!countedIdSetRef.current.has(convId)) countedIdSetRef.current.set(convId, countedSet);
-        if (newerCount > 0) setUnreadForConv(queryClient, convId, serverBase + newerCount);
-        if (entry.lastMsg) {
-          optimisticListUpdate(queryClient, entry.lastMsg, ts, isBumpableType);
-        }
-
-        // 스냅샷 HWM도 보류 큐 최댓값으로 올려서 전환 프레임 중복 방지
-        const snap = snapshotRef.current.get(convId) || { baseUnread: 0, isAI: false, lastMessageAtMs: 0, lastId: '' };
-        if (maxMs > snap.lastMessageAtMs || (maxMs === snap.lastMessageAtMs && maxId > (snap.lastId || ''))) {
-          snapshotRef.current.set(convId, {
-            ...snap,
-            lastMessageAtMs: Math.max(snap.lastMessageAtMs, maxMs),
-            lastId: maxId || snap.lastId || '',
-          });
-        }
-      } catch (e) { try { console.log('[flush:error]', e); } catch {} }
-    });
-    pending.clear();
-  }, [queryClient, ts, isBumpableType]);
 
   const handleReceiveConversation = useCallback((_raw: FullMessageType) => {
     try {
@@ -479,13 +461,53 @@ const SocketState = () => {
       
       if (!convId) return;
 
-      // ✅ 항상 본문 캐시에 추가 (idempotent - upsertMessageSortedInCache가 중복 방지)
+      const canonicalMs = Number.isFinite(msg.serverCreatedAtMs)
+        ? msg.serverCreatedAtMs!
+        : new Date(msg.createdAt || 0).getTime();
       const canonical = {
         ...toCanonicalMsg(msg),
-        serverCreatedAtMs: Number.isFinite((msg as any).serverCreatedAtMs)
-          ? (msg as any).serverCreatedAtMs
-          : new Date(msg.createdAt).getTime(),
+        serverCreatedAtMs: canonicalMs,
       };
+      const messageId = String(canonical.id ?? msg.id ?? '');
+
+      // ✅ 리스트에서 대화방 찾기 (upsertConversation으로 추가된 것도 포함)
+      const list = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
+      const conv = list?.conversations?.find((c: FullConversationType) => String(c.id) === convId);
+
+      const countedSet = ensureSet(countedIdSetRef.current, convId);
+      const messageIdStr = String(canonical.id ?? msg.id ?? '');
+
+      // ✅ 단순화: listReadyRef가 false이면 무조건 버퍼에 저장 (API 호출 중이거나 processList 실행 중)
+      // ⚠️ 중요: listReadyRef는 processList 완료 후에만 true가 됨
+      if (!listReadyRef.current || listSyncGuardRef.current) {
+        // ✅ 이미 처리된 메시지는 버퍼에 저장하지 않음 (중복 방지)
+        if (messageIdStr && countedSet.has(messageIdStr)) {
+          return; // 이미 처리된 메시지는 스킵
+        }
+        
+        // ✅ 버퍼에 저장
+        const idSet = ensureSet(bufferedIdSetRef.current, convId);
+        if (messageIdStr && !idSet.has(messageIdStr)) {
+          const arr = bufferedRef.current.get(convId) ?? [];
+          arr.push({ id: messageId, ms: canonicalMs, msg: canonical as FullMessageType });
+          bufferedRef.current.set(convId, arr);
+          idSet.add(messageIdStr);
+        }
+        return; // 버퍼에만 저장하고 종료
+      }
+
+      // ✅ 실시간 메시지 처리 (processList 완료 후)
+      // ⚠️ 중요: countedSet에 먼저 추가하여 동시성 문제 방지
+      const curId = String(canonical.id ?? '');
+      if (!curId) return;
+      
+      // ✅ 중복 체크: 이미 처리된 메시지는 스킵
+      if (countedSet.has(curId)) return;
+      
+      // ✅ countedSet에 추가 (동시성 방지)
+      countedSet.add(curId);
+      
+      // ✅ 메시지 캐시에 추가
       upsertMessageSortedInCache(queryClient, convId, canonical);
 
       // ✅ 활성 방 처리
@@ -499,160 +521,63 @@ const SocketState = () => {
         requestAnimationFrame(() => window.dispatchEvent(new CustomEvent("chat:new-content")));
       }
 
-      // ✅ 3) 미리보기 bump는 항상 수행 (경합 시에도 미리보기 누락 방지)
-      const isListFetching = queryClient.isFetching({ queryKey: conversationListKey }) > 0;
-      // ✅ 리스트 fetch가 아닌 순간에는 항상 먼저 보류분을 플러시해 경계 프레임 +1 방지 (idempotent)
-      if (!isListFetching) {
-        flushPendingUnread();
+      // ✅ 리스트에 없으면 스킵 (handleConversationNew가 아직 호출되지 않음)
+      if (!conv) return;
+      
+      // ✅ 최적화: 미리보기와 안읽음 카운트 처리
+      // ⚠️ 중요: countedSet에 이미 처리된 메시지 ID가 있으므로, 여기서는 새로운 메시지만 처리
+      // 하지만 processList 완료 직후 도착하는 실시간 메시지는 서버 응답에 이미 포함되었을 수 있음
+      // snapshotRef를 확인하여 서버 응답 기준으로 중복 체크
+      const snap = snapshotRef.current.get(convId);
+      const lastMessageAtMs = conv.lastMessageAt ? new Date(conv.lastMessageAt).getTime() : 0;
+      const msgMs = canonical.serverCreatedAtMs!;
+      const lastIdFromList = conv.lastMessageId ? String(conv.lastMessageId) : '';
+      
+      // ✅ 중복 체크: 리스트의 마지막 메시지와 비교
+      // - 동일 ID면 중복
+      // - 시간이 이전이면 중복
+      let isDuplicate = (lastIdFromList && curId === lastIdFromList) || msgMs < lastMessageAtMs;
+      
+      // ⚠️ 중요: snapshotRef를 확인하여 서버 응답 기준으로 중복 체크
+      // processList 완료 직후 도착하는 실시간 메시지는 서버 응답에 이미 포함되었을 수 있음
+      // snapshotRef는 서버 응답의 마지막 메시지 정보를 정확히 가지고 있음
+      if (snap) {
+        // 서버 응답의 마지막 메시지 시간보다 이전이면 중복
+        if (msgMs < snap.lastMessageAtMs) {
+          isDuplicate = true;
+        }
+        // 서버 응답의 마지막 메시지와 동일 시간이지만 다른 ID인 경우
+        if (msgMs === snap.lastMessageAtMs) {
+          // 동일 시간이면:
+          // - snapshotRef의 lastId와 동일하면 중복 (서버 응답에 이미 포함됨)
+          // - snapshotRef의 lastId와 다르면 새로운 메시지일 수 있음 (계속 진행)
+          if (snap.lastId && curId === snap.lastId) {
+            isDuplicate = true;
+          }
+        }
       }
-      prevListFetchingRef.current = isListFetching ? 1 : 0;
-      const msgType = (msg?.type || '').toLowerCase();
-      const qualifiesForUnread = !isMyMessage && msgType !== "system";
-      if (msg.type !== "system" && (!isListFetching && listReadyRef.current || isMyMessage)) {
-        // 미리보기는 즉시 갱신 (신규 대화방도 upsertConversation로 리스트에 생성됨)
+      
+      // ✅ 미리보기 업데이트 (중복이 아니고 시스템 메시지가 아닐 때)
+      if (!isDuplicate && msg.type !== "system" && (listReadyRef.current || isMyMessage)) {
         optimisticListUpdate(queryClient, msg, ts, isBumpableType);
       }
-
-      // ✅ 개선된 배지 로직: 리스트 준비 여부와 관계없이 즉시 처리
-      const canonicalMs = Number(canonical.serverCreatedAtMs);
-      const messageId = String(canonical.id ?? msg.id ?? '');
-
-      // ✅ 리스트가 준비되지 않았으면 버퍼에 추가
-      if (!listReadyRef.current) {
-        // ✅ 1) O(1) 중복 체크
-        const idSet = bufferedIdSetRef.current.get(convId) ?? new Set<string>();
-        if (!idSet.has(messageId)) {
-          const arr = bufferedRef.current.get(convId) ?? [];
-          arr.push({ id: messageId, ms: canonicalMs, msg });
-          bufferedRef.current.set(convId, arr);
-          idSet.add(messageId);
-          bufferedIdSetRef.current.set(convId, idSet);
-        }
-        return;
-      }
-
-      // ✅ 4) 스냅샷이 없으면 conversationList 기준 최소 중복 체크 후 단일 경로 처리
-      let snap = snapshotRef.current.get(convId);
-      if (!snap) {
-        const list = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
-        const conv = list?.conversations?.find((c: any) => String(c.id) === convId);
-        const lastMessageAtMs = conv?.lastMessageAt ? new Date(conv.lastMessageAt).getTime() : 0;
-        const msgMs = canonical.serverCreatedAtMs!;
-        const lastIdFromList = conv?.lastMessageId ? String(conv.lastMessageId) : '';
-        const curId = String(canonical.id ?? '');
-        const sameAsListId = !!lastIdFromList && curId === lastIdFromList;
-        const isOlderThanList = msgMs < lastMessageAtMs;
-        const isSameTimeAndId = msgMs === lastMessageAtMs && sameAsListId;
-        const isDuplicate = sameAsListId || isOlderThanList || isSameTimeAndId;
-
-        const countedSet = countedIdSetRef.current.get(convId) ?? new Set<string>();
-        if (sameAsListId && !countedSet.has(curId)) {
-          countedSet.add(curId);
-          if (!countedIdSetRef.current.has(convId)) countedIdSetRef.current.set(convId, countedSet);
-        }
-
-        if (!isListFetching && !isDuplicate && !isMyMessage && msg.type !== 'system' && !countedSet.has(curId)) {
-          const msgType = (msg?.type || '').toLowerCase();
-          if (isBumpableType(msgType)) {
-            incUnreadForConv(queryClient, convId, 1);
-            countedSet.add(curId);
-            if (!countedIdSetRef.current.has(convId)) countedIdSetRef.current.set(convId, countedSet);
-          }
-        } else if (isListFetching && !isDuplicate && !isMyMessage && msg.type !== 'system') {
-          const msgType = (msg?.type || '').toLowerCase();
-          if (isBumpableType(msgType)) {
-            const cur = pendingUnreadRef.current.get(convId) ?? { items: [], idSet: new Set<string>(), lastMsg: null };
-            if (!cur.idSet.has(curId) && !countedSet.has(curId)) {
-              cur.idSet.add(curId);
-              cur.items.push({ ms: msgMs, id: curId, msg });
-            }
-            if (!cur.lastMsg || msgMs >= (cur.items[cur.items.length - 1]?.ms || 0)) {
-              cur.lastMsg = msg;
-            }
-            pendingUnreadRef.current.set(convId, cur);
-          }
-        }
-
-        // ✅ 리스트 fetch 중에는 스냅샷을 변경하지 않는다 (flush 시 일괄 반영)
-        if (isListFetching) return;
-
-        // 리스트가 준비된 상태라면 안전하게 스냅샷 갱신
-        const resolvedSnapMs = isDuplicate
-          ? (sameAsListId ? Math.max(lastMessageAtMs, msgMs) : lastMessageAtMs)
-          : msgMs;
-        const resolvedSnapId = isDuplicate
-          ? (sameAsListId ? curId : (conv?.lastMessageId || ''))
-          : curId;
-
-        snap = {
-          baseUnread: conv?.unReadCount || 0,
-          isAI: !!conv?.isAIChat,
-          lastMessageAtMs: resolvedSnapMs,
-          lastId: resolvedSnapId,
-        };
-        snapshotRef.current.set(convId, snap);
-        return;
-      }
-
-      const msgMs = canonical.serverCreatedAtMs!;
-      const msgId = String(canonical.id ?? '');
-      const sameAsSnapId = !!snap.lastId && snap.lastId === msgId;
-      if (sameAsSnapId) {
-        if (msgMs > snap.lastMessageAtMs) {
-          snapshotRef.current.set(convId, { ...snap, lastMessageAtMs: msgMs });
-        }
-        const countedSet = countedIdSetRef.current.get(convId) ?? new Set<string>();
-        if (!countedSet.has(msgId)) {
-          countedSet.add(msgId);
-          if (!countedIdSetRef.current.has(convId)) countedIdSetRef.current.set(convId, countedSet);
-        }
-        return;
-      }
-
-      if (isActive || isMyMessage || snap.isAI) return;
-
-      // (ms, id) 튜플 비교: 동일 ms에서는 snapId가 있을 때만 id 비교로 신규 인정
-      const snapMs = Number(snap.lastMessageAtMs || 0);
-      const snapId = snap.lastId ? String(snap.lastId) : '';
-      const isNewer = msgMs > snapMs || (msgMs === snapMs && !!snapId && msgId > snapId);
-
-      if (isNewer) {
+      
+      // ✅ 안읽음 카운트 (중복이 아니고, 내 메시지가 아니고, 시스템 메시지가 아니고, 활성 대화방이 아닐 때)
+      if (!isDuplicate && !isMyMessage && msg.type !== 'system' && !isActive && !conv.isAIChat) {
         const msgType = (msg?.type || '').toLowerCase();
-        const countedSet = countedIdSetRef.current.get(convId) ?? new Set<string>();
-        if (!isListFetching && isBumpableType(msgType) && !countedSet.has(msgId)) {
+        if (isBumpableType(msgType)) {
           incUnreadForConv(queryClient, convId, 1);
-          countedSet.add(msgId);
-          if (!countedIdSetRef.current.has(convId)) countedIdSetRef.current.set(convId, countedSet);
-        } else if (isListFetching && isBumpableType(msgType) && !isMyMessage && !countedSet.has(msgId)) {
-          const cur = pendingUnreadRef.current.get(convId) ?? { items: [], idSet: new Set<string>(), lastMsg: null };
-          if (!cur.idSet.has(msgId) && !countedSet.has(msgId)) {
-            cur.idSet.add(msgId);
-            cur.items.push({ ms: msgMs, id: msgId, msg });
-          }
-          if (!cur.lastMsg || msgMs >= (cur.items[cur.items.length - 1]?.ms || 0)) {
-            cur.lastMsg = msg;
-          }
-          pendingUnreadRef.current.set(convId, cur);
         }
-
-        const nextSnap = {
-          ...snap,
-          lastMessageAtMs: Math.max(snap.lastMessageAtMs, msgMs),
-          lastId: msgId || snap.lastId || '',
-        };
-        snapshotRef.current.set(convId, nextSnap);
+      } else {
+        // ✅ 활성 대화방이거나 본인 메시지인 경우에도 총합 업데이트 (실시간 동기화 보장)
+        // 프로덕션 모드에서 안 읽은 메시지 카운트가 실시간으로 업데이트되지 않는 문제 해결
+        updateTotalUnreadStore(queryClient);
       }
     } catch {}
   }, [queryClient, ts, isBumpableType]);
 
   // ✅ room.event 핸들러 - 델타 이벤트 처리
-  const handleRoomEvent = useCallback(async (event: {
-    type: "member.left" | "member.joined" | "member.removed" | "room.deleted";
-    conversationId: string;
-    userId?: string;
-    ts: number;
-    rev: number;
-  }) => {
+  const handleRoomEvent = useCallback(async (event: RoomEventPayload) => {
     try {
       const { type, conversationId, userId, ts, rev } = event;
       
@@ -683,7 +608,7 @@ const SocketState = () => {
           }
 
           // ✅ conversationKey 업데이트 (대화방 상세 데이터)
-          queryClient.setQueryData(conversationKey(id), (prev: any) => {
+          queryClient.setQueryData(conversationKey(id), (prev: { conversation?: FullConversationType } | undefined) => {
             if (!prev?.conversation?.userIds) return prev;
             
             const beforeUserIds = prev.conversation.userIds;
@@ -693,7 +618,7 @@ const SocketState = () => {
             if (beforeUserIds.length === updatedUserIds.length) return prev;
             
             const beforeUsers = prev.conversation.users || [];
-            const updatedUsers = beforeUsers.filter((user: any) => user.id !== leftUserId);
+            const updatedUsers = beforeUsers.filter((user) => user.id !== leftUserId);
             
             return {
               ...prev,
@@ -706,10 +631,10 @@ const SocketState = () => {
           });
 
           // ✅ conversationListKey의 해당 아이템만 새 객체로 바꾸고, 나머지 아이템은 같은 참조 유지
-          queryClient.setQueryData(conversationListKey, (prev: any) => {
+          queryClient.setQueryData(conversationListKey, (prev: ConversationListData | undefined) => {
             if (!prev?.conversations?.length) return prev;
             
-            const idx = prev.conversations.findIndex((c: any) => String(c.id) === id);
+            const idx = prev.conversations.findIndex((c: FullConversationType) => String(c.id) === id);
             if (idx < 0) return prev;
                   
             const currentConv = prev.conversations[idx];
@@ -720,7 +645,7 @@ const SocketState = () => {
             if (beforeUserIds.length === updatedUserIds.length) return prev;
             
             // ✅ users 배열에서도 나간 유저 제거
-            const updatedUsers = (currentConv.users || []).filter((user: any) => 
+            const updatedUsers = (currentConv.users || []).filter((user) => 
               user.id !== leftUserId
             );
             
@@ -744,15 +669,15 @@ const SocketState = () => {
           });
 
           // ✅ messagesKey에서 나간 사용자 정보 제거
-          queryClient.setQueryData(messagesKey(id), (prev: any) => {
+          queryClient.setQueryData(messagesKey(id), (prev: MessagesInfinite) => {
             if (!prev?.pages) return prev;
           
             let hasChanges = false;
-            const newPages = prev.pages.map((page: any) => {
+            const newPages = prev.pages.map((page: MessagesPage) => {
               if (!Array.isArray(page?.messages)) return page;
             
               let pageHasChanges = false;
-              const newMessages = page.messages.map((m: any) => {
+              const newMessages = page.messages.map((m: FullMessageType) => {
                 // 메시지의 conversation.userIds에서 나간 사용자 제거
                 if (m?.conversation?.userIds) {
                   const hasLeftUser = m.conversation.userIds.includes(leftUserId);
@@ -775,11 +700,11 @@ const SocketState = () => {
               // seenUsersForLastMessage에서 나간 사용자 제거 (첫 번째 페이지만)
               let updatedSeenUsers = page.seenUsersForLastMessage;
               if (page.seenUsersForLastMessage) {
-                const hasLeftUserInSeen = page.seenUsersForLastMessage.some((user: any) => user.id === leftUserId);
+                const hasLeftUserInSeen = page.seenUsersForLastMessage.some((user: { id: string }) => user.id === leftUserId);
                 if (hasLeftUserInSeen) {
                   pageHasChanges = true;
                   hasChanges = true;
-                  updatedSeenUsers = page.seenUsersForLastMessage.filter((user: any) => 
+                  updatedSeenUsers = page.seenUsersForLastMessage.filter((user: { id: string }) => 
                     user.id !== leftUserId
                   );
                 }
@@ -823,10 +748,12 @@ const SocketState = () => {
       
       // 총 배지 업데이트
       updateTotalUnreadStore(queryClient);
-    } catch (error) {}
+    } catch {
+      // 에러 무시
+    }
   }, [queryClient, session?.user?.id]);
 
-  const handleConversationNew = useCallback((conversation: any) => {
+  const handleConversationNew = useCallback((conversation: PartialConversationType & { id: string }) => {
       try {                
         if (!conversation?.id) return;
         const id = String(conversation.id);
@@ -842,17 +769,27 @@ const SocketState = () => {
 
           // mergeOrUpsertAIConversation이 이미 upsert/머지했으므로 리스트에 있어야 함
           const list = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
-          const item = list?.conversations?.find((c: any) => String(c.id) === visId) as any;
+          const item = list?.conversations?.find((c: FullConversationType) => String(c.id) === visId);
           
           if (item && !lastMessageMs(item)) {
             updateConversationById(queryClient, visId, {
               lastMessageAt: new Date(),
               lastMessageAtMs: Date.now(),
-            } as any);
+            });
           }
 
           zeroAndClampUnread(queryClient, visId, conversationIdRef.current);
 
+          // ✅ ⚠️ 중요: 새로운 대화방을 snapshotRef에 추가하여 실시간 메시지 중복 체크 가능하도록 함
+          // API 호출 중에 생성된 새로운 대화방도 processList 완료 후 실시간 메시지를 받을 수 있도록 함
+          const lastMsgMs = lastMessageMs(item || conv) || 0;
+          const lastMsgId = item?.lastMessageId || (item || conv as FullConversationType).lastMessageId || undefined;
+          snapshotRef.current.set(visId, {
+            baseUnread: 0,
+            isAI: !!conv.isAIChat,
+            lastMessageAtMs: lastMsgMs,
+            lastId: lastMsgId ? String(lastMsgId) : undefined,
+          });
 
           if (merged && oldId && newId && oldId !== newId) {
             remapIfViewing(oldId, newId);
@@ -860,15 +797,29 @@ const SocketState = () => {
           return;
         }
             
-        upsertConversation(queryClient, conv);
+        upsertConversation(queryClient, conv as Partial<FullConversationType> & { id: string });
         if (!lastMessageMs(conv)) {
-          const lastAt = normalizeDate((conv as any)?.lastMessageAt ?? (conv as any)?.createdAt ?? new Date());
-          updateConversationById(queryClient, id, { lastMessageAt: lastAt } as any);
+          const lastAt = normalizeDate(conv.lastMessageAt ?? (conv as { createdAt?: Date | string }).createdAt ?? new Date());
+          updateConversationById(queryClient, id, { lastMessageAt: lastAt });
         }
         zeroAndClampUnread(queryClient, id, conversationIdRef.current);
       
+        // ✅ ⚠️ 중요: 새로운 대화방을 snapshotRef에 추가하여 실시간 메시지 중복 체크 가능하도록 함
+        // API 호출 중에 생성된 새로운 대화방도 processList 완료 후 실시간 메시지를 받을 수 있도록 함
+        const list = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
+        const item = list?.conversations?.find((c: FullConversationType) => String(c.id) === id);
+        const lastMsgMs = lastMessageMs(item || conv) || 0;
+        const lastMsgId = item?.lastMessageId || (item || conv as FullConversationType).lastMessageId || undefined;
+        snapshotRef.current.set(id, {
+          baseUnread: 0,
+          isAI: !!conv.isAIChat,
+          lastMessageAtMs: lastMsgMs,
+          lastId: lastMsgId ? String(lastMsgId) : undefined,
+        });
       
-      } catch (error) { }
+      } catch {
+        // 에러 무시
+      }
   }, [queryClient, remapIfViewing]);
 
 
@@ -890,10 +841,7 @@ const SocketState = () => {
     }
   }, [queryClient]);
 
-  const handleBlogCommentUpdated = useCallback((payload: {
-    blogId: string;
-    comment: CommentType;
-  }) => {
+  const handleBlogCommentUpdated = useCallback((payload: BlogCommentUpdatedPayload) => {
     try {
       if (!payload?.blogId || !payload?.comment?.id) return;
       replaceCommentById(
@@ -907,10 +855,7 @@ const SocketState = () => {
     }
   }, [queryClient]);
 
-  const handleBlogCommentDeleted = useCallback((payload: {
-    blogId: string;
-    commentId: string;
-  }) => {
+  const handleBlogCommentDeleted = useCallback((payload: BlogCommentDeletedPayload) => {
     try {
       if (!payload?.blogId || !payload?.commentId) return;
       removeCommentById(
@@ -943,16 +888,18 @@ const SocketState = () => {
     try {
       const blog = payload?.blog as BlogData;
       if (!blog?.id) return;
-      const patch: any = { id: String(blog.id) };
+      const patch: { id: string } & Partial<Pick<BlogData, 'title' | 'image' | 'author' | 'viewCount'>> & { createdAt?: Date; _count?: { comments: number } } = { id: String(blog.id) };
       if (blog.title !== undefined) patch.title = blog.title;
       if (blog.image !== undefined) patch.image = blog.image;
-      if (blog.createdAt !== undefined) patch.createdAt = blog.createdAt;
+      if (blog.createdAt !== undefined) {
+        patch.createdAt = blog.createdAt instanceof Date ? blog.createdAt : new Date(blog.createdAt);
+      }
       if (blog.author !== undefined) patch.author = blog.author;
-      if (blog._count !== undefined) patch._count = blog._count;
+      if (blog._count?.comments !== undefined) patch._count = { comments: blog._count.comments };
       if (blog.viewCount !== undefined) patch.viewCount = blog.viewCount;
-      upsertBlogCardById(queryClient, patch);
+      upsertBlogCardById(queryClient, patch as unknown as Parameters<typeof upsertBlogCardById>[1]);
               
-      const partial: Record<string, any> = {};
+      const partial: Partial<Pick<BlogData, 'title' | 'content' | 'image'>> = {};
       if (blog.title !== undefined) partial.title = blog.title;
       if (blog.content !== undefined) partial.content = blog.content;
       if (blog.image !== undefined) partial.image = blog.image;
@@ -969,20 +916,17 @@ const SocketState = () => {
       if (!payload?.blogId) return;
       const id = String(payload.blogId);
       removeBlogCardById(queryClient, id);
-      queryClient.setQueryData(blogDetailKey(id), (old: any) => {
+      queryClient.setQueryData(blogDetailKey(id), (old: BlogDetailQueryData) => {
         if (!old) return old;
-        return { ...old, blog: undefined };
+        return { ...old, blog: undefined } as BlogDetailQueryData & { blog: undefined };
       });
       queryClient.removeQueries({ queryKey: blogsCommentsKey(id), exact: true });
     } catch (error) {
       console.error("Error handling blog deleted:", error);
     }
-  }, [queryClient, router, pathname]);
+  }, [queryClient]);
 
-  const handleDrinkReviewNew = useCallback((payload: {
-    drinkSlug: string;
-    review: DrinkReviewType;
-  }) => {
+  const handleDrinkReviewNew = useCallback((payload: DrinkReviewPayload) => {
     try {
       if (!payload?.drinkSlug || !payload?.review?.id) return;
       prependReview(queryClient, payload.drinkSlug, payload.review);
@@ -991,10 +935,7 @@ const SocketState = () => {
     }
   }, [queryClient]);
 
-  const handleDrinkReviewUpdated = useCallback((payload: {
-    drinkSlug: string;
-    review: DrinkReviewType;
-  }) => {
+  const handleDrinkReviewUpdated = useCallback((payload: DrinkReviewPayload) => {
     try {
       if (!payload?.drinkSlug || !payload?.review?.id) return;
       replaceReviewById(
@@ -1008,10 +949,7 @@ const SocketState = () => {
     }
   }, [queryClient]);
 
-  const handleDrinkReviewDeleted = useCallback((payload: {
-    drinkSlug: string;
-    reviewId: string;
-  }) => {
+  const handleDrinkReviewDeleted = useCallback((payload: DrinkReviewDeletedPayload) => {
     try {
       if (!payload?.drinkSlug || !payload?.reviewId) return;
       removeReviewById(queryClient, payload.drinkSlug, payload.reviewId);
@@ -1035,77 +973,43 @@ const SocketState = () => {
     syncActiveConversationRead();
   }, [conversationId, syncActiveConversationRead]);
 
-  // 소켓 이벤트 처리
+  // ✅ 핸들러들을 ref에 저장하여 안정적인 참조 유지
+  const handlersRef = useRef({
+    handleSocketConnect,
+    handleDisconnect,
+    handleReceiveConversation,
+    handleConversationNew,
+    handleRoomEvent,
+    handleBlogCommentNew,
+    handleBlogCommentUpdated,
+    handleBlogCommentDeleted,
+    handleBlogNew,
+    handleBlogUpdated,
+    handleBlogDeleted,
+    handleDrinkReviewNew,
+    handleDrinkReviewUpdated,
+    handleDrinkReviewDeleted,
+  });
+
+  // ✅ 핸들러 ref를 최신으로 유지
   useEffect(() => {
-    const old = lastSocketRef.current;
-    if (old) {
-      for (const [ev, fn] of myHandlersRef.current) {
-        try { old.off(ev, fn) } catch {}
-      }
-    }
-    myHandlersRef.current.clear();
-
-    if (!socket) {
-      lastSocketRef.current = null;
-      return;
-    }
-    
-    try { socket.off("disconnect", handleDisconnect); } catch {}
-    socket.on("disconnect", handleDisconnect);
-    myHandlersRef.current.set("disconnect", handleDisconnect);
-
-    try { socket.off("connect", handleSocketConnect); } catch {}
-    socket.on("connect", handleSocketConnect);
-    myHandlersRef.current.set("connect", handleSocketConnect);
-    
-    if (socket.connected) {
-      handleSocketConnect();
-    }
-
-    // 이벤트 등록
-    const entries: Array<[string, (...a: any[]) => void]> = [
-      [SOCKET_EVENTS.RECEIVE_CONVERSATION, handleReceiveConversation],
-      [SOCKET_EVENTS.CONVERSATION_NEW, handleConversationNew],
-      [SOCKET_EVENTS.ROOM_EVENT, handleRoomEvent],
-      [SOCKET_EVENTS.BLOG_COMMENT_NEW, handleBlogCommentNew],
-      [SOCKET_EVENTS.BLOG_COMMENT_UPDATED, handleBlogCommentUpdated],
-      [SOCKET_EVENTS.BLOG_COMMENT_DELETED, handleBlogCommentDeleted],
-      [SOCKET_EVENTS.BLOG_NEW, handleBlogNew],
-      [SOCKET_EVENTS.BLOG_UPDATED, handleBlogUpdated],
-      [SOCKET_EVENTS.BLOG_DELETED, handleBlogDeleted],
-      [SOCKET_EVENTS.DRINK_REVIEW_NEW, handleDrinkReviewNew],
-      [SOCKET_EVENTS.DRINK_REVIEW_UPDATED, handleDrinkReviewUpdated],
-      [SOCKET_EVENTS.DRINK_REVIEW_DELETED, handleDrinkReviewDeleted],
-    ];
-
-    for (const [ev, fn] of entries) {
-      socket.on(ev, fn);
-      myHandlersRef.current.set(ev, fn);
-    }
-
-    lastSocketRef.current = socket;
-
-    return () => {
-      // ✅ 진행 중인 쿼리 취소만 유지
-      try {
-        queryClient.cancelQueries({ queryKey: conversationListKey, exact: true });
-        const activeId = String(conversationIdRef.current ?? "");
-        if (activeId) {
-          queryClient.cancelQueries({ queryKey: messagesKey(activeId), exact: true });
-        }
-      } catch (e) { }
-            
-      if (lastSocketRef.current) {
-        for (const [ev, fn] of myHandlersRef.current) {
-          try {
-            lastSocketRef.current.off(ev, fn);
-          } catch {}
-        }
-        myHandlersRef.current.clear();
-      }
+    handlersRef.current = {
+      handleSocketConnect,
+      handleDisconnect,
+      handleReceiveConversation,
+      handleConversationNew,
+      handleRoomEvent,
+      handleBlogCommentNew,
+      handleBlogCommentUpdated,
+      handleBlogCommentDeleted,
+      handleBlogNew,
+      handleBlogUpdated,
+      handleBlogDeleted,
+      handleDrinkReviewNew,
+      handleDrinkReviewUpdated,
+      handleDrinkReviewDeleted,
     };
   }, [
-    socket,
     handleSocketConnect,
     handleDisconnect,
     handleReceiveConversation,
@@ -1122,76 +1026,324 @@ const SocketState = () => {
     handleDrinkReviewDeleted,
   ]);
 
+  // 소켓 이벤트 처리
+  useEffect(() => {
+    const old = lastSocketRef.current;
+    if (old) {
+      for (const [ev, fn] of myHandlersRef.current) {
+        try { old.off(ev, fn) } catch {}
+      }
+    }
+    myHandlersRef.current.clear();
+
+    if (!socket) {
+      lastSocketRef.current = null;
+      return;
+    }
+    
+    const handlers = handlersRef.current;
+    
+    if (socket.connected) {
+      handlers.handleSocketConnect();
+    }
+
+    // 이벤트 등록 (cleanup에서도 사용할 목록)
+    const entries: Array<[string, (payload: unknown) => void]> = [
+      ["disconnect", handlers.handleDisconnect],
+      ["connect", handlers.handleSocketConnect],
+      [SOCKET_EVENTS.RECEIVE_CONVERSATION, handlers.handleReceiveConversation as (payload: unknown) => void],
+      [SOCKET_EVENTS.CONVERSATION_NEW, handlers.handleConversationNew as (payload: unknown) => void],
+      [SOCKET_EVENTS.ROOM_EVENT, handlers.handleRoomEvent as (payload: unknown) => void],
+      [SOCKET_EVENTS.BLOG_COMMENT_NEW, handlers.handleBlogCommentNew as (payload: unknown) => void],
+      [SOCKET_EVENTS.BLOG_COMMENT_UPDATED, handlers.handleBlogCommentUpdated as (payload: unknown) => void],
+      [SOCKET_EVENTS.BLOG_COMMENT_DELETED, handlers.handleBlogCommentDeleted as (payload: unknown) => void],
+      [SOCKET_EVENTS.BLOG_NEW, handlers.handleBlogNew as (payload: unknown) => void],
+      [SOCKET_EVENTS.BLOG_UPDATED, handlers.handleBlogUpdated as (payload: unknown) => void],
+      [SOCKET_EVENTS.BLOG_DELETED, handlers.handleBlogDeleted as (payload: unknown) => void],
+      [SOCKET_EVENTS.DRINK_REVIEW_NEW, handlers.handleDrinkReviewNew as (payload: unknown) => void],
+      [SOCKET_EVENTS.DRINK_REVIEW_UPDATED, handlers.handleDrinkReviewUpdated as (payload: unknown) => void],
+      [SOCKET_EVENTS.DRINK_REVIEW_DELETED, handlers.handleDrinkReviewDeleted as (payload: unknown) => void],
+    ];
+
+    // ✅ cleanup에서 사용할 handlers 참조 저장
+    const handlersMap = myHandlersRef.current;
+    
+    for (const [ev, fn] of entries) {
+      socket.on(ev, fn);
+      handlersMap.set(ev, fn);
+    }
+
+    lastSocketRef.current = socket;
+
+    return () => {
+      // ✅ 진행 중인 쿼리 취소만 유지
+      try {
+        queryClientRef.current.cancelQueries({ queryKey: conversationListKey, exact: true });
+        const activeId = String(conversationIdRef.current ?? "");
+        if (activeId) {
+          queryClientRef.current.cancelQueries({ queryKey: messagesKey(activeId), exact: true });
+        }
+      } catch {
+        // 에러 무시
+      }
+            
+      // ✅ cleanup: effect 실행 시점의 entries 사용
+      if (socket) {
+        for (const [ev, fn] of entries) {
+          try {
+            socket.off(ev, fn);
+          } catch {}
+        }
+      }
+      // ✅ cleanup: effect body에서 저장한 handlers 사용
+      handlersMap.clear();
+    };
+    // ✅ socket만 의존성으로 유지 (핸들러들은 안정적이므로 제거)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket]);
+
   // ✅ 1) 구독 본문을 함수로 추출
   const processList = useCallback((serverData?: ConversationListData) => {
     // 내가 쓰고 다시 들어온 콜백이면 바로 탈출
     if (listSyncGuardRef.current) return;
 
+    // ✅ 서버 응답 데이터를 우선 사용 (API 응답의 가장 fresh한 데이터)
+    // React Query 구독 이벤트는 캐시 업데이트 후에 발생하므로,
+    // serverData 파라미터로 받은 데이터가 서버 응답의 원본 데이터입니다
+    // optimisticListUpdate 등으로 캐시가 변경되었을 수 있으므로,
+    // 서버 응답 원본 데이터를 사용해야 버퍼 메시지와 정확히 비교할 수 있습니다
+    const latestData = serverData || (queryClient.getQueryData(conversationListKey) as ConversationListData | undefined);
+
     // ✅ 2) 빈 배열도 '준비 완료'로 인정
-    if (!serverData || !Array.isArray(serverData.conversations)) {
+    if (!latestData || !Array.isArray(latestData.conversations)) {
       snapshotRef.current = new Map();
-      listReadyRef.current = true;
+      // ⚠️ 중요: 빈 데이터일 때도 finally 블록에서 listReadyRef를 true로 설정하도록 함
+      // listSyncGuardRef는 이미 true로 설정되어 있음
       updateTotalUnreadStore(queryClient);
+      // finally 블록에서 listSyncGuardRef와 listReadyRef 설정
+      listSyncGuardRef.current = false;
+      listReadyRef.current = true;
       return;
     }
     
+    // ✅ 서버 응답은 이미 React Query 캐시에 반영된 상태 (subscribe 이벤트가 캐시 업데이트 후 발생)
+    // 따라서 여기서는 버퍼 처리만 수행
     // 리스트 스냅샷 만들기
     const next = new Map<string, ConvSnap>();
-    for (const c of serverData.conversations) {
+    
+    // ✅ ⚠️ 중요: 먼저 snapshotRef를 next Map으로 초기화하여 실시간 메시지 중복 체크가 가능하도록 함
+    // 버퍼 처리 과정에서 버퍼 메시지가 있는 대화방은 다시 업데이트됨
+    for (const c of latestData.conversations) {
       const convId = String(c.id);
+      // ✅ 서버 응답에서 직접 lastMessageAtMs와 lastMessageId 읽기
+      // 서버 API는 lastMessageAtMs를 숫자 또는 null로 반환하고, lastMessageId도 반환함
+      const rawLastMessageAtMs = (c as { lastMessageAtMs?: number | null }).lastMessageAtMs;
+      const rawLastMessageId = (c as { lastMessageId?: string | null }).lastMessageId;
+      
+      // ✅ 서버 응답의 messages[0]에서도 마지막 메시지 ID와 시간 확인 (fallback용)
+      const messagesArray = (c as { messages?: Array<{ id?: string; createdAt?: Date | string; serverCreatedAtMs?: number }> }).messages;
+      const lastMsgFromArray = messagesArray && Array.isArray(messagesArray) && messagesArray.length > 0 
+        ? messagesArray[0] 
+        : null;
+      const lastMsgIdFromArray = lastMsgFromArray?.id ? String(lastMsgFromArray.id) : undefined;
+      
+      // lastMessageAtMs 처리: 서버에서 숫자로 반환하거나 null일 수 있음
+      // 우선순위: lastMessageAtMs > lastMessageAt > messages[0].createdAt
+      let serverLastMessageAtMs: number;
+      if (typeof rawLastMessageAtMs === 'number' && Number.isFinite(rawLastMessageAtMs) && rawLastMessageAtMs > 0) {
+        serverLastMessageAtMs = rawLastMessageAtMs;
+      } else if (c.lastMessageAt) {
+        const fromLastMessageAt = new Date(c.lastMessageAt).getTime();
+        serverLastMessageAtMs = Number.isFinite(fromLastMessageAt) ? fromLastMessageAt : 0;
+      } else if (lastMsgFromArray) {
+        // ✅ messages[0].createdAt을 fallback으로 사용
+        const lastMsgCreatedAtMs = lastMsgFromArray.serverCreatedAtMs 
+          ? (typeof lastMsgFromArray.serverCreatedAtMs === 'number' && Number.isFinite(lastMsgFromArray.serverCreatedAtMs) 
+            ? lastMsgFromArray.serverCreatedAtMs 
+            : 0)
+          : (lastMsgFromArray.createdAt 
+            ? new Date(lastMsgFromArray.createdAt).getTime() 
+            : 0);
+        serverLastMessageAtMs = Number.isFinite(lastMsgCreatedAtMs) && lastMsgCreatedAtMs > 0 ? lastMsgCreatedAtMs : 0;
+      } else {
+        serverLastMessageAtMs = 0; // 메시지가 없는 경우
+      }
+      
+      // ✅ lastMessageId 처리: lastMessageId 우선 (API 응답에 항상 있음), 없으면 messages[0].id 사용
+      const serverLastMessageId = rawLastMessageId 
+        ? String(rawLastMessageId) 
+        : (lastMsgIdFromArray 
+          ? lastMsgIdFromArray 
+          : ((c as { lastMessageId?: string }).lastMessageId ? String((c as { lastMessageId: string }).lastMessageId) : undefined));
+      
       const snap: ConvSnap = {
         baseUnread: Number(c.unReadCount ?? 0),
         isAI: !!c.isAIChat,
-        lastMessageAtMs: Number((c as any).lastMessageAtMs ?? (c.lastMessageAt ? new Date(c.lastMessageAt).getTime() : 0)),
-        lastId: (c as any).lastMessageId ? String((c as any).lastMessageId) : undefined,
+        lastMessageAtMs: serverLastMessageAtMs,
+        lastId: serverLastMessageId,
       };
       next.set(convId, snap);
     }
+    
+    // ✅ ⚠️ 중요: snapshotRef를 먼저 next Map으로 초기화
+    // 이렇게 하면 processList 완료 전에 실시간 메시지가 도착해도 중복 체크가 가능
+    // 버퍼 처리 과정에서 버퍼 메시지가 있는 대화방은 다시 업데이트됨
+    snapshotRef.current = new Map(next);
 
-    // 버퍼 소진 + 정합화 반영 계산
-    const updates: Array<{ convId: string; finalUnread: number; latestBuffered?: any }> = [];
-    for (const [convId, snap] of next) {
+    // ✅ 버퍼 소진: 서버 응답 기준으로 버퍼 메시지 처리
+    // API 호출 중 저장된 실시간 메시지를 서버 응답의 마지막 메시지와 비교하여 처리
+    // 서버 응답에는 lastMessageAtMs와 lastMessageId가 있으므로, 이를 기준으로 비교
+    
+    // ✅ ⚠️ 중요: listSyncGuardRef를 먼저 true로 설정하여 버퍼 처리 중 실시간 메시지가 버퍼에만 저장되도록 함
+    // 이렇게 하면 processList 실행 중에 도착하는 실시간 메시지는 버퍼에 저장되고,
+    // processList 완료 후 listReadyRef가 true가 되면 다음 메시지부터 실시간 처리됨
+    listSyncGuardRef.current = true;
+    
+    const updates: Array<{ convId: string; finalUnread: number; latestBuffered?: UnnormalizedMessage }> = [];
+    
+    // ✅ 모든 대화방 처리 (서버 응답에 있는 대화방 + 버퍼에만 있는 대화방)
+    const allConvIds = new Set<string>();
+    for (const [convId] of next) {
+      allConvIds.add(convId);
+    }
+    for (const [convId] of bufferedRef.current) {
+      allConvIds.add(convId);
+    }
+    
+    for (const convId of allConvIds) {
+      const snap = next.get(convId);
+      // ✅ 서버 응답에 없는 대화방은 스킵 (새 대화방은 handleConversationNew에서 처리)
+      if (!snap) continue;
+      
+      // ✅ processList 실행 중에 실시간 메시지가 버퍼에 추가될 수 있으므로,
+      // 처리 직전에 최신 버퍼를 가져옴
       const buffered = bufferedRef.current.get(convId) ?? [];
       
-      // ✅ 하이워터마크(HWM) 방식: 스냅샷과 비교하여 이미 즉시 처리된 메시지 제외
-      const currentSnap = snapshotRef.current.get(convId);
-      const hwmMs = currentSnap?.lastMessageAtMs ?? snap.lastMessageAtMs;
-      const hwmId = currentSnap?.lastId ?? snap.lastId;
+      // ✅ 서버 응답 기준: lastMessageAtMs와 lastMessageId로 비교
+      const serverMs = snap.lastMessageAtMs;
+      const serverId = snap.lastId ?? '';
       
-      // ✅ 개선된 비교 로직: 현재 HWM과 비교하여 더 새로운 메시지만 필터링
-      const newer = buffered.filter(b => {
+      // ✅ 서버 응답 데이터 검증: serverMs가 0이거나 유효하지 않으면 검열하지 않고 모든 버퍼 메시지 제외
+      // 이는 메시지가 없는 대화방이거나, 서버 응답이 제대로 오지 않은 경우를 방지
+      if (!serverMs || serverMs <= 0) {
+        // 서버에 마지막 메시지가 없으면 버퍼 메시지도 모두 제외 (안전하게 처리)
+        // 서버 응답이 제대로 오지 않았을 수 있으므로, 모든 버퍼 메시지를 무시
+        bufferedRef.current.set(convId, []);
+        bufferedIdSetRef.current.set(convId, new Set());
+        continue; // 다음 대화방 처리
+      }
+      
+      // ✅ 버퍼 내 중복 메시지 제거 (같은 ID가 여러 번 들어있을 수 있음)
+      const seenBufferIds = new Set<string>();
+      const uniqueBuffered = buffered.filter(b => {
+        const msgId = String(b.msg?.id ?? '');
+        if (!msgId) return true; // ID가 없으면 포함
+        if (seenBufferIds.has(msgId)) return false; // 이미 본 메시지는 제외
+        seenBufferIds.add(msgId);
+        return true;
+      });
+      
+      // ✅ 최적화된 필터링: 서버 응답 이후의 메시지만 카운트
+      // 요구사항:
+      // 1) API 마지막 메시지 시간보다 늦은 메시지 추가
+      // 2) 동일 시간이지만 ID가 다른 메시지 추가 (동기화)
+      const newer = uniqueBuffered.filter(b => {
         const msg = b.msg;
-        const msgMs = b.ms;
         const msgId = String(msg?.id ?? '');
         
-        // 1. ID가 같으면 서버와 동일한 메시지이므로 제외
-        if (msgId && hwmId && msgId === hwmId) return false;
-        // 2. 시간 비교 (HWM보다 새로운 메시지만)
-        if (msgMs > hwmMs) return true;
-        if (msgMs < hwmMs) return false;
-        
-        // 3. 동일 시간이면 ID로 tie-breaker (HWM보다 큰 ID만)
-        if (msgMs === hwmMs && msgId && hwmId) {
-          return String(msgId) > String(hwmId);
-        }
-        if (msgMs === hwmMs && msgId && !hwmId) {
-          return true;
+        // ✅ 서버에 저장된 실제 시간 사용 (정확성 보장)
+        // 우선순위: serverCreatedAtMs > createdAt
+        let msgMs: number;
+        if (msg?.serverCreatedAtMs && typeof msg.serverCreatedAtMs === 'number' && Number.isFinite(msg.serverCreatedAtMs) && msg.serverCreatedAtMs > 0) {
+          msgMs = msg.serverCreatedAtMs;
+        } else if (msg?.createdAt) {
+          const fromCreatedAt = new Date(msg.createdAt).getTime();
+          msgMs = Number.isFinite(fromCreatedAt) ? fromCreatedAt : 0;
+        } else {
+          msgMs = 0;
         }
         
+        // ✅ 유효성 검사
+        if (!msgMs || msgMs <= 0 || !msgId) return false;
+        
+        // ✅ 1단계: ID 비교 (가장 빠른 체크)
+        // 서버 응답의 마지막 메시지와 동일한 ID면 제외 (이미 서버 응답에 포함됨)
+        if (serverId && msgId === serverId) return false;
+        
+        // ✅ 2단계: 시간 비교
+        if (msgMs > serverMs) return true; // 서버보다 늦음 → 포함
+        if (msgMs < serverMs) return false; // 서버보다 이전 → 제외
+        
+        // ✅ 3단계: 동일 시간일 때 ID 비교
+        // 동일 시간이지만 ID가 다르면 → 포함 (동기화)
+        if (msgMs === serverMs && serverId && msgId !== serverId) return true;
+        
+        // 동일 시간이고 ID도 같거나 비교 불가 → 제외
         return false;
       });
-
+      
+      // ✅ 최적화: newer 메시지 ID를 countedSet에 먼저 추가 (중복 방지)
+      const countedSet = ensureSet(countedIdSetRef.current, convId);
+      const processedIds = new Set<string>();
+      
+      for (const b of newer) {
+        const msgId = String(b.msg?.id ?? '');
+        if (!msgId || countedSet.has(msgId)) continue; // 이미 처리된 메시지 스킵
+        countedSet.add(msgId);
+        processedIds.add(msgId);
+      }
+      
+      // ✅ 처리할 메시지가 없으면 스킵
+      if (processedIds.size === 0) {
+        bufferedRef.current.set(convId, []);
+        bufferedIdSetRef.current.set(convId, new Set());
+        continue;
+      }
+      
+      // ✅ 처리할 메시지만 필터링 (processedIds에 포함된 메시지만)
+      const filteredNewer = newer.filter(b => {
+        const msgId = String(b.msg?.id ?? '');
+        return msgId && processedIds.has(msgId);
+      });
+      
       // 최종 unread 계산
       const activeId = String(conversationIdRef.current ?? "");
       const isActive = activeId === convId;
-      const extra = newer.length;
+      
+      // ✅ 실제로 안읽음으로 카운트될 메시지만 필터링
+      // 내 메시지가 아니고, 시스템 메시지가 아니고, isBumpableType이 true인 메시지만 카운트
+      const myEmail = emailRef.current ?? "";
+      const myUserId = userIdRef.current ?? "";
+      const countables = filteredNewer.filter(b => {
+        const m = b.msg;
+        
+        // ✅ 내 메시지 체크: email 또는 userId로 비교
+        // sender.id를 우선 확인하고, 없으면 getMessageSenderId 사용
+        const senderId = String(m?.sender?.id ?? getMessageSenderId(m) ?? "");
+        const senderEmail = String(m?.sender?.email ?? "");
+        
+        // ✅ email이 있으면 email로, 없으면 userId로 비교
+        const isMyMsgByEmail = myEmail && senderEmail && 
+                               String(senderEmail).toLowerCase() === String(myEmail).toLowerCase();
+        const isMyMsgById = myUserId && senderId && 
+                           String(senderId).toLowerCase() === String(myUserId).toLowerCase();
+        const isMyMsg = isMyMsgByEmail || isMyMsgById;
+        
+        if (isMyMsg) return false; // 내 메시지는 안읽음 카운트에서 제외
+        
+        if (m.type === 'system') return false;
+        const msgType = (m?.type || '').toLowerCase();
+        return isBumpableType(msgType);
+      });
+      
+      const extra = countables.length;
       const finalUnread = (isActive || snap.isAI) ? 0 : (snap.baseUnread + extra);
 
       // ✅ 2) 미리보기: 정렬 대신 단일 스캔으로 최신 메시지 찾기 (O(k log k) → O(k))
-      let latestBuffered: any | undefined;
+      let latestBuffered: UnnormalizedMessage | undefined;
       let maxMs = -1;
       let maxId = '';
-      for (const n of newer) {
+      for (const n of filteredNewer) {
         const m = n.msg;
         const t = ts(m); // ✅ 4) 유틸 사용
         const id = String(m.id ?? '');
@@ -1205,9 +1357,16 @@ const SocketState = () => {
         }
       }
 
+      // ✅ 버퍼 메시지를 메시지 캐시에 추가 (최적화: 배치 처리)
+      for (const b of filteredNewer) {
+        upsertMessageSortedInCache(queryClient, convId, b.msg);
+      }
+
       updates.push({ convId, finalUnread, latestBuffered });
 
-      // ✅ 스냅샷 전진: 더 정확한 업데이트
+      // ✅ 스냅샷 전진: 더 정확한 업데이트 (버퍼 처리 후)
+      // ⚠️ 중요: processList 완료 전에 snapshotRef를 업데이트하여
+      // 실시간 메시지가 도착했을 때 중복 체크가 정확히 이루어지도록 함
       if (latestBuffered) {
         const ms = ts(latestBuffered); // ✅ 4) 유틸 사용
         const msgId = String(latestBuffered.id ?? '');
@@ -1217,35 +1376,46 @@ const SocketState = () => {
           lastMessageAtMs: Math.max(snap.lastMessageAtMs, ms),
           lastId: msgId || snap.lastId || '',
         });
+      } else {
+        // 버퍼 메시지가 없어도 snapshotRef는 유지 (서버 응답 기준)
+        snapshotRef.current.set(convId, snap);
       }
       
-      // ✅ 간단한 버퍼 관리: 처리된 메시지와 함께 초기화
-      if (newer.length > 0) {
-        // 처리된 메시지가 있으면 해당 대화방 버퍼 초기화
-        bufferedRef.current.set(convId, []);
-        bufferedIdSetRef.current.set(convId, new Set()); // ✅ 1) Set도 초기화
-      } else if (buffered.length > 0) {
-        const remaining = buffered.filter((entry) => {
-          if (!entry?.id) return true;
-          if (hwmId && entry.id === hwmId) return false;
-          if (currentSnap?.lastId && entry.id === currentSnap.lastId) return false;
-          return true;
-        });
-        if (remaining.length !== buffered.length) {
-          bufferedRef.current.set(convId, remaining);
-          bufferedIdSetRef.current.set(convId, new Set(remaining.map((entry) => entry.id)));
+      // ✅ 버퍼 초기화: 처리된 메시지와 과거 메시지는 버퍼에서 제거
+      // filteredNewer에 포함된 메시지는 이미 처리되었으므로 제거
+      // processList 실행 중에 실시간 메시지가 버퍼에 추가될 수 있지만,
+      // 이미 countedSet에 추가되어 있으므로 다음 handleReceiveConversation에서 스킵됨
+      const processedIdsSet = new Set(filteredNewer.map(b => String(b.msg?.id ?? '')));
+      // 현재 시점의 버퍼를 다시 확인 (processList 실행 중에 추가된 메시지 포함)
+      const currentBufferedList = bufferedRef.current.get(convId) ?? [];
+      const remaining = currentBufferedList.filter(b => {
+        const msgId = String(b.msg?.id ?? '');
+        // 처리된 메시지이거나 이미 countedSet에 있으면 제거
+        return msgId && !processedIdsSet.has(msgId) && !countedSet.has(msgId);
+      });
+      
+      if (remaining.length > 0) {
+        bufferedRef.current.set(convId, remaining);
+        const idSet = ensureSet(bufferedIdSetRef.current, convId);
+        idSet.clear();
+        for (const b of remaining) {
+          const msgId = String(b.msg?.id ?? '');
+          if (msgId) idSet.add(msgId);
         }
+      } else {
+        bufferedRef.current.set(convId, []);
+        bufferedIdSetRef.current.set(convId, new Set());
       }
     }
 
     // ----- 배치 쓰기: 한 번만 -----
-    listSyncGuardRef.current = true;
+    // listSyncGuardRef는 이미 위에서 true로 설정됨
     try {
+      
       // ✅ 3) updates를 Map으로 변환하여 O(n²) → O(n) 최적화
-      const updatesMap = new Map<string, { finalUnread: number; latestBuffered?: any }>();
+      const updatesMap = new Map<string, { finalUnread: number; latestBuffered?: UnnormalizedMessage }>();
       for (const u of updates) updatesMap.set(u.convId, u);
 
-      // withConversationList 헬퍼 사용으로 무한루프 방지
       withConversationList(queryClient, (prev: ConversationListData | undefined) => {
         if (!prev?.conversations?.length) return prev;
         
@@ -1263,45 +1433,83 @@ const SocketState = () => {
         return hasChanges ? { ...prev, conversations: newConversations } : prev;
       });
 
-      // 미리보기 bump는 가드가 켜진 상태에서 안전하게 실행
-      for (const update of updates) {
-        if (update.latestBuffered) {
-          optimisticListUpdate(queryClient, update.latestBuffered, ts, isBumpableType);
+        // 미리보기 bump는 listSyncGuardRef가 false가 되기 전에 실행
+        // countedIdSetRef에 이미 메시지 ID가 추가되어 있으므로 실시간 메시지가 도착해도 스킵됨
+        for (const update of updates) {
+          if (update.latestBuffered) {
+            optimisticListUpdate(queryClient, update.latestBuffered, ts, isBumpableType);
+          }
         }
-      }
 
-      snapshotRef.current = next;
-      listReadyRef.current = true;
-      updateTotalUnreadStore(queryClient);
+        updateTotalUnreadStore(queryClient);
       
     } finally {
+      // ✅ listSyncGuardRef를 false로 설정한 후에 listReadyRef를 true로 설정
+      // 이렇게 하면 processList 실행 중에 실시간 메시지가 오면 버퍼에만 저장되고,
+      // listSyncGuardRef가 false가 된 후에야 실시간 처리가 시작됨
       listSyncGuardRef.current = false;
+      listReadyRef.current = true;
     }
   }, [queryClient, ts, isBumpableType]);
 
-// React Query 캐시의 "변경 감지 후크"
-useEffect(() => {
-  // ✅ 1) 구독 직후 1회 시드 (이미 데이터가 있으면 즉시 ready로 전환 + 버퍼 플러시)
-  const existing = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
-  processList(existing);
+  // ✅ 단순화된 버퍼 로직 (초기 로드와 새로고침 모두 동일하게 처리)
+  // 1. listReadyRef는 false로 시작
+  // 2. API 호출 중이면 (isFetching > 0) listReadyRef = false → handleReceiveConversation에서 버퍼 저장
+  // 3. API 응답 완료 후 processList 실행 → 버퍼 처리
+  // 4. processList 완료 후 listReadyRef = true → 이후 실시간 메시지는 즉시 처리
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    
+    // ✅ API 호출 상태 감지 (폴링) - 타이밍 보장
+    // ⚠️ 중요: API 호출 중에는 반드시 listReadyRef를 false로 설정하여 모든 실시간 메시지를 버퍼에 저장
+    // ⚠️ 중요: isFetching이 false가 되어도 listReadyRef는 processList 완료 후에만 true가 됨
+    const checkFetching = () => {
+      const isFetching = queryClient.isFetching({ queryKey: conversationListKey }) > 0;
+      if (isFetching) {
+        // ✅ API 호출 중이면 listReadyRef를 false로 설정하여 버퍼 저장 시작
+        // ⚠️ 중요: processList가 실행되기 전까지는 계속 false 유지되어야 함
+        // processList 내부에서 listSyncGuardRef를 true로 설정하여 추가 보호
+        listReadyRef.current = false;
+      }
+      // ⚠️ 중요: isFetching이 false여도 listReadyRef는 변경하지 않음
+      // processList 완료 후 finally 블록에서만 listReadyRef = true 설정
+    };
+    
+    // ✅ 초기 체크
+    checkFetching();
+    
+    // ✅ 주기적으로 체크 (API 호출 시작 감지용)
+    const interval = setInterval(checkFetching, 100);
+    
+    // ✅ React Query 구독: API 응답 완료 후 processList 실행 (초기 로드든 새로고침이든 동일)
+    // ⚠️ 중요: API 응답 완료 시점에 listReadyRef는 여전히 false이어야 함 (버퍼에 저장된 메시지 처리 전까지)
+    const unsub = queryClient.getQueryCache().subscribe((event) => {
+      if (event?.type !== "updated") return;
+      const q = event.query;
+      if (!Array.isArray(q?.queryKey) || q.queryKey[0] !== conversationListKey[0]) return;
 
-  // ✅ 2) 이후 변경 구독
-  const unsub = queryClient.getQueryCache().subscribe((event) => {
-    if (event?.type !== "updated") return;
-    const q = event.query;
-    if (!Array.isArray(q?.queryKey) || q.queryKey[0] !== conversationListKey[0]) return;
+      // ✅ API 응답 완료 후에만 processList 실행
+      // ⚠️ 중요: fetchStatus가 'idle'이고 status가 'success'인 경우에만 API 응답으로 간주
+      // 이 시점에는 listReadyRef가 false이므로 모든 실시간 메시지는 버퍼에 저장됨
+      const isApiResponse = q.state?.fetchStatus === 'idle' && q.state?.status === 'success';
+      if (!isApiResponse) return;
 
-    // ✅ 5) 동일 버전 스킵 (불필요한 processList 호출 방지)
-    const version = (q.state?.dataUpdatedAt as number) || 0;
-    if (version === lastListVersionRef.current) return;
-    lastListVersionRef.current = version;
+      // ✅ 동일 버전 스킵 (불필요한 processList 호출 방지)
+      const version = (q.state?.dataUpdatedAt as number) || 0;
+      if (version === lastListVersionRef.current) return;
+      lastListVersionRef.current = version;
 
-    const data = q.state?.data as ConversationListData | undefined;
-    processList(data); // 동일 처리
-  });
+      // ✅ ⚠️ 중요: processList 실행 전에 listReadyRef는 여전히 false이어야 함
+      // 이렇게 하면 processList 실행 중에 도착하는 실시간 메시지도 버퍼에 저장됨
+      const data = q.state?.data as ConversationListData | undefined;
+      processList(data); // API 응답 후 버퍼 처리 (내부에서 listSyncGuardRef = true 설정)
+    });
 
-  return () => { try { unsub(); } catch {} }; // ✅ 구독 해제로 메모리 누수 방지
-}, [queryClient, processList]);
+    return () => {
+      clearInterval(interval);
+      try { unsub(); } catch {}
+    };
+  }, [queryClient, processList, status]);
   return null;
 }
 

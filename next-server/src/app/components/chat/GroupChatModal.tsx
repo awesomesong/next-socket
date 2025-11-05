@@ -5,10 +5,10 @@ import Modal from "@/src/app/components/Modal";
 import SelectBox from "@/src/app/components/SelectBox";
 import { IUserList } from "@/src/app/types/common";
 import { useRouter } from "next/navigation";
-import { memo, useRef, useState, useEffect } from "react";
+import { memo, useRef, useState } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { SelectInstance, GroupBase } from "react-select";
+import { SelectInstance, GroupBase, MultiValue } from "react-select";
 import getUsers from "@/src/app/lib/getUsers";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import ShapesSkeleton from "@/src/app/components/skeleton/ShapesSkeleton";
@@ -29,7 +29,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
   onCloseModal,
 }) => {
   const socket = useSocket();
-  const selectRef = useRef<SelectInstance<OptionType, false, GroupBase<OptionType>>>(null);
+  const selectRef = useRef<SelectInstance<OptionType, true, GroupBase<OptionType>>>(null);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   
@@ -44,9 +44,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
   });
 
   const { 
-    mutate, 
-    data,
-    isPending
+    mutate,
   } = useMutation({
     mutationFn: ({ data, isGroup, userId }: { data: FieldValues; isGroup: boolean; userId: string; }) => 
       createChatConversation({ data, isGroup, userId }),
@@ -122,15 +120,6 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
     });
   };
 
-  const isDisabled = isLoading || isPending;
-
-  // 취소 버튼 핸들러
-  const handleCancel = () => {
-    clearErrors();
-    reset();
-    onCloseModal();
-  };
-
   return (
     <Modal isOpen={isOpen} onCloseModal={onCloseModal}>
       <form onSubmit={handleSubmit(onSubmit)} id="form">
@@ -173,7 +162,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
                     value: user.id,
                     label: user.name,
                   })) ?? []}
-                  onChange={(value: any) =>
+                  onChange={(value: MultiValue<OptionType> | null) =>
                     setValue("members", value, {
                       shouldValidate: true,
                     })

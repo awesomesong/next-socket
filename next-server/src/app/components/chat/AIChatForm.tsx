@@ -1,5 +1,5 @@
 "use client";
-import { useForm, SubmitHandler, FieldValues } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { useQueryClient, InfiniteData } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import {
@@ -16,7 +16,7 @@ import { useSession } from "next-auth/react";
 import { ObjectId } from "bson";
 import { formatErrorMessage } from "@/src/app/lib/react-query/utils";
 import { validatePrompt as validateAIPrompt } from "@/src/app/utils/aiPolicy";
-import { FullMessageType } from "@/src/app/types/conversation";
+import { FullMessageType, normalizePreviewType } from "@/src/app/types/conversation";
 import {
   upsertMessageSortedInCache,
   replaceOptimisticMessage,
@@ -102,7 +102,11 @@ const AIChatForm = ({
     }
 
     setIsDisabled(true);
+    // 위의 가드로 인해 session.user는 존재함이 보장됨
     const user = session.user;
+    const userId = user.id;
+    const userName = user.name ?? "";
+    const userEmail = user.email ?? "";
 
     // ✅ 입력 필드 초기화
     setValue("message", "", { shouldValidate: true });
@@ -119,14 +123,14 @@ const AIChatForm = ({
       createdAt: now,
       type: "text",
       conversationId,
-      senderId: user?.id!,
+      senderId: userId,
       sender: {
-        id: user?.id!,
-        name: user?.name!,
-        email: user?.email!,
-        image: user?.image ?? null,
+        id: userId,
+        name: userName,
+        email: userEmail,
+        image: user.image ?? null,
       },
-      conversation: { isGroup: false, userIds: [user?.id!] },
+      conversation: { isGroup: false, userIds: [userId] },
       isAIResponse: false,
       isError: false,
     };
@@ -147,10 +151,16 @@ const AIChatForm = ({
       
       // ✅ 성공 시에만 conversationList 업데이트 (로딩 상태 확인)
       if (!isConversationLoading) {
+        // 서버에서 반환한 메시지 타입을 사용 (이미지가 있을 경우 "image")
+        const messageType = result.newMessage.type || (result.newMessage.image ? "image" : "text");
+        const previewBody = messageType === "image" ? "사진을 보냈습니다." : (message.length > 50 ? message.substring(0, 50) : message);
+        
         bumpConversationOnNewMessage(queryClient, conversationId, {
           id: result.newMessage.id,
           clientMessageId: userMessageId, // ✅ AI 채팅 시 임시 ID로 중복 체크
-          body: message.length > 50 ? message.substring(0, 50) : message,
+          body: previewBody, 
+          type: normalizePreviewType(messageType),
+          image: result.newMessage.image || undefined,
           createdAt: result.newMessage.createdAt,
           isAIResponse: false,
         });

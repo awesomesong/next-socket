@@ -33,7 +33,6 @@ const BlogEditpage = ({ params }: ParamsProps) => {
             <FormBlog
               id={id}
               initialData={data?.blog}
-              message={data?.message}
               isEdit={true}
             />
           ) : 

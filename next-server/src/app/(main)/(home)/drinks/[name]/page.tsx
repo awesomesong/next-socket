@@ -14,14 +14,12 @@ const DESCRIPTION_MOTION = {
   initial: { top: '60%' },
   whileInView: { top: '50%' },
   viewport: { amount: 0.4 },
-  transition: { ease: "easeOut" as any },
 };
 
 const INFO_MOTION = {
   initial: { top: '70%' },
   whileInView: { top: '50%' },
   viewport: { amount: 0 },
-  transition: { ease: "easeOut" as any },
 };
 
 const DrinksPage = ({params } : { params: Promise<{ name: string }> }) => {
@@ -137,8 +135,8 @@ const DrinksPage = ({params } : { params: Promise<{ name: string }> }) => {
             </div>
         }
         <div className='md:px-6 md:py-3 px-3'>
-            <FormReview id={name} user={session?.user!} />
-            <Reviews id={name} name={drink.name} user={session?.user!} />
+            {session?.user && <FormReview id={name} user={session.user} />}
+            <Reviews id={name} name={drink.name} user={session?.user} />
         </div>
     </div>
   );

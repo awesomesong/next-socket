@@ -65,7 +65,6 @@ export async function POST(req: Request) {
     const aiResponse = await generateAIResponse(
       message,
       aiAgentType,
-      conversationId,
     );
 
     // AI 메시지 저장
@@ -127,7 +126,6 @@ export async function POST(req: Request) {
 async function generateAIResponse(
   userMessage: string,
   aiAgentType: string,
-  conversationId: string,
 ): Promise<string> {
   // 여기서 실제 AI API 호출을 구현
   // 예시로 간단한 응답 생성

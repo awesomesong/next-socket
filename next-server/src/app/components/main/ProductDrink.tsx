@@ -1,6 +1,6 @@
 'use client';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, type Transition } from 'framer-motion';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import DrinksName from './DrinksName';
 import Link from 'next/link';
@@ -14,8 +14,8 @@ const OTHER_DRINKS_DATA = drinksData.filter((drink) => drink.type === 'others');
 // ✅ Motion transition 외부 추출
 const DRINK_MOTION_TRANSITION = {
   duration: 0.5,
-  ease: "easeOut" as any,
-};
+  ease: "easeOut",
+} satisfies Transition;
 
 const ProductDrink = () => {
   const scrollRef = useRef<HTMLDivElement>(null);

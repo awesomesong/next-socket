@@ -21,8 +21,6 @@ const Button: React.FC<ButtonProps> = ({
     type,
     fullWidth,
     children,
-    secondary,
-    danger,
     disabled,
     onClick,
     color,

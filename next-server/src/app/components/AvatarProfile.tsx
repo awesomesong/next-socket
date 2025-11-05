@@ -2,7 +2,7 @@
 import { DefaultSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
-import { CldUploadButton } from "next-cloudinary";
+import { CldUploadButton, CloudinaryUploadWidgetResults } from "next-cloudinary";
 import { PiUserCircleFill } from "react-icons/pi";
 import { IoCamera } from "react-icons/io5";
 import { RiSave3Fill } from "react-icons/ri";
@@ -14,6 +14,32 @@ import { updateProfile } from "@/src/app/lib/updateProfile";
 interface AvatarProfileProps {
   user?: DefaultSession["user"];
 }
+
+export type CloudinaryUploadWidgetResult = {
+  event: "success" | "error" | "abort" | string;
+  info: string | {
+    id: string;
+    batchId: string;
+    asset_id: string;
+    public_id: string;
+    version: number;
+    version_id: string;
+    signature: string;
+    width: number;
+    height: number;
+    format: string;
+    resource_type: 'image' | 'video' | 'raw' | 'auto';
+    created_at: string;
+    tags: string[];
+    bytes: number;
+    type: string;
+    etag: string;
+    placeholder: boolean;
+    url: string;
+    secure_url: string;
+    original_filename: string;
+  };
+};
 
 const AvatarProfile: React.FC<AvatarProfileProps> = ({ user }) => {
   const { update } = useSession();
@@ -30,8 +56,13 @@ const AvatarProfile: React.FC<AvatarProfileProps> = ({ user }) => {
 
   const image = watch("image");
 
-  const handleUpload = (result: any) => {
-    const uploadedUrl = result?.info?.secure_url;
+  const handleUpload = (result: CloudinaryUploadWidgetResults) => {
+    if (typeof result.info === 'string') {
+      toast.error("이미지 업로드에 실패했습니다.");
+      return;
+    }
+
+    const uploadedUrl = (result.info as { secure_url: string }).secure_url;
 
     if (!uploadedUrl) {
       toast.error("이미지 업로드에 실패했습니다.");
@@ -59,8 +90,8 @@ const AvatarProfile: React.FC<AvatarProfileProps> = ({ user }) => {
       
       await update(result);
       
-    } catch (error: any) {
-      toast.error(error.message || "프로필 수정 중 오류가 발생했습니다.");
+    } catch {
+      toast.error("프로필 수정 중 오류가 발생했습니다.");
     }
   };
 

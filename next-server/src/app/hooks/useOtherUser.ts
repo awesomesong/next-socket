@@ -1,24 +1,33 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import type { DefaultSession } from "next-auth";
 import type { User } from "@prisma/client";
-import type { FullConversationType } from "../types/conversation";
+import type { FullConversationType, RoomEventPayload } from "../types/conversation";
+import type { IUserList } from "../types/common";
 import { useSocket } from "../context/socketContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { conversationKey } from "@/src/app/lib/react-query/chatCache";
 
 // ---- helpers ----
-const toKey = (x: any): string => {
+/**
+ * 값을 문자열 키로 변환하는 유틸리티 함수
+ * @param x - 변환할 값 (string, number, null, undefined 등)
+ * @returns 문자열 키 또는 빈 문자열
+ */
+export const toKey = (x: unknown): string => {
   if (x == null) return "";
   if (typeof x === "string") return x;
   if (typeof x === "number") return String(x);
-  const s = x?.toString?.();
+  const s = (x as { toString?: () => string })?.toString?.();
   return typeof s === "string" ? s : "";
 };
 
+/**
+ * 값이 유효한 경우에만 업데이트되는 sticky state hook
+ * resetKey가 변경되면 무조건 초기화하고, allowInvalid가 true면 invalid 값도 허용합니다.
+ */
 function useSticky<T>(
   value: T,
-  opts: { isValid: (v: T) => boolean; resetKey?: any; allowInvalid?: boolean }
+  opts: { isValid: (v: T) => boolean; resetKey?: unknown; allowInvalid?: boolean }
 ) {
   const { isValid, resetKey, allowInvalid = false } = opts;
   const [sticky, setSticky] = useState<T>(value);
@@ -38,25 +47,44 @@ function useSticky<T>(
   return sticky as T;
 }
 
-const isNonEmptyString = (v: any): v is string =>
+/**
+ * 값이 비어있지 않은 문자열인지 확인하는 타입 가드
+ */
+const isNonEmptyString = (v: unknown): v is string =>
   typeof v === "string" && v.length > 0;
 
+/**
+ * 대화방의 최소 필수 필드만 포함하는 타입
+ */
 type MinimalConv = Pick<FullConversationType, "id" | "name" | "users">;
 
-const FALLBACK_USER = {
+/**
+ * 대화 상대가 없을 때 사용하는 fallback 사용자 객체
+ */
+export type FallbackUser = {
+  email: "None";
+  name: "(대화상대 없음)";
+  id: null;
+  createdAt: null;
+  updatedAt: null;
+  image: "None";
+  role: null;
+};
+
+const FALLBACK_USER: FallbackUser = {
   email: "None",
   name: "(대화상대 없음)",
-  id: null as string | null,
+  id: null,
   createdAt: null,
   updatedAt: null,
   image: "None",
-  role: null as any,
+  role: null,
 };
 
 // ---- hook ----
 const useOtherUser = (
   conversation: FullConversationType | { users: User[] } | null | undefined,
-  currentUser?: DefaultSession["user"]
+  currentUser?: IUserList | null
 ) => {
   const { data: session, status } = useSession();
   const socket = useSocket();
@@ -78,10 +106,18 @@ const useOtherUser = (
   // 2) 대화방 (sticky)
   const convCandidate: MinimalConv | null = useMemo(() => {
     if (!conversation) return null;
+    
+    // 타입 가드를 통해 안전하게 필드 접근
+    const hasId = "id" in conversation && conversation.id != null;
+    const hasName = "name" in conversation;
+    const id = hasId ? String(conversation.id) : null;
+    const name = hasName && conversation.name != null ? String(conversation.name) : null;
+    const users = Array.isArray(conversation.users) ? conversation.users : [];
+    
     return {
-      id: (conversation as any).id ?? null,
-      name: (conversation as any).name ?? null,
-      users: Array.isArray(conversation.users) ? conversation.users : [],
+      id,
+      name,
+      users,
     } as MinimalConv | null;
   }, [conversation]);
 
@@ -92,7 +128,7 @@ const useOtherUser = (
 
   // 3) tombstones (일방향)
   const [tombstones, setTombstones] = useState<Set<string>>(new Set());
-  const markTomb = (id: any) => {
+  const markTomb = (id: unknown) => {
     const k = toKey(id);
     if (!k) return;
     setTombstones((prev) => (prev.has(k) ? prev : new Set(prev).add(k)));
@@ -102,7 +138,7 @@ const useOtherUser = (
   useEffect(() => {
     if (!socket) return;
 
-    const onRoomEvent = (p: any) => {
+    const onRoomEvent = (p: RoomEventPayload) => {
       const key = toKey(p?.conversationId ?? p?.roomId ?? p?.id);
       if (!key) return;
 
@@ -129,8 +165,17 @@ const useOtherUser = (
     if (!convKey) return;
     const state = queryClient.getQueryState(conversationKey(convKey));
     if (state?.status === "success") {
-      const data: any = queryClient.getQueryData(conversationKey(convKey));
-      const users = Array.isArray(data?.users) ? data.users : stickyConv?.users ?? [];
+      // conversationKey는 FullConversationType 또는 { conversation: FullConversationType } 형태를 반환할 수 있음
+      const data = queryClient.getQueryData<FullConversationType | { conversation?: FullConversationType }>(
+        conversationKey(convKey)
+      );
+      
+      // data가 객체 형태일 수 있으므로 안전하게 users 추출
+      const conversation = data && "conversation" in data ? data.conversation : data;
+      const users = (conversation && "users" in conversation && Array.isArray(conversation.users))
+        ? conversation.users
+        : (stickyConv?.users ?? []);
+      
       if (users.length <= 1) {
         markTomb(convKey);
       }
@@ -139,13 +184,17 @@ const useOtherUser = (
 
   // 6) 상대 유저 계산
   const allowInvalid = tombstones.has(convKey);
-  const computedOtherUser = useMemo(() => {
+  const computedOtherUser = useMemo((): IUserList | FallbackUser => {
     if (allowInvalid || !stickyConv) return FALLBACK_USER;
     const users = stickyConv.users ?? [];
     if (users.length <= 1) return FALLBACK_USER;
     if (stickyEmail) {
-      const other = users.find((u: any) => u?.email !== stickyEmail);
-      if (other) return other as User;
+      // users는 IUserList[] 타입이므로 email 필드가 있을 수 있음
+      const other = users.find((u: IUserList) => u?.email !== stickyEmail);
+      // IUserList 타입으로 반환 (실제 사용처에서도 IUserList로 사용됨)
+      if (other && other.id) {
+        return other as IUserList;
+      }
     }
     return FALLBACK_USER;
   }, [allowInvalid, stickyConv, stickyEmail]);

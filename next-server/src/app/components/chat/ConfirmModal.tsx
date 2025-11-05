@@ -36,7 +36,13 @@ const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
 
       onCloseModal();
 
-      const event = payload?.event; // { type: "room.deleted" | "member.left", conversationId, ... }
+      // 타입 가드: success가 true이면 payload는 DeleteConversationSuccessResponse
+      if (!payload || !("ok" in payload) || payload.ok !== true) {
+        toast.error("삭제 이벤트 응답이 없습니다.");
+        return;
+      }
+
+      const event = payload.event;
       if (!event?.type) {
         toast.error("삭제 이벤트 응답이 없습니다.");
         return;

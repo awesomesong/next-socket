@@ -17,7 +17,7 @@ import {
   blogDetailKey,
 } from "@/src/app/lib/react-query/blogsCache";
 import { SOCKET_EVENTS } from "@/src/app/lib/react-query/utils";
-import { BlogProps, CreateBlogResponse, UpdateBlogResponse } from "@/src/app/types/blog";
+import { BlogProps, CreateBlogResponse, UpdateBlogResponse, BlogDetailQueryData } from "@/src/app/types/blog";
 import toast from "react-hot-toast";
 import PointsLoading from "./PointsLoading";
 import Button from "./Button";
@@ -32,7 +32,6 @@ import "react-quill-new/dist/quill.snow.css";
 type FormBlogProps = {
   id?: string;
   initialData?: BlogProps;
-  message?: string;
   isEdit: boolean;
 };
 
@@ -181,12 +180,11 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
               return [...prevImages, { index, url }];
             });
           }
-        } catch (error: any) {
+        } catch {
           toast.error(
             "이미지 업로드 중 오류가 발생했습니다. 다시 시도해주세요.",
           );
-          console.error(error);
-        } finally {
+        } finally { 
           setIsLoading(false);
         }
       }
@@ -319,7 +317,7 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
           );
           
           // ✅ 단일 캐시 업데이트로 통합 (중복 제거)
-          const existingCache = queryClient.getQueryData(blogDetailKey(String(updateResult.updateBlog!.id))) as any;
+          const existingCache = queryClient.getQueryData(blogDetailKey(String(updateResult.updateBlog!.id))) as BlogDetailQueryData;
           const updatedBlog = {
             ...updateResult.updateBlog,
             content: updateResult.updateBlog!.content,
@@ -341,7 +339,7 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
           });
 
           queryClient.setQueryData(blogDetailKey(String(updateResult.updateBlog!.id)), {
-            blog: updatedBlog
+            blog: updatedBlog,
           });
 
           // ✅ 소켓 브로드캐스트
@@ -385,18 +383,18 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
         
         toast.success(result.message!);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      if (error.message?.includes("권한")) {
+      const errorMessage = error instanceof Error ? error.message : "에러가 발생하였습니다. 다시 시도해주세요.";
+      if (errorMessage.includes("권한")) {
         router.push("/blogs");
       }
-      toast.error(error.message || "에러가 발생하였습니다. 다시 시도해주세요.");
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   }, [
     title,
-    content,
     images,
     imageDelete,
     isEdit,
@@ -407,6 +405,7 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
     socket,
     router,
     id,
+    extractImageUrls,
   ]);
 
   // 페이지 이탈 시 임시 이미지 정리
@@ -444,7 +443,6 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
     return isTitleDirty || isContentDirty || isImagesDirty;
   }, [
     title,
-    content,
     imageDelete.length,
     initialData?.title,
     initialData?.content,
@@ -468,7 +466,7 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
       e.returnValue = ""; // 표준에 따라 필요
     };
 
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = () => {
       if (!isDirtyState || isNavigating.current) return; // ✅ isDirtyState 사용
 
       const confirmLeave = window.confirm(
@@ -499,7 +497,7 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
 
   // 내부 링크 클릭 또는 외부 이미지 클릭 시 dirty 상태 경고
   useEffect(() => {
-    const handleClick = (e: any) => {
+    const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
 
       // Quill 내부 UI 클릭은 무시
@@ -553,7 +551,7 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
   }, [isDirtyState, images, resetImage]); // ✅ 의존성 최적화
 
   // ✅ handleTextChange 최적화 - DOM 조작 제거
-  const handleTextChange = useCallback((delta: any, oldDelta: any, source: string) => {
+  const handleTextChange = useCallback((_delta: unknown, _oldDelta: unknown, source: string) => {
       if (!quillRef.current) return;
       const editor = quillRef.current.getEditor();
 
@@ -566,7 +564,6 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
 
         // ✅ Set을 사용한 효율적인 비교
         const currentImageSet = new Set(currentImageUrlsInContent);
-        const existingImageSet = new Set(images.map(img => img.url));
 
         // images 상태에서 제거된 이미지 찾기
         const removedImagesFromEditor = images.filter(

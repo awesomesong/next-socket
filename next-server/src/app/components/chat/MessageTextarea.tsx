@@ -10,16 +10,14 @@ interface MessageTextareaProps {
     required?: boolean;
     register: UseFormRegister<FieldValues>;
     errors: FieldErrors;
-    onKeyDown: (e : any) => void;
+    onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }
 
 const MessageTextarea:React.FC<MessageTextareaProps> = ({
     placeholder,
     id,
-    type,
     required,
     register,
-    errors,
     onKeyDown
 }) => {
     return (

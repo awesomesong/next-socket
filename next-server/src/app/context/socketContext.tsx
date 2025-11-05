@@ -4,6 +4,11 @@ import type { Socket } from "socket.io-client";
 import { getSocket } from "@/src/app/lib/socket";
 import { useSession } from "next-auth/react";
 
+type ExtendedSocket = Omit<Socket, 'auth'> & {
+  auth: { useremail: string; userId: string };
+  __prevAuth?: { useremail?: string; userId?: string };
+};
+
 const SocketContext = createContext<Socket | null>(null);
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
@@ -28,18 +33,17 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (authed) {
       // 최신 auth 적용 (handshake.auth)
-      (socket as any).auth = { useremail: email, userId };
+      const extendedSocket = socket as unknown as ExtendedSocket;
+      extendedSocket.auth = { useremail: email, userId };
 
       // 이전 auth와 달라졌다면 재연결로 핸드셰이크 갱신
-      const prev = (socket as any).__prevAuth as
-        | { useremail?: string; userId?: string }
-        | undefined;
+      const prev = extendedSocket.__prevAuth;
       const changed = !prev || prev.useremail !== email || prev.userId !== userId;
 
       if (changed) {
         if (socket.connected) socket.disconnect();
         socket.connect();
-        (socket as any).__prevAuth = { useremail: email, userId };
+        extendedSocket.__prevAuth = { useremail: email, userId };
       } else if (!socket.connected) {
         socket.connect();
       }

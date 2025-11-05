@@ -1,9 +1,3 @@
-import {
-  ConversationListData,
-  conversationListKey,
-} from "./chatCache";
-import type { FullMessageType } from "@/src/app/types/conversation";
-
 // 공통 상수
 export const MESSAGE_ID_CLEANUP_DELAY = 2 * 60 * 1000;
 export const SOCKET_EVENTS = {

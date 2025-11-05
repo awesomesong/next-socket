@@ -2,7 +2,12 @@ import type { QueryClient, InfiniteData } from "@tanstack/react-query";
 import type {
   FullConversationType,
   FullMessageType,
+  ConversationMessagePreview,
+  UnnormalizedMessage,
+  SenderUserBase,
+  PartialConversationType,
 } from "@/src/app/types/conversation";
+import { getMessageSenderId, normalizeMessageType, normalizePreviewType } from "@/src/app/types/conversation";
 import { hasCustomMeta, lastMessageMs, memberCount, pickMsgs } from "../../utils/chat";
 import { normalizeDate } from "./utils";
 
@@ -24,7 +29,7 @@ export type MessagesPage = {
 export type MessagesInfinite = InfiniteData<MessagesPage> | undefined;
 
 // sender/user 정규화 헬퍼
-const deriveSenderAndUser = (base: any) => {
+const deriveSenderAndUser = (base: SenderUserBase) => {
   const s = base?.sender;
   const u = base?.user;
   const user = u ?? (s ? { id: s.id, name: s.name, email: s.email, image: s.image } : undefined);
@@ -33,9 +38,9 @@ const deriveSenderAndUser = (base: any) => {
 };
 
 // NaN 방어 헬퍼
-const asMs = (t?: number, d?: any) => {
+const asMs = (t?: number, d?: Date | string | number) => {
   if (Number.isFinite(t)) return t as number;
-  const ms = new Date(d as any).getTime();
+  const ms = new Date(d as Date | string).getTime();
   return Number.isFinite(ms) ? ms : 0;
 };
 
@@ -52,17 +57,19 @@ const MESSAGE_DIFF_KEYS = [
 ] as const;
 
 // 안전한 값 비교 함수
-const eq = (a: any, b: any) => {
+const eq = (a: unknown, b: unknown): boolean => {
   // Date 값 비교 보정
   if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
   return Object.is(a, b); // NaN 포함 안전
 };
 
 // 메시지 변경 감지 함수
-const changed = (prev: any, next: any) => {
+const changed = (prev: Partial<FullMessageType> | Partial<UnnormalizedMessage>, next: Partial<FullMessageType> | Partial<UnnormalizedMessage>): boolean => {
   // 1) 핵심 키 비교
   for (const k of MESSAGE_DIFF_KEYS) {
-    if (!eq(prev?.[k], next?.[k])) return true;
+    const prevVal = (prev as Record<string, unknown>)?.[k];
+    const nextVal = (next as Record<string, unknown>)?.[k];
+    if (!eq(prevVal, nextVal)) return true;
   }
   
   // 2) 중첩: sender는 포인트 비교만
@@ -75,7 +82,7 @@ const changed = (prev: any, next: any) => {
 };
 
 // 오래→최신(ASC). 동시간대는 id로 안정화
-const cmpAsc = (a: any, b: any) => {
+const cmpAsc = (a: Partial<UnnormalizedMessage>, b: Partial<UnnormalizedMessage>): number => {
   const ta = asMs(a?.serverCreatedAtMs, a?.createdAt);
   const tb = asMs(b?.serverCreatedAtMs, b?.createdAt);
   if (ta !== tb) return ta - tb;
@@ -88,13 +95,13 @@ const cmpAsc = (a: any, b: any) => {
 };
 
 // 메시지 정규화 함수 (통합)
-export function normalizeMessage(message: any) {
+export function normalizeMessage(message: UnnormalizedMessage): FullMessageType {
   // 1) createdAt을 Date로 안전 정규화
   let created: Date;
   if (message.createdAt instanceof Date) {
     created = message.createdAt;
   } else {
-    const d = new Date(message.createdAt as any);
+    const d = new Date(message.createdAt as Date | string);
     created = Number.isFinite(d.getTime()) ? d : new Date();
   }
 
@@ -106,63 +113,67 @@ export function normalizeMessage(message: any) {
       : created.getTime();
 
   // 3) 타입 정규화
-  const type: "text" | "image" | "system" = 
-    message?.type === "image" ? "image" : 
-    message?.type === "system" ? "system" : "text";
+  const type = normalizeMessageType(message?.type);
 
   // 4) sender/user 정규화 (헬퍼 사용)
-  const { sender, user } = deriveSenderAndUser(message);
+  const { sender } = deriveSenderAndUser(message);
 
   return {
     ...message,
     createdAt: created,
     serverCreatedAtMs: ms,
     type,
-    sender,
-    user,
+    sender: {
+      id: sender.id || "",
+      name: sender.name ?? null,
+      email: sender.email ?? null,
+      image: sender.image ?? null,
+    },
+    senderId: message.senderId || sender.id || "",
     isAIResponse: Boolean(message.isAIResponse),
     isError: Boolean(message.isError),
     conversation: {
-      ...(message.conversation || { isGroup: false, userIds: [] }),
+      ...(message.conversation || { isGroup: null, userIds: [] }),
+      isGroup: message.conversation?.isGroup ?? null,
       userIds:
         message.conversation?.userIds ??
         (Array.isArray(message.conversation?.users)
           ? message.conversation.users
-              .map((u: any) => String(u?.id ?? u?.userId ?? u))
+              .map((u: { id?: string; userId?: string }) => String(u?.id ?? u?.userId ?? ""))
               .filter(Boolean)
           : []),
     },
-    image: type === "image" ? message?.image : undefined,
+    image: type === "image" ? (message?.image ?? null) : null,
     conversationId: String(message?.conversationId ?? ""),
-  };
+  } as FullMessageType;
 }
 
 // normalizeMessageForSocket는 normalizeMessage로 통합됨
 
 // ID 중복 체크 헬퍼들
-const isSameId = (a: any, b: any) => {
+const isSameId = (a: Partial<UnnormalizedMessage> | Partial<FullMessageType>, b: Partial<UnnormalizedMessage> | Partial<FullMessageType>): boolean => {
   const ai = a?.id;
   const bi = b?.id;
   return ai != null && bi != null && String(ai) === String(bi);
 };
 
-const isSameClientId = (a: any, b: any) => {
+const isSameClientId = (a: Partial<UnnormalizedMessage> | Partial<FullMessageType>, b: Partial<UnnormalizedMessage> | Partial<FullMessageType>): boolean => {
   const ac = a?.clientMessageId;
   const bc = b?.clientMessageId;
   return ac != null && bc != null && String(ac) === String(bc);
 };
 
 // 같은 사용자가 보낸 같은 메시지인지 확인 (중복 체크용)
-function isSameUserMessage(a: any, b: any) {
-  const idEq = (x?: any, y?: any) => x && y && String(x) === String(y);
-  const email = (x: any) => String(x?.sender?.email ?? "").trim().toLowerCase();
+function isSameUserMessage(a: Partial<UnnormalizedMessage> | Partial<FullMessageType>, b: Partial<UnnormalizedMessage> | Partial<FullMessageType>): boolean {
+  const idEq = (x?: string, y?: string) => x && y && String(x) === String(y);
+  const email = (x: Partial<UnnormalizedMessage>) => String(x?.sender?.email ?? "").trim().toLowerCase();
   const sameSender = idEq(a?.sender?.id, b?.sender?.id) || (email(a) && email(a) === email(b));
   if (!sameSender) return false;
   return isSameId(a, b) || isSameClientId(a, b);
 }
 
 // 정렬 삽입(오래→최신 ASC), 같은 사용자의 동일 메시지는 중복 삽입 방지
-function binaryInsertSorted(arr: any[], msg: any, cmp = cmpAsc) {
+function binaryInsertSorted(arr: FullMessageType[], msg: FullMessageType, cmp = cmpAsc): void {
   // ✅ 최적화: ID 기반 중복 체크를 먼저 수행 (빠른 종료)
   const msgId = msg?.id ? String(msg.id) : null;
   const clientId = msg?.clientMessageId ? String(msg.clientMessageId) : null;
@@ -201,7 +212,7 @@ function binaryInsertSorted(arr: any[], msg: any, cmp = cmpAsc) {
 
 // ✅ 헬퍼: 메시지가 리스트의 마지막(top, 최신)인지 확인
 // p.messages는 오래→최신(ASC) 정렬 기준
-const isTop = (arr: any[], msg: any) => {
+const isTop = (arr: FullMessageType[], msg: FullMessageType) => {
   if (!arr.length) return true;
   const last = arr[arr.length - 1];
   return cmpAsc(last, msg) <= 0; // last <= msg 이면 msg가 top(또는 동률)
@@ -213,11 +224,11 @@ const isTop = (arr: any[], msg: any) => {
  * 구조라고 가정하고, 최신 페이지를 pages[0]로 본다.
  */
 export function upsertMessageSortedInCache(
-  qc: any,
+  qc: QueryClient,
   conversationId: string,
-  message: any,
+  message: UnnormalizedMessage | FullMessageType,
 ) {
-  qc.setQueryData(messagesKey(conversationId), (old: any) => {
+  qc.setQueryData(messagesKey(conversationId), (old: MessagesInfinite) => {
     const normalized = normalizeMessage(message);
 
     // ✅ 3) 방어 로직: 다른 방 메시지 필터링
@@ -235,15 +246,15 @@ export function upsertMessageSortedInCache(
           nextCursor: null,
           seenUsersForLastMessage: [],
         }],
-      } as any;
+      } as InfiniteData<MessagesPage>;
     }
 
     let anyPageChanged = false;
 
-    const pages = old.pages.map((p: any, i: number) => {
+    const pages = old.pages.map((p: MessagesPage, i: number) => {
       if (i !== 0) return p; // 최신 페이지만 수정
 
-      const origList: any[] = Array.isArray(p.messages) ? p.messages : [];
+      const origList: FullMessageType[] = Array.isArray(p.messages) ? p.messages : [];
       let list = origList;      // 변경 없으면 참조 유지
       let pageChanged = false;  // 이 페이지 변경 여부
       let resetSeen = false;    // seenUsersForLastMessage 초기화 여부
@@ -422,7 +433,7 @@ export const clampUnread = (n: unknown) => {
 };
 
 // ✅ 공통 유틸리티 함수 - 대화방 업데이트 패턴
-export const updateConversationInList = (qc: any, convId: string, updater: (conv: any) => any | null) => {
+export const updateConversationInList = (qc: QueryClient, convId: string, updater: (conv: FullConversationType) => FullConversationType | null) => {
   qc.setQueryData(conversationListKey, (prev: ConversationListData | undefined) => {
     if (!prev?.conversations?.length) return prev;
     const next = { ...prev, conversations: [...prev.conversations] };
@@ -449,7 +460,7 @@ export function computeTotalUnread(
 }
 
 // ✅ 스토어 배지 업데이트의 중복 방지 - 단일 유틸로 통합
-export const setTotalUnreadFromList = (qc: any) => {
+export const setTotalUnreadFromList = (qc: QueryClient) => {
   const list = qc.getQueryData(conversationListKey) as ConversationListData | undefined;
   if (!list?.conversations?.length) return undefined;
   const next = computeTotalUnread(list);
@@ -457,7 +468,7 @@ export const setTotalUnreadFromList = (qc: any) => {
 };
 
 // ✅ 대화방의 이전 미리보기 메시지 조회
-export const getPrevPreview = (qc: any, convId: string) => {
+export const getPrevPreview = (qc: QueryClient, convId: string) => {
   const list = qc.getQueryData(conversationListKey) as ConversationListData | undefined;
   return list?.conversations?.find((c) => String(c.id) === convId)?.messages?.[0];
 };
@@ -517,12 +528,12 @@ export function markConversationRead(
 export function bumpConversationOnNewMessage(
   queryClient: QueryClient,
   conversationId: string,
-  message: Partial<FullMessageType> & { createdAt: Date | string },
+  message: ConversationMessagePreview,
 ): void {
   withConversationList(queryClient, (old) => {
     if (!old?.conversations) return old;
 
-    const incomingAt = normalizeDate(message.createdAt as any);
+    const incomingAt = normalizeDate(message.createdAt);
     const conversations = old.conversations.map((c) => {
         if (String(c.id) !== String(conversationId)) return c;
 
@@ -563,25 +574,34 @@ export function bumpConversationOnNewMessage(
         const nextLastAt = new Date(incMs);
 
         // ✅ system 메시지는 미리보기 유지
-        const isSystem = message?.type === "system";
+        const isSystem = message.type === "system";
         let nextMessages = c.messages || [];
         if (!isSystem) {
+          const previewType = normalizePreviewType(message.type) ?? "text";
+          // 이미지 타입일 때 body가 명시적으로 전달되면 그대로 사용, 없으면 null
+          // system 타입은 항상 null
+          const previewBody = message.type === "system" 
+            ? null 
+            : (message.type === "image" 
+              ? (message.body !== undefined ? message.body : null)
+              : (message.body ?? null));
+          
           const preview: Partial<FullMessageType> = {
-            id: (message as any).id,
-            clientMessageId: message.clientMessageId, // ✅ 추가
-            type: (message as any).type === "system" ? "text" : (message as any).type ?? "text",
-            body: (message as any).type === "image" || (message as any).type === "system" ? null : (message as any).body ?? null,
-            image: (message as any).image,
-            isAIResponse: !!(message as any).isAIResponse,
+            id: message.id,
+            clientMessageId: message.clientMessageId,
+            type: previewType,
+            body: previewBody,
+            image: message.image,
+            isAIResponse: !!message.isAIResponse,
             createdAt: nextLastAt,
-            conversationId: conversationId as any,
+            conversationId: conversationId,
             sender: {
-              id: (message as any).sender?.id || (message as any).senderId,
-              name: (message as any).sender?.name || null,
-              email: (message as any).sender?.email || null,
-              image: (message as any).sender?.image || null,
+              id: getMessageSenderId(message),
+              name: message.sender?.name || null,
+              email: message.sender?.email || null,
+              image: message.sender?.image || null,
             },
-            senderId: (message as any).senderId,
+            senderId: message.senderId,
           };
           nextMessages = [preview as FullMessageType];
         }
@@ -598,14 +618,16 @@ export function bumpConversationOnNewMessage(
         };
       })
       .sort(
-        (a: any, b: any) => {
+        (a: FullConversationType, b: FullConversationType) => {
           const aTime = new Date(a.lastMessageAt || 0).getTime();
           const bTime = new Date(b.lastMessageAt || 0).getTime();
           if (aTime !== bTime) return bTime - aTime;
           
           // 동률 타임스탬프 tie-break
-          const aMs = a.lastMessageAtMs || 0;
-          const bMs = b.lastMessageAtMs || 0;
+          const aMsValue = (a as PartialConversationType).lastMessageAtMs;
+          const aMs = typeof aMsValue === 'number' ? aMsValue : 0;
+          const bMsValue = (b as PartialConversationType).lastMessageAtMs;
+          const bMs = typeof bMsValue === 'number' ? bMsValue : 0;
           if (aMs !== bMs) return bMs - aMs;
           
           return String(b.id).localeCompare(String(a.id));
@@ -635,11 +657,11 @@ export type CanonicalMessage = {
   conversation?: { userIds?: string[]; isGroup?: boolean };
 };
 
-const asDate = (d: unknown): Date => d instanceof Date ? d : new Date(d as any);
+const asDate = (d: unknown): Date => d instanceof Date ? d : new Date(d as Date | string);
 
 // 일관된 형태의 메시지로 정규화
-export const toCanonicalMsg = (raw: any): CanonicalMessage => {
-  const type: "text" | "image" | "system" = raw?.type === "image" ? "image" : raw?.type === "system" ? "system" : "text";
+export const toCanonicalMsg = (raw: UnnormalizedMessage | FullMessageType): CanonicalMessage => {
+  const type = normalizeMessageType(raw?.type);
 
   return {
     ...(raw?.id ? { id: String(raw.id) } : {}),
@@ -670,14 +692,17 @@ export const toCanonicalMsg = (raw: any): CanonicalMessage => {
 };
 
 // 남은 사용자만 반영 (불필요한 카운트 필드 쓰거나 만들지 않음)
-export const patchConvWithRemaining = (conv: any, remainingIds: string[] = []) => {
+export const patchConvWithRemaining = (conv: FullConversationType, remainingIds: string[] = []): FullConversationType => {
   if (!conv) return conv;
 
   const ids = remainingIds.map(String);
   const idSet = new Set(ids);
 
   const nextUsers = Array.isArray(conv.users)
-    ? conv.users.filter((u: any) => idSet.has(String(u?.id ?? u?.userId ?? u?.user?.id ?? u?.memberId ?? u?.member?.id ?? u ?? "")))
+    ? conv.users.filter((u) => {
+        const uid = String(u?.id ?? "");
+        return idSet.has(uid);
+      })
     : conv.users;
 
   return {
@@ -688,16 +713,16 @@ export const patchConvWithRemaining = (conv: any, remainingIds: string[] = []) =
 };
 
 export const safePatchConversation = (
-  qc: any,
+  qc: QueryClient,
   id: string,
   remainingIds: string[],
 ) => {
-  qc.setQueryData(conversationKey(id), (prev: any) => {
-    const fromList = (qc.getQueryData(conversationListKey) as any)?.conversations
-        ?.find((c: any) => String(c.id) === String(id));
+  qc.setQueryData(conversationKey(id), (prev: { conversation?: FullConversationType } | FullConversationType | undefined) => {
+    const fromList = (qc.getQueryData(conversationListKey) as ConversationListData | undefined)?.conversations
+        ?.find((c: FullConversationType) => String(c.id) === String(id));
 
     // prev가 { conversation: ... } 형태인 정상 케이스
-    if (prev && prev.conversation) {
+    if (prev && 'conversation' in prev && prev.conversation) {
       return {
         ...prev,
         conversation: patchConvWithRemaining(prev.conversation, remainingIds),
@@ -705,29 +730,29 @@ export const safePatchConversation = (
     }
 
     // 혹시 prev가 대화 객체 자체로 저장돼 있던 이력 호환
-    if (prev && !prev.conversation) {
-      return patchConvWithRemaining(prev, remainingIds);
+    if (prev && !('conversation' in prev)) {
+      return patchConvWithRemaining(prev as FullConversationType, remainingIds);
     }
 
     // prev가 없을 때 리스트에서 끌어와 형태 맞춰 저장
     return {
-      conversation: patchConvWithRemaining(fromList ?? {}, remainingIds),
+      conversation: patchConvWithRemaining(fromList ?? {} as FullConversationType, remainingIds),
     };
   });
 };
 
-export const hasMessagesCached = (qc: any, convId: string): boolean => {
-  const datas = qc.getQueriesData({ queryKey: messagesKey(convId) }).map(([, d]: any) => d);
-  return datas.some((d: any) => pickMsgs(d).length > 0);
+export const hasMessagesCached = (qc: QueryClient, convId: string): boolean => {
+  const datas = qc.getQueriesData({ queryKey: messagesKey(convId) }).map(([, d]) => d);
+  return datas.some((d) => pickMsgs(d as { messages?: FullMessageType[]; pages?: Array<{ messages?: FullMessageType[] }> }).length > 0);
 };
 
-export const findAICandidateIndex = (qc: any, newId: string): number => {
+export const findAICandidateIndex = (qc: QueryClient, newId: string): number => {
   const list = qc.getQueryData(conversationListKey) as ConversationListData | undefined;
   const convs = list?.conversations ?? [];
   if (!convs.length) return -1;
 
   // 완전 빈 AI 방만 머지
-  return convs.findIndex((c: any) =>
+  return convs.findIndex((c: FullConversationType) =>
     c?.isAIChat &&
     String(c.id) !== newId &&
     // 서버 기준 미리보기(마지막 메시지 시각) 없음
@@ -754,14 +779,14 @@ export function setSeenUsersForLastMessage(
   
   const queryKey = messagesKey(convId);
 
-  queryClient.setQueryData(queryKey, (oldData: any) => {
+  queryClient.setQueryData(queryKey, (oldData: MessagesInfinite) => {
     if (!oldData?.pages) return oldData;
 
     return {
       ...oldData,
-      pages: oldData.pages.map((page: any, index: number) => {
+      pages: oldData.pages.map((page: MessagesPage, index: number) => {
         if (index !== 0) return page;
-        const msgs: any[] = Array.isArray(page.messages) ? page.messages : [];
+        const msgs: FullMessageType[] = Array.isArray(page.messages) ? page.messages : [];
         const top = msgs[msgs.length - 1];
         if (!top || String(top.id ?? "") !== String(lastMessageId)) return page;
 
@@ -787,28 +812,29 @@ export function resetSeenUsersForLastMessage(
  * clientMessageId로 매칭하여 교체 후 필요시 재삽입
  */
 export function replaceOptimisticMessage(
-  queryClient: any,
+  queryClient: QueryClient,
   conversationId: string,
   clientMessageId: string,
-  serverMessage: any,
+  serverMessage: UnnormalizedMessage | FullMessageType,
   reinsert = false, // 재시도 시에만 재정렬
 ) {
-  queryClient.setQueryData(messagesKey(conversationId), (old: any) => {
+  queryClient.setQueryData(messagesKey(conversationId), (old: MessagesInfinite) => {
     if (!old?.pages) return old;
 
-    const pages = old.pages.map((p: any, i: number) => {
+    const pages = old.pages.map((p: MessagesPage, i: number) => {
       if (i !== 0) return p;
 
-      let list: any[] = Array.isArray(p.messages) ? [...p.messages] : [];
+      let list: FullMessageType[] = Array.isArray(p.messages) ? [...p.messages] : [];
 
-      const normalized = {
-        ...normalizeMessage(serverMessage),
+      const normalizedMsg = normalizeMessage(serverMessage);
+      const normalized: FullMessageType = {
+        ...normalizedMsg,
         clientMessageId: serverMessage.clientMessageId ?? clientMessageId,
-        conversation: serverMessage.conversation || { isGroup: false, userIds: [] },
+        conversation: normalizedMsg.conversation,
         conversationId: String(serverMessage?.conversationId ?? conversationId),
       };
 
-      const eq = (a: any, b: any) => String(a) === String(b);
+      const eq = (a: string | undefined, b: string | undefined): boolean => String(a) === String(b);
 
       if (!reinsert) {
         // ✅ 일반 성공: 자리 유지 교체 (끊김 없음)

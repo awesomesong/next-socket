@@ -24,7 +24,7 @@ const getBlogData = cache(async (id: string) => {
     
     const { blog } = await res.json();
     return blog;
-  } catch (error) {
+  } catch {
     return null;
   }
 });
@@ -63,7 +63,7 @@ const createMetadata = async (id: string) => {
         imageUrl = imageData[0].url;
       }
     }
-  } catch (error) {}
+  } catch {}
   
   const metadata = {
     metadataBase: new URL(base),

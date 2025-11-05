@@ -12,6 +12,7 @@ import {
   messagesKey,
 } from "@/src/app/lib/react-query/chatCache";
 import type { FullMessageType } from "@/src/app/types/conversation";
+import { normalizePreviewType } from "@/src/app/types/conversation";
 import { useFailedMessages } from "@/src/app/hooks/useFailedMessages";
 
 interface UseAIStreamOptions {
@@ -27,7 +28,7 @@ interface RequestAIOptions {
   isRetry?: boolean;
   existingAIMessageId?: string; // 재시도 시 기존 AI 메시지 제거용
   currentUser?: {
-    id?: string;
+    id?: string | null;
     name?: string | null;
     email?: string | null;
     image?: string | null;
@@ -185,6 +186,7 @@ export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewCo
             bumpConversationOnNewMessage(queryClient, conversationId, {
                 id: aiWaitingMessageId,
                 body: fullResponse.length > 50 ? fullResponse.substring(0, 50) : fullResponse,
+                type: normalizePreviewType("text"),
                 createdAt: streamResult?.createdAt ? new Date(streamResult.createdAt) : new Date(),
                 isAIResponse: true,
             });

@@ -1,5 +1,5 @@
 "use client";
-import { ApolloClient, InMemoryCache, ApolloProvider, gql } from '@apollo/client';
+import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 import { SessionProvider } from 'next-auth/react';
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {

@@ -56,7 +56,7 @@ export async function GET(req: NextRequest, { params }: ParamsProp) {
     }
 
     return NextResponse.json({ conversation }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       conversation: null,
       message: "해당 대화방을 불러오지 못했습니다.",
@@ -223,11 +223,11 @@ export async function DELETE(req: Request, { params }: ParamsProp) {
     };
     
     return NextResponse.json(response, { status: 200 });
-  } catch (error: any) {
-    if (error?.message === "NOT_FOUND") {
+  } catch (error: unknown) {
+    if ((error as {message?: string})?.message === "NOT_FOUND") {
       return NextResponse.json({ message: "대화방이 존재하지 않습니다." }, { status: 404 });
     }
-    if (error?.message === "FORBIDDEN") {
+    if ((error as {message?: string})?.message === "FORBIDDEN") {
       return NextResponse.json({ message: "해당 대화방에 접근할 수 없습니다." }, { status: 403 });
     }
     console.log("ERROR_CONVERSATION_DELETE", error);

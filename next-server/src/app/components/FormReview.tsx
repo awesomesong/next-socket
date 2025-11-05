@@ -109,7 +109,7 @@ const FormReview = ({
     },
     onSuccess: (newData, _vars, ctx) => {
       if (!ctx?.optimisticId) return;
-      replaceReviewById(queryClient, id, ctx?.optimisticId!, {
+      replaceReviewById(queryClient, id, ctx.optimisticId, {
         ...newData.newReview,
         author: user,
       });

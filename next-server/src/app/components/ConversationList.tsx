@@ -1,6 +1,6 @@
 "use client";
 import { useSession } from "next-auth/react";
-import { FullConversationType } from "@/src/app/types/conversation";
+import { FullConversationType, PartialConversationType, ConversationListResponse } from "@/src/app/types/conversation";
 import { useState, useMemo, memo } from "react";
 import ConversationBox from "./ConversationBox";
 import getConversations from "@/src/app/lib/getConversations";
@@ -33,7 +33,7 @@ const ConversationList = memo(function ConversationList() {
   const { theme, setTheme } = useTheme();
 
   // ✅ 안정적인 정렬: 최근 메시지 시간 내림차순, 동시간대는 마지막 메시지 id → 대화방 id로 보조 정렬
-  const compareConversationsDesc = (a: any, b: any) => {
+  const compareConversationsDesc = (a: PartialConversationType, b: PartialConversationType) => {
     const aMs = lastMessageMs(a);
     const bMs = lastMessageMs(b);
     if (aMs !== bMs) return bMs - aMs;
@@ -42,7 +42,7 @@ const ConversationList = memo(function ConversationList() {
     const aMsgId = String(a?.messages?.[0]?.id ?? "");
     const bMsgId = String(b?.messages?.[0]?.id ?? "");
     if (aMsgId && bMsgId && aMsgId !== bMsgId) return bMsgId.localeCompare(aMsgId);
-    return String(b.id).localeCompare(String(a.id));
+    return String(b.id ?? "").localeCompare(String(a.id ?? ""));
   };  
 
   // 다크모드 토글 함수
@@ -57,9 +57,9 @@ const ConversationList = memo(function ConversationList() {
   } = useQuery({
     queryKey: conversationListKey,
     queryFn: getConversations,
-    select: (d: any) => ({
+    select: (d: ConversationListResponse | undefined) => ({
       conversations: Array.isArray(d?.conversations)
-        ? [...d.conversations].sort(compareConversationsDesc)
+        ? [...d.conversations].sort((a, b) => compareConversationsDesc(a as PartialConversationType, b as PartialConversationType))
         : [],
     }),
     staleTime: 30_000,
@@ -88,8 +88,7 @@ const ConversationList = memo(function ConversationList() {
   }, [
     listData?.conversations, // conversations 배열만 의존
     conversationId,
-    session?.user?.id, // user.id만 의존 (전체 user 객체 대신)
-    session?.user?.email, // user.email도 의존
+    session?.user, // session?.user 전체를 의존성에 포함
   ]);
 
   return (
@@ -181,8 +180,8 @@ const ConversationList = memo(function ConversationList() {
         <div className="flex flex-col">
           {status !== "success" ? (
             <ChatConversationSkeleton />
-          ) : !Array.isArray((listData as any)?.conversations) ||
-            (listData as any).conversations.length === 0 ? (
+          ) : !Array.isArray(listData?.conversations) ||
+            listData.conversations.length === 0 ? (
             <div
               className="
                 flex

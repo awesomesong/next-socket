@@ -7,9 +7,9 @@ import {
 } from "@tanstack/react-query";
 import { PiUserCircleFill } from "react-icons/pi";
 import { getBlogsComments } from "@/src/app/lib/getBlogsComments";
-import { Fragment, useEffect, useState, useMemo, useCallback } from "react";
+import { Fragment, useEffect, useState, useCallback, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
-import { CommentType } from "@/src/app/types/blog";
+import { CommentType, UpdateCommentResponse } from "@/src/app/types/comments";
 import { updateBlogsComments } from "@/src/app/lib/updateBlogsComments";
 import { deleteBlogsComments } from "@/src/app/lib/deleteBlogsComments";
 import {
@@ -25,6 +25,8 @@ import CircularProgress from "./CircularProgress";
 import FallbackNextImage from "./FallbackNextImage";
 import toast from "react-hot-toast";
 import { SOCKET_EVENTS } from "../lib/react-query/utils";
+import type { CommentPage } from "@/src/app/types/comments";
+import DOMPurify from "dompurify";
 
 type CommentsProps = {
   blogId: string;
@@ -64,19 +66,19 @@ const Comments = ({ blogId, user }: CommentsProps) => {
         if (!commentsPage) return undefined;
 
         // 지금까지 로드된 총 댓글 개수
-        const loadedCount = (allPages ?? []).reduce(
-          (acc: number, page: any) => {
-            const p = page.find((it: any) => "comments" in it) as
+        const loadedCount = (allPages ?? []).reduce((acc: number, page: CommentPage) => {
+            const p = page.find((it) => "comments" in it) as
               | { comments: { id: string }[] }
               | undefined;
             return acc + (p?.comments?.length ?? 0);
           },
           0,
-        );
+        ) as number;
 
         // 총 개수만큼 모두 로드했다면 다음 페이지 없음
         if (
           typeof countObj?.commentsCount === "number" &&
+          countObj.commentsCount >= 0 &&
           loadedCount >= countObj.commentsCount
         )
           return undefined;
@@ -97,7 +99,7 @@ const Comments = ({ blogId, user }: CommentsProps) => {
         });
         const prev = queryClient.getQueryData(blogsCommentsKey(bid));
         // 낙관적 텍스트 반영
-        replaceCommentById(queryClient, bid, commentId, { text } as any);
+        replaceCommentById(queryClient, bid, commentId, { text });
         return { prev };
       },
       onSuccess: (updated) => {
@@ -105,8 +107,8 @@ const Comments = ({ blogId, user }: CommentsProps) => {
         // 서버 응답 형태 정규화: { updatedComment } 또는 바로 객체
         const updatedComment =
           updated && typeof updated === "object" && "updatedComment" in updated
-            ? (updated as any).updatedComment
-            : updated;
+            ? (updated as UpdateCommentResponse).updatedComment
+            : updated as CommentType;
 
         // ✅ 최종 서버 데이터로 해당 댓글만 치환
         if (updatedComment?.id) {
@@ -114,7 +116,7 @@ const Comments = ({ blogId, user }: CommentsProps) => {
             queryClient,
             blogId,
             updatedComment.id,
-            updatedComment as any,
+            updatedComment,
           );
         }
         
@@ -126,9 +128,10 @@ const Comments = ({ blogId, user }: CommentsProps) => {
           });
         } catch {}
       },
-      onError: (err: any, _vars, ctx) => {
-        if (ctx?.prev)
-          queryClient.setQueryData(blogsCommentsKey(blogId), ctx.prev as any);
+      onError: (err: Error, _vars, ctx) => {
+        if (ctx?.prev) {
+          queryClient.setQueryData(blogsCommentsKey(blogId), ctx.prev);
+        }
         const message = err?.message || "댓글 수정에 실패했습니다.";
         toast.error(message);
       },
@@ -154,9 +157,10 @@ const Comments = ({ blogId, user }: CommentsProps) => {
         socket?.emit(SOCKET_EVENTS.BLOG_COMMENT_DELETED, { blogId, commentId });
       } catch {}
     },
-    onError: (err: any, _vars, ctx) => {
-      if (ctx?.prev)
-        queryClient.setQueryData(blogsCommentsKey(blogId), ctx.prev as any);
+    onError: (err: Error, _vars, ctx) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(blogsCommentsKey(blogId), ctx.prev);
+      }
       const message = err?.message || "댓글 삭제에 실패했습니다.";
       toast.error(message);
     },
@@ -172,7 +176,6 @@ const Comments = ({ blogId, user }: CommentsProps) => {
     if (typeof window === 'undefined') return text;
     
     try {
-      const DOMPurify = require('dompurify');
       return DOMPurify.sanitize(text || '');
     } catch (error) {
       console.warn('DOMPurify 로드 실패:', error);
@@ -190,15 +193,16 @@ const Comments = ({ blogId, user }: CommentsProps) => {
     setEditingId(null);
   }, [deleteComment, blogId]);
 
+  const commentsCount = useMemo(() => 
+    data?.pages[0]?.find(
+      (page): page is { commentsCount: number } => "commentsCount" in page
+    )?.commentsCount,
+    [data?.pages]
+  );
+
   return (
     <>
-      {data?.pages[0]?.flat().map((page, i) => (
-        <Fragment key={i}>
-          {Object.keys(page)[0] === "commentsCount" && (
-            <h4>댓글 {page.commentsCount}개</h4>
-          )}
-        </Fragment>
-      ))}
+      {commentsCount !== undefined && <h4>댓글 {commentsCount}개</h4>}
       {status === "pending" ? (
         <div className="flex flex-col gap-3">
           <CommentSkeleton />

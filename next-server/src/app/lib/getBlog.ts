@@ -9,7 +9,7 @@ const getBlog = async ( id : string) => {
         },
     }); 
 
-    const { blog, message } = await res.json();
+    const { blog } = await res.json();
     
     if(!blog) redirect('/not-found');
 
@@ -17,7 +17,7 @@ const getBlog = async ( id : string) => {
         toast.error('블로그에 대한 내용을 찾지 못했습니다.');
     }
 
-    return { blog, message };
+    return { blog };
 };
 
 export default getBlog;
