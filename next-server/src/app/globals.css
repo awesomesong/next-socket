@@ -2,34 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/* react-quill-new 툴바 아이콘과 텍스트 다크모드 스타일 */
-.dark .ql-toolbar .ql-stroke,
-[data-theme="dark"] .ql-toolbar .ql-stroke {
-  stroke: white !important;
-}
-
 .dark .ql-toolbar .ql-fill,
 [data-theme="dark"] .ql-toolbar .ql-fill {
   fill: white !important;
 }
 
-.dark .ql-toolbar .ql-picker,
-[data-theme="dark"] .ql-toolbar .ql-picker {
-  color: white !important;
-}
-
 .dark .ql-toolbar button,
-[data-theme="dark"] .ql-toolbar button {
-  color: white !important;
-}
-
+[data-theme="dark"] .ql-toolbar button,
 .dark .ql-toolbar .ql-picker-label,
 [data-theme="dark"] .ql-toolbar .ql-picker-label {
   color: white !important;
 }
 
-.ql-snow .ql-picker.ql-expanded .ql-picker-options {
-  color: #020202;
+.dark .ql-snow .ql-picker-label .ql-stroke,
+.dark .ql-snow button .ql-stroke {
+  stroke: white !important;
 }
 
 blockquote{
