@@ -30,7 +30,7 @@ const ConversationList = memo(function ConversationList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { isOpen, conversationId } = useConversation();
   const { launch } = useLaunchAiConversation();
-  const { theme, setTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
 
   // ✅ 안정적인 정렬: 최근 메시지 시간 내림차순, 동시간대는 마지막 메시지 id → 대화방 id로 보조 정렬
   const compareConversationsDesc = (a: PartialConversationType, b: PartialConversationType) => {
@@ -47,8 +47,13 @@ const ConversationList = memo(function ConversationList() {
 
   // 다크모드 토글 함수
   const toggleTheme = useCallback(() => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  }, [theme, setTheme]);
+    // ✅ resolvedTheme을 사용하여 실제 적용된 테마 기준으로 토글
+    if (resolvedTheme === "dark") {
+      setTheme("light");
+    } else {
+      setTheme("dark");
+    }
+  }, [resolvedTheme, setTheme]);
 
   const {
     data: listData,
@@ -159,21 +164,23 @@ const ConversationList = memo(function ConversationList() {
                   AI 채팅
                 </DropdownItem>
                 <DropdownItem key="theme-toggle" onPress={toggleTheme}>
-                  {theme === "dark" ? "라이트 모드" : "다크 모드"}
+                  {resolvedTheme === "dark" ? "라이트 모드" : "다크 모드"}
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           ) : (
-            <div
-              className="
-                overflow-hidden
-                inline-block
-                relative
-                rounded-full
-                w-[40px]
-                h-[40px]
-            ">
-              <ShapesSkeleton width="100%" height="100%" radius="lg" />
+            <div className="flex justify-center items-center">
+              <div
+                className="
+                  overflow-hidden
+                  inline-block
+                  relative
+                  rounded-sm
+                  w-[24px]
+                  h-[24px]
+              ">
+                <ShapesSkeleton width="100%" height="100%" radius="sm" />
+              </div>
             </div>
           )}
         </div>
