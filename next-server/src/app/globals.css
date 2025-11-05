@@ -28,6 +28,10 @@
   color: white !important;
 }
 
+.ql-snow .ql-picker.ql-expanded .ql-picker-options {
+  color: #020202;
+}
+
 blockquote{
   border-left: 4px solid #ccc;
   margin-bottom: 5px;
