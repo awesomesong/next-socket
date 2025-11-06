@@ -209,9 +209,14 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
       // ✅ 사파리에서 즉시 실행되도록 requestAnimationFrame 사용
-      requestAnimationFrame(() => {
-        fetchNextPage();
-      });
+      // ✅ 약간의 지연을 두어 DOM 업데이트가 완료된 후 실행
+      const timeoutId = setTimeout(() => {
+        requestAnimationFrame(() => {
+          fetchNextPage();
+        });
+      }, 0);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [inView, hasNextPage, fetchNextPage, isFetchingNextPage]);
 
@@ -347,7 +352,10 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
           </ul>
         </>
       )}
-      <div ref={ref}>
+      <div 
+        ref={ref} 
+        className="min-h-[20px] p-2"
+      >
         {isFetchingNextPage && <CircularProgress aria-label="로딩중" />}
       </div>
     </>
