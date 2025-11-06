@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { PiUserCircleFill } from "react-icons/pi";
 import { getBlogsComments } from "@/src/app/lib/getBlogsComments";
-import { Fragment, useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
 import { CommentType, UpdateCommentResponse } from "@/src/app/types/comments";
 import { updateBlogsComments } from "@/src/app/lib/updateBlogsComments";
@@ -82,6 +82,11 @@ const Comments = ({ blogId, user }: CommentsProps) => {
           loadedCount >= countObj.commentsCount
         )
           return undefined;
+
+        // ✅ 댓글 배열이 비어있으면 다음 페이지 없음 (모바일 사파리 호환)
+        if (!commentsPage.comments || commentsPage.comments.length === 0) {
+          return undefined;
+        }
 
         // 다음 페이지 커서 반환
         return commentsPage.comments.at(-1)?.id || undefined;

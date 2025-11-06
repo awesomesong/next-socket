@@ -98,9 +98,15 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
         // 총 개수만큼 모두 로드했다면 다음 페이지 없음
         if (
           typeof countObj?.reviewsCount === "number" &&
+          countObj.reviewsCount >= 0 &&
           loadedCount >= countObj.reviewsCount
         )
           return undefined;
+
+        // ✅ 리뷰 배열이 비어있으면 다음 페이지 없음 (모바일 사파리 호환)
+        if (!reviewsPage.reviews || reviewsPage.reviews.length === 0) {
+          return undefined;
+        }
 
         // 다음 페이지 커서 반환
         return reviewsPage.reviews.at(-1)?.id || undefined;
