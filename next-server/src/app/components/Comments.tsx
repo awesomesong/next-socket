@@ -88,7 +88,13 @@ const Comments = ({ blogId, user }: CommentsProps) => {
       },
     });
 
-  const { ref, inView } = useInView({ threshold: 0.2, delay: 100 });
+  // ✅ 사파리 호환성을 위한 useInView 설정
+  // threshold: 0 (더 민감하게 반응), rootMargin: 100px (미리 트리거)
+  const { ref, inView } = useInView({ 
+    threshold: 0,
+    rootMargin: '100px',
+    triggerOnce: false,
+  });
 
   const { mutateAsync: updateComment, isPending: isUpdatingComment } = useMutation({
       mutationFn: updateBlogsComments,
@@ -168,7 +174,10 @@ const Comments = ({ blogId, user }: CommentsProps) => {
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
+      // ✅ 사파리에서 즉시 실행되도록 requestAnimationFrame 사용
+      requestAnimationFrame(() => {
+        fetchNextPage();
+      });
     }
   }, [inView, hasNextPage, fetchNextPage, isFetchingNextPage]);
 
