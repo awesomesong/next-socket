@@ -41,6 +41,7 @@ export async function aiStream(params: {
 }): Promise<StreamMeta> {
   const { endpoint, payload, onDelta, signal } = params;
 
+  // ✅ 사파리 모바일 호환성: credentials와 cache 설정 추가
   const resp = await fetch(endpoint, {
     method: "POST",
     headers: { 
@@ -49,6 +50,8 @@ export async function aiStream(params: {
     },
     body: JSON.stringify(payload),
     signal,
+    credentials: 'include', // ✅ 쿠키 포함 (인증 필요)
+    cache: 'no-store', // ✅ 사파리 모바일에서 캐시 방지
   });
 
   if (!resp.ok) {

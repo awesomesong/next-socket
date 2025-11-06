@@ -189,8 +189,17 @@ const AIChatForm = ({
     }
   }, [conversationId, queryClient, requestAI, removeFailedMessage, addFailedMessage, isConversationLoading, setFocus, setValue, session, isDisabled, notifyNewContent]);
 
-  // ✅ 제출 경로 통일 (지연 평가)
-  const submit = useCallback(() => handleSubmit(onSubmit)(), [handleSubmit, onSubmit]);
+  // ✅ 제출 경로 통일 (사파리 모바일 호환: 명시적 preventDefault)
+  // handleSubmit은 이벤트 객체가 없어도 작동하지만, 폼 제출 시에는 명시적으로 전달
+  const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleSubmit(onSubmit)();
+  }, [handleSubmit, onSubmit]);
+  
+  const submit = useCallback(() => {
+    handleSubmit(onSubmit)();
+  }, [handleSubmit, onSubmit]);
 
   const { isComposing, handleCompositionStart, handleCompositionEnd } = useComposition();
 
@@ -216,8 +225,9 @@ const AIChatForm = ({
         border-t-default
     ">
       <form
-        onSubmit={submit}
+        onSubmit={handleFormSubmit}
         className="flex items-center gap-2 w-full"
+        noValidate
       >
         <TextareaAutosize
           id="message"
