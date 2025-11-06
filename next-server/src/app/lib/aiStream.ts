@@ -64,37 +64,119 @@ export async function aiStream(params: {
 
   const decoder = new TextDecoder();
   let metadata: StreamMeta;
+  let isDone = false;
 
   try {
     let buffer = "";
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      
+      // ✅ 모바일 사파리: 스트림 완료 시 남은 버퍼 처리
+      if (done) {
+        // 마지막 버퍼 처리 (완료 후 남은 데이터)
+        if (buffer.trim()) {
+          const lines = buffer.split(/\r?\n/);
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            if (line.startsWith(":")) continue;
+            
+            // 메타데이터 라인 처리
+            const meta = parseMetadataLine(line);
+            if (meta) { 
+              metadata = meta; 
+              continue;
+            }
+            
+            // 데이터 라인 처리
+            if (line.startsWith("data: ")) {
+              const data = line.slice(6).trim();
+              if (data === "[DONE]") {
+                isDone = true;
+              } else if (data.startsWith(META_PREFIX)) {
+                const meta = parseMetadataLine(data);
+                if (meta) metadata = meta;
+              } else {
+                try {
+                  const parsed = safeJSON<{ content?: unknown }>(data);
+                  if (typeof parsed?.content === "string") {
+                    onDelta(parsed.content);
+                  }
+                } catch {
+                  // 파싱 실패 무시
+                }
+              }
+            }
+          }
+        }
+        break;
+      }
+
+      // ✅ 모바일 사파리: 스트림 읽기 중 에러 처리
+      if (!value) continue;
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split(/\r?\n/);
       buffer = lines.pop() ?? "";
 
       for (const line of lines) {
-        if (!line) continue;
+        if (!line.trim()) continue;
         if (line.startsWith(":")) continue; // keep-alive/주석 라인 무시
         
         // 메타라인 우선 처리
         const meta = parseMetadataLine(line);
-        if (meta) { metadata = meta; continue; }
+        if (meta) { 
+          metadata = meta; 
+          continue;
+        }
 
         // 데이터 라인 처리
-        if (handleDataLine(line, onDelta, (m) => { metadata = m; }) === "DONE") return metadata;
+        const result = handleDataLine(line, onDelta, (m) => { metadata = m; });
+        if (result === "DONE") {
+          isDone = true;
+          // ✅ DONE 후에도 메타데이터가 올 수 있으므로 즉시 return하지 않음
+          // 하지만 스트림이 완료되면 break
+        }
       }
     }
 
-    // 남은 버퍼 처리(메타 가능성)
-    if (buffer.trim()) {
-      const meta = parseMetadataLine(buffer.trim());
-      if (meta) metadata = meta;
+    // ✅ 남은 버퍼 최종 처리 (완료 후 확인)
+    if (buffer.trim() && !isDone) {
+      const trimmed = buffer.trim();
+      const meta = parseMetadataLine(trimmed);
+      if (meta) {
+        metadata = meta;
+      } else if (trimmed.startsWith("data: ")) {
+        const data = trimmed.slice(6).trim();
+        if (data === "[DONE]") {
+          isDone = true;
+        } else if (!data.startsWith(META_PREFIX)) {
+          try {
+            const parsed = safeJSON<{ content?: unknown }>(data);
+            if (typeof parsed?.content === "string") {
+              onDelta(parsed.content);
+            }
+          } catch {
+            // 파싱 실패 무시
+          }
+        }
+      }
+    }
+  } catch (error) {
+    // ✅ 모바일 사파리: 스트림 읽기 중 에러 발생 시 처리
+    if (error instanceof Error && error.name === "AbortError") {
+      throw error;
+    }
+    console.error('[aiStream] 스트림 읽기 오류:', error);
+    // 에러 발생 시에도 메타데이터가 있으면 반환
+    if (!metadata) {
+      throw error;
     }
   } finally {
-    reader.releaseLock();
+    try {
+      reader.releaseLock();
+    } catch {
+      // 이미 해제된 경우 무시
+    }
   }
 
   return metadata;

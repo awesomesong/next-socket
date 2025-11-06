@@ -237,17 +237,54 @@ async function handleStreamingResponse(
   }
 
   try {
+    // ✅ 모바일 사파리: 버퍼를 사용하여 스트림 안정성 향상
+    let buffer = "";
     while (true) {
       const { done, value } = await reader.read();
 
-      if (done) break;
+      if (done) {
+        // ✅ 스트림 완료 시 남은 버퍼 처리
+        if (buffer.trim()) {
+          const lines = buffer.split(/\r?\n/);
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const data = line.slice(6).trim();
+              if (data === "[DONE]") {
+                isStreamingComplete = true;
+              } else {
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices?.[0]?.delta?.content;
+                  if (content) {
+                    fullResponse += content;
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        `data: ${JSON.stringify({ content })}\n\n`,
+                      ),
+                    );
+                  }
+                } catch {
+                  // 파싱 오류 무시
+                }
+              }
+            }
+          }
+        }
+        break;
+      }
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split("\n");
+      if (!value) continue;
+
+      // ✅ 버퍼에 추가하여 라인 단위로 처리
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() ?? "";
 
       for (const line of lines) {
+        if (!line.trim()) continue;
+        
         if (line.startsWith("data: ")) {
-          const data = line.slice(6);
+          const data = line.slice(6).trim();
 
           if (data === "[DONE]") {
             isStreamingComplete = true;
@@ -367,17 +404,47 @@ async function handleStreamingResponse(
         }
         
         // ✅ 스트림 마지막에 메타데이터 전송 (클라이언트가 createdAt 업데이트하도록)
+        // ✅ 모바일 사파리: 메타데이터 전송 보장 (DONE 전에 전송)
         const metadata = JSON.stringify({
           type: 'metadata',
           messageId: savedMessageId,
           createdAt: aiCreatedAt.toISOString(),
         });
-        controller.enqueue(new TextEncoder().encode(`\n\n[METADATA]${metadata}`));
+        controller.enqueue(new TextEncoder().encode(`\n\n[METADATA]${metadata}\n\n`));
       } catch (error) {
         console.error("AI 메시지 저장 오류:", error);
-        // AI 메시지 저장 실패는 스트리밍을 중단하지 않음
+        // ✅ 메시지 저장 실패 시에도 메타데이터 전송 시도 (클라이언트에 알림)
+        try {
+          const errorMessageId = messageId || new ObjectId().toHexString();
+          const errorMetadata = JSON.stringify({
+            type: 'metadata',
+            messageId: errorMessageId,
+            createdAt: new Date().toISOString(),
+            error: true,
+          });
+          controller.enqueue(new TextEncoder().encode(`\n\n[METADATA]${errorMetadata}\n\n`));
+        } catch (metaError) {
+          console.error("메타데이터 전송 오류:", metaError);
+        }
+      }
+    } else {
+      // ✅ 응답이 비어있어도 메타데이터 전송 (클라이언트에 알림)
+      console.warn("AI 응답이 비어있습니다.");
+      try {
+        const emptyMetadata = JSON.stringify({
+          type: 'metadata',
+          messageId: messageId || new ObjectId().toHexString(),
+          createdAt: new Date().toISOString(),
+          empty: true,
+        });
+        controller.enqueue(new TextEncoder().encode(`\n\n[METADATA]${emptyMetadata}\n\n`));
+      } catch (metaError) {
+        console.error("메타데이터 전송 오류:", metaError);
       }
     }
+    
+    // ✅ DONE 신호 전송 (스트림 완료 알림)
+    controller.enqueue(new TextEncoder().encode(`data: [DONE]\n\n`));
   } catch (error) {
     console.error("스트리밍 처리 오류:", error);
 
@@ -410,8 +477,16 @@ async function handleStreamingResponse(
 
     controller.error(error);
   } finally {
-    reader.releaseLock();
-    controller.close();
+    try {
+      reader.releaseLock();
+    } catch {
+      // 이미 해제된 경우 무시
+    }
+    try {
+      controller.close();
+    } catch {
+      // 이미 닫힌 경우 무시
+    }
   }
 }
 

@@ -152,35 +152,97 @@ export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewCo
             });
 
             // ✅ 서버에서 받은 메타데이터로 메시지 업데이트
-            if (streamResult?.createdAt) {
-                // 캐시에서 현재 메시지 조회
-                const cache = queryClient.getQueryData(messagesKey(conversationId)) as InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }> | undefined;
-                const currentMsg = cache?.pages?.flatMap(p => p.messages).find(m => String(m.id) === String(aiWaitingMessageId));
+            const cache = queryClient.getQueryData(messagesKey(conversationId)) as InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }> | undefined;
+            const currentMsg = cache?.pages?.flatMap(p => p.messages).find(m => String(m.id) === String(aiWaitingMessageId));
+            
+            if (streamResult?.createdAt && currentMsg) {
+                // ✅ 서버에서 메시지가 저장되었고 메타데이터가 있음
+                // 서버 createdAt으로 메시지 재생성하여 정렬 보장
+                const updatedMessage: FullMessageType = {
+                    ...currentMsg,
+                    body: fullResponse,
+                    createdAt: new Date(streamResult.createdAt),
+                    isTyping: false,
+                    isWaiting: false,
+                    isError: false,
+                };
                 
-                if (currentMsg) {
-                    // ✅ 서버 createdAt으로 메시지 재생성하여 정렬 보장
-                    const updatedMessage: FullMessageType = {
-                        ...currentMsg,
+                // 기존 메시지 제거 후 정렬 삽입 (createdAt 변경 반영)
+                replaceOptimisticMessage(queryClient, conversationId, aiWaitingMessageId, updatedMessage);
+                
+                // 성공 시 localStorage에서 제거
+                removeFailedMessage(conversationId, aiWaitingMessageId);
+            } else if (currentMsg && fullResponse.trim()) {
+                // ✅ 메타데이터가 없음: 서버 저장 여부 불확실
+                // 서버에 메시지 저장을 직접 요청하여 보장
+                try {
+                    const saveResponse = await fetch('/api/messages', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            conversationId,
+                            messageId: aiWaitingMessageId,
+                            body: fullResponse.trim(),
+                            type: 'text',
+                            isAIResponse: true,
+                        }),
+                    });
+
+                    if (saveResponse.ok) {
+                        const savedMessage = await saveResponse.json();
+                        // ✅ 서버에서 저장된 메시지로 업데이트
+                        if (savedMessage?.id) {
+                            const updatedMessage: FullMessageType = {
+                                ...currentMsg,
+                                body: fullResponse,
+                                createdAt: new Date(savedMessage.createdAt),
+                                isTyping: false,
+                                isWaiting: false,
+                                isError: false,
+                            };
+                            replaceOptimisticMessage(queryClient, conversationId, aiWaitingMessageId, updatedMessage);
+                            removeFailedMessage(conversationId, aiWaitingMessageId);
+                        }
+                    } else {
+                        // ✅ 저장 실패: 클라이언트 캐시에만 표시하고 실패 상태로 마킹
+                        console.warn('[useAIStream] 서버 저장 실패, 클라이언트 캐시만 업데이트');
+                        updateMessagePartialById(queryClient, conversationId, aiWaitingMessageId, {
+                            body: fullResponse,
+                            isTyping: false,
+                            isWaiting: false,
+                            isError: false,
+                        });
+                        // 실패 메시지로 저장 (재시도 가능하도록)
+                        addFailedMessage(conversationId, {
+                            ...currentMsg,
+                            body: fullResponse,
+                            isError: false,
+                        });
+                    }
+                } catch (saveError) {
+                    // ✅ 네트워크 오류 등: 클라이언트 캐시에만 표시
+                    console.error('[useAIStream] 메시지 저장 요청 실패:', saveError);
+                    updateMessagePartialById(queryClient, conversationId, aiWaitingMessageId, {
                         body: fullResponse,
-                        createdAt: new Date(streamResult.createdAt),
                         isTyping: false,
                         isWaiting: false,
                         isError: false,
-                    };
-                    
-                    // 기존 메시지 제거 후 정렬 삽입 (createdAt 변경 반영)
-                    replaceOptimisticMessage(queryClient, conversationId, aiWaitingMessageId, updatedMessage);
+                    });
+                    // 실패 메시지로 저장
+                    addFailedMessage(conversationId, {
+                        ...currentMsg,
+                        body: fullResponse,
+                        isError: false,
+                    });
                 }
             } else {
-                // 메타데이터가 없으면 기존 방식대로
+                // 메시지가 없거나 응답이 비어있으면 기본 상태만 업데이트
                 updateMessagePartialById(queryClient, conversationId, aiWaitingMessageId, {
                     isTyping: false,
                     isWaiting: false,
                 });
             }
-            
-            // 성공 시 localStorage에서 제거 (실패했다가 재시도 성공한 경우)
-            removeFailedMessage(conversationId, aiWaitingMessageId);
 
             // ConversationList 업데이트 (미리보기용 50자만)
             bumpConversationOnNewMessage(queryClient, conversationId, {
