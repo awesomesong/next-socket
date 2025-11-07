@@ -211,7 +211,26 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
     [folderName],
   );
 
-  // Quill modules 설정 (imageHandler 포함)
+  // Quill link handler - 절대 URL로 변환
+  const linkHandler = useCallback(() => {
+    const editor = quillRef.current?.getEditor();
+    if (!editor) return;
+
+    const range = editor.getSelection(true);
+    if (range) {
+      const url = prompt("링크 URL을 입력하세요:");
+      if (url) {
+        // URL이 절대 URL이 아니면 https:// 추가
+        let finalUrl = url.trim();
+        if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+          finalUrl = `https://${finalUrl}`;
+        }
+        editor.formatText(range.index, range.length, 'link', finalUrl);
+      }
+    }
+  }, []);
+
+  // Quill modules 설정 (imageHandler, linkHandler 포함)
   const modules = useMemo(
     () => ({
       toolbar: {
@@ -224,6 +243,7 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
         ],
         handlers: {
           image: imageHandler,
+          link: linkHandler,
         },
       },
       clipboard: {
@@ -235,8 +255,8 @@ export const FormBlog = ({ id, initialData, isEdit }: FormBlogProps) => {
         userOnly: true,
       },
     }),
-    [imageHandler],
-  ); // imageHandler가 변경될 때만 modules가 다시 생성됨
+    [imageHandler, linkHandler],
+  ); // imageHandler, linkHandler가 변경될 때만 modules가 다시 생성됨
 
   // Quill formats 설정
   const formats = useMemo(() => [

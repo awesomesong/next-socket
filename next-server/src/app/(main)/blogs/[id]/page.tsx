@@ -121,9 +121,26 @@ const BlogDetailPage = ({ params } : {
         
         // 클라이언트에서만 DOMPurify 사용
         try {
-            return DOMPurify.sanitize(data?.blog?.content || '', {
+            let sanitized = DOMPurify.sanitize(data?.blog?.content || '', {
                 ADD_ATTR: ['target', 'rel'],
             });
+            
+            // 외부 링크를 새 탭에서 열리도록 처리
+            sanitized = sanitized.replace(
+                /<a\s+([^>]*href=["']([^"']+)["'][^>]*)>/gi,
+                (match, attributes, href) => {
+                    // 절대 URL인 경우 새 탭에서 열기
+                    if (href.startsWith('http://') || href.startsWith('https://')) {
+                        // 이미 target이 있으면 유지, 없으면 추가
+                        if (!attributes.includes('target=')) {
+                            return `<a ${attributes} target="_blank" rel="noopener noreferrer">`;
+                        }
+                    }
+                    return match;
+                }
+            );
+            
+            return sanitized;
         } catch (error) {
             console.warn('DOMPurify 로드 실패:', error);
             return data?.blog?.content || '';
