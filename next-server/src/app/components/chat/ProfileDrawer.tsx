@@ -47,20 +47,15 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
       ></ConfirmModal>
       {!isOpen ? null : (
         <div
-          className="relative z-40"
+          className="fixed inset-0 z-[999]"
           onClick={onClose}
         >
           <div
             className="
               fixed
-              bg-neutral-800
-              bg-opacity-75
+              inset-0
+              bg-neutral-800/75
               backdrop-blur-sm
-              -left-60
-              right-0
-              top-0
-              bottom-0
-              effect-rightLeft
             ">
             <div
               className="
@@ -76,6 +71,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                   right-0
                   flex
                   max-w-full
+                effect-rightLeft
               ">
                 <div
                   className="
