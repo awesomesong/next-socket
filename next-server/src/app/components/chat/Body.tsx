@@ -111,7 +111,8 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
       includeSeenUsers?: boolean;
       suppressSocketEmit?: boolean;
     }) => {
-      const { suppressSocketEmit, ...payload } = vars;
+      const payload = { ...vars };
+      delete payload.suppressSocketEmit;
       return readState(payload);
     },
     onMutate: async (vars: {
@@ -396,7 +397,6 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const myMail     = session?.user?.email;
     const isFromMe = (senderId && myId && String(senderId) === String(myId))
                   || (senderMail && myMail && String(senderMail) === String(myMail));
-    const isSystemMessage = m.type === "system";
     const isAIResponse = !!m.isAIResponse;
 
     // ✅ 내 메시지 / AI는 early return
