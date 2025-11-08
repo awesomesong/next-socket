@@ -298,11 +298,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     }
 
     const messages = allMessagesRef.current;
-    if (!messages?.length) {
-      processedConversationRef.current = conversationId;
-      pendingJoinReadRef.current = false;
-      return;
-    }
+    if (!messages?.length) return;
 
     const lastMessage = messages[messages.length - 1];
     if (!lastMessage?.id) return;
