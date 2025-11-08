@@ -36,7 +36,7 @@ const ButtonProfile = () => {
             fill
             sizes={`${width}px`}
             unoptimized={false}
-            className="object-cover drop-shadow-lg rounded-full"
+            className="object-cover drop-shadow-sm rounded-full"
           />
         ) : (
           <PiUserCircleDuotone className="w-full h-full scale-[1.2] drop-shadow-lg" />
