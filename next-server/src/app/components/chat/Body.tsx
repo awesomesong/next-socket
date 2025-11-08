@@ -104,8 +104,23 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
 
   // === 1) readStateMutation: onMutate에서 낙관적 워터마크 반영 유지 ===
   const { mutate: readStateMutation } = useMutation({
-    mutationFn: readState,
-    onMutate: async (vars: { conversationId: string; seenUntilMs: number; lastMessageId?: string; includeSeenUsers?: boolean }) => {
+    mutationFn: (vars: {
+      conversationId: string;
+      seenUntilMs: number;
+      lastMessageId?: string;
+      includeSeenUsers?: boolean;
+      suppressSocketEmit?: boolean;
+    }) => {
+      const { suppressSocketEmit, ...payload } = vars;
+      return readState(payload);
+    },
+    onMutate: async (vars: {
+      conversationId: string;
+      seenUntilMs: number;
+      lastMessageId?: string;
+      includeSeenUsers?: boolean;
+      suppressSocketEmit?: boolean;
+    }) => {
       const { conversationId: targetConversationId } = vars;
 
       const prevList = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
@@ -117,7 +132,12 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
       return { prevList, prevTotal };
     },
     onSuccess: (data, vars) => {
-      const { conversationId: targetConversationId, includeSeenUsers, lastMessageId } = vars;
+      const {
+        conversationId: targetConversationId,
+        includeSeenUsers,
+        lastMessageId,
+        suppressSocketEmit,
+      } = vars;
 
       // 총합 갱신 / 소켓 통지 등 기존 코드 유지
       const totalUnread = setTotalUnreadFromList(queryClient);
@@ -133,7 +153,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
         );
       }
       
-      if (socket) {
+      if (socket && !suppressSocketEmit) {
         // ✅ API에서 전달받은 메시지 발신자 ID 사용 (효율적)
         const messageSenderId = data.messageSenderId;
         
@@ -274,8 +294,11 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const myId = session?.user?.id;
     const isFromMe = lastSenderId && myId && String(lastSenderId) === String(myId);
     const isGroup = message.conversation?.isGroup;
+    const isSystemMessage = message.type === "system";
+    const isAIResponse = !!message.isAIResponse;
+    const shouldIncludeSeenUsers = !!isGroup && !isSystemMessage;
     
-    if (isFromMe || isAIChat) {
+    if (isFromMe || isAIResponse || isAIChat) {
       hasProcessedReadRef.current.add(key);
       return;
     }
@@ -285,7 +308,8 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
       conversationId,
       seenUntilMs: Date.now(),
       lastMessageId: messageId,
-      includeSeenUsers: !!isGroup,
+      includeSeenUsers: shouldIncludeSeenUsers,
+      suppressSocketEmit: isSystemMessage,
     });
   }, [conversationId, isAIChat, session?.user?.id, readStateMutation]);
 
@@ -310,9 +334,9 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const isFromMe =
       (senderId && myId && String(senderId) === String(myId)) ||
       (senderMail && myMail && String(senderMail) === String(myMail));
-    const isHuman = !lastMessage.isAIResponse && lastMessage.type !== "system";
+    const isAIResponse = !!lastMessage.isAIResponse;
 
-    if (!isHuman || isFromMe || isAIChat) {
+    if (isAIResponse || isFromMe || isAIChat) {
       processedConversationRef.current = conversationId;
       pendingJoinReadRef.current = false;
       return;
@@ -372,10 +396,11 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const myMail     = session?.user?.email;
     const isFromMe = (senderId && myId && String(senderId) === String(myId))
                   || (senderMail && myMail && String(senderMail) === String(myMail));
-    const isHuman  = !m.isAIResponse && m.type !== "system";
+    const isSystemMessage = m.type === "system";
+    const isAIResponse = !!m.isAIResponse;
 
-    // ✅ 내 메시지 / AI / 시스템은 early return
-    if (!isHuman || isFromMe || isAIChat) return;
+    // ✅ 내 메시지 / AI는 early return
+    if (isFromMe || isAIResponse || isAIChat) return;
 
     // ✅ 여기서만 reset (상대방 새 메시지에 대해서만)
     resetSeenUsersForLastMessage(queryClient, conversationId, m.id);
