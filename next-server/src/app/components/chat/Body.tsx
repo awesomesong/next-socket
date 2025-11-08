@@ -71,12 +71,6 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   } = useChatScroller(getEl);
 
   // ✅ 대화방 변경 시 초기 스크롤 플래그 리셋
-  useEffect(() => {
-    isScrollingInitialRef.current = true;
-    hasProcessedReadRef.current.clear(); // 읽음 처리 Set 초기화
-    pendingJoinReadRef.current = false;
-  }, [conversationId]);
-
   // ✅ 메시지 데이터 불러오기 (무한 스크롤 적용)
   const { data, status, fetchNextPage, hasNextPage, isFetchingNextPage, dataUpdatedAt } = useInfiniteQuery({
     queryKey: messagesKey(conversationId),
@@ -230,6 +224,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   // === 2) allMessagesRef 최신화 (초기/수신 공용) ===
   const allMessagesRef = useRef<FullMessageType[]>([]);
   const lastMessageCountRef = useRef(0);
+  const processedConversationRef = useRef<string | null>(null);
   
   useEffect(() => {
     allMessagesRef.current = allMessages;
@@ -297,9 +292,17 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   const attemptJoinSuccessRead = useCallback(() => {
     if (!pendingJoinReadRef.current) return;
     if (!conversationId) return;
+    if (processedConversationRef.current === conversationId) {
+      pendingJoinReadRef.current = false;
+      return;
+    }
 
     const messages = allMessagesRef.current;
-    if (!messages?.length) return;
+    if (!messages?.length) {
+      processedConversationRef.current = conversationId;
+      pendingJoinReadRef.current = false;
+      return;
+    }
 
     const lastMessage = messages[messages.length - 1];
     if (!lastMessage?.id) return;
@@ -314,13 +317,30 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const isHuman = !lastMessage.isAIResponse && lastMessage.type !== "system";
 
     if (!isHuman || isFromMe || isAIChat) {
+      processedConversationRef.current = conversationId;
       pendingJoinReadRef.current = false;
       return;
     }
 
     pendingJoinReadRef.current = false;
+    processedConversationRef.current = conversationId;
     processReadState(lastMessage.id, "join:success 후 초기 진입", lastMessage);
   }, [conversationId, isAIChat, processReadState, session?.user?.email, session?.user?.id]);
+
+  // ✅ 대화방 변경 시 초기 스크롤 플래그 리셋
+  useEffect(() => {
+    isScrollingInitialRef.current = true;
+    hasProcessedReadRef.current.clear(); // 읽음 처리 Set 초기화
+    pendingJoinReadRef.current = false;
+    processedConversationRef.current = null;
+
+    return () => {
+      if (pendingJoinReadRef.current) {
+        attemptJoinSuccessRead();
+      }
+      pendingJoinReadRef.current = false;
+    };
+  }, [conversationId, attemptJoinSuccessRead]);
 
   // ✅ join:room 성공 이벤트 리스너
   useEffect(() => {
