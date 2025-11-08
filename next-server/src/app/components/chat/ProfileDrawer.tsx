@@ -47,7 +47,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
       ></ConfirmModal>
       {!isOpen ? null : (
         <div
-          className="fixed inset-0 z-[999]"
+          className="fixed inset-0 z-[100]"
           onClick={onClose}
         >
           <div

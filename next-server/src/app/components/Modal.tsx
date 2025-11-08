@@ -32,7 +32,7 @@ const Modal:React.FC<ModalProps> = ({
     return (
             <div
                 className={clsx(
-                    "fixed inset-0 z-50",
+                    "fixed inset-0 z-[9999]",
                     isOpen? "block" : "hidden"
                 )}
                 onClick={onCloseModal}
