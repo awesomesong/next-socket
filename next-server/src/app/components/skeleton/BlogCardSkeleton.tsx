@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import CardSkeleton from "./CardSkeleton";
 
 const BlogCardSkeleton = () => {
@@ -6,41 +5,28 @@ const BlogCardSkeleton = () => {
     <div className="
       layout-card
     ">
-      {Array(2).fill(
-        <div className="block">
+      {Array.from({ length: 2 }).map((_, index) => (
+        <div key={`xs-${index}`} className="block">
           <CardSkeleton />
-        </div>)
-        .map((html, index) => (
-        <Fragment key={index}>
-          {html}
-        </Fragment>
+        </div>
       ))}
-      {Array(2).fill(
-        <div className="hidden sm:block">
+
+      {Array.from({ length: 2 }).map((_, index) => (
+        <div key={`sm-${index}`} className="hidden sm:block">
           <CardSkeleton />
-        </div>)
-        .map((html, index) => (
-        <Fragment key={index}>
-          {html}
-        </Fragment>
+        </div>
       ))}
-      {Array(5).fill(
-        <div className="hidden md:block">
+
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div key={`md-${index}`} className="hidden md:block">
           <CardSkeleton />
-        </div>)
-        .map((html, index) => (
-        <Fragment key={index}>
-          {html}
-        </Fragment>
+        </div>
       ))}
-      {Array(3).fill(
-        <div className="hidden lg:block">
+
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={`lg-${index}`} className="hidden lg:block">
           <CardSkeleton />
-        </div>)
-        .map((html, index) => (
-        <Fragment key={index}>
-          {html}
-        </Fragment>
+        </div>
       ))}
     </div>
   )
