@@ -283,6 +283,18 @@ h6 {
   @apply break-keep;
 }
 
+@layer utilities {
+  .backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .backdrop-blur-md {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
 .drink-info {
   @apply flex flex-col gap-2 sm:gap-6 whitespace-pre-wrap;
 }
