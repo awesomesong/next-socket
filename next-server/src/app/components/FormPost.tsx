@@ -8,9 +8,6 @@ import { ImFilesEmpty } from "react-icons/im";
 import { FaTrashAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { CloudinaryUploadWidgetResults } from "next-cloudinary";
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 
 import { ADD_POST, UPDATE_POST } from '@/graphql/mutations';
 import { GET_POSTS, GET_POST } from '@/graphql/queries';
