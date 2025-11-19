@@ -64,6 +64,7 @@ export default async function DrinksPage({ params }: Props) {
               src={drink.image_footer} 
               alt={drink.name} 
               fill
+              priority
               sizes="100vw"
               className="object-cover"
             />
