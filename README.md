@@ -27,8 +27,18 @@
   - 서버 컴포넌트 및 클라이언트 컴포넌트 분리
   - 파일 기반 라우팅 시스템
   - API Routes를 통한 서버리스 함수 구현
-  - ISR (Incremental Static Regeneration) 활용
-    - 블로그 상세 페이지 메타데이터 생성 시 `fetch`의 `next: { revalidate: 3600 }` 옵션 사용 (1시간 캐시 재검증)
+  - **렌더링 전략 (SSR/SSG/CSR/ISR)**
+    - **SSG (Static Site Generation)**: 빌드 타임에 정적 HTML 생성
+      - `/drinks/[name]`: `generateStaticParams`를 활용해 모든 음료 상세 페이지를 빌드 타임에 미리 생성
+      - 빠른 초기 로딩 속도 및 SEO 최적화
+    - **ISR (Incremental Static Regeneration)**: 주기적 재검증을 통한 정적 페이지 갱신
+      - 블로그 상세 페이지 메타데이터: `fetch`의 `next: { revalidate: 3600 }` 옵션 사용 (1시간 캐시 재검증)
+      - 요청 시 캐시가 만료되면 기존 캐시를 먼저 반환하고 백그라운드에서 재생성하여 SEO 메타데이터를 즉시 제공하면서도 최신 상태 유지
+    - **CSR (Client-Side Rendering)**: 클라이언트에서 동적 렌더링
+      - 블로그 목록 및 상세 페이지: React Query를 활용해 실시간 데이터 처리
+      - 실시간 채팅, 대화방, 블로그 에디터 등 사용자 인터랙션이 많은 화면
+    - **하이브리드 렌더링**: 페이지 특성에 따라 적절한 렌더링 방식 조합
+      - 블로그 상세 페이지: 메타데이터는 ISR, 본문 콘텐츠는 CSR로 처리하여 SEO와 실시간 데이터를 동시에 확보
 - **React 19.1.0**
   - 함수형 컴포넌트 및 Hooks 패턴
   - Server Components와 Client Components 혼합 사용
