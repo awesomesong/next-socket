@@ -1,10 +1,14 @@
 "use client";
-import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
+import { ApolloClient, InMemoryCache, ApolloProvider, HttpLink } from '@apollo/client';
+
+const link = new HttpLink({
+    uri: `${process.env.NEXT_PUBLIC_URL}/api/graphql`,
+    credentials: "include",
+});
 
 const client = new ApolloClient({
-    uri: `${process.env.NEXT_PUBLIC_URL}/api/graphql`,
+    link,
     cache: new InMemoryCache(),
-    credentials: "include", 
 })
 
 const ApolloProviders = ({ children }: { children: React.ReactNode } ) => {
