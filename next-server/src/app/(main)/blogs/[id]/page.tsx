@@ -42,7 +42,7 @@ const BlogDetailPage = ({ params } : {
 
     const { mutate: addBlogViewCountMutaion } = useMutation({
         mutationFn: addBlogViewCount,
-        onMutate: async ({ id: blogId }: { id: string; viewCount?: number }) => {
+        onMutate: async ({ id: blogId }: { id: string }) => {
             await Promise.all([
                 queryClient.cancelQueries({ queryKey: blogDetailKey(blogId), exact: true }),
                 queryClient.cancelQueries({ queryKey: BLOG_LIST_KEY, exact: true }),
@@ -94,7 +94,7 @@ const BlogDetailPage = ({ params } : {
           const last = localStorage.getItem(key);
           if (last !== today) {
             viewCountIncrementedRef.current = true;
-            addBlogViewCountMutaion({ id, viewCount: data.blog.viewCount });
+            addBlogViewCountMutaion({ id });
             try { localStorage.setItem(key, today); } catch {}
           }
         }

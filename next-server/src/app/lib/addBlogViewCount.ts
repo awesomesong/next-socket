@@ -1,7 +1,6 @@
 type Props = {
-  id: string; 
-  viewCount: number;
-}
+  id: string;
+};
 
 export const addBlogViewCount = async ({ id }: Props) => {
     const res = await fetch(`/api/blogs/${id}/viewCount`, {
