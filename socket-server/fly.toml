@@ -6,6 +6,9 @@
 app = 'socket-server-muddy-shadow-6983'
 primary_region = 'nrt'
 
+[env]
+  PORT = "3001"
+
 [build]
   dockerfile = 'Dockerfile'
 
@@ -26,10 +29,11 @@ primary_region = 'nrt'
     handlers = ["tls", "http"]
     port = 443
 
+  # 앱 부팅 후 헬스체크 대기 시간·타임아웃 조정 (Node 앱이 준비될 때까지 여유 부여)
   [services.http_checks]
     interval = "10s"
-    timeout = "2s"
-    grace_period = "5s"
+    timeout = "5s"
+    grace_period = "15s"
     method = "get"
     path = "/"
 
