@@ -9,15 +9,19 @@ process.stderr.setEncoding('utf8');
 // ✅ 메시지 큐 저장소 (Connection State Recovery 대신)
 const messageQueue = new Map(); // userId -> [{ message, timestamp, conversationId }]
 
+// ✅ 메시지 큐 TTL (24시간)
+const MESSAGE_QUEUE_TTL = 24 * 60 * 60 * 1000;
+
 // ✅ 메시지 큐잉 헬퍼 함수
 const addToQueue = (userId, message, conversationId) => {
   if (!messageQueue.has(userId)) {
     messageQueue.set(userId, []);
   }
   const queue = messageQueue.get(userId);
+  const now = Date.now();
   queue.push({
     message,
-    timestamp: Date.now(),
+    timestamp: now,
     conversationId
   });
   // 큐 크기 제한 (최대 50개)
@@ -28,7 +32,15 @@ const addToQueue = (userId, message, conversationId) => {
 };
 
 const getQueuedMessages = (userId) => {
-  const queue = messageQueue.get(userId) || [];
+  const now = Date.now();
+  const queue = (messageQueue.get(userId) || []).filter(
+    (item) => now - item.timestamp < MESSAGE_QUEUE_TTL
+  );
+  if (queue.length === 0) {
+    messageQueue.delete(userId);
+  } else {
+    messageQueue.set(userId, queue);
+  }
   console.log(`📤 Delivering ${queue.length} queued messages to user ${userId}`);
   return queue;
 };
@@ -293,24 +305,8 @@ io.on("connection", (socket) => {
   const authEmail = String(socket.handshake.auth?.useremail || "").trim().toLowerCase();
   const authUserId = String(socket.handshake.auth?.userId || "");
 
-  // ✅ 디버깅: 인증 정보 로깅
-  console.log("🔐 Socket auth info:", {
-    useremail: authEmail,
-    userId: authUserId,
-    rawAuth: socket.handshake.auth,
-    socketId: socket.id
-  });
-
   if (authEmail) socket.data.useremail = authEmail;
   if (authUserId) socket.data.userId = authUserId;
-  
-  // ✅ 디버깅: socket.data 설정 확인
-  console.log("🔧 Socket data set:", {
-    useremail: socket.data.useremail,
-    userId: socket.data.userId,
-    authEmail,
-    authUserId
-  });
 
   // ✅ 소켓이 참여한 방들을 안전하게 추적
   socket.data.joinedRooms = new Set();
@@ -354,13 +350,6 @@ io.on("connection", (socket) => {
 
   // 클라이언트가 로그인하여 온라인 사용자 목록에 등록될 때 호출됩니다.
   socket.on("online:user", ({ useremail, userId }) => {
-    console.log(`[Socket Server] online:user 이벤트 수신:`, {
-      useremail,
-      userId,
-      socketId: socket.id,
-      totalConnections: io.sockets.sockets.size
-    });
-    
     const email = (useremail || "").trim().toLowerCase();
     const uid = String(userId || "");
 
@@ -368,12 +357,6 @@ io.on("connection", (socket) => {
       console.log("[online:user] missing email or userId, skip", { email, uid });
       return;
     }
-    
-    console.log(`[Socket Server] 처리할 사용자 정보:`, {
-      email,
-      uid,
-      socketId: socket.id
-    });
     
     // 소켓 연결 시 해당 소켓에 사용자 정보를 저장 (disconnect 시 활용)
     socket.data.useremail = email;
@@ -437,23 +420,7 @@ io.on("connection", (socket) => {
     // ✅ 해당 유저가 이미 온라인인지 체크 (O(1))
     const alreadyOnline = userIdToSocketsMap.has(uid) && userIdToSocketsMap.get(uid).size > 0;
     
-    console.log(`[Socket Server] addUser 호출 전:`, {
-      email,
-      socketId: socket.id,
-      uid,
-      currentOnlineCount: onlineUsersMap.size,
-      alreadyOnline
-    });
-    
     addUser(email, socket.id, uid);          // ← 통일된 uid 사용
-    
-    console.log(`[Socket Server] addUser 호출 후:`, {
-      email,
-      socketId: socket.id,
-      uid,
-      newOnlineCount: onlineUsersMap.size,
-      onlineUsersMap: Array.from(onlineUsersMap.values()).map(u => ({ useremail: u.useremail, socketId: u.socketId, userId: u.userId }))
-    });
 
     // ✅ 이 유저가 "처음" 온라인 상태가 되었을 때만 델타 전송
     if (!alreadyOnline) {
@@ -547,28 +514,29 @@ io.on("connection", (socket) => {
 
     // ✅ 대화방 참여자들에게 실시간 메시지 전송 (유저 룸 기반 + 큐잉)
     const participantUserIds = newMessage?.conversation?.userIds || [];
+    let hasOnlineRecipient = false;
+
     participantUserIds.forEach((userId) => {
       // 보낸 본인 제외
       if (userId === socket.data.userId) return;
-      
+
       // ✅ 온라인 사용자 확인 (O(1))
       const isOnline = userIdToSocketsMap.has(userId) && userIdToSocketsMap.get(userId).size > 0;
-      
+
       if (isOnline) {
-        // 온라인: 실시간 발송
-        // ✅ receive:conversation - 모든 대화방 리스트 업데이트용 (항상 전송)
+        // ✅ receive:conversation - 모든 대화방 리스트 업데이트용 (항상 전송, 개인 룸)
         io.to(userRoom(userId)).emit("receive:conversation", newMessage);
-        
-        // ✅ receive:message - 해당 대화방에 join한 경우에만 전송
-        if (newMessage?.type !== "system") {
-          // roomId(conversationId)에 join한 사용자에게만 전송
-          socket.to(roomId).emit("receive:message", newMessage);
-        }
+        hasOnlineRecipient = true;
       } else {
         // 오프라인: 큐에 저장
         addToQueue(userId, newMessage, roomId);
       }
     });
+
+    // ✅ receive:message - 룸 브로드캐스트는 1회만 (온라인 수신자가 있을 때)
+    if (hasOnlineRecipient && newMessage?.type !== "system") {
+      socket.to(roomId).emit("receive:message", newMessage);
+    }
 
     console.log(`Message sent to conversation participants: ${participantUserIds.join(', ')}`);
   });
@@ -702,7 +670,7 @@ io.on("connection", (socket) => {
   });
 
   // ✅ room.event 핸들러 추가 (보안 강화된 델타 이벤트)
-  socket.on("room.event", async (evt) => {
+  socket.on("room.event", (evt) => {
     const { conversationId, type, userId, ts, rev, recipients } = evt || {};
     
     // 0) 간단 레이트 리밋 (200ms window)
@@ -770,6 +738,7 @@ io.on("connection", (socket) => {
       // 모든 소켓을 해당 방에서 퇴장시키고 캐시도 삭제
       io.in(conversationId).socketsLeave(conversationId);
       roomMembers.delete(conversationId);
+      globalRoomRev.delete(conversationId);
     }
     
     console.log(`[room.event] ${type} room=${conversationId} user=${userId} rev=${nextRev}`);
