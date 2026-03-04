@@ -1,8 +1,6 @@
 import prisma from '@/prisma/db';
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from '@/src/app/lib/session';
-import { ObjectId as BSONObjectId } from "bson";
-
 interface IParams {
     conversationId: string;
 }
@@ -25,14 +23,6 @@ export async function GET (
             );
         }
 
-        // ✅ ObjectId 형식 검증
-        if (!BSONObjectId.isValid(conversationId)) {
-            return NextResponse.json(
-                {message: 'conversationId 형식이 올바르지 않습니다.'}, 
-                {status: 400}
-            );
-        }
-        
         // ✅ 대화방 존재 및 참여자 확인
         const conversation = await prisma.conversation.findUnique({
             where: { id: conversationId },

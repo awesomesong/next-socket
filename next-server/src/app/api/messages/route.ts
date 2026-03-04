@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/src/app/lib/session";
 import prisma from "@/prisma/db";
-import { ObjectId as BSONObjectId } from "bson";
 import { containsProhibited } from "@/src/app/utils/aiPolicy";
 
 export const runtime = "nodejs";
@@ -30,11 +29,6 @@ export async function POST(req: NextRequest) {
       return new NextResponse("conversationId가 유효하지 않습니다.", { status: 400 });
     }
 
-    // ObjectId 형식 검증
-    if (!BSONObjectId.isValid(conversationId)) {
-      return new NextResponse("conversationId 형식이 올바르지 않습니다.", { status: 400 });
-    }
-
     // 빈 메시지 방지 (텍스트/이미지 둘 다 없음)
     const hasContent = !!(image || (body ?? message)?.trim());
     if (!hasContent && !isAIResponse && !isError) {
@@ -61,7 +55,7 @@ export async function POST(req: NextRequest) {
     }
 
     // === 메시지 생성 (AI 응답이면 트랜잭션 분리) ===
-    const msgId = messageId || new BSONObjectId().toHexString();
+    const msgId = messageId || crypto.randomUUID();
     const inferredType = image ? "image" : "text";
 
     let result;
