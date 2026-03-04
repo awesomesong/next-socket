@@ -43,7 +43,8 @@ const AIChatForm = ({
 }: Props) => {
   const [isDisabled, setIsDisabled] = useState(false);
   const queryClient = useQueryClient();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
+  const isSessionLoading = sessionStatus === "loading";
   const rafIdRef = useRef<number | null>(null);
 
   // 커스텀 훅을 사용하여 로딩 상태 확인
@@ -88,8 +89,16 @@ const AIChatForm = ({
     setFocus("message");
   }, [setFocus]);
 
+  // 세션 로드 완료 시 포커스 재적용 (세션 로딩 중 리렌더링으로 포커스 유실 방지)
+  useEffect(() => {
+    if (sessionStatus === "authenticated") {
+      setFocus("message");
+    }
+  }, [sessionStatus, setFocus]);
+
   const onSubmit = useCallback<SubmitHandler<Form>>(async ({ message }) => {
     if (isDisabled) return;
+    if (isSessionLoading) return; // 세션 로딩 중 조용히 대기 (에러 toast 없음)
 
     const check = validateAIPrompt(String(message || ""));
     if (!check.isValid) {
@@ -187,7 +196,7 @@ const AIChatForm = ({
     } finally {
       setIsDisabled(false);
     }
-  }, [conversationId, queryClient, requestAI, removeFailedMessage, addFailedMessage, isConversationLoading, setFocus, setValue, session, isDisabled, notifyNewContent]);
+  }, [conversationId, queryClient, requestAI, removeFailedMessage, addFailedMessage, isConversationLoading, setFocus, setValue, session, sessionStatus, isSessionLoading, isDisabled, notifyNewContent]);
 
   // ✅ 제출 경로 통일 (사파리 모바일 호환: 명시적 preventDefault)
   // handleSubmit은 이벤트 객체가 없어도 작동하지만, 폼 제출 시에는 명시적으로 전달
@@ -207,7 +216,7 @@ const AIChatForm = ({
     if (isComposing()) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (isDisabled || getValues("message").trim().length === 0) return;
+      if (isDisabled || isSessionLoading || getValues("message").trim().length === 0) return;
       submit();
     }
   };
@@ -256,7 +265,7 @@ const AIChatForm = ({
         />
         <button
           type="submit"
-          disabled={isDisabled}
+          disabled={isDisabled || isSessionLoading}
           className="
             rounded-full
             p-2
