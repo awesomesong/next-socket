@@ -5,8 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import getUsers from "@/src/app/lib/getUsers";
 import UserBox from "./UserBox";
 import ChatMemberSkeleton from "./skeleton/ChatMemberSkeleton";
+import StatusMessage from "./StatusMessage";
 import { useSocket } from "../context/socketContext";
-import { IoBeerOutline } from "react-icons/io5";
 import { CHAT_MEMBER_KEY } from "@/src/app/lib/react-query/chatCache";
 
 const UserList = () => {
@@ -138,7 +138,11 @@ const UserList = () => {
           ) : users?.length ? (
             users.map((u) => <UserBox key={u.id} userInfo={u} />)
           ) : (
-            <div className="text-default-secondary text-sm text-center py-4">현재 등록된 채팅 멤버가 없습니다.</div>
+            <StatusMessage
+              fallbackMessage="현재 등록된 채팅 멤버가 없습니다."
+              minHeight="min-h-0"
+              className="py-4"
+            />
           )}
         </>
       )}
