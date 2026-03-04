@@ -6,17 +6,21 @@ primary_region = 'nrt'
 
 [env]
   PORT = "3001"
+  CLIENT_ORIGIN = "https://www.devsonghee.com,https://devsonghee.com,http://localhost:3001"
 
 [http_service]
   internal_port = 3001
   force_https = true
-  # 🔴 중요: 소켓 서버는 요청이 없어도 켜져 있어야 합니다. "stop" 대신 false 사용.
-  auto_stop_machines = false  
+  auto_stop_machines = false
   auto_start_machines = true
   min_machines_running = 1
   processes = ['app']
 
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
 [[vm]]
-  # Socket.IO 연결/핸드셰이크에 256mb는 빠듯할 수 있음 → 512mb 권장
-  memory = '512mb'
+  memory = '256mb'
   cpus = 1
