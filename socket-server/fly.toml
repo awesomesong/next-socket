@@ -16,19 +16,6 @@ primary_region = 'nrt'
   min_machines_running = 1
   processes = ['app']
 
-  [http_service.concurrency]
-    type = "connections"
-    hard_limit = 1000
-    soft_limit = 800
-
-  [[http_service.checks]]
-    grace_period = "15s"
-    interval = "10s"
-    timeout = "5s"
-    method = "GET"
-    path = "/"
-    protocol = "http"
-
 [[vm]]
   memory = '256mb'
   cpus = 1
