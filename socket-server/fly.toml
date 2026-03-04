@@ -17,5 +17,6 @@ primary_region = 'nrt'
   processes = ['app']
 
 [[vm]]
-  memory = '256mb'
+  # Socket.IO 연결/핸드셰이크에 256mb는 빠듯할 수 있음 → 512mb 권장
+  memory = '512mb'
   cpus = 1
