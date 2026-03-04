@@ -209,10 +209,9 @@ const io = new Server(httpServer, {
   // ✅ Socket.IO v4만 사용 (EIO3 비활성화)
   allowEIO3: false,
   // 연결 상태 감지를 위한 heartbeat/ping 설정
-  pingInterval: 25000, // 클라이언트에 ping을 보내는 간격(ms) - 더 자주 체크
-  pingTimeout: 90000, // pong 응답을 기다리는 최대 시간(ms)
-  upgradeTimeout: 7000, // 업그레이드 타임아웃
-  transports: ["websocket"], // websocket 우선 사용으로 업그레이드 지연 방지
+  pingInterval: 25000, // 서버가 클라이언트에 ping을 보내는 간격(ms)
+  pingTimeout: 30000,  // ping 후 pong이 오지 않으면 연결 끊기까지 대기 시간(ms) — pingInterval보다 크게 설정
+  transports: ["websocket"], // polling 폴백 없이 WebSocket 전용 사용 (Fly.io 환경에서 안정적)
 });
 
 // Express REST 엔드포인트용 CORS 헤더 미들웨어
