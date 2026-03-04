@@ -72,6 +72,7 @@ model Conversation {
   isAIChat          Boolean?           @default(false)
   aiAgentType       String?
   lastMessageId     String?
+  userIds           String[]           @default([])
   conversationReads ConversationRead[]
   messages          Message[]
   users             User[]             @relation("ConversationToUser")
