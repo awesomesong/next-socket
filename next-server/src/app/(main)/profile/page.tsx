@@ -6,31 +6,16 @@ const Profile = async () => {
 
     if( user ){
         return (
-            <div className="
-                    flex
-                    flex-col
-                    justify-center
-                    items-center
-                    gap-4
-                    py-20
-                    max-md:py-10
-                    rounded-sm
-                "
-            >
-                <AvatarProfile user={user} />   
-                <ul className="space-y-2">
-                    <li>
-                        <span className="tracking-[15px]">이</span>
-                        <span>름</span>
-                        <span className="tracking-[.5rem]">:</span>
-                        <span>{user.name}</span>
-                    </li>
-                    <li>
-                        <span>이메일</span>
-                        <span className="tracking-[.5rem]">:</span>
-                        <span>{user.email}</span>
-                    </li>
-                </ul>
+            <div className="flex flex-col items-center py-16 max-md:py-12 px-4">
+                <AvatarProfile user={user} />
+                <div className="mt-2 pt-6 w-full max-w-sm flex flex-col items-center gap-1 text-center">
+                    <p className="text-lg font-semibold text-[var(--color-text-primary)] tracking-tight">
+                        {user.name}
+                    </p>
+                    <p className="text-sm text-[var(--color-text-secondary)] break-all">
+                        {user.email}
+                    </p>
+                </div>
             </div>
         )
     }

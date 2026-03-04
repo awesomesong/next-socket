@@ -1,6 +1,5 @@
 'use client';
-import { signOut } from 'next-auth/react'
-
+import { signOut } from 'next-auth/react';
 
 const ButtonLogout = () => {
     const onClick = () => {
@@ -10,19 +9,14 @@ const ButtonLogout = () => {
     };
 
     return (
-        <button 
-            type='button'
-            className='
-                hover:underline 
-                drop-shadow-lg
-                dark:text-slate-200 
-                text-neutral-950
-            '
+        <button
+            type="button"
+            className="font-josefin text-gradient-scent font-semibold tracking-[0.03em] capitalize drop-shadow-sm focus:outline-none"
             onClick={onClick}
         >
             Logout
         </button>
-    )
+    );
 }
 
 export default ButtonLogout

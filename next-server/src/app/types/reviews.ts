@@ -1,9 +1,9 @@
-import type { DrinkReviewType } from "./drink";
+import type { FragranceReviewType } from "./fragrance";
 import type { ReviewPage, ReviewsInfinite } from "@/src/app/lib/react-query/reviewsCache";
 
 // ===== API Response Types =====
 export interface UpdateReviewResponse {
-  updateReview: DrinkReviewType;
+  updateReview: FragranceReviewType;
 }
 
 export interface DeleteReviewResponse {

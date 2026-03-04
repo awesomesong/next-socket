@@ -5,11 +5,11 @@ interface AuthFormProps {
     title: string;
 }
 
-const AuthForm:React.FC<AuthFormProps> = ({
+const AuthForm: React.FC<AuthFormProps> = ({
     children,
     title,
 }) => {
-   
+
     return (
         <div
             className='
@@ -34,7 +34,7 @@ const AuthForm:React.FC<AuthFormProps> = ({
                     text-2xl
                     tracking-tight
                 '>
-                    {title}
+                    <span className="text-gradient-scent">{title}</span>
                 </h2>
             </div>
             <div
@@ -59,7 +59,7 @@ const AuthForm:React.FC<AuthFormProps> = ({
                 </div>
             </div>
         </div>
-  )
+    )
 }
 
 export default AuthForm;

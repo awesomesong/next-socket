@@ -1,9 +1,9 @@
-export const deleteImage = async (url: string, folderName?: string) => {
+export const deleteImage = async (url: string) => {
   try {
     const res = await fetch('/api/cloudinary', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, folderName }),
+      body: JSON.stringify({ url }),
     });
 
     const { data } = await res.json();

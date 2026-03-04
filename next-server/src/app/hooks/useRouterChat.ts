@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { HiChat } from 'react-icons/hi';
 import { HiUser} from "react-icons/hi2";
-import { IoHomeSharp } from "react-icons/io5";
 import { RiLogoutBoxFill } from "react-icons/ri";
+import { AiFillHome } from "react-icons/ai";
 import useConversation from "./useConversation";
 import { signOut } from "next-auth/react";
 
@@ -29,7 +29,7 @@ const useRouterChat = () => {
             label: '강송희 홈페이지',
             href: '/',
             onClick: () => router.push('/'),
-            icon: IoHomeSharp
+            icon: AiFillHome,
         },
         {
             label: '로그아웃',

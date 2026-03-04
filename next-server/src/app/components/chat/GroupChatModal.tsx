@@ -1,6 +1,6 @@
 "use client";
 import Button from "@/src/app/components/Button";
-import Input from "@/src/app/components/Input";
+import TextField from "@/src/app/components/TextField";
 import Modal from "@/src/app/components/Modal";
 import SelectBox from "@/src/app/components/SelectBox";
 import { IUserList } from "@/src/app/types/common";
@@ -141,7 +141,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
                 gap-y-8
               "
             >
-              <Input
+              <TextField
                 register={register}
                 label="채팅 이름"
                 id="name"

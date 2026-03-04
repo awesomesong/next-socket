@@ -4,38 +4,41 @@ import Link from "next/link";
 import ChatUnReadCount from "./ChatUnReadCount";
 
 const ChatMenu = () => {
-  return (
-    <>
-        <Tooltip
-            showArrow={true} 
-            content="채팅"
-            size='lg'
-        >
-            <Link 
-                href='/conversations'
-                title='채팅'
-                className='
+    return (
+        <>
+            <Tooltip
+                showArrow={false}
+                content="채팅"
+                size='lg'
+                classNames={{
+                    content: "bg-[var(--scent-gradient-mid)] text-[var(--bg-page)]",
+                }}
+            >
+                <Link
+                    href='/conversations'
+                    title='채팅'
+                    className='
                     fixed
-                    right-10
-                    bottom-12
+                    right-6
+                    bottom-6
                     z-50
-                    w-[70px]
-                    h-[70px]
+                    w-[60px]
+                    h-[60px]
                 '
-            > 
-                <Image 
-                    src='/image/chat.png'
-                    alt=''
-                    fill
-                    unoptimized={true}
-                    priority={true}
-                    className="object-cover"
-                />
-                <ChatUnReadCount />
-            </Link>
-        </Tooltip>
-    </>
-  )
+                >
+                    <Image
+                        src='/image/scent_memories_chat.png'
+                        alt=''
+                        fill
+                        unoptimized={true}
+                        priority={true}
+                        className="object-cover"
+                    />
+                    {/* <ChatUnReadCount /> */}
+                </Link>
+            </Tooltip>
+        </>
+    )
 }
 
 export default ChatMenu

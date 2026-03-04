@@ -1,7 +1,7 @@
 'use client';
 import useRouteNav from "@/src/app/hooks/useRouterNav";
+import NavLink from "./NavLink";
 import { clsx } from "clsx";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -39,7 +39,7 @@ const MobileNav = () => {
                         left-0
                         right-0
                         bottom-0
-                        top-[92px]
+                        top-[60px]
                         h-screen
                         p-4
                         bg-white
@@ -50,27 +50,13 @@ const MobileNav = () => {
                 )}
             >
                 {routerNav.map((route) => (
-                    <li
-                        key={route.label}
-                    >
-                        <Link
+                    <li key={route.label}>
+                        <NavLink
                             href={route.href}
-                            className=''
-                        >
-                            <span className={clsx(`
-                                inline-block
-                                `,
-                                route.active && 'font-extrabold'
-                            )}>
-                                {route.label}
-                                {route.active && <span className={clsx(`
-                                    flex
-                                    w-full
-                                    h-[2px]
-                                    bg-default-reverse
-                                `)} /> }
-                            </span>
-                        </Link>
+                            label={route.label}
+                            isActive={route.active}
+                            showLineOnActive
+                        />
                     </li>
                 ))}
             </ul>

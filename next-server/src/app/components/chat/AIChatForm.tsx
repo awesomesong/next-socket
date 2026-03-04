@@ -48,10 +48,10 @@ const AIChatForm = ({
 
   // 커스텀 훅을 사용하여 로딩 상태 확인
   const { isLoading: isConversationLoading } = useConversationLoading();
-  
+
   // 실패한 메시지 관리 훅
   const { addFailedMessage, removeFailedMessage } = useFailedMessages(conversationId);
-  
+
   // 새 컨텐츠 알림: 프레임당 1회로 coalesce
   const notifyNewContent = useCallback(() => {
     if (rafIdRef.current !== null) return;
@@ -60,7 +60,7 @@ const AIChatForm = ({
       rafIdRef.current = null;
     });
   }, []);
-  
+
   // AI 스트림 요청 훅
   const { requestAI, abort: abortAI } = useAIStream({
     conversationId,
@@ -90,7 +90,7 @@ const AIChatForm = ({
 
   const onSubmit = useCallback<SubmitHandler<Form>>(async ({ message }) => {
     if (isDisabled) return;
-    
+
     const check = validateAIPrompt(String(message || ""));
     if (!check.isValid) {
       toast.error(check.error || "입력값을 확인해주세요.");
@@ -144,21 +144,21 @@ const AIChatForm = ({
         messageId: userMessageId,
         data: { body: message, type: "text", isAIResponse: false, isError: false },
       });
-      
+
       // 성공: 서버 응답으로 낙관적 메시지 교체
       replaceOptimisticMessage(queryClient, conversationId, userMessageId, result.newMessage);
       removeFailedMessage(conversationId, userMessageId);
-      
+
       // ✅ 성공 시에만 conversationList 업데이트 (로딩 상태 확인)
       if (!isConversationLoading) {
         // 서버에서 반환한 메시지 타입을 사용 (이미지가 있을 경우 "image")
         const messageType = result.newMessage.type || (result.newMessage.image ? "image" : "text");
         const previewBody = messageType === "image" ? "사진을 보냈습니다." : (message.length > 50 ? message.substring(0, 50) : message);
-        
+
         bumpConversationOnNewMessage(queryClient, conversationId, {
           id: result.newMessage.id,
           clientMessageId: userMessageId, // ✅ AI 채팅 시 임시 ID로 중복 체크
-          body: previewBody, 
+          body: previewBody,
           type: normalizePreviewType(messageType),
           image: result.newMessage.image || undefined,
           createdAt: result.newMessage.createdAt,
@@ -166,17 +166,17 @@ const AIChatForm = ({
         });
       }
 
-        await requestAI({
-          userMessage: message,
-          userMessageId, // 서버가 이 ID로 조회하여 시간 계산
-          currentUser: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            image: user.image,
-          },
-          conversation: { isGroup: false, userIds: [user.id] },
-        });
+      await requestAI({
+        userMessage: message,
+        userMessageId, // 서버가 이 ID로 조회하여 시간 계산
+        currentUser: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        },
+        conversation: { isGroup: false, userIds: [user.id] },
+      });
     } catch (err) {
       updateMessagePartialById(queryClient, conversationId, userMessageId, { isError: true });
       const failed = queryClient.getQueryData<InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }>>(
@@ -196,7 +196,7 @@ const AIChatForm = ({
     e.stopPropagation();
     handleSubmit(onSubmit)();
   }, [handleSubmit, onSubmit]);
-  
+
   const submit = useCallback(() => {
     handleSubmit(onSubmit)();
   }, [handleSubmit, onSubmit]);
@@ -237,7 +237,7 @@ const AIChatForm = ({
           placeholder={
             isDisabled
               ? "AI 응답이 완료될 때까지 기다려주세요."
-              : "하이트진로 AI 어시스턴트에게 궁금한 점을 물어보세요."
+              : "향수 AI 어시스턴트에게 궁금한 점을 물어보세요."
           }
           onKeyDown={handleKeyPress}
           onCompositionStart={handleCompositionStart}

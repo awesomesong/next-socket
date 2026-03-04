@@ -5,8 +5,8 @@ import { signIn, useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import AuthForm from "@/src/app/components/AuthForm";
-import Input from "@/src/app/components/Input";
-import Button from "@/src/app/components/Button";
+import TextField from "@/src/app/components/TextField";
+import Button, { submitButtonClassName } from "@/src/app/components/Button";
 import AuthSocial from "@/src/app/components/AuthSocail";
 import Link from "next/link";
 import clsx from "clsx";
@@ -14,7 +14,7 @@ import clsx from "clsx";
 const SignInForm = () => {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get("callbackUrl") || "/";
-  const [ isLoading, setIsLoading ] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { data: session, status, update } = useSession();
   const pendingRedirectRef = useRef<string | null>(null);
 
@@ -23,7 +23,7 @@ const SignInForm = () => {
     if (status === 'authenticated' && pendingRedirectRef.current && session?.user?.id && session?.user?.email) {
       const targetUrl = pendingRedirectRef.current;
       pendingRedirectRef.current = null;
-      
+
       // ✅ 아이폰 사파리 및 모바일 WebView 환경에서도 작동하도록 window.location 사용
       // requestAnimationFrame으로 브라우저 렌더링과 동기화 후 리다이렉트
       requestAnimationFrame(() => {
@@ -32,22 +32,23 @@ const SignInForm = () => {
     }
   }, [status, session?.user?.id, session?.user?.email]);
 
-  const { 
-    register, 
+  const {
+    register,
+    setValue,
     handleSubmit,
     reset,
     formState: {
-        errors,
+      errors,
     }
   } = useForm<FieldValues>({
-      mode: "onBlur",
-      defaultValues: {
-          email: '',
-          password: '',
-      }
+    mode: "onBlur",
+    defaultValues: {
+      email: '',
+      password: '',
+    }
   });
 
-  const onSubmit:SubmitHandler<FieldValues> = useCallback(async (data) => {
+  const onSubmit: SubmitHandler<FieldValues> = useCallback(async (data) => {
     setIsLoading(true);
 
     try {
@@ -60,19 +61,19 @@ const SignInForm = () => {
         toast.error(result.error);
       } else {
         toast.success('로그인이 되었습니다.');
-        
+
         // ✅ 모바일 Safari 및 WebView에서도 작동하도록 절대 URL 생성
-        const targetUrl = callbackUrl.startsWith('/') 
+        const targetUrl = callbackUrl.startsWith('/')
           ? `${window.location.origin}${callbackUrl}`
           : callbackUrl;
-        
+
         // ✅ 세션 업데이트 강제 (모바일 WebView에서 세션 동기화 보장)
         try {
           await update();
         } catch (error) {
           console.warn('세션 업데이트 실패, 계속 진행:', error);
         }
-        
+
         // ✅ 세션이 이미 인증된 경우 즉시 리다이렉트
         // 세션이 아직 준비되지 않은 경우, useEffect에서 세션 상태 변경을 감지하여 리다이렉트
         if (status === 'authenticated' && session?.user?.id && session?.user?.email) {
@@ -84,7 +85,7 @@ const SignInForm = () => {
           // 세션이 아직 준비되지 않았으므로, useEffect에서 세션 상태 변경을 감지할 때까지 대기
           pendingRedirectRef.current = targetUrl;
         }
-        
+
         reset();
       }
     } catch {
@@ -97,57 +98,57 @@ const SignInForm = () => {
   return (
     <AuthForm title="로그인">
       <form
-        className="space-y-4"
+        className="flex flex-col gap-10"
         onSubmit={handleSubmit(onSubmit)}
       >
-        <Input 
-          id="email" 
-          label="이메일" 
+        <TextField
+          id="email"
+          label="이메일"
           type="email"
           register={register}
+          setValue={setValue}
           rules={{
-              required: "이메일을 입력해주세요.", 
-              pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/i,
-                  message: "이메일 형식이 아닙니다.",
-              },
+            required: "이메일을 입력해주세요.",
+            pattern: {
+              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/i,
+              message: "이메일 형식이 아닙니다.",
+            },
           }}
           errors={errors}
           disabled={isLoading}
-          placement="outside"
           variant="underlined"
         />
-        <Input 
-            id="password" 
-            label="비밀번호" 
-            type="password"
-            register={register}
-            rules={{
-                required: "비밀번호를 입력해주세요.", 
-                minLength: {
-                    value: 8,
-                    message: "비밀번호를 8자 이상 입력해주세요."
-                },
-            }}
-            errors={errors}
-            disabled={isLoading}
-            placement="outside"
-            variant="underlined"
+        <TextField
+          id="password"
+          label="비밀번호"
+          type="password"
+          register={register}
+          rules={{
+            required: "비밀번호를 입력해주세요.",
+            minLength: {
+              value: 8,
+              message: "비밀번호를 8자 이상 입력해주세요."
+            },
+          }}
+          errors={errors}
+          disabled={isLoading}
+          variant="underlined"
         />
-        <div className="pt-[18px] text-sm">
+        <div className="pt-6 text-sm">
           <Button
-              disabled={isLoading}
-              type="submit"
-              fullWidth
-              color="primary"
-              variant="shadow"
+            disabled={isLoading}
+            type="submit"
+            fullWidth
+            color="primary"
+            variant="shadow"
+            className={submitButtonClassName}
           >
             로그인
           </Button>
         </div>
       </form>
 
-      <AuthSocial 
+      <AuthSocial
         onClick={(value) => setIsLoading(value)}
         disabled={isLoading}
       />
@@ -163,17 +164,17 @@ const SignInForm = () => {
         계정이 필요하세요?
         <Link
           href={isLoading
-              ? '#'
-              : `/auth/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
+            ? '#'
+            : `/auth/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
           }
           className={clsx(`
             hover:underline
             hover:underline-offset-4
           `,
-          isLoading ? 'text-blue-900' : 'text-blue-500'
-        )}
+            isLoading ? 'text-purple-500/50' : 'text-purple-500'
+          )}
         >
-            계정등록
+          계정등록
         </Link>
       </div>
     </AuthForm>

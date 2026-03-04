@@ -3,13 +3,14 @@ import { DefaultSession } from "next-auth";
 import { useSession } from "next-auth/react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { CldUploadButton, CloudinaryUploadWidgetResults } from "next-cloudinary";
-import { PiUserCircleFill } from "react-icons/pi";
 import { IoCamera } from "react-icons/io5";
 import { RiSave3Fill } from "react-icons/ri";
 import toast from "react-hot-toast";
-import { Button } from "@heroui/react";
+import Button, { ghostMediumButtonClassName } from "./Button";
 import FallbackNextImage from "./FallbackNextImage";
 import { updateProfile } from "@/src/app/lib/updateProfile";
+import ScentUserAvatar from "./ScentUserAvatar";
+import clsx from "clsx";
 
 interface AvatarProfileProps {
   user?: DefaultSession["user"];
@@ -70,6 +71,10 @@ const AvatarProfile: React.FC<AvatarProfileProps> = ({ user }) => {
     }
 
     setValue("image", uploadedUrl, { shouldValidate: true });
+    toast("사진 저장 버튼을 눌러 프로필을 저장하세요.", {
+      icon: "💾",
+      duration: 4000,
+    });
   };
 
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {
@@ -106,7 +111,9 @@ const AvatarProfile: React.FC<AvatarProfileProps> = ({ user }) => {
         relative
       "
     >
-      <h2 className="text-xl">프로필 관리</h2>
+      <h2 className="text-xl">
+        <span className="text-gradient-scent">프로필 관리</span>
+      </h2>
       <div
         className="
           relative
@@ -136,10 +143,10 @@ const AvatarProfile: React.FC<AvatarProfileProps> = ({ user }) => {
             />
           </span>
         ) : (
-          <PiUserCircleFill className="w-full h-full" />
+          <ScentUserAvatar className="drop-shadow-lg" />
         )}
       </div>
-      <div className="flex flex-row gap-3">
+      <div className="flex flex-row flex-wrap justify-center gap-2 sm:gap-3">
         <CldUploadButton
           options={{
             maxFiles: 1,
@@ -153,32 +160,16 @@ const AvatarProfile: React.FC<AvatarProfileProps> = ({ user }) => {
           }}
           onSuccess={handleUpload}
           uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET}
-          className="
-            flex
-            flex-row
-            justify-center
-            items-center
-            relative
-            px-6
-            py-2
-            border-default
-            text-default
-            btn
-            rounded-md
-          "
+          className={clsx(
+            "inline-flex items-center justify-center gap-2 cursor-pointer",
+            ghostMediumButtonClassName
+          )}
         >
-          <IoCamera size={30} className="mr-2" />
+          <IoCamera size={20} aria-hidden />
           프로필 사진 편집
         </CldUploadButton>
-        <Button
-          type="submit"
-          color="default"
-          variant="ghost"
-          size="lg"
-          radius="sm"
-          className="min-w-10 gap-0"
-        >
-          <RiSave3Fill size={30} className="mr-2" />
+        <Button type="submit" variant="scent" size="md" className="gap-2">
+          <RiSave3Fill size={20} aria-hidden />
           사진 저장
         </Button>
       </div>

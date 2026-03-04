@@ -14,23 +14,22 @@ const AuthSocialButton: React.FC<AuthSocialButtonProps> = ({
     children,
     disabled,
 }) => {
-  return (
-    <Button
-        type="button"
-        onClick={onClick}
-        fullWidth
-        color="default"
-        variant="ghost"
-        disabled={disabled}
-    >
-        <span>
-            <Icon />
-        </span>
-        <span className="text-sm">
-            {children}
-        </span>
-    </Button>
-  )
+    return (
+        <Button
+            type="button"
+            variant="ghostLavender"
+            onClick={onClick}
+            fullWidth
+            disabled={disabled}
+        >
+            <span>
+                <Icon />
+            </span>
+            <span className="text-sm">
+                {children}
+            </span>
+        </Button>
+    )
 }
 
 export default AuthSocialButton;

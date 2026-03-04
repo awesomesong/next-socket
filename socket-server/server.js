@@ -161,7 +161,7 @@ const app = express();
 const httpServer = http.createServer(app);
 
 // ✅ UTF-8 인코딩 설정 (한글 깨짐 방지)
-httpServer.setTimeout(30000);
+httpServer.setTimeout(120000);
 require("dotenv").config();
 
 // 허용 도메인 정리

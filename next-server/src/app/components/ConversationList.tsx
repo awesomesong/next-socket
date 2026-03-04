@@ -37,13 +37,13 @@ const ConversationList = memo(function ConversationList() {
     const aMs = lastMessageMs(a);
     const bMs = lastMessageMs(b);
     if (aMs !== bMs) return bMs - aMs;
-  
+
     // 타이브레이크(선택)
     const aMsgId = String(a?.messages?.[0]?.id ?? "");
     const bMsgId = String(b?.messages?.[0]?.id ?? "");
     if (aMsgId && bMsgId && aMsgId !== bMsgId) return bMsgId.localeCompare(aMsgId);
     return String(b.id ?? "").localeCompare(String(a.id ?? ""));
-  };  
+  };
 
   // 다크모드 토글 함수
   const toggleTheme = useCallback(() => {
@@ -113,7 +113,7 @@ const ConversationList = memo(function ConversationList() {
           lg:w-80
         `,
           isOpen && "hidden lg:block",
-      )}>
+        )}>
         <div className="
             flex 
             justify-between
@@ -122,14 +122,14 @@ const ConversationList = memo(function ConversationList() {
             px-3
         ">
           <div className="
-              inline-flex 
-              items-end 
-              gap-2
-              leading-none
-              text-2xl
-              font-bold
+            text-gradient-scent
+            inline-flex 
+            items-end 
+            gap-2
+            leading-none
+            text-2xl
+            font-bold
           ">
-            <IoBeerOutline size={26} />
             대화방
           </div>
           {!isLoading ? (
@@ -191,6 +191,7 @@ const ConversationList = memo(function ConversationList() {
             listData.conversations.length === 0 ? (
             <div
               className="
+                text-default-secondary
                 flex
                 justify-center
                 h-full

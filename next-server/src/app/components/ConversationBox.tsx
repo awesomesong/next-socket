@@ -36,7 +36,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
     if (data.isAIChat) {
       const msg = lastMessage?.body;
       if (msg) return msg.length > 30 ? `${msg.slice(0, 30)}...` : msg;
-      return "하이트진로 AI 어시스턴트와 대화해보세요. 술에 대한 질문이나 추천을 받을 수 있습니다.";
+      return "향수 AI 어시스턴트와 대화해보세요. 술에 대한 질문이나 추천을 받을 수 있습니다.";
     }
     if (lastMessage?.type === "system") return undefined;
     if (lastMessage?.type === "image") return "사진을 보냈습니다.";
@@ -93,7 +93,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
                 font-medium
             ">
               {data.isAIChat
-                ? "하이트진로 AI 어시스턴트"
+                ? "향수 AI 어시스턴트"
                 : data.name || otherUser.name}
               {data.isGroup && (
                 <span className="ml-2 text-neutral-500">
@@ -158,7 +158,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
 export default memo(ConversationBox, (prevProps, nextProps) => {
   const prevUserIds = prevProps.data.userIds || [];
   const nextUserIds = nextProps.data.userIds || [];
-  
+
   // userIds 비교 O(n^2) → O(n)
   const nextSet = new Set(nextUserIds);
   const userIdsEqual =
@@ -167,7 +167,7 @@ export default memo(ConversationBox, (prevProps, nextProps) => {
 
   const prevUsers = prevProps.data.users || [];
   const nextUsers = nextProps.data.users || [];
-  
+
   // users 비교에 표시 필드 포함(선택)
   const usersEqual =
     prevUsers.length === nextUsers.length &&

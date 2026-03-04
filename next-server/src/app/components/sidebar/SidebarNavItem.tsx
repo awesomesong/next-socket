@@ -6,7 +6,7 @@ import ChatUnReadCount from "../ChatUnReadCount";
 
 interface SidebarNavItemProps {
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; fill?: string }>;
   href: string;
   onClick?: () => void;
   active?: boolean;
@@ -49,16 +49,17 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
           font-semibold
           text-neutral-900
           dark:text-neutral-200
+          hover:bg-[#e0d7ed]
+          hover:dark:bg-[#6d5a8a]/25
           hover:dark:text-neutral-900
-          hover:bg-neutral-200
           md:rounded-md
           md:py-3
           max-md:h-full
         `,
-        active && `bg-neutral-200 dark:text-neutral-900 `
-      )}
+        active && `bg-[#e0d7ed] dark:bg-[#6d5a8a]/50 dark:text-neutral-900`
+        )}
       >
-        <Icon className="h-6 w-6 shrink-0" />
+        <Icon className="h-6 w-6 shrink-0" fill="url(#scent-nav-gradient)" />
         <span className="sr-only">{label}</span>
         {label === '채팅' && 
           <ChatUnReadCount size="mobile-small" />

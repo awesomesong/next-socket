@@ -17,7 +17,7 @@ declare module "next-auth" {
     }
 
     interface User {
-        role? : string | undefined;
+        role?: string | undefined;
     }
 }
 
@@ -30,18 +30,18 @@ export const authOptions: AuthOptions = {
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
             authorization: {
                 params: {
-                  prompt: "consent",
-                  access_type: "offline",
-                  response_type: "code"
+                    prompt: "consent",
+                    access_type: "offline",
+                    response_type: "code"
                 }
             },
             profile(profile) {
-                return { 
+                return {
                     id: profile.sub,
                     email: profile.email,
                     name: profile.name,
                     image: profile.picture,
-                    role: "user", 
+                    role: "user",
                     provider: "google",
                 }
             },
@@ -55,7 +55,7 @@ export const authOptions: AuthOptions = {
                 }
             },
             profile(profile) {
-                return  { 
+                return {
                     id: profile.id,
                     email: profile.kakao_account.email,
                     name: profile.kakao_account.profile.nickname,
@@ -64,11 +64,11 @@ export const authOptions: AuthOptions = {
                     provider: "kakao",
                 }
             },
-        }),      
+        }),
         CredentialsProvider({
             name: 'credentials',
             credentials: {
-                email: { 
+                email: {
                     label: 'email',
                     type: 'text'
                 },
@@ -78,16 +78,16 @@ export const authOptions: AuthOptions = {
                 }
             },
             authorize: async (credentials) => {
-                if(!credentials?.email) throw new Error('아이디를 입력해주세요.');
-                if(!credentials?.password) throw new Error('비밀번호를 입력해주세요.');
+                if (!credentials?.email) throw new Error('아이디를 입력해주세요.');
+                if (!credentials?.password) throw new Error('비밀번호를 입력해주세요.');
 
                 const user = await prisma.user.findUnique({
                     where: {
                         email: credentials.email
                     }
                 });
-              
-                if(!user || !user?.hashedPassword) {
+
+                if (!user || !user?.hashedPassword) {
                     throw new Error('아이디 또는 비밀번호를 잘못 입력했습니다. \n입력한 내용을 다시 확인해주세요.');
                 }
 
@@ -96,17 +96,17 @@ export const authOptions: AuthOptions = {
                     user.hashedPassword
                 );
 
-                if(!isCorrectPassword) {
+                if (!isCorrectPassword) {
                     throw new Error('아이디 또는 비밀번호를 잘못 입력했습니다. \n입력한 내용을 다시 확인해주세요.');
                 }
 
                 const { id, email, name, image, role } = user;
-                return { 
-                    id, 
-                    email: email ?? undefined, 
-                    name: name ?? undefined, 
-                    image: image ?? undefined, 
-                    role: role ?? undefined 
+                return {
+                    id,
+                    email: email ?? undefined,
+                    name: name ?? undefined,
+                    image: image ?? undefined,
+                    role: role ?? undefined
                 };
             }
         }),
@@ -121,8 +121,8 @@ export const authOptions: AuthOptions = {
     },
     secret: process.env.NEXTAUTH_SECRET,
     events: {
-        signIn: async () => { 
-            /* user updated - e.g. their email was verified */ 
+        signIn: async () => {
+            /* user updated - e.g. their email was verified */
         },
         signOut: async () => {
             // add here
@@ -132,18 +132,18 @@ export const authOptions: AuthOptions = {
         jwt: async ({ token, account, user, trigger, session }) => {
             // 초기 로그인시 User 정보를 가공해 반환
             if (account) {
-              return {
-                // provider: account.provider,
-                role: user?.role ?? token.role ?? "user",
-                email: user?.email ?? token.email ?? "",
-                id: user?.id ?? token.id ?? "",
-                image: user?.image ?? token.image ?? null,
-                name: user?.name ?? token.name ?? null,
-              }
+                return {
+                    // provider: account.provider,
+                    role: user?.role ?? token.role ?? "user",
+                    email: user?.email ?? token.email ?? "",
+                    id: user?.id ?? token.id ?? "",
+                    image: user?.image ?? token.image ?? null,
+                    name: user?.name ?? token.name ?? null,
+                }
             }
-            
-            if ( trigger === 'update' && session?.name && session?.image) {
-                const { name, image } = session; 
+
+            if (trigger === 'update' && session?.name && session?.image) {
+                const { name, image } = session;
                 // token의 정보를 업데이트
                 token.name = name;
                 token.image = image;
@@ -164,7 +164,7 @@ export const authOptions: AuthOptions = {
                 },
             };
         },
-        redirect: async({ url, baseUrl }) => {
+        redirect: async ({ url, baseUrl }) => {
             // Allows relative callback URLs
             if (url.startsWith("/")) return `${baseUrl}${url}`
             // Allows callback URLs on the same origin

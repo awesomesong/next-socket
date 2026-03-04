@@ -6,8 +6,8 @@ import toast from "react-hot-toast";
 import clsx from "clsx";
 import Link from "next/link";
 import AuthForm from "./AuthForm";
-import Input from "./Input";
-import Button from "./Button";
+import TextField from "./TextField";
+import Button, { submitButtonClassName } from "./Button";
 import AuthSocial from "./AuthSocail";
 import { registerUser } from "@/src/app/lib/register";
 
@@ -15,10 +15,11 @@ const RegisterForm = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const callbackUrl = searchParams?.get("callbackUrl") || "/";
-    const [ isLoading, setIsLoading ] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const { 
-        register, 
+    const {
+        register,
+        setValue,
         handleSubmit,
         setError,
         clearErrors,
@@ -32,15 +33,15 @@ const RegisterForm = () => {
             name: '',
             email: '',
             password: '',
-            passwordConfirm:'',
+            passwordConfirm: '',
         }
     });
 
-    const onSubmit:SubmitHandler<FieldValues> = useCallback(async (data) => {
+    const onSubmit: SubmitHandler<FieldValues> = useCallback(async (data) => {
         setIsLoading(true);
 
         // ✅ 비밀번호 확인 검증
-        if (data.password !== data.passwordConfirm) {      
+        if (data.password !== data.passwordConfirm) {
             setIsLoading(false);
             setError(
                 'passwordConfirm', // 에러 핸들링할 input요소의 id 입력
@@ -58,13 +59,13 @@ const RegisterForm = () => {
                 password: data.password,
                 passwordConfirm: data.passwordConfirm,
             });
-            
+
             toast.success(result.message);
             clearErrors();
             reset();
-            
+
             router.replace(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
-            
+
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : '회원가입 중 오류가 발생했습니다.';
             toast.error(errorMessage);
@@ -76,17 +77,18 @@ const RegisterForm = () => {
     return (
         <AuthForm title="회원가입">
             <form
-                className="space-y-4"
+                className="flex flex-col gap-10"
                 onSubmit={handleSubmit(onSubmit)}
             >
-                <Input
-                    id="name" 
-                    label="이름" 
+                <TextField
+                    id="name"
+                    label="이름"
                     type="text"
                     register={register}
+                    setValue={setValue}
                     rules={{
-                        required: "이름을 입력해주세요.", 
-                        minLength: {value: 2, message: '2글자 이상 입력헤주세요.'},
+                        required: "이름을 입력해주세요.",
+                        minLength: { value: 2, message: '2글자 이상 입력헤주세요.' },
                         pattern: {
                             value: /^[가-힣]{2,}$/,
                             message: "이름은 공백 없이 한글만 2글자 이상 입력해주세요.",
@@ -94,16 +96,16 @@ const RegisterForm = () => {
                     }}
                     errors={errors}
                     disabled={isLoading}
-                    placement="outside"
                     variant="underlined"
                 />
-                <Input 
-                    id="email" 
-                    label="이메일" 
+                <TextField
+                    id="email"
+                    label="이메일"
                     type="email"
                     register={register}
+                    setValue={setValue}
                     rules={{
-                        required: "이메일을 입력해주세요.", 
+                        required: "이메일을 입력해주세요.",
                         pattern: {
                             value: /^[\w.-]+@(?:gmail\.com|naver\.com|daum\.net|hanmail\.net|nate\.com|outlook\.com|yahoo\.com)$/i,
                             message: "이메일 형식이 아닙니다.",
@@ -111,16 +113,15 @@ const RegisterForm = () => {
                     }}
                     errors={errors}
                     disabled={isLoading}
-                    placement="outside"
                     variant="underlined"
                 />
-                <Input 
-                    id="password" 
-                    label="비밀번호" 
+                <TextField
+                    id="password"
+                    label="비밀번호"
                     type="password"
                     register={register}
                     rules={{
-                        required: "비밀번호를 입력해주세요.", 
+                        required: "비밀번호를 입력해주세요.",
                         minLength: {
                             value: 8,
                             message: "비밀번호를 8자 이상 입력해주세요."
@@ -132,16 +133,15 @@ const RegisterForm = () => {
                     }}
                     errors={errors}
                     disabled={isLoading}
-                    placement="outside"
                     variant="underlined"
                 />
-                <Input 
-                    id="passwordConfirm" 
-                    label="비밀번호 확인" 
+                <TextField
+                    id="passwordConfirm"
+                    label="비밀번호 확인"
                     type="password"
                     register={register}
                     rules={{
-                        required: "비밀번호를 확인을 입력해주세요.", 
+                        required: "비밀번호를 확인을 입력해주세요.",
                         minLength: {
                             value: 8,
                             message: "비밀번호를 8자 이상 입력해주세요."
@@ -153,23 +153,23 @@ const RegisterForm = () => {
                     }}
                     errors={errors}
                     disabled={isLoading}
-                    placement="outside"
                     variant="underlined"
                 />
-                <div className="pt-[18px] text-sm">
+                <div className="pt-6 text-sm">
                     <Button
                         disabled={isLoading}
                         type="submit"
                         fullWidth
                         color="primary"
                         variant="shadow"
+                        className={submitButtonClassName}
                     >
                         회원가입
                     </Button>
                 </div>
             </form>
 
-            <AuthSocial onClick={(value) => setIsLoading(value)} disabled={isLoading}/>
+            <AuthSocial onClick={(value) => setIsLoading(value)} disabled={isLoading} />
 
             <div
                 className="
@@ -186,13 +186,13 @@ const RegisterForm = () => {
                         hover:underline
                         hover:underline-offset-4
                     `,
-                    isLoading ? 'text-blue-900' : 'text-blue-500'
+                        isLoading ? 'text-purple-500/50' : 'text-purple-500'
                     )}
                 >
                     로그인
                 </Link>
             </div>
-      </AuthForm>
+        </AuthForm>
     )
 }
 

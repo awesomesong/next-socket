@@ -7,11 +7,11 @@
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:check": "prisma migrate status",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@apollo/client": "^3.10.0-rc.1",
-    "@apollo/server": "^4.10.4",
     "@as-integrations/next": "^3.2.0",
     "@auth/mongodb-adapter": "^3.1.0",
     "@auth/prisma-adapter": "^1.5.2",
@@ -20,6 +20,7 @@
     "@tanstack/react-query": "^5.59.19",
     "@tanstack/react-query-devtools": "^5.59.19",
     "@types/bson": "^4.0.5",
+    "@types/three": "^0.183.0",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.5.1",
     "clsx": "^2.1.1",
@@ -28,7 +29,6 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "framer-motion": "^12.5.0",
-    "graphql": "^16.8.1",
     "mongodb": "^6.6.2",
     "next": "15.4.8",
     "next-auth": "^4.24.7",
@@ -48,6 +48,7 @@
     "sha1": "^1.1.1",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
+    "three": "^0.183.0",
     "zustand": "^4.5.6"
   },
   "devDependencies": {

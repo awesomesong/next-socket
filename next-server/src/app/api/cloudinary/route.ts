@@ -31,11 +31,11 @@ export async function POST(req: NextRequest) {
     }
 }
 
-const getPublicIdFromUrl = ({ url, folderName }: { url: string; folderName?: string }) => {
-    const parts = url.split('/');
-    const filename = parts[parts.length - 1].split('.')[0];
-    const cleanFolder = folderName?.replace(/^\/+/, '');
-    return cleanFolder ? `${cleanFolder}/${filename}` : filename;
+const getPublicIdFromUrl = ({ url }: { url: string }) => {
+    // Cloudinary URL 형식: .../upload/v{version}/{public_id}.{ext}
+    // public_id에 폴더가 포함될 수 있음: e.g. notices/abc123
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.\w+)?$/);
+    return match ? match[1] : url.split('/').pop()?.split('.')[0] ?? '';
 };
 
 export async function DELETE(req: NextRequest) {
@@ -43,7 +43,7 @@ export async function DELETE(req: NextRequest) {
     try {
         const user = await getCurrentUser();
         const body = await req.json();
-        const { url, folderName } = body;
+        const { url } = body;
 
         if(!user?.id || !user?.email) return NextResponse.json({message: '로그인이 되지 않았습니다. 로그인 후에 이용해주세요.'}, {status: 401})
 
@@ -51,7 +51,7 @@ export async function DELETE(req: NextRequest) {
         const apiKey = process.env.CLOUDINARY_API_KEY!;
         const apiSecret = process.env.CLOUDINARY_API_SECRET!;
 
-        const publicId = getPublicIdFromUrl({ url, folderName });
+        const publicId = getPublicIdFromUrl({ url });
         const timestamp = Math.floor(Date.now() / 1000).toString();
         const stringToSign = `public_id=${publicId}&timestamp=${timestamp}`;
         const signature = sha1(stringToSign + apiSecret);

@@ -1,35 +1,34 @@
 "use client";
-import dayjs from "@/src/app/utils/day";
 import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { PiUserCircleFill } from "react-icons/pi";
-import { getBlogsComments } from "@/src/app/lib/getBlogsComments";
+import { getNoticesComments } from "@/src/app/lib/getNoticesComments";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
 import { CommentType, UpdateCommentResponse } from "@/src/app/types/comments";
-import { updateBlogsComments } from "@/src/app/lib/updateBlogsComments";
-import { deleteBlogsComments } from "@/src/app/lib/deleteBlogsComments";
+import { updateNoticesComments } from "@/src/app/lib/updateNoticesComments";
+import { deleteNoticesComments } from "@/src/app/lib/deleteNoticesComments";
 import {
   replaceCommentById,
   removeCommentById,
-  blogsCommentsKey,
-  incrementBlogDetailCommentsCount,
-} from "@/src/app/lib/react-query/blogsCache";
+  noticesCommentsKey,
+  incrementNoticeDetailCommentsCount,
+} from "@/src/app/lib/react-query/noticeCache";
 import FormComment from "./FormComment";
 import { useSocket } from "../context/socketContext";
-import CommentSkeleton from "./skeleton/CommentSkeleton";
+import { CommentsSkeleton } from "./FragranceSkeleton";
 import CircularProgress from "./CircularProgress";
-import FallbackNextImage from "./FallbackNextImage";
 import toast from "react-hot-toast";
 import { SOCKET_EVENTS } from "../lib/react-query/utils";
 import type { CommentPage } from "@/src/app/types/comments";
 import DOMPurify from "dompurify";
+import EditableItemRow from "./EditableItemRow";
+import ScentUserAvatar from "./ScentUserAvatar";
 
 type CommentsProps = {
-  blogId: string;
+  noticeId: string;
   user?: {
     role?: string;
     id: string;
@@ -39,7 +38,7 @@ type CommentsProps = {
   };
 };
 
-const Comments = ({ blogId, user }: CommentsProps) => {
+const Comments = ({ noticeId, user }: CommentsProps) => {
   const queryClient = useQueryClient();
   const socket = useSocket();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -52,8 +51,8 @@ const Comments = ({ blogId, user }: CommentsProps) => {
 
   const { data, status, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: blogsCommentsKey(blogId),
-      queryFn: getBlogsComments,
+      queryKey: noticesCommentsKey(noticeId),
+      queryFn: getNoticesComments,
       initialPageParam: "",
       getNextPageParam: (lastPage, allPages) => {
         if (!lastPage) return undefined;
@@ -102,13 +101,13 @@ const Comments = ({ blogId, user }: CommentsProps) => {
   });
 
   const { mutateAsync: updateComment, isPending: isUpdatingComment } = useMutation({
-      mutationFn: updateBlogsComments,
-      onMutate: async ({ blogId: bid, commentId, text }) => {
+      mutationFn: updateNoticesComments,
+      onMutate: async ({ noticeId: bid, commentId, text }) => {
         await queryClient.cancelQueries({
-          queryKey: blogsCommentsKey(bid),
+          queryKey: noticesCommentsKey(bid),
           exact: true,
         });
-        const prev = queryClient.getQueryData(blogsCommentsKey(bid));
+        const prev = queryClient.getQueryData(noticesCommentsKey(bid));
         // 낙관적 텍스트 반영
         replaceCommentById(queryClient, bid, commentId, { text });
         return { prev };
@@ -125,7 +124,7 @@ const Comments = ({ blogId, user }: CommentsProps) => {
         if (updatedComment?.id) {
           replaceCommentById(
             queryClient,
-            blogId,
+            noticeId,
             updatedComment.id,
             updatedComment,
           );
@@ -133,15 +132,15 @@ const Comments = ({ blogId, user }: CommentsProps) => {
         
         // 소켓 브로드캐스트(댓글 수정)
         try {
-          socket?.emit(SOCKET_EVENTS.BLOG_COMMENT_UPDATED, {
-            blogId,
+          socket?.emit(SOCKET_EVENTS.NOTICE_COMMENT_UPDATED, {
+            noticeId,
             comment: updatedComment,
           });
         } catch {}
       },
       onError: (err: Error, _vars, ctx) => {
         if (ctx?.prev) {
-          queryClient.setQueryData(blogsCommentsKey(blogId), ctx.prev);
+          queryClient.setQueryData(noticesCommentsKey(noticeId), ctx.prev);
         }
         const message = err?.message || "댓글 수정에 실패했습니다.";
         toast.error(message);
@@ -149,28 +148,28 @@ const Comments = ({ blogId, user }: CommentsProps) => {
     });
 
   const { mutate: deleteComment } = useMutation({
-    mutationFn: deleteBlogsComments,
-    onMutate: async ({ blogId: bid, commentId }) => {
+    mutationFn: deleteNoticesComments,
+    onMutate: async ({ noticeId: bid, commentId }) => {
       await queryClient.cancelQueries({
-        queryKey: blogsCommentsKey(bid),
+        queryKey: noticesCommentsKey(bid),
         exact: true,
       });
-      const prev = queryClient.getQueryData(blogsCommentsKey(bid));
+      const prev = queryClient.getQueryData(noticesCommentsKey(bid));
       // 낙관적 제거 + 카운트 -1
       removeCommentById(queryClient, bid, commentId);
       // 블로그 상세 페이지 댓글 수 업데이트
-      incrementBlogDetailCommentsCount(queryClient, blogId, -1);
+      incrementNoticeDetailCommentsCount(queryClient, noticeId, -1);
       return { prev };
     },
     onSuccess: (_result, { commentId }) => {
       // 소켓 브로드캐스트(댓글 삭제)
       try {
-        socket?.emit(SOCKET_EVENTS.BLOG_COMMENT_DELETED, { blogId, commentId });
+        socket?.emit(SOCKET_EVENTS.NOTICE_COMMENT_DELETED, { noticeId, commentId });
       } catch {}
     },
     onError: (err: Error, _vars, ctx) => {
       if (ctx?.prev) {
-        queryClient.setQueryData(blogsCommentsKey(blogId), ctx.prev);
+        queryClient.setQueryData(noticesCommentsKey(noticeId), ctx.prev);
       }
       const message = err?.message || "댓글 삭제에 실패했습니다.";
       toast.error(message);
@@ -197,16 +196,6 @@ const Comments = ({ blogId, user }: CommentsProps) => {
     }
   }, []);
 
-  const handleDeleteComment = useCallback((commentId: string) => {
-    if (window.confirm("댓글을 지우시겠습니까?")) {
-      deleteComment({
-        blogId,
-        commentId,
-      });
-    }
-    setEditingId(null);
-  }, [deleteComment, blogId]);
-
   const commentsCount = useMemo(() => 
     data?.pages[0]?.find(
       (page): page is { commentsCount: number } => "commentsCount" in page
@@ -216,127 +205,71 @@ const Comments = ({ blogId, user }: CommentsProps) => {
 
   return (
     <>
-      {commentsCount !== undefined && <h4>댓글 {commentsCount}개</h4>}
+      {commentsCount !== undefined && (
+        <h4 className="section-title">
+          <span className="text-gradient-scent">댓글 {commentsCount}개</span>
+        </h4>
+      )}
       {status === "pending" ? (
-        <div className="flex flex-col gap-3">
-          <CommentSkeleton />
-          <CommentSkeleton />
-          <CommentSkeleton />
-          <CommentSkeleton />
-        </div>
+        <CommentsSkeleton />
       ) : (
         <>
-          <div className="mt-2">
+          <ul className="mt-2">
             {data?.pages?.map((page, pageIndex) => (
-              <ul key={`page-${pageIndex}`}>
+              <li key={`page-${pageIndex}`}>
                 {page
                   ?.find((item) => "comments" in item)
                   ?.comments?.map((comment: CommentType) => (
-                    <li
+                    <EditableItemRow
                       key={comment.id}
-                      id={`comment-${comment.id}`}
-                      className="flex flex-row gap-3 py-1"
-                    >
-                      <span className="shrink-0 overflow-hidden relative w-10 h-10 mt-1 rounded-full">
-                        {comment.author?.image ? (
-                          <FallbackNextImage
-                            src={comment.author?.image}
-                            alt={`${comment.author?.name} 이미지`}
-                            fill
-                            className="object-cover"
-                            unoptimized={false}
-                          />
-                        ) : (
-                          <PiUserCircleFill className="w-full h-full" />
-                        )}
-                      </span>
-                      <div className="flex-1">
-                        <div className="inline-flex items-end flex-wrap">
-                          <span className="break-all mr-2">
-                            {comment.author?.name}
-                          </span>
-                          <span className="text-gray-400 mr-2">
-                            {dayjs(comment.createdAt).fromNow()}
-                          </span>
-                          {canEditComment(comment) && (
-                            <span className="text-gray-500">
-                              <button
-                                onClick={() => {
-                                  setEditingId(comment.id);
-                                }}
-                                className="
-                                  px-3
-                                  py-1 
-                                  mr-2
-                                  rounded-full
-                                  text-xs
-                                  text-blue-500
-                                  border-blue-500
-                                  border-1
-                                "
-                              >
-                                수정
-                              </button>
-                              <button
-                                onClick={() => handleDeleteComment(comment.id)}
-                                className="
-                                  px-3
-                                  py-1 
-                                  rounded-full
-                                  text-xs
-                                  text-gray-500
-                                  border-gray-500
-                                  dark:text-gray-400
-                                  dark:border-gray-400
-                                  border-1
-                                "
-                              >
-                                삭제
-                              </button>
-                            </span>
-                          )}
-                        </div>
-                        {editingId === comment.id ? (
-                          isUpdatingComment ? (
-                            <div className="flex items-center justify-center py-4">
-                              <CircularProgress aria-label="댓글 저장 중 입니다" />
-                            </div>
-                          ) : (
-                            <FormComment
-                              blogId={blogId}
-                              user={user!}
-                              initialText={comment.text}
-                              submitLabel="저장"
-                              autoFocus
-                              onSubmit={(text) =>
-                                updateComment({
-                                  blogId,
-                                  commentId: comment.id,
-                                  text,
-                                })
-                              }
-                              onCancel={() => setEditingId(null)}
-                            />
-                          )
-                        ) : (
-                          <>
-                            <pre
-                              className="whitespace-pre-wrap"
-                              dangerouslySetInnerHTML={{
-                                __html: sanitizeText(comment?.text || ""),
-                              }}
-                            />
-                          </>
-                        )}
-                      </div>
-                    </li>
+                      id={comment.id}
+                      idPrefix="comment"
+                      authorName={comment.author?.name}
+                      authorImage={comment.author?.image}
+                      createdAt={comment.createdAt}
+                      canEdit={canEditComment(comment)}
+                      isEditing={editingId === comment.id}
+                      isUpdating={isUpdatingComment}
+                      onStartEdit={() => setEditingId(comment.id)}
+                      onDelete={() => {
+                        deleteComment({
+                          noticeId,
+                          commentId: comment.id,
+                        });
+                        setEditingId(null);
+                      }}
+                      deleteConfirmMessage="댓글을 지우시겠습니까?"
+                      updatingLabel="댓글 저장 중 입니다"
+                      avatarFallback={<ScentUserAvatar />}
+                      editForm={
+                        <FormComment
+                          noticeId={noticeId}
+                          user={user!}
+                          initialText={comment.text}
+                          submitLabel="저장"
+                          autoFocus
+                          onSubmit={(text) =>
+                            updateComment({
+                              noticeId,
+                              commentId: comment.id,
+                              text,
+                            })
+                          }
+                          onCancel={() => setEditingId(null)}
+                        />
+                      }
+                      contentHtml={sanitizeText(comment?.text || "")}
+                    />
                   ))}
-              </ul>
+              </li>
             ))}
-          </div>
+          </ul>
         </>
       )}
-      <div ref={ref}>
+      <div
+        ref={ref}
+        className="infinite-scroll-sentinel"
+      >
         {isFetchingNextPage && <CircularProgress aria-label="로딩중" />}
       </div>
     </>

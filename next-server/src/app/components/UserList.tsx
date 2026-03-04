@@ -36,15 +36,15 @@ const UserList = () => {
 
 
   // ✅ 새 사용자 등록 시 UserList에 직접 추가 (새로고침 없이)
-  const handleNewUser = useCallback((data: { userId: string; useremail: string; name: string; createdAt: string }) => {      
+  const handleNewUser = useCallback((data: { userId: string; useremail: string; name: string; createdAt: string }) => {
     // 기존 캐시 데이터 가져오기
     const currentData = queryClient.getQueryData<{ users: IUserList[] }>(CHAT_MEMBER_KEY);
-    
+
     if (currentData?.users) {
       // 중복 사용자 체크
       const existingUser = currentData.users.find(user => user.id === data.userId);
       if (existingUser) return;
-      
+
       // 새 사용자 객체 생성
       const newUser: IUserList = {
         id: data.userId,
@@ -53,27 +53,27 @@ const UserList = () => {
         image: null,
         role: 'user'
       };
-      
+
       // 새 사용자를 올바른 위치에 삽입 (서버 정렬 순서 유지)
       const updatedUsers = [...currentData.users];
-      
+
       // 새 사용자를 이름순으로 올바른 위치에 삽입
       let insertIndex = updatedUsers.length; // 기본값: 마지막
-      
+
       for (let i = 0; i < updatedUsers.length; i++) {
         const currentName = updatedUsers[i].name || '';
         const newUserName = newUser.name || '';
-        
+
         // 서버 정렬과 동일한 로직 (Prisma orderBy: { name: 'asc' })
         if (newUserName.toLowerCase() < currentName.toLowerCase()) {
           insertIndex = i;
           break;
         }
       }
-      
+
       // 올바른 위치에 새 사용자 삽입
       updatedUsers.splice(insertIndex, 0, newUser);
-      
+
       // 캐시 업데이트
       queryClient.setQueryData(CHAT_MEMBER_KEY, {
         ...currentData,
@@ -87,7 +87,7 @@ const UserList = () => {
 
   useEffect(() => {
     if (!socket) return;
-    
+
     socket.on('registered:user', handleNewUser);
 
     return () => {
@@ -105,7 +105,7 @@ const UserList = () => {
         lg:w-80
         border-r-default
     ">
-      { status === "error" ? (
+      {status === "error" ? (
         <div className="flex justify-center mt-10">
           <h1 className="text-sm">멤버를 불러오지 못했습니다.</h1>
         </div>
@@ -123,13 +123,13 @@ const UserList = () => {
           >
             <span
               className="
+                text-gradient-scent
                 inline-flex 
                 items-end 
                 gap-2
                 leading-none
               "
             >
-              <IoBeerOutline size={26} />
               멤버
             </span>
           </div>
@@ -138,7 +138,7 @@ const UserList = () => {
           ) : users?.length ? (
             users.map((u) => <UserBox key={u.id} userInfo={u} />)
           ) : (
-            <div className="text-sm text-center py-4">현재 등록된 채팅 멤버가 없습니다.</div>
+            <div className="text-default-secondary text-sm text-center py-4">현재 등록된 채팅 멤버가 없습니다.</div>
           )}
         </>
       )}

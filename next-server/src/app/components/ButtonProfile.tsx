@@ -2,7 +2,7 @@
 import { Tooltip } from "@heroui/react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { PiUserCircleDuotone } from "react-icons/pi";
+import ScentUserAvatar from "./ScentUserAvatar";
 import ShapesSkeleton from "./skeleton/ShapesSkeleton";
 import clsx from "clsx";
 import FallbackNextImage from "./FallbackNextImage";
@@ -13,7 +13,14 @@ const ButtonProfile = () => {
   const height = "30px";
 
   return (
-    <Tooltip showArrow={true} content="프로필" size="lg">
+    <Tooltip
+      showArrow={false}
+      content="프로필"
+      size="lg"
+      classNames={{
+        content: "bg-[var(--scent-gradient-mid)] text-[var(--bg-page)]",
+      }}
+    >
       <Link
         href="/profile"
         title={`${session?.user.name} 프로필`}
@@ -39,7 +46,7 @@ const ButtonProfile = () => {
             className="object-cover drop-shadow-sm rounded-full"
           />
         ) : (
-          <PiUserCircleDuotone className="w-full h-full scale-[1.2] drop-shadow-lg" />
+          <ScentUserAvatar className="drop-shadow-lg" />
         )}
       </Link>
     </Tooltip>

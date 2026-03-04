@@ -1,6 +1,6 @@
 'use client';
 import { signIn } from "next-auth/react";
-import { usePathname, useSearchParams} from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const ButtonLogin = () => {
     const pathname = usePathname();
@@ -11,17 +11,12 @@ const ButtonLogin = () => {
 
     return (
         <button
-            className='
-                hover:underline
-                drop-shadow-lg
-                dark:text-slate-200 
-                text-neutral-950
-            '
+            className="font-josefin text-gradient-scent font-semibold tracking-[0.03em] capitalize drop-shadow-sm focus:outline-none"
             onClick={() => signIn(undefined, { callbackUrl: fullPath })}
         >
             login
         </button>
-    )
+    );
 }
 
 export default ButtonLogin;

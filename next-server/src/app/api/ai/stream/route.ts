@@ -86,11 +86,11 @@ function sweepIdle(now: number) {
 
 // AI Agent별 시스템 프롬프트 정의 (안전/주제 제한 포함)
 const AI_AGENT_PROMPTS = {
-  assistant: `당신은 친근하고 도움이 되는 하이트진로 AI 어시스턴트입니다.
+  assistant: `당신은 친근하고 도움이 되는 향수 AI 어시스턴트입니다.
 다음 정책을 반드시 준수하세요:
-- 대화 주제는 하이트진로(브랜드, 제품, 역사, 제조, 원재료, 맛/향, 푸드페어링, 보관법, 책임있는 음주 안내) 관련으로 제한합니다.
-- 하이트진로와 무관한 주제 요청에는 정중히 사양하고, 대화를 하이트진로 관련 주제로 유도하세요.
-- 미성년자 음주 조장, 불법/위험 행위, 노골적 성적 내용, 혐오/폭력적 발언, 개인정보 요구 등 부적절한 요청은 거절하고 안전 가이드를 제시하세요.
+- 대화 주제는 향수(브랜드, 제품, 역사, 제조, 원재료, 향,구입방법) 관련으로 제한합니다.
+- 향수와 무관한 주제 요청에는 정중히 사양하고, 대화를 향수 관련 주제로 유도하세요.
+- 불법/위험 행위, 노골적 성적 내용, 혐오/폭력적 발언, 개인정보 요구 등 부적절한 요청은 거절하고 안전 가이드를 제시하세요.
 - 한국어로 답변하세요. 이전 대화 맥락을 유지하세요.`,
 } as const;
 
@@ -165,11 +165,11 @@ function buildConversationContext(messages: HistoryMessage[], currentMessage: st
     role: "system" | "user" | "assistant";
     content: string;
   }> = [
-    {
-      role: "system",
-      content: AI_AGENT_PROMPTS.assistant,
-    },
-  ];
+      {
+        role: "system",
+        content: AI_AGENT_PROMPTS.assistant,
+      },
+    ];
 
   // 이전 대화 기록 추가 (최대 8개 메시지)
   const recentMessages = messages.slice(-CONSTANTS.MAX_HISTORY_MESSAGES);
@@ -282,7 +282,7 @@ async function handleStreamingResponse(
 
       for (const line of lines) {
         if (!line.trim()) continue;
-        
+
         if (line.startsWith("data: ")) {
           const data = line.slice(6).trim();
 
@@ -324,7 +324,7 @@ async function handleStreamingResponse(
               where: { id: existingAIMessageId },
               select: { id: true },
             });
-            
+
             if (existingMessage) {
               await prisma.message.delete({
                 where: { id: existingAIMessageId },
@@ -340,24 +340,24 @@ async function handleStreamingResponse(
             // 삭제 실패해도 계속 진행 (메시지가 이미 없을 수 있음)
           }
         }
-        
+
         // 사용자 메시지 조회하여 +1ms 계산
         let aiCreatedAt = new Date();
-        
+
         if (userMessageId) {
           const userMsg = await prisma.message.findUnique({
             where: { id: userMessageId },
             select: { createdAt: true },
           });
-          
+
           if (userMsg?.createdAt) {
             aiCreatedAt = new Date(userMsg.createdAt.getTime() + 1);
           }
         }
-        
+
         // ✅ messageId가 있고 기존 메시지가 있으면 업데이트, 없으면 생성
         const savedMessageId = messageId || new ObjectId().toHexString();
-        
+
         if (messageId) {
           const existingMessage = await prisma.message.findUnique({
             where: { id: messageId },
@@ -402,7 +402,7 @@ async function handleStreamingResponse(
             },
           });
         }
-        
+
         // ✅ 스트림 마지막에 메타데이터 전송 (클라이언트가 createdAt 업데이트하도록)
         // ✅ 모바일 사파리: 메타데이터 전송 보장 (DONE 전에 전송)
         const metadata = JSON.stringify({
@@ -442,7 +442,7 @@ async function handleStreamingResponse(
         console.error("메타데이터 전송 오류:", metaError);
       }
     }
-    
+
     // ✅ DONE 신호 전송 (스트림 완료 알림)
     controller.enqueue(new TextEncoder().encode(`data: [DONE]\n\n`));
   } catch (error) {

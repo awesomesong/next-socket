@@ -7,23 +7,23 @@ import { useSession } from "next-auth/react";
 import { useSocket } from "../context/socketContext";
 import useConversation from "../hooks/useConversation";
 import useConversationUserList from "../hooks/useConversationUserList";
-import { 
+import {
   SOCKET_EVENTS,
   normalizeDate,
 } from "@/src/app/lib/react-query/utils";
-import { 
-  prependBlogCard,
-  upsertBlogCardById,
-  removeBlogCardById,
-  upsertBlogDetailPartial,
-  incrementBlogDetailCommentsCount,
-  prependBlogCommentFirstPage,
-  blogDetailKey,
-  blogsCommentsKey,
+import {
+  prependNoticeCard,
+  upsertNoticeCardById,
+  removeNoticeCardById,
+  upsertNoticeDetailPartial,
+  incrementNoticeDetailCommentsCount,
+  prependNoticeCommentFirstPage,
+  noticeDetailKey,
+  noticesCommentsKey,
   replaceCommentById,
   removeCommentById,
-} from "@/src/app/lib/react-query/blogsCache";
-import { 
+} from "@/src/app/lib/react-query/noticeCache";
+import {
   conversationListKey,
   conversationKey,
   messagesKey,
@@ -56,22 +56,22 @@ import {
   RoomEventPayload,
   getMessageSenderId,
 } from "@/src/app/types/conversation";
-import type { 
-  BlogCommentNewPayload,
-  BlogNewPayload,
-  BlogUpdatedPayload,
-  BlogDeletedPayload,
-  BlogData,
-  BlogDetailQueryData,
-} from "@/src/app/types/blog";
-import type { 
-  BlogCommentUpdatedPayload,
-  BlogCommentDeletedPayload,
+import type {
+  NoticeCommentNewPayload,
+  NoticeNewPayload,
+  NoticeUpdatedPayload,
+  NoticeDeletedPayload,
+  NoticeData,
+  NoticeDetailQueryData,
+} from "@/src/app/types/notice";
+import type {
+  NoticeCommentUpdatedPayload,
+  NoticeCommentDeletedPayload,
 } from "@/src/app/types/comments";
-import type { 
-  DrinkReviewPayload,
-  DrinkReviewDeletedPayload,
-} from "@/src/app/types/drink";
+import type {
+  FragranceReviewPayload,
+  FragranceReviewDeletedPayload,
+} from "@/src/app/types/fragrance";
 import { lastMessageMs, serverLooksEmpty } from "../utils/chat";
 import type { ConvSnap, BufferedMsg } from "../types/socket";
 import type { QueryClient } from "@tanstack/react-query";
@@ -88,13 +88,13 @@ const mergeOrUpsertAIConversation = (
   const isEmptyAI = !!conv?.isAIChat && serverLooksEmpty(conv);
   // 빈 AI 방이면 후보를 찾아 머지
   const idx = isEmptyAI ? findAICandidateIndex(qc, newId) : -1;
-  
+
   // 머지 불가능하면 업서트 (빈 AI 방이 아니거나 후보 없음)
   if (idx < 0) {
     upsertConversation(qc, { ...conv, id: newId } as Partial<FullConversationType> & { id: string });
     return { merged: false, newId };
   }
-  
+
   // 머지 가능: 기존 빈 AI 방에 새 데이터 덮어쓰기
   let oldId: string | undefined;
   qc.setQueryData(conversationListKey, (prev: ConversationListData | undefined) => {
@@ -105,7 +105,7 @@ const mergeOrUpsertAIConversation = (
     next.conversations[idx] = { ...existing, ...conv, id: newId } as FullConversationType;
     return next;
   });
-  
+
   if (oldId && oldId !== newId) {
     qc.removeQueries({ queryKey: messagesKey(oldId), exact: false });
     qc.removeQueries({ queryKey: conversationKey(oldId), exact: true });
@@ -155,7 +155,7 @@ const incUnreadForConv = (qc: QueryClient, convId: string, delta: number) => {
 
 // ✅ 읽음 처리 통일 - 실수 예방을 위한 헬퍼
 const applyLocalRead = (qc: QueryClient, convId: string) => {
-  try { markConversationRead(qc, convId); } catch {}
+  try { markConversationRead(qc, convId); } catch { }
   zeroActiveUnread(qc, convId);
   updateTotalUnreadStore(qc);
 };
@@ -165,8 +165,8 @@ const optimisticListUpdate = (qc: QueryClient, msg: UnnormalizedMessage, ts: (m:
   const convId = String(msg?.conversationId ?? '');
   if (!convId) return;
 
-  upsertConversation(qc, { 
-    id: convId, 
+  upsertConversation(qc, {
+    id: convId,
     lastMessageAt: new Date(ts(msg))  // ✅ serverCreatedAtMs 우선 (일관성)
   });
 
@@ -176,7 +176,7 @@ const optimisticListUpdate = (qc: QueryClient, msg: UnnormalizedMessage, ts: (m:
   // ✅ 안전한 비교: 시간 → ID 순
   const serverMs = item ? (lastMessageMs(item) || 0) : 0;
   const msgMs = ts(msg); // ✅ 유틸 사용
-  
+
   if (item && msgMs <= serverMs) {
     // 같은 시간이면 ID로 tie-breaker
     if (msgMs === serverMs && msg.id && item.lastMessageId) {
@@ -189,7 +189,7 @@ const optimisticListUpdate = (qc: QueryClient, msg: UnnormalizedMessage, ts: (m:
   // ✅ 유틸 사용
   const t = (msg?.type || '').toLowerCase();
   if (!isBumpableType(t)) return; // 시스템 제외, text/image만
-  
+
   bumpConversationOnNewMessage(qc, convId, {
     id: msg.id,
     clientMessageId: msg.clientMessageId,
@@ -227,17 +227,17 @@ const SocketState = () => {
   useEffect(() => {
     queryClientRef.current = queryClient;
   }, [queryClient]);
-    
+
   // ✅ ConversationList 캐시 설정 (gcTime: Infinity 제거 - 메모리 누수 방지)
   useEffect(() => {
-    queryClient.setQueryDefaults(conversationListKey, { 
+    queryClient.setQueryDefaults(conversationListKey, {
       gcTime: 10 * 60 * 1000, // 10분 후 GC (메모리 누수 방지)
-      staleTime: 60_000 
+      staleTime: 60_000
     });
   }, [queryClient]);
 
   useEffect(() => {
-      conversationIdRef.current = conversationId;
+    conversationIdRef.current = conversationId;
   }, [conversationId]);
 
   // ✅ 모든 페이지에서 conversationList 로드 보장 (프로덕션 모드 대응)
@@ -245,14 +245,14 @@ const SocketState = () => {
   // 단, /conversations 페이지에서는 ConversationList 컴포넌트가 이미 호출하므로 중복 방지
   useEffect(() => {
     if (status !== "authenticated") return;
-    
+
     // ✅ /conversations 페이지에서는 ConversationList가 이미 호출하므로 스킵
     const isConversationsPage = pathname?.startsWith('/conversations');
     if (isConversationsPage) return;
-    
+
     const existingList = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
     const hasListNow = !!(existingList?.conversations?.length);
-    
+
     // 캐시에 없으면 로드 (다른 페이지에서만 작동)
     if (!hasListNow) {
       queryClient.ensureQueryData({
@@ -268,14 +268,14 @@ const SocketState = () => {
 
   // 상태 refs
   const userIdRef = useRef<string | null>(null);
-  const emailRef  = useRef<string | null>(null);
+  const emailRef = useRef<string | null>(null);
   const lastSocketRef = useRef<ReturnType<typeof useSocket> | null>(null);
   const myHandlersRef = useRef<Map<string, (...args: unknown[]) => void>>(
     new Map(),
   );
-  
+
   // ✅ 이벤트 리비전 저장용 맵 분리 (myHandlersRef와 분리)
-  const roomRevRef = useRef<Map<string, {rev: number; ts: number}>>(new Map());
+  const roomRevRef = useRef<Map<string, { rev: number; ts: number }>>(new Map());
   const exitedByMeRef = useRef<Set<string>>(new Set());
   // 기타
   const pendingNewConvsRef = useRef<Map<string, PartialConversationType & { id: string }>>(new Map());
@@ -294,11 +294,11 @@ const SocketState = () => {
   const lastListVersionRef = useRef<number>(0);
 
   // ✅ 4) 타임스탬프 유틸: 중복 분기 제거
-  const ts = useCallback((m: UnnormalizedMessage): number => 
+  const ts = useCallback((m: UnnormalizedMessage): number =>
     Number.isFinite(m?.serverCreatedAtMs)
       ? m.serverCreatedAtMs!
       : new Date(m?.createdAt || 0).getTime()
-  , []);
+    , []);
 
   // ✅ 3) 타입 판별 유틸: 소문자 변환 최소화
   const isBumpableType = useCallback((t: string) => t === 'text' || t === 'image', []);
@@ -324,7 +324,7 @@ const SocketState = () => {
         // 이 방에서 나가기로 예약된 유저가 나(내 id)라면 스킵
         const exits = new Set((pendingExitRef.current.get(cid) ?? []).map(String));
         if (exits.has(myUserId)) continue;
-  
+
         if (conv?.isAIChat) {
           const { merged, oldId, newId } = mergeOrUpsertAIConversation(queryClient, conv);
           if (merged && oldId && newId && oldId !== newId) {
@@ -334,11 +334,11 @@ const SocketState = () => {
           upsertConversation(queryClient, { ...conv, id: String(conv.id ?? cid) } as Partial<FullConversationType> & { id: string });
         }
       }
-      
+
       // 2) 시딩 중 EXIT 적용
       for (const [cid, remainingIds] of pendingExitRef.current) {
         const id = String(cid);
-              
+
         set({ conversationId: id, userIds: remainingIds ?? [] });
 
         // 상세 캐시
@@ -355,7 +355,7 @@ const SocketState = () => {
 
           const amIExiting = !!myUserId && !remainingIds.includes(myUserId);
           if (amIExiting) {
-              next.conversations.splice(idx, 1);
+            next.conversations.splice(idx, 1);
           }
           return next;
         });
@@ -387,24 +387,24 @@ const SocketState = () => {
   const syncActiveConversationRead = useCallback(() => {
     const activeId = String(conversationIdRef.current ?? "");
     if (!activeId) return;
-    
+
     applyLocalRead(queryClient, activeId);
   }, [queryClient]);
-  
+
   // ✅ 초기화 함수를 먼저 정의
   const initializeSocketState = useCallback(() => {
     try {
       // ✅ pending NEW/EXIT 먼저 적용
       reconcileAfterList();
-    
+
       // ✅ 서버 큐잉으로 메시지 복구 - 워터마크 불필요
       const listNow = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
 
       // ✅ LIVE 모드 진입 시 읽음 처리
       syncActiveConversationRead();
-      
+
       // ✅ 총합 갱신
-    if (listNow?.conversations?.length) {
+      if (listNow?.conversations?.length) {
         updateTotalUnreadStore(queryClient);
       }
     } catch (error) {
@@ -416,14 +416,14 @@ const SocketState = () => {
   const handleSocketConnect = useCallback(async () => {
     // ✅ 로그인되어 있을 때만 실행
     if (status !== "authenticated") return;
-    
+
     // snapshotRef만 클리어하여 새로운 API 데이터 기준으로 재계산
     snapshotRef.current.clear();
-    
+
     // ✅ conversationList 데이터 확인 및 로드
     const existingList = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
     const hasListNow = !!(existingList?.conversations?.length);
-    
+
     // ✅ 리스트가 없으면 기본 fetch만 실행 (서버 큐잉과 별개)
     if (!hasListNow) {
       // ensureQueryData: 캐시에 없으면 fetch, 있으면 재사용
@@ -436,13 +436,13 @@ const SocketState = () => {
         console.error('[SocketState] conversationList 로드 실패:', err);
       });
     }
-    
+
     // ✅ 활성 대화방 읽음 상태만 동기화
     syncActiveConversationRead();
-    
+
     // ✅ 소켓 상태 초기화
     initializeSocketState();
-    
+
   }, [status, initializeSocketState, queryClient, syncActiveConversationRead]);
 
   const handleDisconnect = useCallback(() => {
@@ -458,7 +458,7 @@ const SocketState = () => {
     try {
       const msg = normalizeMessage(_raw);
       const convId = String(msg?.conversationId ?? "");
-      
+
       if (!convId) return;
 
       const canonicalMs = Number.isFinite(msg.serverCreatedAtMs)
@@ -484,7 +484,7 @@ const SocketState = () => {
         if (messageIdStr && countedSet.has(messageIdStr)) {
           return; // 이미 처리된 메시지는 스킵
         }
-        
+
         // ✅ 버퍼에 저장
         const idSet = ensureSet(bufferedIdSetRef.current, convId);
         if (messageIdStr && !idSet.has(messageIdStr)) {
@@ -500,13 +500,13 @@ const SocketState = () => {
       // ⚠️ 중요: countedSet에 먼저 추가하여 동시성 문제 방지
       const curId = String(canonical.id ?? '');
       if (!curId) return;
-      
+
       // ✅ 중복 체크: 이미 처리된 메시지는 스킵
       if (countedSet.has(curId)) return;
-      
+
       // ✅ countedSet에 추가 (동시성 방지)
       countedSet.add(curId);
-      
+
       // ✅ 메시지 캐시에 추가
       upsertMessageSortedInCache(queryClient, convId, canonical);
 
@@ -515,7 +515,7 @@ const SocketState = () => {
       const activeId = String(conversationIdRef.current ?? "");
       const isActive = activeId === convId;
       const isMyMessage = String(msg?.sender?.email ?? "").toLowerCase() === myEmail.toLowerCase();
-      
+
       if (isActive) {
         applyLocalRead(queryClient, convId);
         requestAnimationFrame(() => window.dispatchEvent(new CustomEvent("chat:new-content")));
@@ -523,7 +523,7 @@ const SocketState = () => {
 
       // ✅ 리스트에 없으면 스킵 (handleConversationNew가 아직 호출되지 않음)
       if (!conv) return;
-      
+
       // ✅ 최적화: 미리보기와 안읽음 카운트 처리
       // ⚠️ 중요: countedSet에 이미 처리된 메시지 ID가 있으므로, 여기서는 새로운 메시지만 처리
       // 하지만 processList 완료 직후 도착하는 실시간 메시지는 서버 응답에 이미 포함되었을 수 있음
@@ -532,12 +532,12 @@ const SocketState = () => {
       const lastMessageAtMs = conv.lastMessageAt ? new Date(conv.lastMessageAt).getTime() : 0;
       const msgMs = canonical.serverCreatedAtMs!;
       const lastIdFromList = conv.lastMessageId ? String(conv.lastMessageId) : '';
-      
+
       // ✅ 중복 체크: 리스트의 마지막 메시지와 비교
       // - 동일 ID면 중복
       // - 시간이 이전이면 중복
       let isDuplicate = (lastIdFromList && curId === lastIdFromList) || msgMs < lastMessageAtMs;
-      
+
       // ⚠️ 중요: snapshotRef를 확인하여 서버 응답 기준으로 중복 체크
       // processList 완료 직후 도착하는 실시간 메시지는 서버 응답에 이미 포함되었을 수 있음
       // snapshotRef는 서버 응답의 마지막 메시지 정보를 정확히 가지고 있음
@@ -556,12 +556,12 @@ const SocketState = () => {
           }
         }
       }
-      
+
       // ✅ 미리보기 업데이트 (중복이 아니고 시스템 메시지가 아닐 때)
       if (!isDuplicate && msg.type !== "system" && (listReadyRef.current || isMyMessage)) {
         optimisticListUpdate(queryClient, msg, ts, isBumpableType);
       }
-      
+
       // ✅ 안읽음 카운트 (중복이 아니고, 내 메시지가 아니고, 시스템 메시지가 아니고, 활성 대화방이 아닐 때)
       if (!isDuplicate && !isMyMessage && msg.type !== 'system' && !isActive && !conv.isAIChat) {
         const msgType = (msg?.type || '').toLowerCase();
@@ -573,20 +573,20 @@ const SocketState = () => {
         // 프로덕션 모드에서 안 읽은 메시지 카운트가 실시간으로 업데이트되지 않는 문제 해결
         updateTotalUnreadStore(queryClient);
       }
-    } catch {}
+    } catch { }
   }, [queryClient, ts, isBumpableType]);
 
   // ✅ room.event 핸들러 - 델타 이벤트 처리
   const handleRoomEvent = useCallback(async (event: RoomEventPayload) => {
     try {
       const { type, conversationId, userId, ts, rev } = event;
-      
+
       // ✅ 리비전 가드 (중복 이벤트 방지) - roomRevRef 사용
       const roomKey = `room:${conversationId}`;
       const last = roomRevRef.current.get(roomKey);
       if (last && rev <= last.rev) return;
       roomRevRef.current.set(roomKey, { rev, ts });
-      
+
       switch (type) {
         case "member.left": {
           if (!userId) return; // 잘못된 델타 방어
@@ -602,7 +602,7 @@ const SocketState = () => {
             // 로컬 상태 정리
 
             // 진행 중 상세 쿼리만 취소
-            try { await queryClient.cancelQueries({ queryKey: conversationKey(id), exact: true }); } catch {}
+            try { await queryClient.cancelQueries({ queryKey: conversationKey(id), exact: true }); } catch { }
 
             return; // ⬅️ 전역 캐시/배지 업데이트 없이 함수 종료
           }
@@ -610,16 +610,16 @@ const SocketState = () => {
           // ✅ conversationKey 업데이트 (대화방 상세 데이터)
           queryClient.setQueryData(conversationKey(id), (prev: { conversation?: FullConversationType } | undefined) => {
             if (!prev?.conversation?.userIds) return prev;
-            
+
             const beforeUserIds = prev.conversation.userIds;
             const updatedUserIds = beforeUserIds.filter((userId: string) => userId !== leftUserId);
-            
+
             // 변경사항이 없으면 기존 데이터 반환
             if (beforeUserIds.length === updatedUserIds.length) return prev;
-            
+
             const beforeUsers = prev.conversation.users || [];
             const updatedUsers = beforeUsers.filter((user) => user.id !== leftUserId);
-            
+
             return {
               ...prev,
               conversation: {
@@ -633,33 +633,33 @@ const SocketState = () => {
           // ✅ conversationListKey의 해당 아이템만 새 객체로 바꾸고, 나머지 아이템은 같은 참조 유지
           queryClient.setQueryData(conversationListKey, (prev: ConversationListData | undefined) => {
             if (!prev?.conversations?.length) return prev;
-            
+
             const idx = prev.conversations.findIndex((c: FullConversationType) => String(c.id) === id);
             if (idx < 0) return prev;
-                  
+
             const currentConv = prev.conversations[idx];
             const beforeUserIds = currentConv.userIds || [];
             const updatedUserIds = beforeUserIds.filter((userId: string) => userId !== leftUserId);
-            
+
             // 변경사항이 없으면 기존 데이터 반환 (리렌더링 방지)
             if (beforeUserIds.length === updatedUserIds.length) return prev;
-            
+
             // ✅ users 배열에서도 나간 유저 제거
-            const updatedUsers = (currentConv.users || []).filter((user) => 
+            const updatedUsers = (currentConv.users || []).filter((user) =>
               user.id !== leftUserId
             );
-            
+
             // ✅ 변경된 대화방만 새 객체로 생성
             const updatedConversation = {
               ...currentConv,
               userIds: [...updatedUserIds],
               users: [...updatedUsers]
             };
-            
+
             // ✅ 변경된 대화방만 교체, 나머지는 같은 참조 유지
             const newConversations = [...prev.conversations];
             newConversations[idx] = updatedConversation;
-            
+
             const result = {
               ...prev,
               conversations: newConversations
@@ -671,11 +671,11 @@ const SocketState = () => {
           // ✅ messagesKey에서 나간 사용자 정보 제거
           queryClient.setQueryData(messagesKey(id), (prev: MessagesInfinite) => {
             if (!prev?.pages) return prev;
-          
+
             let hasChanges = false;
             const newPages = prev.pages.map((page: MessagesPage) => {
               if (!Array.isArray(page?.messages)) return page;
-            
+
               let pageHasChanges = false;
               const newMessages = page.messages.map((m: FullMessageType) => {
                 // 메시지의 conversation.userIds에서 나간 사용자 제거
@@ -684,7 +684,7 @@ const SocketState = () => {
                   if (hasLeftUser) {
                     pageHasChanges = true;
                     hasChanges = true;
-                    
+
                     return {
                       ...m,
                       conversation: {
@@ -704,32 +704,32 @@ const SocketState = () => {
                 if (hasLeftUserInSeen) {
                   pageHasChanges = true;
                   hasChanges = true;
-                  updatedSeenUsers = page.seenUsersForLastMessage.filter((user: { id: string }) => 
+                  updatedSeenUsers = page.seenUsersForLastMessage.filter((user: { id: string }) =>
                     user.id !== leftUserId
                   );
                 }
               }
 
-              return pageHasChanges ? { 
-                ...page, 
+              return pageHasChanges ? {
+                ...page,
                 messages: newMessages,
                 seenUsersForLastMessage: updatedSeenUsers
               } : page;
             });
-            
+
             // 변경사항이 없으면 기존 데이터 반환
             if (!hasChanges) return prev;
-                  
+
             return {
               ...prev,
-                pages: newPages
+              pages: newPages
             };
           });
           break;
         }
         case "room.deleted": {
           const id = String(conversationId);
-          
+
           // 1) 목록에서 제거
           removeConversationById(queryClient, id);
 
@@ -745,7 +745,7 @@ const SocketState = () => {
           break;
         }
       }
-      
+
       // 총 배지 업데이트
       updateTotalUnreadStore(queryClient);
     } catch {
@@ -754,217 +754,217 @@ const SocketState = () => {
   }, [queryClient, session?.user?.id]);
 
   const handleConversationNew = useCallback((conversation: PartialConversationType & { id: string }) => {
-      try {                
-        if (!conversation?.id) return;
-        const id = String(conversation.id);
-        const conv = { ...conversation, id };
+    try {
+      if (!conversation?.id) return;
+      const id = String(conversation.id);
+      const conv = { ...conversation, id };
 
-        // ✅ 이미 내가 나간 방이면 무시
-        if (exitedByMeRef.current.has(id)) return; 
-                
-        // 2) 라이브 경로: AI 방이면 머지 시도
-        if (conv?.isAIChat) {
-          const { merged, oldId, newId } = mergeOrUpsertAIConversation(queryClient, conv);
-          const visId = String(newId ?? id);
+      // ✅ 이미 내가 나간 방이면 무시
+      if (exitedByMeRef.current.has(id)) return;
 
-          // mergeOrUpsertAIConversation이 이미 upsert/머지했으므로 리스트에 있어야 함
-          const list = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
-          const item = list?.conversations?.find((c: FullConversationType) => String(c.id) === visId);
-          
-          if (item && !lastMessageMs(item)) {
-            updateConversationById(queryClient, visId, {
-              lastMessageAt: new Date(),
-              lastMessageAtMs: Date.now(),
-            });
-          }
+      // 2) 라이브 경로: AI 방이면 머지 시도
+      if (conv?.isAIChat) {
+        const { merged, oldId, newId } = mergeOrUpsertAIConversation(queryClient, conv);
+        const visId = String(newId ?? id);
 
-          zeroAndClampUnread(queryClient, visId, conversationIdRef.current);
+        // mergeOrUpsertAIConversation이 이미 upsert/머지했으므로 리스트에 있어야 함
+        const list = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
+        const item = list?.conversations?.find((c: FullConversationType) => String(c.id) === visId);
 
-          // ✅ ⚠️ 중요: 새로운 대화방을 snapshotRef에 추가하여 실시간 메시지 중복 체크 가능하도록 함
-          // API 호출 중에 생성된 새로운 대화방도 processList 완료 후 실시간 메시지를 받을 수 있도록 함
-          const lastMsgMs = lastMessageMs(item || conv) || 0;
-          const lastMsgId = item?.lastMessageId || (item || conv as FullConversationType).lastMessageId || undefined;
-          snapshotRef.current.set(visId, {
-            baseUnread: 0,
-            isAI: !!conv.isAIChat,
-            lastMessageAtMs: lastMsgMs,
-            lastId: lastMsgId ? String(lastMsgId) : undefined,
+        if (item && !lastMessageMs(item)) {
+          updateConversationById(queryClient, visId, {
+            lastMessageAt: new Date(),
+            lastMessageAtMs: Date.now(),
           });
+        }
 
-          if (merged && oldId && newId && oldId !== newId) {
-            remapIfViewing(oldId, newId);
-          }
-          return;
-        }
-            
-        upsertConversation(queryClient, conv as Partial<FullConversationType> & { id: string });
-        if (!lastMessageMs(conv)) {
-          const lastAt = normalizeDate(conv.lastMessageAt ?? (conv as { createdAt?: Date | string }).createdAt ?? new Date());
-          updateConversationById(queryClient, id, { lastMessageAt: lastAt });
-        }
-        zeroAndClampUnread(queryClient, id, conversationIdRef.current);
-      
+        zeroAndClampUnread(queryClient, visId, conversationIdRef.current);
+
         // ✅ ⚠️ 중요: 새로운 대화방을 snapshotRef에 추가하여 실시간 메시지 중복 체크 가능하도록 함
         // API 호출 중에 생성된 새로운 대화방도 processList 완료 후 실시간 메시지를 받을 수 있도록 함
-        const list = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
-        const item = list?.conversations?.find((c: FullConversationType) => String(c.id) === id);
         const lastMsgMs = lastMessageMs(item || conv) || 0;
         const lastMsgId = item?.lastMessageId || (item || conv as FullConversationType).lastMessageId || undefined;
-        snapshotRef.current.set(id, {
+        snapshotRef.current.set(visId, {
           baseUnread: 0,
           isAI: !!conv.isAIChat,
           lastMessageAtMs: lastMsgMs,
           lastId: lastMsgId ? String(lastMsgId) : undefined,
         });
-      
-      } catch {
-        // 에러 무시
+
+        if (merged && oldId && newId && oldId !== newId) {
+          remapIfViewing(oldId, newId);
+        }
+        return;
       }
+
+      upsertConversation(queryClient, conv as Partial<FullConversationType> & { id: string });
+      if (!lastMessageMs(conv)) {
+        const lastAt = normalizeDate(conv.lastMessageAt ?? (conv as { createdAt?: Date | string }).createdAt ?? new Date());
+        updateConversationById(queryClient, id, { lastMessageAt: lastAt });
+      }
+      zeroAndClampUnread(queryClient, id, conversationIdRef.current);
+
+      // ✅ ⚠️ 중요: 새로운 대화방을 snapshotRef에 추가하여 실시간 메시지 중복 체크 가능하도록 함
+      // API 호출 중에 생성된 새로운 대화방도 processList 완료 후 실시간 메시지를 받을 수 있도록 함
+      const list = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
+      const item = list?.conversations?.find((c: FullConversationType) => String(c.id) === id);
+      const lastMsgMs = lastMessageMs(item || conv) || 0;
+      const lastMsgId = item?.lastMessageId || (item || conv as FullConversationType).lastMessageId || undefined;
+      snapshotRef.current.set(id, {
+        baseUnread: 0,
+        isAI: !!conv.isAIChat,
+        lastMessageAtMs: lastMsgMs,
+        lastId: lastMsgId ? String(lastMsgId) : undefined,
+      });
+
+    } catch {
+      // 에러 무시
+    }
   }, [queryClient, remapIfViewing]);
 
 
-  const handleBlogCommentNew = useCallback((payload: BlogCommentNewPayload) => {
+  const handleBlogCommentNew = useCallback((payload: NoticeCommentNewPayload) => {
     try {
-      if (!payload?.blogId || !payload?.comment) return;
-      incrementBlogDetailCommentsCount(
+      if (!payload?.noticeId || !payload?.comment) return;
+      incrementNoticeDetailCommentsCount(
         queryClient,
-        String(payload.blogId),
+        String(payload.noticeId),
         1,
       );
-      prependBlogCommentFirstPage(
+      prependNoticeCommentFirstPage(
         queryClient,
-        String(payload.blogId),
+        String(payload.noticeId),
         payload.comment,
       );
     } catch (error) {
-      console.error("Error handling blog comment new:", error);
+      console.error("Error handling notice comment new:", error);
     }
   }, [queryClient]);
 
-  const handleBlogCommentUpdated = useCallback((payload: BlogCommentUpdatedPayload) => {
+  const handleBlogCommentUpdated = useCallback((payload: NoticeCommentUpdatedPayload) => {
     try {
-      if (!payload?.blogId || !payload?.comment?.id) return;
+      if (!payload?.noticeId || !payload?.comment?.id) return;
       replaceCommentById(
         queryClient,
-        String(payload.blogId),
+        String(payload.noticeId),
         payload.comment.id,
         payload.comment,
       );
     } catch (error) {
-      console.error("Error handling blog comment updated:", error);
+      console.error("Error handling notice comment updated:", error);
     }
   }, [queryClient]);
 
-  const handleBlogCommentDeleted = useCallback((payload: BlogCommentDeletedPayload) => {
+  const handleBlogCommentDeleted = useCallback((payload: NoticeCommentDeletedPayload) => {
     try {
-      if (!payload?.blogId || !payload?.commentId) return;
+      if (!payload?.noticeId || !payload?.commentId) return;
       removeCommentById(
         queryClient,
-        String(payload.blogId),
+        String(payload.noticeId),
         payload.commentId,
       );
-      incrementBlogDetailCommentsCount(
+      incrementNoticeDetailCommentsCount(
         queryClient,
-        String(payload.blogId),
+        String(payload.noticeId),
         -1,
       );
     } catch (error) {
-      console.error("Error handling blog comment deleted:", error);
+      console.error("Error handling notice comment deleted:", error);
     }
   }, [queryClient]);
 
-  const handleBlogNew = useCallback((payload: BlogNewPayload) => {
+  const handleBlogNew = useCallback((payload: NoticeNewPayload) => {
     try {
-      const blog = payload?.blog;
-      if (!blog?.id) return;
-      const createdAt = normalizeDate(blog.createdAt);
-      prependBlogCard(queryClient, { ...blog, createdAt });
+      const notice = payload?.notice;
+      if (!notice?.id) return;
+      const createdAt = normalizeDate(notice.createdAt);
+      prependNoticeCard(queryClient, { ...notice, createdAt });
     } catch (error) {
-      console.error("Error handling blog new:", error);
+      console.error("Error handling notice new:", error);
     }
   }, [queryClient]);
 
-  const handleBlogUpdated = useCallback((payload: BlogUpdatedPayload) => {
+  const handleBlogUpdated = useCallback((payload: NoticeUpdatedPayload) => {
     try {
-      const blog = payload?.blog as BlogData;
-      if (!blog?.id) return;
-      const patch: { id: string } & Partial<Pick<BlogData, 'title' | 'image' | 'author' | 'viewCount'>> & { createdAt?: Date; _count?: { comments: number } } = { id: String(blog.id) };
-      if (blog.title !== undefined) patch.title = blog.title;
-      if (blog.image !== undefined) patch.image = blog.image;
-      if (blog.createdAt !== undefined) {
-        patch.createdAt = blog.createdAt instanceof Date ? blog.createdAt : new Date(blog.createdAt);
+      const notice = payload?.notice as NoticeData;
+      if (!notice?.id) return;
+      const patch: { id: string } & Partial<Pick<NoticeData, 'title' | 'image' | 'author' | 'viewCount'>> & { createdAt?: Date; _count?: { comments: number } } = { id: String(notice.id) };
+      if (notice.title !== undefined) patch.title = notice.title;
+      if (notice.image !== undefined) patch.image = notice.image;
+      if (notice.createdAt !== undefined) {
+        patch.createdAt = notice.createdAt instanceof Date ? notice.createdAt : new Date(notice.createdAt);
       }
-      if (blog.author !== undefined) patch.author = blog.author;
-      if (blog._count?.comments !== undefined) patch._count = { comments: blog._count.comments };
-      if (blog.viewCount !== undefined) patch.viewCount = blog.viewCount;
-      upsertBlogCardById(queryClient, patch as unknown as Parameters<typeof upsertBlogCardById>[1]);
-              
-      const partial: Partial<Pick<BlogData, 'title' | 'content' | 'image'>> = {};
-      if (blog.title !== undefined) partial.title = blog.title;
-      if (blog.content !== undefined) partial.content = blog.content;
-      if (blog.image !== undefined) partial.image = blog.image;
+      if (notice.author !== undefined) patch.author = notice.author;
+      if (notice._count?.comments !== undefined) patch._count = { comments: notice._count.comments };
+      if (notice.viewCount !== undefined) patch.viewCount = notice.viewCount;
+      upsertNoticeCardById(queryClient, patch as unknown as Parameters<typeof upsertNoticeCardById>[1]);
+
+      const partial: Partial<Pick<NoticeData, 'title' | 'content' | 'image'>> = {};
+      if (notice.title !== undefined) partial.title = notice.title;
+      if (notice.content !== undefined) partial.content = notice.content;
+      if (notice.image !== undefined) partial.image = notice.image;
       if (Object.keys(partial).length > 0) {
-          upsertBlogDetailPartial(queryClient, String(blog.id), partial);
+        upsertNoticeDetailPartial(queryClient, String(notice.id), partial);
       }
     } catch (error) {
-      console.error("Error handling blog updated:", error);
+      console.error("Error handling notice updated:", error);
     }
   }, [queryClient]);
 
-  const handleBlogDeleted = useCallback((payload: BlogDeletedPayload) => {
+  const handleBlogDeleted = useCallback((payload: NoticeDeletedPayload) => {
     try {
-      if (!payload?.blogId) return;
-      const id = String(payload.blogId);
-      removeBlogCardById(queryClient, id);
-      queryClient.setQueryData(blogDetailKey(id), (old: BlogDetailQueryData) => {
+      if (!payload?.noticeId) return;
+      const id = String(payload.noticeId);
+      removeNoticeCardById(queryClient, id);
+      queryClient.setQueryData(noticeDetailKey(id), (old: NoticeDetailQueryData) => {
         if (!old) return old;
-        return { ...old, blog: undefined } as BlogDetailQueryData & { blog: undefined };
+        return { ...old, notice: undefined } as NoticeDetailQueryData & { notice: undefined };
       });
-      queryClient.removeQueries({ queryKey: blogsCommentsKey(id), exact: true });
+      queryClient.removeQueries({ queryKey: noticesCommentsKey(id), exact: true });
     } catch (error) {
-      console.error("Error handling blog deleted:", error);
+      console.error("Error handling notice deleted:", error);
     }
   }, [queryClient]);
 
-  const handleDrinkReviewNew = useCallback((payload: DrinkReviewPayload) => {
+  const handleFragranceReviewNew = useCallback((payload: FragranceReviewPayload) => {
     try {
-      if (!payload?.drinkSlug || !payload?.review?.id) return;
-      prependReview(queryClient, payload.drinkSlug, payload.review);
+      if (!payload?.fragranceSlug || !payload?.review?.id) return;
+      prependReview(queryClient, payload.fragranceSlug, payload.review);
     } catch (error) {
-      console.error("Error handling drink review new:", error);
+      console.error("Error handling fragrance review new:", error);
     }
   }, [queryClient]);
 
-  const handleDrinkReviewUpdated = useCallback((payload: DrinkReviewPayload) => {
+  const handleFragranceReviewUpdated = useCallback((payload: FragranceReviewPayload) => {
     try {
-      if (!payload?.drinkSlug || !payload?.review?.id) return;
+      if (!payload?.fragranceSlug || !payload?.review?.id) return;
       replaceReviewById(
         queryClient,
-        payload.drinkSlug,
+        payload.fragranceSlug,
         payload.review.id,
         payload.review,
       );
     } catch (error) {
-      console.error("Error handling drink review updated:", error);
+      console.error("Error handling fragrance review updated:", error);
     }
   }, [queryClient]);
 
-  const handleDrinkReviewDeleted = useCallback((payload: DrinkReviewDeletedPayload) => {
+  const handleFragranceReviewDeleted = useCallback((payload: FragranceReviewDeletedPayload) => {
     try {
-      if (!payload?.drinkSlug || !payload?.reviewId) return;
-      removeReviewById(queryClient, payload.drinkSlug, payload.reviewId);
+      if (!payload?.fragranceSlug || !payload?.reviewId) return;
+      removeReviewById(queryClient, payload.fragranceSlug, payload.reviewId);
     } catch (error) {
-      console.error("Error handling drink review deleted:", error);
+      console.error("Error handling fragrance review deleted:", error);
     }
   }, [queryClient]);
 
   useEffect(() => {
     if (status === "authenticated" && session?.user?.id && session.user.email) {
       userIdRef.current = String(session.user.id);
-      emailRef.current  = String(session.user.email);
+      emailRef.current = String(session.user.email);
     } else if (status === "unauthenticated") {
       userIdRef.current = null;
-      emailRef.current  = null;
+      emailRef.current = null;
     }
   }, [status, session?.user?.id, session?.user?.email]);
 
@@ -986,9 +986,9 @@ const SocketState = () => {
     handleBlogNew,
     handleBlogUpdated,
     handleBlogDeleted,
-    handleDrinkReviewNew,
-    handleDrinkReviewUpdated,
-    handleDrinkReviewDeleted,
+    handleFragranceReviewNew,
+    handleFragranceReviewUpdated,
+    handleFragranceReviewDeleted,
   });
 
   // ✅ 핸들러 ref를 최신으로 유지
@@ -1005,9 +1005,9 @@ const SocketState = () => {
       handleBlogNew,
       handleBlogUpdated,
       handleBlogDeleted,
-      handleDrinkReviewNew,
-      handleDrinkReviewUpdated,
-      handleDrinkReviewDeleted,
+      handleFragranceReviewNew,
+      handleFragranceReviewUpdated,
+      handleFragranceReviewDeleted,
     };
   }, [
     handleSocketConnect,
@@ -1021,9 +1021,9 @@ const SocketState = () => {
     handleBlogNew,
     handleBlogUpdated,
     handleBlogDeleted,
-    handleDrinkReviewNew,
-    handleDrinkReviewUpdated,
-    handleDrinkReviewDeleted,
+    handleFragranceReviewNew,
+    handleFragranceReviewUpdated,
+    handleFragranceReviewDeleted,
   ]);
 
   // 소켓 이벤트 처리
@@ -1031,7 +1031,7 @@ const SocketState = () => {
     const old = lastSocketRef.current;
     if (old) {
       for (const [ev, fn] of myHandlersRef.current) {
-        try { old.off(ev, fn) } catch {}
+        try { old.off(ev, fn) } catch { }
       }
     }
     myHandlersRef.current.clear();
@@ -1040,9 +1040,9 @@ const SocketState = () => {
       lastSocketRef.current = null;
       return;
     }
-    
+
     const handlers = handlersRef.current;
-    
+
     if (socket.connected) {
       handlers.handleSocketConnect();
     }
@@ -1054,20 +1054,20 @@ const SocketState = () => {
       [SOCKET_EVENTS.RECEIVE_CONVERSATION, handlers.handleReceiveConversation as (payload: unknown) => void],
       [SOCKET_EVENTS.CONVERSATION_NEW, handlers.handleConversationNew as (payload: unknown) => void],
       [SOCKET_EVENTS.ROOM_EVENT, handlers.handleRoomEvent as (payload: unknown) => void],
-      [SOCKET_EVENTS.BLOG_COMMENT_NEW, handlers.handleBlogCommentNew as (payload: unknown) => void],
+      [SOCKET_EVENTS.NOTICE_COMMENT_NEW, handlers.handleBlogCommentNew as (payload: unknown) => void],
       [SOCKET_EVENTS.BLOG_COMMENT_UPDATED, handlers.handleBlogCommentUpdated as (payload: unknown) => void],
       [SOCKET_EVENTS.BLOG_COMMENT_DELETED, handlers.handleBlogCommentDeleted as (payload: unknown) => void],
       [SOCKET_EVENTS.BLOG_NEW, handlers.handleBlogNew as (payload: unknown) => void],
       [SOCKET_EVENTS.BLOG_UPDATED, handlers.handleBlogUpdated as (payload: unknown) => void],
       [SOCKET_EVENTS.BLOG_DELETED, handlers.handleBlogDeleted as (payload: unknown) => void],
-      [SOCKET_EVENTS.DRINK_REVIEW_NEW, handlers.handleDrinkReviewNew as (payload: unknown) => void],
-      [SOCKET_EVENTS.DRINK_REVIEW_UPDATED, handlers.handleDrinkReviewUpdated as (payload: unknown) => void],
-      [SOCKET_EVENTS.DRINK_REVIEW_DELETED, handlers.handleDrinkReviewDeleted as (payload: unknown) => void],
+      [SOCKET_EVENTS.FRAGRANCE_REVIEW_NEW, handlers.handleFragranceReviewNew as (payload: unknown) => void],
+      [SOCKET_EVENTS.FRAGRANCE_REVIEW_UPDATED, handlers.handleFragranceReviewUpdated as (payload: unknown) => void],
+      [SOCKET_EVENTS.FRAGRANCE_REVIEW_DELETED, handlers.handleFragranceReviewDeleted as (payload: unknown) => void],
     ];
 
     // ✅ cleanup에서 사용할 handlers 참조 저장
     const handlersMap = myHandlersRef.current;
-    
+
     for (const [ev, fn] of entries) {
       socket.on(ev, fn);
       handlersMap.set(ev, fn);
@@ -1086,13 +1086,13 @@ const SocketState = () => {
       } catch {
         // 에러 무시
       }
-            
+
       // ✅ cleanup: effect 실행 시점의 entries 사용
       if (socket) {
         for (const [ev, fn] of entries) {
           try {
             socket.off(ev, fn);
-          } catch {}
+          } catch { }
         }
       }
       // ✅ cleanup: effect body에서 저장한 handlers 사용
@@ -1125,12 +1125,12 @@ const SocketState = () => {
       listReadyRef.current = true;
       return;
     }
-    
+
     // ✅ 서버 응답은 이미 React Query 캐시에 반영된 상태 (subscribe 이벤트가 캐시 업데이트 후 발생)
     // 따라서 여기서는 버퍼 처리만 수행
     // 리스트 스냅샷 만들기
     const next = new Map<string, ConvSnap>();
-    
+
     // ✅ ⚠️ 중요: 먼저 snapshotRef를 next Map으로 초기화하여 실시간 메시지 중복 체크가 가능하도록 함
     // 버퍼 처리 과정에서 버퍼 메시지가 있는 대화방은 다시 업데이트됨
     for (const c of latestData.conversations) {
@@ -1139,14 +1139,14 @@ const SocketState = () => {
       // 서버 API는 lastMessageAtMs를 숫자 또는 null로 반환하고, lastMessageId도 반환함
       const rawLastMessageAtMs = (c as { lastMessageAtMs?: number | null }).lastMessageAtMs;
       const rawLastMessageId = (c as { lastMessageId?: string | null }).lastMessageId;
-      
+
       // ✅ 서버 응답의 messages[0]에서도 마지막 메시지 ID와 시간 확인 (fallback용)
       const messagesArray = (c as { messages?: Array<{ id?: string; createdAt?: Date | string; serverCreatedAtMs?: number }> }).messages;
-      const lastMsgFromArray = messagesArray && Array.isArray(messagesArray) && messagesArray.length > 0 
-        ? messagesArray[0] 
+      const lastMsgFromArray = messagesArray && Array.isArray(messagesArray) && messagesArray.length > 0
+        ? messagesArray[0]
         : null;
       const lastMsgIdFromArray = lastMsgFromArray?.id ? String(lastMsgFromArray.id) : undefined;
-      
+
       // lastMessageAtMs 처리: 서버에서 숫자로 반환하거나 null일 수 있음
       // 우선순위: lastMessageAtMs > lastMessageAt > messages[0].createdAt
       let serverLastMessageAtMs: number;
@@ -1157,25 +1157,25 @@ const SocketState = () => {
         serverLastMessageAtMs = Number.isFinite(fromLastMessageAt) ? fromLastMessageAt : 0;
       } else if (lastMsgFromArray) {
         // ✅ messages[0].createdAt을 fallback으로 사용
-        const lastMsgCreatedAtMs = lastMsgFromArray.serverCreatedAtMs 
-          ? (typeof lastMsgFromArray.serverCreatedAtMs === 'number' && Number.isFinite(lastMsgFromArray.serverCreatedAtMs) 
-            ? lastMsgFromArray.serverCreatedAtMs 
+        const lastMsgCreatedAtMs = lastMsgFromArray.serverCreatedAtMs
+          ? (typeof lastMsgFromArray.serverCreatedAtMs === 'number' && Number.isFinite(lastMsgFromArray.serverCreatedAtMs)
+            ? lastMsgFromArray.serverCreatedAtMs
             : 0)
-          : (lastMsgFromArray.createdAt 
-            ? new Date(lastMsgFromArray.createdAt).getTime() 
+          : (lastMsgFromArray.createdAt
+            ? new Date(lastMsgFromArray.createdAt).getTime()
             : 0);
         serverLastMessageAtMs = Number.isFinite(lastMsgCreatedAtMs) && lastMsgCreatedAtMs > 0 ? lastMsgCreatedAtMs : 0;
       } else {
         serverLastMessageAtMs = 0; // 메시지가 없는 경우
       }
-      
+
       // ✅ lastMessageId 처리: lastMessageId 우선 (API 응답에 항상 있음), 없으면 messages[0].id 사용
-      const serverLastMessageId = rawLastMessageId 
-        ? String(rawLastMessageId) 
-        : (lastMsgIdFromArray 
-          ? lastMsgIdFromArray 
+      const serverLastMessageId = rawLastMessageId
+        ? String(rawLastMessageId)
+        : (lastMsgIdFromArray
+          ? lastMsgIdFromArray
           : ((c as { lastMessageId?: string }).lastMessageId ? String((c as { lastMessageId: string }).lastMessageId) : undefined));
-      
+
       const snap: ConvSnap = {
         baseUnread: Number(c.unReadCount ?? 0),
         isAI: !!c.isAIChat,
@@ -1184,7 +1184,7 @@ const SocketState = () => {
       };
       next.set(convId, snap);
     }
-    
+
     // ✅ ⚠️ 중요: snapshotRef를 먼저 next Map으로 초기화
     // 이렇게 하면 processList 완료 전에 실시간 메시지가 도착해도 중복 체크가 가능
     // 버퍼 처리 과정에서 버퍼 메시지가 있는 대화방은 다시 업데이트됨
@@ -1193,14 +1193,14 @@ const SocketState = () => {
     // ✅ 버퍼 소진: 서버 응답 기준으로 버퍼 메시지 처리
     // API 호출 중 저장된 실시간 메시지를 서버 응답의 마지막 메시지와 비교하여 처리
     // 서버 응답에는 lastMessageAtMs와 lastMessageId가 있으므로, 이를 기준으로 비교
-    
+
     // ✅ ⚠️ 중요: listSyncGuardRef를 먼저 true로 설정하여 버퍼 처리 중 실시간 메시지가 버퍼에만 저장되도록 함
     // 이렇게 하면 processList 실행 중에 도착하는 실시간 메시지는 버퍼에 저장되고,
     // processList 완료 후 listReadyRef가 true가 되면 다음 메시지부터 실시간 처리됨
     listSyncGuardRef.current = true;
-    
+
     const updates: Array<{ convId: string; finalUnread: number; latestBuffered?: UnnormalizedMessage }> = [];
-    
+
     // ✅ 모든 대화방 처리 (서버 응답에 있는 대화방 + 버퍼에만 있는 대화방)
     const allConvIds = new Set<string>();
     for (const [convId] of next) {
@@ -1209,20 +1209,20 @@ const SocketState = () => {
     for (const [convId] of bufferedRef.current) {
       allConvIds.add(convId);
     }
-    
+
     for (const convId of allConvIds) {
       const snap = next.get(convId);
       // ✅ 서버 응답에 없는 대화방은 스킵 (새 대화방은 handleConversationNew에서 처리)
       if (!snap) continue;
-      
+
       // ✅ processList 실행 중에 실시간 메시지가 버퍼에 추가될 수 있으므로,
       // 처리 직전에 최신 버퍼를 가져옴
       const buffered = bufferedRef.current.get(convId) ?? [];
-      
+
       // ✅ 서버 응답 기준: lastMessageAtMs와 lastMessageId로 비교
       const serverMs = snap.lastMessageAtMs;
       const serverId = snap.lastId ?? '';
-      
+
       // ✅ 서버 응답 데이터 검증: serverMs가 0이거나 유효하지 않으면 검열하지 않고 모든 버퍼 메시지 제외
       // 이는 메시지가 없는 대화방이거나, 서버 응답이 제대로 오지 않은 경우를 방지
       if (!serverMs || serverMs <= 0) {
@@ -1232,7 +1232,7 @@ const SocketState = () => {
         bufferedIdSetRef.current.set(convId, new Set());
         continue; // 다음 대화방 처리
       }
-      
+
       // ✅ 버퍼 내 중복 메시지 제거 (같은 ID가 여러 번 들어있을 수 있음)
       const seenBufferIds = new Set<string>();
       const uniqueBuffered = buffered.filter(b => {
@@ -1242,7 +1242,7 @@ const SocketState = () => {
         seenBufferIds.add(msgId);
         return true;
       });
-      
+
       // ✅ 최적화된 필터링: 서버 응답 이후의 메시지만 카운트
       // 요구사항:
       // 1) API 마지막 메시지 시간보다 늦은 메시지 추가
@@ -1250,7 +1250,7 @@ const SocketState = () => {
       const newer = uniqueBuffered.filter(b => {
         const msg = b.msg;
         const msgId = String(msg?.id ?? '');
-        
+
         // ✅ 서버에 저장된 실제 시간 사용 (정확성 보장)
         // 우선순위: serverCreatedAtMs > createdAt
         let msgMs: number;
@@ -1262,80 +1262,80 @@ const SocketState = () => {
         } else {
           msgMs = 0;
         }
-        
+
         // ✅ 유효성 검사
         if (!msgMs || msgMs <= 0 || !msgId) return false;
-        
+
         // ✅ 1단계: ID 비교 (가장 빠른 체크)
         // 서버 응답의 마지막 메시지와 동일한 ID면 제외 (이미 서버 응답에 포함됨)
         if (serverId && msgId === serverId) return false;
-        
+
         // ✅ 2단계: 시간 비교
         if (msgMs > serverMs) return true; // 서버보다 늦음 → 포함
         if (msgMs < serverMs) return false; // 서버보다 이전 → 제외
-        
+
         // ✅ 3단계: 동일 시간일 때 ID 비교
         // 동일 시간이지만 ID가 다르면 → 포함 (동기화)
         if (msgMs === serverMs && serverId && msgId !== serverId) return true;
-        
+
         // 동일 시간이고 ID도 같거나 비교 불가 → 제외
         return false;
       });
-      
+
       // ✅ 최적화: newer 메시지 ID를 countedSet에 먼저 추가 (중복 방지)
       const countedSet = ensureSet(countedIdSetRef.current, convId);
       const processedIds = new Set<string>();
-      
+
       for (const b of newer) {
         const msgId = String(b.msg?.id ?? '');
         if (!msgId || countedSet.has(msgId)) continue; // 이미 처리된 메시지 스킵
         countedSet.add(msgId);
         processedIds.add(msgId);
       }
-      
+
       // ✅ 처리할 메시지가 없으면 스킵
       if (processedIds.size === 0) {
         bufferedRef.current.set(convId, []);
         bufferedIdSetRef.current.set(convId, new Set());
         continue;
       }
-      
+
       // ✅ 처리할 메시지만 필터링 (processedIds에 포함된 메시지만)
       const filteredNewer = newer.filter(b => {
         const msgId = String(b.msg?.id ?? '');
         return msgId && processedIds.has(msgId);
       });
-      
+
       // 최종 unread 계산
       const activeId = String(conversationIdRef.current ?? "");
       const isActive = activeId === convId;
-      
+
       // ✅ 실제로 안읽음으로 카운트될 메시지만 필터링
       // 내 메시지가 아니고, 시스템 메시지가 아니고, isBumpableType이 true인 메시지만 카운트
       const myEmail = emailRef.current ?? "";
       const myUserId = userIdRef.current ?? "";
       const countables = filteredNewer.filter(b => {
         const m = b.msg;
-        
+
         // ✅ 내 메시지 체크: email 또는 userId로 비교
         // sender.id를 우선 확인하고, 없으면 getMessageSenderId 사용
         const senderId = String(m?.sender?.id ?? getMessageSenderId(m) ?? "");
         const senderEmail = String(m?.sender?.email ?? "");
-        
+
         // ✅ email이 있으면 email로, 없으면 userId로 비교
-        const isMyMsgByEmail = myEmail && senderEmail && 
-                               String(senderEmail).toLowerCase() === String(myEmail).toLowerCase();
-        const isMyMsgById = myUserId && senderId && 
-                           String(senderId).toLowerCase() === String(myUserId).toLowerCase();
+        const isMyMsgByEmail = myEmail && senderEmail &&
+          String(senderEmail).toLowerCase() === String(myEmail).toLowerCase();
+        const isMyMsgById = myUserId && senderId &&
+          String(senderId).toLowerCase() === String(myUserId).toLowerCase();
         const isMyMsg = isMyMsgByEmail || isMyMsgById;
-        
+
         if (isMyMsg) return false; // 내 메시지는 안읽음 카운트에서 제외
-        
+
         if (m.type === 'system') return false;
         const msgType = (m?.type || '').toLowerCase();
         return isBumpableType(msgType);
       });
-      
+
       const extra = countables.length;
       const finalUnread = (isActive || snap.isAI) ? 0 : (snap.baseUnread + extra);
 
@@ -1370,7 +1370,7 @@ const SocketState = () => {
       if (latestBuffered) {
         const ms = ts(latestBuffered); // ✅ 4) 유틸 사용
         const msgId = String(latestBuffered.id ?? '');
-        
+
         snapshotRef.current.set(convId, {
           ...snap,
           lastMessageAtMs: Math.max(snap.lastMessageAtMs, ms),
@@ -1380,7 +1380,7 @@ const SocketState = () => {
         // 버퍼 메시지가 없어도 snapshotRef는 유지 (서버 응답 기준)
         snapshotRef.current.set(convId, snap);
       }
-      
+
       // ✅ 버퍼 초기화: 처리된 메시지와 과거 메시지는 버퍼에서 제거
       // filteredNewer에 포함된 메시지는 이미 처리되었으므로 제거
       // processList 실행 중에 실시간 메시지가 버퍼에 추가될 수 있지만,
@@ -1393,7 +1393,7 @@ const SocketState = () => {
         // 처리된 메시지이거나 이미 countedSet에 있으면 제거
         return msgId && !processedIdsSet.has(msgId) && !countedSet.has(msgId);
       });
-      
+
       if (remaining.length > 0) {
         bufferedRef.current.set(convId, remaining);
         const idSet = ensureSet(bufferedIdSetRef.current, convId);
@@ -1411,20 +1411,20 @@ const SocketState = () => {
     // ----- 배치 쓰기: 한 번만 -----
     // listSyncGuardRef는 이미 위에서 true로 설정됨
     try {
-      
+
       // ✅ 3) updates를 Map으로 변환하여 O(n²) → O(n) 최적화
       const updatesMap = new Map<string, { finalUnread: number; latestBuffered?: UnnormalizedMessage }>();
       for (const u of updates) updatesMap.set(u.convId, u);
 
       withConversationList(queryClient, (prev: ConversationListData | undefined) => {
         if (!prev?.conversations?.length) return prev;
-        
+
         let hasChanges = false;
         const newConversations = prev.conversations.map(conv => {
           const convId = String(conv.id);
           const update = updatesMap.get(convId); // ✅ O(1) 조회
           if (!update || conv.unReadCount === update.finalUnread) return conv;
-          
+
           hasChanges = true;
           return { ...conv, unReadCount: update.finalUnread };
         });
@@ -1433,16 +1433,16 @@ const SocketState = () => {
         return hasChanges ? { ...prev, conversations: newConversations } : prev;
       });
 
-        // 미리보기 bump는 listSyncGuardRef가 false가 되기 전에 실행
-        // countedIdSetRef에 이미 메시지 ID가 추가되어 있으므로 실시간 메시지가 도착해도 스킵됨
-        for (const update of updates) {
-          if (update.latestBuffered) {
-            optimisticListUpdate(queryClient, update.latestBuffered, ts, isBumpableType);
-          }
+      // 미리보기 bump는 listSyncGuardRef가 false가 되기 전에 실행
+      // countedIdSetRef에 이미 메시지 ID가 추가되어 있으므로 실시간 메시지가 도착해도 스킵됨
+      for (const update of updates) {
+        if (update.latestBuffered) {
+          optimisticListUpdate(queryClient, update.latestBuffered, ts, isBumpableType);
         }
+      }
 
-        updateTotalUnreadStore(queryClient);
-      
+      updateTotalUnreadStore(queryClient);
+
     } finally {
       // ✅ listSyncGuardRef를 false로 설정한 후에 listReadyRef를 true로 설정
       // 이렇게 하면 processList 실행 중에 실시간 메시지가 오면 버퍼에만 저장되고,
@@ -1459,7 +1459,7 @@ const SocketState = () => {
   // 4. processList 완료 후 listReadyRef = true → 이후 실시간 메시지는 즉시 처리
   useEffect(() => {
     if (status !== 'authenticated') return;
-    
+
     // ✅ API 호출 상태 감지 (폴링) - 타이밍 보장
     // ⚠️ 중요: API 호출 중에는 반드시 listReadyRef를 false로 설정하여 모든 실시간 메시지를 버퍼에 저장
     // ⚠️ 중요: isFetching이 false가 되어도 listReadyRef는 processList 완료 후에만 true가 됨
@@ -1474,13 +1474,13 @@ const SocketState = () => {
       // ⚠️ 중요: isFetching이 false여도 listReadyRef는 변경하지 않음
       // processList 완료 후 finally 블록에서만 listReadyRef = true 설정
     };
-    
+
     // ✅ 초기 체크
     checkFetching();
-    
+
     // ✅ 주기적으로 체크 (API 호출 시작 감지용)
     const interval = setInterval(checkFetching, 100);
-    
+
     // ✅ React Query 구독: API 응답 완료 후 processList 실행 (초기 로드든 새로고침이든 동일)
     // ⚠️ 중요: API 응답 완료 시점에 listReadyRef는 여전히 false이어야 함 (버퍼에 저장된 메시지 처리 전까지)
     const unsub = queryClient.getQueryCache().subscribe((event) => {
@@ -1507,7 +1507,7 @@ const SocketState = () => {
 
     return () => {
       clearInterval(interval);
-      try { unsub(); } catch {}
+      try { unsub(); } catch { }
     };
   }, [queryClient, processList, status]);
   return null;

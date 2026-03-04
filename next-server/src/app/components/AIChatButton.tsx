@@ -25,13 +25,10 @@ const AIChatButton = ({
     <Button
       onClick={handleClick}
       disabled={isLoading || isPending}
-      color="primary"
-      variant="solid"
-      size="md"
-      radius="md"
-      className="bg-gradient-to-r from-blue-700 to-sky-400 hover:from-blue-900 hover:to-sky-600 hover:shadow-blue-500/25"
+      variant="scent"
+      className="px-6"
     >
-      {isLoading || isPending ? "생성 중..." : `하이트진로 AI 어시스턴트와 채팅`}
+      {isLoading || isPending ? "생성 중" : `향수 AI 어시스턴트와 채팅`}
     </Button>
   );
 };

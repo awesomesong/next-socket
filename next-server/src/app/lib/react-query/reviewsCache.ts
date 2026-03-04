@@ -6,8 +6,8 @@ export type ReviewPage = [{ reviews: Review[] }, { reviewsCount: number }];
 
 export type ReviewsInfinite = { pages: ReviewPage[]; pageParams?: unknown[] };
 
-export const drinkReviewsKey = (drinkSlug: string) =>
-  ["drinkReviews", drinkSlug] as const;
+export const fragranceReviewsKey = (fragranceSlug: string) =>
+  ["fragranceReviews", fragranceSlug] as const;
 
 // ===== Internal Utils =====
 type PageData = { reviews?: Review[]; reviewsCount?: number };
@@ -39,21 +39,21 @@ function createUpdatedPage(reviews: Review[], count: number): ReviewPage {
 
 function withReviewsCache(
   queryClient: QueryClient,
-  drinkSlug: string,
+  fragranceSlug: string,
   updater: (old: ReviewsInfinite | undefined) => ReviewsInfinite | undefined,
 ): void {
   queryClient.setQueriesData(
-    { queryKey: drinkReviewsKey(drinkSlug), exact: true },
+    { queryKey: fragranceReviewsKey(fragranceSlug), exact: true },
     updater,
   );
 }
 
 export function prependReview(
   queryClient: QueryClient,
-  drinkSlug: string,
+  fragranceSlug: string,
   review: Review,
 ): void {
-  withReviewsCache(queryClient, drinkSlug, (old) => {
+  withReviewsCache(queryClient, fragranceSlug, (old) => {
     if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
 
     const { reviewsObj, countObj } = extractPageData(old.pages[0]);
@@ -73,11 +73,11 @@ export function prependReview(
 
 export function replaceReviewById(
   queryClient: QueryClient,
-  drinkSlug: string,
+  fragranceSlug: string,
   matchId: string,
   serverReview: Partial<Review>,
 ): void {
-  withReviewsCache(queryClient, drinkSlug, (old) => {
+  withReviewsCache(queryClient, fragranceSlug, (old) => {
     if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
 
     let hasChanges = false;
@@ -103,10 +103,10 @@ export function replaceReviewById(
 
 export function removeReviewById(
   queryClient: QueryClient,
-  drinkSlug: string,
+  fragranceSlug: string,
   reviewId: string,
 ): void {
-  withReviewsCache(queryClient, drinkSlug, (old) => {
+  withReviewsCache(queryClient, fragranceSlug, (old) => {
     if (!old || !Array.isArray(old.pages) || old.pages.length === 0) return old;
 
     let hasChanges = false;

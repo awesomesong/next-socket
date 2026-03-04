@@ -28,10 +28,10 @@ import { useAIStream } from "@/src/app/hooks/useAIStream";
 import { useConversationLoading } from "@/src/app/hooks/useConversationLoading";
 import DOMPurify from 'dompurify';
 
-type SeenUser = { 
-  id: string; 
-  name: string | null; 
-  image: string | null 
+type SeenUser = {
+  id: string;
+  name: string | null;
+  image: string | null
 };
 
 interface MessageBoxProps {
@@ -58,26 +58,26 @@ const areEqual = (prev: MessageBoxProps, next: MessageBoxProps) => {
 
   // 1) 가장 흔한 동일성 빠른 탈출 (참조 비교 우선)
   if (p === n &&
-      prev.isLastOwnForThisMessage === next.isLastOwnForThisMessage &&
-      prev.liveUsersKey === next.liveUsersKey &&
-      prev.showDateDivider === next.showDateDivider &&
-      prev.isAIChat === next.isAIChat &&
-      prev.conversationId === next.conversationId &&
-      prev.currentUser?.email === next.currentUser?.email &&
-      prev.seenUsersForLastMessage === next.seenUsersForLastMessage // ✅ 참조 비교로 빠른 탈출
+    prev.isLastOwnForThisMessage === next.isLastOwnForThisMessage &&
+    prev.liveUsersKey === next.liveUsersKey &&
+    prev.showDateDivider === next.showDateDivider &&
+    prev.isAIChat === next.isAIChat &&
+    prev.conversationId === next.conversationId &&
+    prev.currentUser?.email === next.currentUser?.email &&
+    prev.seenUsersForLastMessage === next.seenUsersForLastMessage // ✅ 참조 비교로 빠른 탈출
   ) {
     return true;
   }
 
   // 2) 메시지 ID가 다르면 무조건 리렌더링 필요
   if (p.id !== n.id) return false;
-  
+
   // ✅ AI 응답 완료 후에는 완전히 리렌더링 차단 (가장 먼저 체크)
   const prevIsActive = Boolean(p.isWaiting || p.isTyping);
   const nextIsActive = Boolean(n.isWaiting || n.isTyping);
   const isStreamingComplete = !prevIsActive && !nextIsActive;
   const isAIComplete = p.isAIResponse && n.isAIResponse && isStreamingComplete;
-  
+
   if (isAIComplete) {
     // AI 응답이 완료된 경우 모든 변경을 무시하고 리렌더링 차단
     return true;
@@ -164,7 +164,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
       // SSR에서는 원본 텍스트 반환
       return data.body || '';
     }
-    
+
     try {
       return DOMPurify.sanitize(data.body || '');
     } catch (error) {
@@ -172,10 +172,10 @@ const MessageView: React.FC<MessageBoxProps> = ({
       return data.body || '';
     }
   }, [data.body]);
-  
+
   const seenIdSetRef = useRef<Set<string>>(new Set());
   const [dots, setDots] = useState("");
-  
+
   // 1) 멤버 Set을 문자열로 보관
   const liveIdSet = useMemo(() => {
     const ids = (liveUsersKey || "").split(",").filter(Boolean);
@@ -203,7 +203,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
     // ✅ 성능 개선: Set을 사용한 O(n) 병합 (some() 대신 Set.has 사용)
     const merged = [...server];
     const mergedIds = new Set(merged.map(u => u.id));
-    
+
     for (const u of realtime) {
       if (!mergedIds.has(u.id)) {
         merged.push(u);
@@ -230,13 +230,13 @@ const MessageView: React.FC<MessageBoxProps> = ({
 
   const seenNames = useMemo(() => {
     const nameSet = new Set<string>();
-    
+
     for (const u of filteredSeenUsers) {
       if (u.name) {  // Boolean 체크와 동시에 추가
         nameSet.add(u.name);
       }
     }
-    
+
     return [...nameSet].join(", ");
   }, [filteredSeenUsers]);
 
@@ -275,15 +275,15 @@ const MessageView: React.FC<MessageBoxProps> = ({
     setSeenUsers(initial);
     seenIdSetRef.current = nextSet;
   }, [isLastOwn, currentUserId, senderId, liveIdSet, seenUsersForLastMessage, data.id]);
-  
+
   // 새 컨텐츠 알림 (스크롤 트리거)
   const notifyNewContent = useCallback(() => {
     window.dispatchEvent(new CustomEvent("chat:new-content"));
   }, []);
-  
+
   // AI 스트림 요청 훅
-  const { requestAI } = useAIStream({ 
-    conversationId, 
+  const { requestAI } = useAIStream({
+    conversationId,
     aiAgentType: "assistant",
     onNewContent: notifyNewContent,
   });
@@ -299,10 +299,10 @@ const MessageView: React.FC<MessageBoxProps> = ({
         responseData.newMessage,
         true // ✅ 재시도 시 재정렬 (시간 변경 반영)
       );
-      
+
       // 재전송 성공 시 localStorage에서 제거
       removeFailedMessage(conversationId, data.id);
-      
+
       // ✅ 성공 시에만 conversationList 업데이트 (로딩 상태 확인)
       if (!isConversationLoading) {
         bumpConversationOnNewMessage(queryClient, conversationId, {
@@ -314,19 +314,19 @@ const MessageView: React.FC<MessageBoxProps> = ({
           createdAt: responseData.newMessage.createdAt,
           isAIResponse: false,
         });
-        
+
         // ✅ 재전송 성공 시 자동 스크롤 트리거
         requestAnimationFrame(() => {
           window.dispatchEvent(new CustomEvent("chat:new-content"));
         });
       }
-      
+
       // 소켓으로 메시지 브로드캐스트 (소켓 서버가 기대하는 구조로 전송)
       if (socket && responseData.newMessage) {
         // ✅ responseData.newMessage.conversation에서 참여자 정보 가져오기
         const conversation = responseData.newMessage.conversation;
         const userIds = conversation?.userIds || [];
-        
+
         // 소켓 전송용 메시지 정규화 (FullMessageType 구조 보장)
         const socketMessage = normalizeMessage({
           ...responseData.newMessage,
@@ -353,19 +353,19 @@ const MessageView: React.FC<MessageBoxProps> = ({
     // 캐시에서 메시지 목록 조회
     const cache = queryClient.getQueryData(messagesKey(conversationId)) as | InfiniteData<MessagesPage> | undefined;
     const allMessages: FullMessageType[] = cache?.pages?.flatMap((p) => p.messages) ?? [];
-    
+
     if (isAIMessage) {
       // AI 응답 재시도: 직전 사용자 메시지 찾기
       const idx = allMessages.findIndex((m) => m.id === data.id);
       let userMsg: FullMessageType | null = null;
-      
+
       for (let i = idx - 1; i >= 0; i--) {
         if (!allMessages[i].isAIResponse && allMessages[i].body?.trim()) {
           userMsg = allMessages[i];
           break;
         }
       }
-      
+
       if (!userMsg) {
         toast.error("재시도할 사용자 메시지를 찾을 수 없습니다.");
         return;
@@ -375,7 +375,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
       const userCreatedAtToPass = userMsg.createdAt
         ? new Date(userMsg.createdAt)
         : new Date();
-      
+
       await requestAI({
         userMessage: userMsg.body || "",
         userMessageId: userMsg.id,
@@ -402,13 +402,13 @@ const MessageView: React.FC<MessageBoxProps> = ({
         image: data.image || undefined,
         messageId: data.id,
       });
-      
+
       // AI 채팅방이면 AI 응답도 요청
       if (isAIChat && data.body && currentUser) {
         // ✅ 현재 사용자 메시지 바로 다음의 AI 응답 찾기 (같은 쌍)
         const currentIndex = allMessages.findIndex((m) => m.id === data.id);
         let nextAIMessage: FullMessageType | undefined;
-        
+
         // 바로 다음 메시지만 확인 (다른 사용자 메시지 전까지)
         if (currentIndex !== -1 && currentIndex + 1 < allMessages.length) {
           const nextMsg = allMessages[currentIndex + 1];
@@ -416,7 +416,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
             nextAIMessage = nextMsg;
           }
         }
-        
+
         requestAI({
           userMessage: data.body,
           userMessageId: data.id,
@@ -480,9 +480,9 @@ const MessageView: React.FC<MessageBoxProps> = ({
       // 단일 사용자 추가
       const base = seenUsersForLastMessage.find(u => String(u.id) === readerIdStr);
       const newUser = { id: readerIdStr, name: base?.name ?? "사용자", image: base?.image ?? null };
-      
+
       if (seenIdSetRef.current.has(readerIdStr)) return;
-      
+
       setSeenUsers(prev => {
         seenIdSetRef.current.add(readerIdStr);
         return [...prev, newUser];
@@ -527,7 +527,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
       }
     };
   }, []);
-  
+
   return data?.type === "system" ? (
     <div
       data-message-id={data.id}
@@ -651,7 +651,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
           >
             <div className="text-sm text-neutral-700 dark:text-neutral-300">
               {isAIMessage
-                ? "하이트진로 AI 어시스턴트"
+                ? "향수 AI 어시스턴트"
                 : isConversationUser
                   ? data.sender.name
                   : "(알 수 없음)"}

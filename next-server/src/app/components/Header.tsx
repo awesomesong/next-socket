@@ -12,15 +12,15 @@ export const Header = async () => {
     return (
         <header className='
             shrink-0
-            sticky 
-            top-0 
+            sticky
+            -top-px
             z-50
-            h-[92px]
+            h-auto
             px-4
             md:px-8
-            bg-default/10 
+            py-2
+            header-bg
             backdrop-blur-md
-            shadow-sm
         '>
             <div className='
                 flex 
@@ -29,7 +29,8 @@ export const Header = async () => {
                 max-w-[1440px]
                 mx-auto
                 h-full
-                text-lg
+                text-sm
+                md:text-base
             '>
                 <div className='
                     flex

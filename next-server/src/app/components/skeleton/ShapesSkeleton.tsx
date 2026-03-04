@@ -1,20 +1,27 @@
-import { Skeleton } from "@heroui/react";
-import { Card } from "@heroui/react";
+"use client";
 
-type ShapesSkeletonProps  = {
+type ShapesSkeletonProps = {
     width: string;
     height: string;
-    radius: "sm" | "md" | "lg" | "none" | undefined;
-}
+    radius: "sm" | "md" | "lg" | "none" | "full" | undefined;
+};
 
-const ShapesSkeleton = ({ width, height, radius } : ShapesSkeletonProps ) => {
+const radiusClass = {
+    sm: "rounded-sm",
+    md: "rounded-md",
+    lg: "rounded-lg",
+    full: "rounded-full",
+    none: "rounded-none",
+};
+
+const ShapesSkeleton = ({ width, height, radius }: ShapesSkeletonProps) => {
+    const rounded = radius ? radiusClass[radius] : "rounded-lg";
     return (
-        <Card radius={radius} style={{ width, height }}>
-            <Skeleton style={{ width, height }}>
-                <div style={{ width, height }} />
-            </Skeleton>
-        </Card>
-    )
-}
+        <div
+            className={`bg-[#e0d7ed] dark:bg-[#e2d9f3] animate-pulse ${rounded} overflow-hidden`}
+            style={{ width, height }}
+        />
+    );
+};
 
-export default ShapesSkeleton
+export default ShapesSkeleton;

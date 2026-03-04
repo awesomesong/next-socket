@@ -1,33 +1,29 @@
 'use client';
 import Link from 'next/link';
 import { motion, Variants } from 'framer-motion';
-import { Urbanist } from 'next/font/google';
 import clsx from 'clsx';
 
-const urbanist = Urbanist({ subsets: ['latin'], weight: ['400', '700'], style: ['italic', 'normal'] });
-
-const letters = 'HITEJINRO'.split('');
-
-const container = {
-  hidden: {},
-  visible: {
+// 단어 단위 fade-up — 스태거 없이 부드럽게
+const wordVariants: Variants = {
+  hidden: { opacity: 0.15, y: 4 },
+  visible: (delay: number) => ({
+    opacity: 1,
+    y: 0,
     transition: {
-      delayChildren: 0.2,
-      staggerChildren: 0.08,
+      delay,
+      duration: 0.9,
+      ease: [0.25, 0.46, 0.45, 0.94], // easeOutQuart
     },
-  },
+  }),
 };
 
-const item: Variants = {
-  hidden: { y: 12, opacity: 0 },
+// 언더라인 슬라이드인
+const lineVariants: Variants = {
+  hidden: { scaleX: 0, opacity: 0 },
   visible: {
-    y: 0,
+    scaleX: 1,
     opacity: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 100,
-      damping: 20,
-    },
+    transition: { delay: 0.9, duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94] },
   },
 };
 
@@ -36,66 +32,45 @@ interface AnimatedLogoProps {
 }
 
 const AnimatedLogo: React.FC<AnimatedLogoProps> = ({ responsive = true }) => {
-  const textSizeClass = responsive
-    ? 'text-3xl max-[480px]:text-xl max-[319px]:text-[18px]'
-    : 'text-3xl';
-
   return (
-    <div className="relative inline-block">
-      {/* 배경 흐릿한 고정 텍스트 */}
-      <h1 
-        className={clsx(`
-          absolute 
-          top-0 
-          left-0 
-          opacity-30 
-          bg-gradient-to-r 
-        from-blue-900 
-        via-blue-500 
-        to-sky-300 
-          bg-clip-text 
-          text-transparent 
-          pointer-events-none
-        `,
-          urbanist.className,
-          textSizeClass
-        )}
-        aria-hidden="true"
-      >
-        HITEJINRO
-      </h1>
+    <Link href="/" className="inline-flex flex-col items-start leading-none select-none gap-[0px]">
 
-      {/* 앞쪽 등장 애니메이션 텍스트 */}
-      <motion.h1
-        className={clsx(`
-          relative
-          bg-gradient-to-r 
-        from-blue-700 
-        via-blue-500 
-        to-sky-400 
-          bg-clip-text 
-          text-transparent
-        `,
-          urbanist.className,
-          textSizeClass
-        )}
-        variants={container}
+      {/* "Scent" — italic, normal weight */}
+      <motion.div
+        custom={0}
+        variants={wordVariants}
         initial="hidden"
         animate="visible"
+        className={clsx(
+          'text-gradient-scent font-josefin text-lg italic font-light tracking-[0.02em]',
+          responsive && 'max-[480px]:text-base',
+        )}
       >
-        <Link href="/">
-          {letters.map((char, index) => (
-            <motion.span
-              key={index}
-              variants={item}
-              className="inline-block"
-            >
-              {char}
-            </motion.span>
-          ))}
-        </Link>
-      </motion.h1>
-    </div>
+        Scent
+      </motion.div>
+
+      {/* "Memories" — upright, slight weight */}
+      <motion.div
+        custom={0.28}
+        variants={wordVariants}
+        initial="hidden"
+        animate="visible"
+        className={clsx(
+          'text-gradient-memories font-josefin font-normal tracking-[0.03em]',
+          responsive && 'max-[480px]:text-base',
+        )}
+      >
+        Memories
+      </motion.div>
+
+      {/* 장식 라인 */}
+      <motion.div
+        variants={lineVariants}
+        initial="hidden"
+        animate="visible"
+        className="line-gradient-deco"
+      />
+    </Link>
   );
 };
 

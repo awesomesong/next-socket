@@ -5,11 +5,12 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { PiUserCircleFill } from "react-icons/pi";
-import { getDrinkReviews } from "@/src/app/lib/getDrinkReviews";
+import ScentUserAvatar from "./ScentUserAvatar";
+import { getFragranceReviews } from "@/src/app/lib/getFragranceReviews";
 import { Fragment, useEffect, useState, useMemo } from "react";
+import clsx from "clsx";
 import { useInView } from "react-intersection-observer";
-import { DrinkReviewType } from "@/src/app/types/drink";
+import { FragranceReviewType } from "@/src/app/types/fragrance";
 import type {
   UpdateReviewResponse,
   PartialReviewUpdate,
@@ -18,22 +19,22 @@ import type {
   ReviewsQueryData,
   ReviewPageItem,
 } from "@/src/app/types/reviews";
-import { updateDrinkReview } from "@/src/app/lib/updateDrinkReview";
-import { deleteDrinkReview } from "@/src/app/lib/deleteDrinkReview";
+import { updateFragranceReview } from "@/src/app/lib/updateFragranceReview";
+import { deleteFragranceReview } from "@/src/app/lib/deleteFragranceReview";
 import {
   replaceReviewById,
   removeReviewById,
-  drinkReviewsKey,
+  fragranceReviewsKey,
   type ReviewPage,
 } from "@/src/app/lib/react-query/reviewsCache";
 import FormReview from "./FormReview";
 import { useSocket } from "../context/socketContext";
 import { SOCKET_EVENTS } from "@/src/app/lib/react-query/utils";
-import CommentSkeleton from "./skeleton/CommentSkeleton";
+import { ReviewsSkeleton } from "./FragranceSkeleton";
 import CircularProgress from "./CircularProgress";
-import FallbackNextImage from "./FallbackNextImage";
 import toast from "react-hot-toast";
 import DOMPurify from "dompurify";
+import EditableItemRow from "./EditableItemRow";
 
 type ReviewsProps = {
   id: string;
@@ -59,7 +60,7 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
         // SSR에서는 원본 텍스트 반환
         return text || '';
       }
-      
+
       try {
         return DOMPurify.sanitize(text || '');
       } catch (error) {
@@ -71,8 +72,8 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
 
   const { data, status, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: drinkReviewsKey(id),
-      queryFn: getDrinkReviews,
+      queryKey: fragranceReviewsKey(id),
+      queryFn: getFragranceReviews,
       initialPageParam: "",
       getNextPageParam: (lastPage, allPages) => {
         if (!lastPage) return undefined;
@@ -115,7 +116,7 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
 
   // ✅ 사파리 호환성을 위한 useInView 설정
   // threshold: 0 (더 민감하게 반응), rootMargin: 100px (미리 트리거)
-  const { ref, inView } = useInView({ 
+  const { ref, inView } = useInView({
     threshold: 0,
     rootMargin: '100px',
     triggerOnce: false,
@@ -123,13 +124,13 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
 
   const { mutateAsync: updateReview, isPending: isUpdatingReview } =
     useMutation({
-      mutationFn: updateDrinkReview,
+      mutationFn: updateFragranceReview,
       onMutate: async ({ id: reviewId, text }) => {
         await queryClient.cancelQueries({
-          queryKey: drinkReviewsKey(id),
+          queryKey: fragranceReviewsKey(id),
           exact: true,
         });
-        const prev = queryClient.getQueryData<ReviewsQueryData>(drinkReviewsKey(id));
+        const prev = queryClient.getQueryData<ReviewsQueryData>(fragranceReviewsKey(id));
         // ✅ 낙관적 텍스트 반영 (InfiniteQuery의 모든 페이지 순회)
         const partialUpdate: PartialReviewUpdate = { text };
         // replaceReviewById는 matchId를 사용하여 리뷰를 찾고 병합하므로 id 없이도 안전함
@@ -138,12 +139,12 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
       },
       onSuccess: (updated, _vars, ctx) => {
         setEditingId(null);
-        
+
         // 서버 응답 형태 정규화
-        const updatedReview: DrinkReviewType | undefined =
+        const updatedReview: FragranceReviewType | undefined =
           updated && typeof updated === "object" && "updateReview" in updated
             ? (updated as UpdateReviewResponse).updateReview
-            : (updated as DrinkReviewType | undefined);
+            : (updated as FragranceReviewType | undefined);
 
         // ✅ 최종 서버 데이터로 교체 (낙관적 업데이트를 서버 데이터로 덮어쓰기)
         // replaceReviewById가 모든 페이지를 순회하여 처리
@@ -158,16 +159,16 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
 
         // 소켓 브로드캐스트(리뷰 수정)
         try {
-          socket?.emit(SOCKET_EVENTS.DRINK_REVIEW_UPDATED, {
-            drinkSlug: id,
+          socket?.emit(SOCKET_EVENTS.FRAGRANCE_REVIEW_UPDATED, {
+            fragranceSlug: id,
             review: updatedReview,
           });
-        } catch {}
+        } catch { }
       },
       onError: (err: MutationError, _vars, ctx) => {
         // ✅ 롤백: 이전 데이터로 완전 복원
         if (ctx?.prev) {
-          queryClient.setQueryData<ReviewsQueryData>(drinkReviewsKey(id), ctx.prev);
+          queryClient.setQueryData<ReviewsQueryData>(fragranceReviewsKey(id), ctx.prev);
         }
         const message = err?.message || "리뷰 수정에 실패했습니다.";
         toast.error(message);
@@ -175,13 +176,13 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
     });
 
   const { mutate: deleteReview } = useMutation({
-    mutationFn: deleteDrinkReview,
+    mutationFn: deleteFragranceReview,
     onMutate: async (deletedId: string) => {
       await queryClient.cancelQueries({
-        queryKey: drinkReviewsKey(id),
+        queryKey: fragranceReviewsKey(id),
         exact: true,
       });
-      const prev = queryClient.getQueryData<ReviewsQueryData>(drinkReviewsKey(id));
+      const prev = queryClient.getQueryData<ReviewsQueryData>(fragranceReviewsKey(id));
       // ✅ 낙관적 제거 + 카운트 -1 (InfiniteQuery의 모든 페이지 순회)
       removeReviewById(queryClient, id, deletedId);
       return { prev } as MutationContext;
@@ -190,16 +191,16 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
 
       // 소켓 브로드캐스트(리뷰 삭제)
       try {
-        socket?.emit(SOCKET_EVENTS.DRINK_REVIEW_DELETED, {
-          drinkSlug: id,
+        socket?.emit(SOCKET_EVENTS.FRAGRANCE_REVIEW_DELETED, {
+          fragranceSlug: id,
           reviewId: deletedId,
         });
-      } catch {}
+      } catch { }
     },
     onError: (err: MutationError, _vars, ctx) => {
       // ✅ 롤백: 이전 데이터로 완전 복원
       if (ctx?.prev) {
-        queryClient.setQueryData<ReviewsQueryData>(drinkReviewsKey(id), ctx.prev);
+        queryClient.setQueryData<ReviewsQueryData>(fragranceReviewsKey(id), ctx.prev);
       }
       const message = err?.message || "리뷰 삭제에 실패했습니다.";
       toast.error(message);
@@ -215,146 +216,77 @@ const Reviews = ({ id, name, user }: ReviewsProps) => {
           fetchNextPage();
         });
       }, 0);
-      
+
       return () => clearTimeout(timeoutId);
     }
   }, [inView, hasNextPage, fetchNextPage, isFetchingNextPage]);
 
   return (
     <>
-      {data?.pages[0]?.flat().map((page, i) => (
-        <Fragment key={i}>
-          {"reviewsCount" in page && (
-            <h4>
-              {name} - 리뷰 {page.reviewsCount}개
-            </h4>
-          )}
-        </Fragment>
-      ))}
       {status === "pending" ? (
-        <div className="flex flex-col gap-3">
-          <CommentSkeleton />
-          <CommentSkeleton />
-          <CommentSkeleton />
-          <CommentSkeleton />
-        </div>
+        <ReviewsSkeleton />
       ) : (
         <>
+          {data?.pages[0]?.flat().map((page, i) => (
+            <Fragment key={i}>
+              {"reviewsCount" in page && (
+                <h4 className="section-title">
+                  <span className="text-gradient-scent">{name} - 리뷰 {page.reviewsCount}개</span>
+                </h4>
+              )}
+            </Fragment>
+          ))}
           <ul className="mt-2">
             {data?.pages?.map((page, pageIndex) => (
               <li key={`page-${pageIndex}`}>
                 {(page
-                  ?.find((item) => "reviews" in item) as { reviews: DrinkReviewType[] } | undefined)
-                  ?.reviews?.map((review: DrinkReviewType) => (
-                    <div
+                  ?.find((item) => "reviews" in item) as { reviews: FragranceReviewType[] } | undefined)
+                  ?.reviews?.map((review: FragranceReviewType) => (
+                    <EditableItemRow
                       key={review.id}
-                      id={`review-${review.id}`}
-                      className="flex flex-row gap-3 py-1"
-                    >
-                      <span className="shrink-0 overflow-hidden relative w-10 h-10 mt-1 rounded-full">
-                        {review.author?.image ? (
-                          <FallbackNextImage
-                            src={review.author?.image}
-                            alt={`${review.author?.name} 이미지`}
-                            fill
-                            className="object-cover"
-                            unoptimized={false}
-                          />
-                        ) : (
-                          <PiUserCircleFill className="w-full h-full" />
-                        )}
-                      </span>
-                      <div className="flex-1">
-                        <div className="inline-flex items-end flex-wrap">
-                          <span className="break-all mr-2">
-                            {review.author?.name}
-                          </span>
-                          <span className="text-gray-400 mr-2">
-                            {dayjs(review.createdAt).fromNow()}
-                          </span>
-                          {(user?.role === "admin" ||
-                            user?.email === review.author?.email) && (
-                            <span className="text-gray-500">
-                              <button
-                                onClick={() => {
-                                  setEditingId(review.id);
-                                }}
-                                className="
-                                  px-3
-                                  py-1 
-                                  mr-2
-                                  rounded-full
-                                  text-xs
-                                  text-blue-500
-                                  border-blue-500
-                                  border-1
-                                "
-                              >
-                                수정
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (confirm("리뷰를 지우시겠습니까?")) {
-                                    deleteReview(review.id);
-                                  }
-                                  setEditingId(null);
-                                }}
-                                className="
-                                  px-3
-                                  py-1 
-                                  rounded-full
-                                  text-xs
-                                  text-gray-500
-                                  border-gray-500
-                                  dark:text-gray-400
-                                  dark:border-gray-400
-                                  border-1
-                                "
-                              >
-                                삭제
-                              </button>
-                            </span>
-                          )}
-                        </div>
-                        {editingId === review.id ? (
-                          isUpdatingReview ? (
-                            <div className="flex items-center justify-center py-4">
-                              <CircularProgress aria-label="리뷰 저장 중 입니다" />
-                            </div>
-                          ) : (
-                            <FormReview
-                              id={id}
-                              user={user!}
-                              initialText={review.text}
-                              submitLabel="저장"
-                              autoFocus
-                              onSubmit={(text) =>
-                                updateReview({ id: review.id, text })
-                              }
-                              onCancel={() => setEditingId(null)}
-                            />
-                          )
-                        ) : (
-                          <>
-                            <pre
-                              className="whitespace-pre-wrap"
-                              dangerouslySetInnerHTML={{
-                                __html: sanitizeReviewText(review?.text || ""),
-                              }}
-                            />
-                          </>
-                        )}
-                      </div>
-                    </div>
+                      id={review.id}
+                      idPrefix="review"
+                      authorName={review.author?.name}
+                      authorImage={review.author?.image}
+                      createdAt={review.createdAt}
+                      canEdit={
+                        user?.role === "admin" ||
+                        user?.email === review.author?.email
+                      }
+                      isEditing={editingId === review.id}
+                      isUpdating={isUpdatingReview}
+                      onStartEdit={() => setEditingId(review.id)}
+                      onDelete={() => {
+                        deleteReview(review.id);
+                        setEditingId(null);
+                      }}
+                      deleteConfirmMessage="리뷰를 지우시겠습니까?"
+                      updatingLabel="리뷰 저장 중 입니다"
+                      avatarFallback={<ScentUserAvatar />}
+                      editForm={
+                        <FormReview
+                          id={id}
+                          user={user!}
+                          initialText={review.text}
+                          submitLabel="저장"
+                          autoFocus
+                          onSubmit={(text) =>
+                            updateReview({ id: review.id, text })
+                          }
+                          onCancel={() => setEditingId(null)}
+                        />
+                      }
+                      contentHtml={sanitizeReviewText(review?.text || "")}
+                    />
                   ))}
               </li>
             ))}
           </ul>
         </>
       )}
-      <div 
-        ref={ref} 
-        className="min-h-[20px] p-2"
+      <div
+        ref={ref}
+        className="infinite-scroll-sentinel"
       >
         {isFetchingNextPage && <CircularProgress aria-label="로딩중" />}
       </div>

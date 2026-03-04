@@ -1,5 +1,6 @@
-"use client";
-import TextareaAutosize from "react-textarea-autosize";
+import Button from "./Button";
+import TextField, { formClassNames } from "./TextField";
+import { formInputLayout } from "./formLayoutClasses";
 import React, {
   useRef,
   useState,
@@ -9,15 +10,15 @@ import React, {
 } from "react";
 import useComposition from "@/src/app/hooks/useComposition";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createDrinkReviews } from "@/src/app/lib/createDrinkReviews";
-import { DrinkReviewsDataProps, DrinkReviewType } from "@/src/app/types/drink";
+import { createFragranceReviews } from "@/src/app/lib/createFragranceReviews";
+import { FragranceReviewsDataProps, FragranceReviewType } from "@/src/app/types/fragrance";
 import { useSocket } from "../context/socketContext";
 import toast from "react-hot-toast";
 import {
   prependReview,
   replaceReviewById,
   removeReviewById,
-  drinkReviewsKey,
+  fragranceReviewsKey,
 } from "@/src/app/lib/react-query/reviewsCache";
 import { SOCKET_EVENTS } from "@/src/app/lib/react-query/utils";
 
@@ -71,20 +72,20 @@ const FormReview = ({
     }
   }, [autoFocus]);
 
-  const { mutate: createDrinkReviewsMutation } = useMutation({
-    mutationFn: createDrinkReviews,
+  const { mutate: createFragranceReviewsMutation } = useMutation({
+    mutationFn: createFragranceReviews,
     onMutate: async ({ id, text }) => {
       await queryClient.cancelQueries({
-        queryKey: drinkReviewsKey(id),
+        queryKey: fragranceReviewsKey(id),
         exact: true,
       });
-      const prev = queryClient.getQueryData(drinkReviewsKey(id)) as
-        | DrinkReviewsDataProps
+      const prev = queryClient.getQueryData(fragranceReviewsKey(id)) as
+        | FragranceReviewsDataProps
         | undefined;
       const optimisticId = `temp-${Date.now()}-${Math.random()}`;
-      const optimistic: DrinkReviewType = {
+      const optimistic: FragranceReviewType = {
         id: optimisticId,
-        drinkSlug: id,
+        fragranceSlug: id,
         text,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -98,13 +99,6 @@ const FormReview = ({
       };
       prependReview(queryClient, id, optimistic);
 
-      setTimeout(() => {
-        document.getElementById(`review-${optimisticId}`)?.scrollIntoView({
-          behavior: "smooth",
-          block: "end",
-        });
-      }, 100);
-
       return { prev, optimisticId };
     },
     onSuccess: (newData, _vars, ctx) => {
@@ -115,8 +109,8 @@ const FormReview = ({
       });
       // 소켓 브로드캐스트(리뷰 생성) - 다른 사용자들에게만 전송
       try {
-        socket?.emit(SOCKET_EVENTS.DRINK_REVIEW_NEW, {
-          drinkSlug: id,
+        socket?.emit(SOCKET_EVENTS.FRAGRANCE_REVIEW_NEW, {
+          fragranceSlug: id,
           review: {
             ...newData.newReview,
             author: {
@@ -126,12 +120,12 @@ const FormReview = ({
             },
           },
         });
-      } catch {}
+      } catch { }
     },
     onError: (error, { id, text }, context) => {
       // 에러 시 롤백
       if (context?.prev) {
-        queryClient.setQueryData(drinkReviewsKey(id), context.prev);
+        queryClient.setQueryData(fragranceReviewsKey(id), context.prev);
       }
       if (context?.optimisticId) {
         // 낙관적 업데이트로 추가된 리뷰 제거
@@ -175,32 +169,32 @@ const FormReview = ({
         });
     } else {
       // useMutation을 사용한 낙관적 업데이트
-      createDrinkReviewsMutation({ id, text });
+      createFragranceReviewsMutation({ id, text });
     }
-  }, [onSubmit, onCancel, createDrinkReviewsMutation, id]);
+  }, [onSubmit, onCancel, createFragranceReviewsMutation, id]);
 
   // 버튼 클릭 이벤트 핸들러
-  const handleSubmitReview = useCallback((e: FormEvent<HTMLButtonElement>) => {
-      e.preventDefault();
-      submitReview(review);
+  const handleSubmitReview = useCallback(() => {
+    submitReview(review);
   }, [review, submitReview]);
 
   // Enter 키 이벤트 핸들러
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      // 한글 입력 조합 중이면 제출하지 않음
-      if (isComposing()) return;
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<any>) => {
+    // 한글 입력 조합 중이면 제출하지 않음
+    if (isComposing()) return;
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
 
-        // 이벤트 객체에서 직접 값을 가져와서 정확한 텍스트 전달
-        submitReview(e.currentTarget.value);
-      }
+      // 이벤트 객체에서 직접 값을 가져와서 정확한 텍스트 전달
+      submitReview(e.currentTarget.value);
+    }
   }, [submitReview, isComposing]);
 
   return (
-    <div className="my-4">
-      <TextareaAutosize
+    <div className={formInputLayout.wrapper}>
+      <TextField
         ref={textareaRef}
+        name="review"
         disabled={!user?.email}
         placeholder={
           user?.email
@@ -213,25 +207,29 @@ const FormReview = ({
         onKeyDown={handleKeyDown}
         onCompositionStart={handleCompositionStart}
         onCompositionEnd={handleCompositionEnd}
-        className="w-full p-2 box-border border-solid border-b-[1px]"
+        variant="underlined"
+        minRows={1}
+        classNames={formClassNames.textarea}
       />
       {stateReview && (
-        <div className="flex gap-2 mt-2">
-          <button
+        <div className={formInputLayout.actions}>
+          <Button
             onClick={handleSubmitReview}
             type="submit"
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md"
+            size="md"
+            variant="scent"
           >
             {submitLabel}
-          </button>
+          </Button>
           {onCancel && (
-            <button
+            <Button
               onClick={onCancel}
               type="button"
-              className="px-4 py-2 bg-gray-600 rounded-md text-white"
+              variant="ghostLavender"
+              size="md"
             >
               취소
-            </button>
+            </Button>
           )}
         </div>
       )}

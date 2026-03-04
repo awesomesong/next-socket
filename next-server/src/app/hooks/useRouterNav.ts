@@ -11,14 +11,9 @@ const useRouteNav = () => {
             active: false
         },
         {
-            label: 'Blogs',
-            href: '/blogs',
-            active: pathname?.startsWith('/blogs') 
-        },
-        {
-            label: 'posts',
-            href: '/posts',
-            active: pathname?.startsWith('/posts')
+            label: 'Notice',
+            href: '/notice',
+            active: pathname?.startsWith('/notice')
         },
     ], [pathname]);
 

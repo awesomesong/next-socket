@@ -85,9 +85,9 @@ const Header: React.FC<HeaderProps> = ({ conversation, currentUser }) => {
             )}
           </div>
           <div className="flex flex-col">
-            <div className="line-clamp-2">
+            <div className="line-clamp-2 text-gradient-scent">
               {conversation?.isAIChat
-                ? "하이트진로 AI 어시스턴트"
+                ? "향수 AI 어시스턴트"
                 : conversation?.name || otherUser.name}
             </div>
             <div className="

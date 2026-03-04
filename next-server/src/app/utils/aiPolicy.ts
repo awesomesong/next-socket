@@ -75,7 +75,7 @@ export function validatePrompt(message: string): {
   if (!isAllowedTopic(message))
     return {
       isValid: false,
-      error: "하이트진로 관련 주제로만 대화가 가능합니다.",
+      error: "향수와 관련된 주제로만 대화가 가능합니다.",
     };
   return { isValid: true };
 }

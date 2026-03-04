@@ -2,9 +2,8 @@
 import useActiveList from "@/src/app/hooks/useActiveList";
 import { IUserList } from "@/src/app/types/common";
 import clsx from "clsx";
-import { PiUserCircleFill } from "react-icons/pi";
-import { PiUserCircleDuotone } from "react-icons/pi";
 import FallbackNextImage from "./FallbackNextImage";
+import ScentUserAvatar from "./ScentUserAvatar";
 import { memo, useMemo } from "react";
 
 type AvatarProps = {
@@ -46,10 +45,8 @@ const Avatar= ({user, isOwn, isAIChat} :AvatarProps) => {
             unoptimized={false}
             className="object-cover"
           />
-        ) : user?.image === 'None' ? (
-          <PiUserCircleFill className="w-full h-full"/>
         ) : (
-          <PiUserCircleDuotone className="w-full h-full scale-[1.2]"/>
+          <ScentUserAvatar className="drop-shadow-lg w-full h-full" />
         )}
       </div>
       {isActive ? (

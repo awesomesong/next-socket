@@ -1,24 +1,26 @@
 "use client";
-import TextareaAutosize from "react-textarea-autosize";
-import { useRef, useState, FormEvent, useEffect, useCallback, useMemo } from "react";
+import TextField, { formClassNames } from "./TextField";
+import Button from "./Button";
+import { formInputLayout } from "./formLayoutClasses";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import useComposition from "@/src/app/hooks/useComposition";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createBlogsComments } from "@/src/app/lib/createBlogsComments";
+import { createNoticesComments } from "@/src/app/lib/createNoticesComments";
 import { CommentType } from "@/src/app/types/comments";
-import { Author } from "@/src/app/types/blog";
+import { Author } from "@/src/app/types/notice";
 import { useSocket } from "../context/socketContext";
 import toast from "react-hot-toast";
 import {
-  prependBlogCommentFirstPage,
+  prependNoticeCommentFirstPage,
   replaceCommentById,
   removeCommentById,
-  blogsCommentsKey,
-  incrementBlogDetailCommentsCount,
-} from "@/src/app/lib/react-query/blogsCache";
+  noticesCommentsKey,
+  incrementNoticeDetailCommentsCount,
+} from "@/src/app/lib/react-query/noticeCache";
 import { SOCKET_EVENTS } from "../lib/react-query/utils";
 
 type FormCommentProps = {
-  blogId: string;
+  noticeId: string;
   user: {
     role?: string;
     id: string;
@@ -39,7 +41,7 @@ type FormCommentProps = {
 };
 
 const FormComment = ({
-  blogId,
+  noticeId,
   user,
   initialText = "",
   submitLabel = "확인",
@@ -69,14 +71,14 @@ const FormComment = ({
 
   // useMutation을 사용한 낙관적 업데이트
   const { mutate: createCommentMutation } = useMutation({
-    mutationFn: createBlogsComments,
-    onMutate: async ({ blogId: bid, comment: text }) => {
-      await queryClient.cancelQueries({ queryKey: blogsCommentsKey(bid), exact: true });
-      const previousComments = queryClient.getQueryData(blogsCommentsKey(bid));
+    mutationFn: createNoticesComments,
+    onMutate: async ({ noticeId: bid, comment: text }) => {
+      await queryClient.cancelQueries({ queryKey: noticesCommentsKey(bid), exact: true });
+      const previousComments = queryClient.getQueryData(noticesCommentsKey(bid));
       const optimisticId = `temp-${Date.now()}-${Math.random()}`;
       const optimisticComment: CommentType = {
         id: optimisticId,
-        blogId: bid,
+        noticeId: bid,
         text,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -85,8 +87,8 @@ const FormComment = ({
       };
 
       // 즉시 UI에 추가
-      prependBlogCommentFirstPage(queryClient, bid, optimisticComment);
-      incrementBlogDetailCommentsCount(queryClient, bid, 1);
+      prependNoticeCommentFirstPage(queryClient, bid, optimisticComment);
+      incrementNoticeDetailCommentsCount(queryClient, bid, 1);
 
       // ✅ 스크롤 최적화: requestAnimationFrame 사용
       requestAnimationFrame(() => {
@@ -100,7 +102,7 @@ const FormComment = ({
 
       return { previousComments, optimisticId };
     },
-    onSuccess: (result, { blogId: bid }, context) => {
+    onSuccess: (result, { noticeId: bid }, context) => {
       if (!context?.optimisticId) return;
       // 임시 댓글을 실제 댓글로 교체
       replaceCommentById(queryClient, bid, context.optimisticId, {
@@ -110,8 +112,8 @@ const FormComment = ({
 
       // 소켓 브로드캐스트 (다른 사용자들에게만)
       try {
-        socket?.emit(SOCKET_EVENTS.BLOG_COMMENT_NEW, {
-          blogId: bid,
+        socket?.emit(SOCKET_EVENTS.NOTICE_COMMENT_NEW, {
+          noticeId: bid,
           comment: {
             ...result.newComment,
             author: {
@@ -123,17 +125,17 @@ const FormComment = ({
         });
       } catch {}
     },
-    onError: (error, { blogId: bid, comment }, context) => {
+    onError: (error, { noticeId: bid, comment }, context) => {
       // 에러 시 롤백
       if (context?.previousComments) {
         queryClient.setQueryData(
-          blogsCommentsKey(bid),
+          noticesCommentsKey(bid),
           context.previousComments,
         );
       }
       if (context?.optimisticId) {
         removeCommentById(queryClient, bid, context.optimisticId);
-        incrementBlogDetailCommentsCount(queryClient, bid, -1);
+        incrementNoticeDetailCommentsCount(queryClient, bid, -1);
       }
 
       // 입력창 복원
@@ -182,15 +184,14 @@ const FormComment = ({
           });
       } else {
         // useMutation을 사용한 낙관적 업데이트
-        createCommentMutation({ blogId, comment: text });
+        createCommentMutation({ noticeId, comment: text });
       }
     },
-    [onSubmit, onCancel, createCommentMutation, blogId]
+    [onSubmit, onCancel, createCommentMutation, noticeId]
   );
 
   // 버튼 클릭 이벤트 핸들러
-  const handleSubmitComment = useCallback((e: FormEvent<HTMLButtonElement>) => {
-  e.preventDefault();
+  const handleSubmitComment = useCallback(() => {
     submitComment(comment);
   }, [comment, submitComment]);
 
@@ -207,10 +208,11 @@ const FormComment = ({
   }, [submitComment, isComposing]);
 
   return (
-    <div className="my-4">
-      <TextareaAutosize
+    <div className={formInputLayout.wrapper}>
+      <TextField
         ref={textareaRef}
-        disabled={!user?.email} // ✅ 간소화
+        name="comment"
+        disabled={!user?.email}
         placeholder={
           user?.email
             ? "댓글을 입력해주세요."
@@ -222,25 +224,29 @@ const FormComment = ({
         onKeyDown={handleKeyDown}
         onCompositionStart={handleCompositionStart}
         onCompositionEnd={handleCompositionEnd}
-        className="w-full p-2 box-border border-solid border-b-[1px]"
+        variant="underlined"
+        minRows={1}
+        classNames={formClassNames.textarea}
       />
       {stateComment && (
-        <div className="flex gap-2 mt-2">
-          <button
+        <div className={formInputLayout.actions}>
+          <Button
             onClick={handleSubmitComment}
             type="submit"
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md"
+            size="md"
+            variant="scent"
           >
             {submitLabel}
-          </button>
+          </Button>
           {onCancel && (
-            <button
+            <Button
               onClick={onCancel}
               type="button"
-              className="px-4 py-2 bg-gray-600 rounded-md text-white"
+              variant="ghostLavender"
+              size="md"
             >
               취소
-            </button>
+            </Button>
           )}
         </div>
       )}

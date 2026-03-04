@@ -1,4 +1,4 @@
-import type { Author } from "@/src/app/types/blog";
+import type { Author } from "@/src/app/types/notice";
 
 /**
  * 댓글 타입
@@ -9,7 +9,7 @@ export type CommentType = {
   createdAt: string | Date;
   updatedAt: string | Date;
   authorEmail: string | null;
-  blogId: string | null;
+  noticeId: string | null;
   author: Author;
 };
 
@@ -45,7 +45,7 @@ export type DeleteCommentResponse = {
  * 댓글 수정 API 요청 타입
  */
 export type UpdateCommentRequest = {
-  blogId: string;
+  noticeId: string;
   commentId: string;
   text: string;
 };
@@ -54,14 +54,14 @@ export type UpdateCommentRequest = {
  * 댓글 삭제 API 요청 타입
  */
 export type DeleteCommentRequest = {
-  blogId: string;
+  noticeId: string;
   commentId: string;
 };
 
 /**
  * React Query에 사용되는 페이지 데이터 타입
  */
-export type CommentPageItem = 
+export type CommentPageItem =
   | { comments: CommentType[] }
   | { commentsCount: number };
 
@@ -76,13 +76,12 @@ export type ExtractedCommentData = {
 /**
  * 소켓 이벤트 페이로드 타입
  */
-export type BlogCommentUpdatedPayload = {
-  blogId: string;
+export type NoticeCommentUpdatedPayload = {
+  noticeId: string;
   comment: CommentType;
 };
 
-export type BlogCommentDeletedPayload = {
-  blogId: string;
+export type NoticeCommentDeletedPayload = {
+  noticeId: string;
   commentId: string;
 };
-
