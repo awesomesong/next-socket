@@ -94,12 +94,12 @@ export default async function RootLayout({
             <ToasterContext />
             <HeroUIProvider className="flex flex-col flex-1">
               <ThemeProvider>
-                {/* <SocketProvider>
+                <SocketProvider>
                   <SocketComponents />
                   <SocketState />
-                  <UserActiveStatus /> */}
-                {children}
-                {/* </SocketProvider> */}
+                  <UserActiveStatus />
+                  {children}
+                </SocketProvider>
               </ThemeProvider>
             </HeroUIProvider>
           </RQProviders>
