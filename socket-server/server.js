@@ -237,7 +237,7 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Socket.IO server is running!");
+  res.status(200).send("Socket Server is OK");
 });
 
   // ✅ HTTP POST로 새 사용자 등록 알림 받기 (웹훅 보안 포함)
