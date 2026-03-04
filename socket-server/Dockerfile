@@ -20,9 +20,9 @@ FROM base AS build
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config
 
-# Install node modules
-COPY package.json ./
-RUN npm install
+# Install node modules (production만, 이미지 크기 감소)
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
 # Copy application code
 COPY . .
