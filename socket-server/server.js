@@ -600,62 +600,62 @@ io.on("connection", (socket) => {
     }
   });
 
-  // 블로그 신규 생성 브로드캐스트 (보낸 본인 제외 전체에 전송)
-  socket.on("blog:new", (payload) => {
+  // 공지사항 신규 생성 브로드캐스트 (보낸 본인 제외 전체에 전송)
+  socket.on("notice:new", (payload) => {
     try {
-      socket.broadcast.emit("blog:new", payload);
+      socket.broadcast.emit("notice:new", payload);
     } catch (e) {}
   });
 
-  // 블로그 수정 브로드캐스트 (보낸 본인 제외 전체에 전송)
-  socket.on("blog:updated", (payload) => {
+  // 공지사항 수정 브로드캐스트 (보낸 본인 제외 전체에 전송)
+  socket.on("notice:updated", (payload) => {
     try {
-      socket.broadcast.emit("blog:updated", payload);
+      socket.broadcast.emit("notice:updated", payload);
     } catch (e) {}
   });
 
-  // 블로그 삭제 브로드캐스트 (보낸 본인 제외 전체에 전송)
-  socket.on("blog:deleted", (payload) => {
+  // 공지사항 삭제 브로드캐스트 (보낸 본인 제외 전체에 전송)
+  socket.on("notice:deleted", (payload) => {
     try {
-      socket.broadcast.emit("blog:deleted", payload);
+      socket.broadcast.emit("notice:deleted", payload);
     } catch (e) {}
   });
 
-  // 블로그 댓글 신규 생성 브로드캐스트 (보낸 본인 제외 전체에 전송)
-  socket.on("blog:comment:new", (payload) => {
+  // 공지사항 댓글 신규 생성 브로드캐스트 (보낸 본인 제외 전체에 전송)
+  socket.on("notice:comment:new", (payload) => {
     try {
-      socket.broadcast.emit("blog:comment:new", payload);
+      socket.broadcast.emit("notice:comment:new", payload);
     } catch (e) {}
   });
 
-  // 블로그 댓글 수정 브로드캐스트 (보낸 본인 제외 전체에 전송)
-  socket.on("blog:comment:updated", (payload) => {
+  // 공지사항 댓글 수정 브로드캐스트 (보낸 본인 제외 전체에 전송)
+  socket.on("notice:comment:updated", (payload) => {
     try {
-      socket.broadcast.emit("blog:comment:updated", payload);
+      socket.broadcast.emit("notice:comment:updated", payload);
     } catch (e) {}
   });
 
-  // 블로그 댓글 삭제 브로드캐스트 (보낸 본인 제외 전체에 전송)
-  socket.on("blog:comment:deleted", (payload) => {
+  // 공지사항 댓글 삭제 브로드캐스트 (보낸 본인 제외 전체에 전송)
+  socket.on("notice:comment:deleted", (payload) => {
     try {
-      socket.broadcast.emit("blog:comment:deleted", payload);
+      socket.broadcast.emit("notice:comment:deleted", payload);
     } catch (e) {}
   });
 
-  // 리뷰: 생성/수정/삭제 브로드캐스트 (보낸 본인 제외 전체)
-  socket.on("drink:review:new", (payload) => {
+  // 향수 리뷰: 생성/수정/삭제 브로드캐스트 (보낸 본인 제외 전체)
+  socket.on("fragrance:review:new", (payload) => {
     try {
-      socket.broadcast.emit("drink:review:new", payload);
+      socket.broadcast.emit("fragrance:review:new", payload);
     } catch (e) {}
   });
-  socket.on("drink:review:updated", (payload) => {
+  socket.on("fragrance:review:updated", (payload) => {
     try {
-      socket.broadcast.emit("drink:review:updated", payload);
+      socket.broadcast.emit("fragrance:review:updated", payload);
     } catch (e) {}
   });
-  socket.on("drink:review:deleted", (payload) => {
+  socket.on("fragrance:review:deleted", (payload) => {
     try {
-      socket.broadcast.emit("drink:review:deleted", payload);
+      socket.broadcast.emit("fragrance:review:deleted", payload);
     } catch (e) {}
   });
 
