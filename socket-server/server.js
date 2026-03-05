@@ -255,8 +255,8 @@ app.get("/", (req, res) => {
       return res.status(401).json({ ok: false, message: '인증 실패' });
     }
     
-    const { userId, useremail, name, createdAt } = req.body;
-    
+    const { userId, useremail, name, image, createdAt } = req.body;
+
     console.log(`[Socket Server] HTTP POST로 새 사용자 등록 알림 수신:`, {
       userId,
       useremail,
@@ -264,12 +264,13 @@ app.get("/", (req, res) => {
       createdAt,
       totalOnlineUsers: onlineUsersMap.size
     });
-  
+
     // 모든 온라인 사용자에게 새 사용자 등록 알림
     io.emit("registered:user", {
       userId,
       useremail,
       name,
+      image: image ?? null,
       createdAt
     });
   

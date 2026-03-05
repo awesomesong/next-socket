@@ -121,6 +121,27 @@ export const authOptions: AuthOptions = {
     },
     secret: process.env.NEXTAUTH_SECRET,
     events: {
+        createUser: async ({ user }) => {
+            try {
+                const socketServerUrl = 'https://socket-server-muddy-shadow-6983.fly.dev';
+                await fetch(`${socketServerUrl}/api/user-registered`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-webhook-secret': process.env.WEBHOOK_SECRET || '',
+                    },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        useremail: user.email,
+                        name: user.name,
+                        image: user.image ?? null,
+                        createdAt: new Date().toISOString(),
+                    }),
+                });
+            } catch (e) {
+                console.error('[Auth] createUser 소켓 알림 실패:', e);
+            }
+        },
         signIn: async () => {
             /* user updated - e.g. their email was verified */
         },

@@ -36,7 +36,7 @@ const UserList = () => {
 
 
   // ✅ 새 사용자 등록 시 UserList에 직접 추가 (새로고침 없이)
-  const handleNewUser = useCallback((data: { userId: string; useremail: string; name: string; createdAt: string }) => {
+  const handleNewUser = useCallback((data: { userId: string; useremail: string; name: string; image?: string | null; createdAt: string }) => {
     // 기존 캐시 데이터 가져오기
     const currentData = queryClient.getQueryData<{ users: IUserList[] }>(CHAT_MEMBER_KEY);
 
@@ -50,7 +50,7 @@ const UserList = () => {
         id: data.userId,
         name: data.name,
         email: data.useremail,
-        image: null,
+        image: data.image ?? null,
         role: 'user'
       };
 
