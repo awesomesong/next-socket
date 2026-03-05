@@ -11,7 +11,6 @@ import StatusMessage from "./StatusMessage";
 import clsx from "clsx";
 import useConversation from "@/src/app/hooks/useConversation";
 import GroupChatModal from "./chat/GroupChatModal";
-import { IoBeerOutline } from "react-icons/io5";
 import { useCallback } from "react";
 import {
   Button,
@@ -21,10 +20,11 @@ import {
   DropdownItem,
 } from "@heroui/react";
 import { useTheme } from "next-themes";
-import { PiDotsThreeVerticalBold } from "react-icons/pi";
+import { PiDotsThreeVerticalBold, PiUsersThreeBold, PiSparkleBold } from "react-icons/pi";
 import { useLaunchAiConversation } from "@/src/app/lib/createAIConversation";
 import { conversationListKey } from "@/src/app/lib/react-query/chatCache";
 import { lastMessageMs } from "../utils/chat";
+import { HiOutlineSun, HiOutlineMoon } from "react-icons/hi";
 
 const ConversationList = memo(function ConversationList() {
   const { data: session, status: sessionStatus } = useSession();
@@ -108,7 +108,7 @@ const ConversationList = memo(function ConversationList() {
           "chat-sidebar",
           isOpen && "hidden lg:block",
         )}>
-        <div className="chat-sidebar__header justify-between">
+        <div className="chat-sidebar__header justify-between px-4">
           <div className="
             text-gradient-scent
             chat-sidebar__title
@@ -116,37 +116,70 @@ const ConversationList = memo(function ConversationList() {
             대화방
           </div>
           {!isLoading ? (
-            <Dropdown>
+            <Dropdown
+              classNames={{
+                content: "bg-[var(--color-card-bg)]/80 backdrop-blur-md border-1 border-[var(--color-lavender-border)] shadow-xl rounded-xl p-1",
+              }}
+            >
               <DropdownTrigger>
                 <Button
-                  type="button"
-                  variant="shadow"
-                  radius="sm"
+                  isIconOnly
+                  variant="light"
+                  radius="full"
                   className="
-                    min-w-6 
-                    h-6 
-                    p-0 
-                    bg-gray-100 
-                    dark:bg-neutral-800 
-                    dark:border-neutral-600
-                ">
-                  <PiDotsThreeVerticalBold size={21} />
+                    min-w-8 
+                    w-8
+                    h-8
+                    bg-[var(--color-lavender-pale)]/50
+                    backdrop-blur-sm
+                    text-[var(--color-text-primary)]
+                    hover:bg-[var(--color-lavender-light)]
+                    hover:scale-110
+                    active:scale-95
+                    transition-all
+                    duration-300
+                    border-1
+                    border-[var(--color-lavender-border)]
+                    shadow-sm
+                  "
+                >
+                  <PiDotsThreeVerticalBold size={18} />
                 </Button>
               </DropdownTrigger>
-              <DropdownMenu>
+              <DropdownMenu
+                aria-label="Conversation Actions"
+                itemClasses={{
+                  base: [
+                    "rounded-lg",
+                    "text-[var(--color-text-secondary)]",
+                    "transition-all",
+                    "gap-3",
+                    "px-3",
+                    "py-2",
+                    "data-[hover=true]:text-[var(--color-text-primary)]",
+                    "data-[hover=true]:bg-[var(--color-lavender-pale)]",
+                  ],
+                }}
+              >
                 <DropdownItem
                   key="group-chat"
                   onPress={() => setIsModalOpen(true)}
+                  startContent={<PiUsersThreeBold size={18} />}
                 >
                   단체 채팅
                 </DropdownItem>
                 <DropdownItem
                   key="ai-chat"
                   onPress={() => launch({ aiAgentType: "assistant" })}
+                  startContent={<PiSparkleBold size={18} />}
                 >
                   AI 채팅
                 </DropdownItem>
-                <DropdownItem key="theme-toggle" onPress={toggleTheme}>
+                <DropdownItem
+                  key="theme-toggle"
+                  onPress={toggleTheme}
+                  startContent={resolvedTheme === "dark" ? <HiOutlineSun size={18} /> : <HiOutlineMoon size={18} />}
+                >
                   {resolvedTheme === "dark" ? "라이트 모드" : "다크 모드"}
                 </DropdownItem>
               </DropdownMenu>
