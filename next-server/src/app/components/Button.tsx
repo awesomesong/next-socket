@@ -2,9 +2,9 @@
 import clsx from "clsx";
 import { Button as Btn } from "@heroui/react";
 
-/** 제출용 그라데이션 버튼 공통 핵심 스타일 (배경 그라데이션, 텍스트 효과, 호버 애니메이션) */
+/** 제출용 그라데이션 버튼 공통 핵심 스타일 (배경 그라데이션, 텍스트 효과, 호버 애니메이션, 그림자 없음) */
 export const submitButtonBaseClassName =
-  "rounded-full bg-gradient-to-r from-[#b094e0] to-[#5c4a7a] text-white uppercase shadow-xl shadow-indigo-200/50 dark:shadow-none hover:shadow-2xl hover:brightness-110 hover:saturate-150 transition-all duration-300";
+  "rounded-full bg-gradient-to-r from-[#b094e0] to-[#5c4a7a] text-white uppercase shadow-none hover:shadow-none hover:brightness-110 hover:saturate-150 transition-all duration-300";
 
 /** 공통 제출 버튼 스타일 (FormFragrance, RegisterForm, SignInForm 등에서 사용) */
 export const submitButtonClassName =
@@ -14,9 +14,9 @@ export const submitButtonClassName =
 export const submitSmallButtonClassName =
   clsx("px-3 h-[26px] text-xs", submitButtonBaseClassName);
 
-/** 리뷰 폼 등에서 사용하는 중간 크기 그라데이션 스타일 (그림자 없음) */
+/** 리뷰 폼 등에서 사용하는 중간 크기 그라데이션 스타일 */
 export const submitMediumButtonClassName =
-  clsx("h-8 min-h-0 text-[0.8rem] px-5 shadow-none hover:shadow-none", submitButtonBaseClassName);
+  clsx("h-8 min-h-0 text-[0.8rem] px-5", submitButtonBaseClassName);
 
 /** ghostLavender 공통 핵심 스타일 (색상, 테두리, 트랜지션) */
 export const ghostLavenderBaseClassName =
@@ -99,7 +99,7 @@ const Button: React.FC<ButtonProps> = ({
     const isSmall = size === "sm";
     const isMedium = size === "md";
     const appliedClass = isScent
-      ? (isSmall ? submitSmallButtonClassName : (isMedium ? clsx(submitMediumButtonClassName, "!shadow-none hover:!shadow-none") : submitButtonClassName))
+      ? (isSmall ? submitSmallButtonClassName : (isMedium ? submitMediumButtonClassName : submitButtonClassName))
       : (isSmall ? ghostSmallButtonClassName : (isMedium ? ghostMediumButtonClassName : ghostButtonClassName));
 
     return (
