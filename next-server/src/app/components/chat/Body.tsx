@@ -560,7 +560,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
             right-1/2
             p-2
             bg-default-reverse
-            text-default-reverse
+            text-reverse
             rounded-full
             shadow-lg
             opacity-70

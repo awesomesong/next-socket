@@ -164,7 +164,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                                       justify-center
                                       mr-2
                                       bg-default-reverse 
-                                      text-default-reverse
+                                      text-reverse
                                       rounded-lg
                                     "
                                   >
@@ -195,7 +195,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                             w-10
                             h-10
                             bg-default-reverse
-                            text-default-reverse
+                            text-reverse
                             group-hover:bg-neutral-400 
                             group-hover:text-neutral-900
                             group-hover:dark:bg-neutral-500 

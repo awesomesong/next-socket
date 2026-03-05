@@ -32,7 +32,7 @@ const EmptyState = ({ message, isError }: messageProps) => {
           "flex flex-col items-center",
           isError && "hidden"
         )}>
-          <h3 className="mt-4 mb-2 text-lg text-default-secondary">
+          <h3 className="mt-4 mb-2 text-lg text-secondary">
             아래 버튼을 클릭해서, 향수 AI와 대화를 시작해보세요.
           </h3>
           <div className="flex justify-center">

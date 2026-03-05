@@ -209,8 +209,12 @@ h6 {
   @apply text-neutral-950 dark:text-neutral-200;
 }
 
-.text-default-reverse {
+.text-reverse {
   @apply text-neutral-200 dark:text-neutral-950;
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
 }
 
 .border-default {

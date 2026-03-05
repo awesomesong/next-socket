@@ -191,7 +191,7 @@ const ConversationList = memo(function ConversationList() {
             listData.conversations.length === 0 ? (
             <div
               className="
-                text-default-secondary
+                text-secondary
                 flex
                 justify-center
                 h-full
