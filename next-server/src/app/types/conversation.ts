@@ -33,6 +33,7 @@ export type MessageType = Message & {
 export type FullConversationType = Conversation & {
   users: IUserList[];
   messages: MessageType[];
+  userIds: string[];
   unReadCount?: number;
   lastMessageAt?: Date | string;
   lastMessageAtMs?: number;
