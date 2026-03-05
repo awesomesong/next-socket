@@ -11,6 +11,7 @@ import StatusMessage from "./StatusMessage";
 import clsx from "clsx";
 import useConversation from "@/src/app/hooks/useConversation";
 import GroupChatModal from "./chat/GroupChatModal";
+import DropdownIconButton from "./DropdownIconButton";
 import { useCallback } from "react";
 import {
   Button,
@@ -122,29 +123,9 @@ const ConversationList = memo(function ConversationList() {
               }}
             >
               <DropdownTrigger>
-                <Button
-                  isIconOnly
-                  variant="light"
-                  radius="full"
-                  className="
-                    min-w-8 
-                    w-8
-                    h-8
-                    bg-[var(--color-lavender-pale)]/50
-                    backdrop-blur-sm
-                    text-[var(--color-text-primary)]
-                    hover:bg-[var(--color-lavender-light)]
-                    hover:scale-110
-                    active:scale-95
-                    transition-all
-                    duration-300
-                    border-1
-                    border-[var(--color-lavender-border)]
-                    shadow-sm
-                  "
-                >
+                <DropdownIconButton>
                   <PiDotsThreeVerticalBold size={18} />
-                </Button>
+                </DropdownIconButton>
               </DropdownTrigger>
               <DropdownMenu
                 aria-label="Conversation Actions"
@@ -185,19 +166,9 @@ const ConversationList = memo(function ConversationList() {
               </DropdownMenu>
             </Dropdown>
           ) : (
-            <div className="flex justify-center items-center">
-              <div
-                className="
-                  overflow-hidden
-                  inline-block
-                  relative
-                  rounded-sm
-                  w-[24px]
-                  h-[24px]
-              ">
-                <ShapesSkeleton width="100%" height="100%" radius="sm" />
-              </div>
-            </div>
+            <DropdownIconButton isDisabled aria-hidden>
+              <ShapesSkeleton width="100%" height="100%" radius="none" />
+            </DropdownIconButton>
           )}
         </div>
         <div className="flex flex-col">
