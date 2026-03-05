@@ -39,7 +39,7 @@ export async function POST(req: Request){
 
         // ✅ 새 사용자 등록 시 Socket.IO 서버로 HTTP POST 알림
         try {
-            const socketServerUrl = process.env.SOCKET_SERVER_URL || 'https://socket-server-muddy-shadow-6983.fly.dev';
+            const socketServerUrl = 'https://socket-server-muddy-shadow-6983.fly.dev';
             const notifyUrl = `${socketServerUrl}/api/user-registered`;
             
             const response = await fetch(notifyUrl, {
