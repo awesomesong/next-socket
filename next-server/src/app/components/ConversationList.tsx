@@ -7,6 +7,7 @@ import getConversations from "@/src/app/lib/getConversations";
 import { useQuery } from "@tanstack/react-query";
 import ShapesSkeleton from "./skeleton/ShapesSkeleton";
 import ChatConversationSkeleton from "./skeleton/ChatConversationSkeleton";
+import StatusMessage from "./StatusMessage";
 import clsx from "clsx";
 import useConversation from "@/src/app/hooks/useConversation";
 import GroupChatModal from "./chat/GroupChatModal";
@@ -171,18 +172,11 @@ const ConversationList = memo(function ConversationList() {
             <ChatConversationSkeleton />
           ) : !Array.isArray(listData?.conversations) ||
             listData.conversations.length === 0 ? (
-            <div
-              className="
-                text-secondary
-                flex
-                justify-center
-                h-full
-                text-neutral-500
-                dark:text-neutral-400
-                text-sm
-            ">
-              대화방이 없습니다.
-            </div>
+            <StatusMessage
+              fallbackMessage="대화방이 없습니다."
+              minHeight="min-h-0"
+              className="py-4"
+            />
           ) : (
             memoizedConversations
           )}
