@@ -97,37 +97,19 @@ const UserList = () => {
 
   return (
     <aside
-      className="
-        overflow-y-auto
-        lg:block
-        max-lg:flex-1
-        w-0
-        lg:w-80
-        border-r-default
-    ">
+      className="chat-sidebar lg:block"
+    >
       {status === "error" ? (
         <div className="flex justify-center mt-10">
           <h1 className="text-sm">멤버를 불러오지 못했습니다.</h1>
         </div>
       ) : (
         <>
-          <div
-            className="
-              flex
-              items-center
-              h-16
-              px-3
-              text-2xl
-              font-bold
-            "
-          >
+          <div className="chat-sidebar__header">
             <span
               className="
                 text-gradient-scent
-                inline-flex 
-                items-end 
-                gap-2
-                leading-none
+                chat-sidebar__title
               "
             >
               멤버

@@ -103,32 +103,14 @@ const ConversationList = memo(function ConversationList() {
         onCloseModal={() => setIsModalOpen(false)}
       />
       <aside
-        className={clsx(`
-          shrink-0
-          overflow-y-auto
-          h-full
-          border-r-default
-          max-lg:flex-1
-          w-0
-          lg:w-80
-        `,
+        className={clsx(
+          "chat-sidebar",
           isOpen && "hidden lg:block",
         )}>
-        <div className="
-            flex 
-            justify-between
-            items-center
-            h-16
-            px-3
-        ">
+        <div className="chat-sidebar__header justify-between">
           <div className="
             text-gradient-scent
-            inline-flex 
-            items-end 
-            gap-2
-            leading-none
-            text-2xl
-            font-bold
+            chat-sidebar__title
           ">
             대화방
           </div>

@@ -1182,6 +1182,18 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
     -webkit-text-fill-color: transparent;
   }
 
+  .chat-sidebar {
+    @apply shrink-0 overflow-y-auto h-full border-r-default max-lg:flex-1 w-0 lg:w-80;
+  }
+
+  .chat-sidebar__header {
+    @apply flex items-center h-16 px-3;
+  }
+
+  .chat-sidebar__title {
+    @apply inline-flex items-end gap-2 leading-none font-bold text-xl;
+  }
+
   .text-gradient-memories {
     display: inline-block;
     background: linear-gradient(115deg, #c49b6a 0%, #6b5b95 50%, #b88a90 100%);
