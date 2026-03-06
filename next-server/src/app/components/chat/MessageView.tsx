@@ -541,8 +541,8 @@ const MessageView: React.FC<MessageBoxProps> = ({
           px-6
           py-2
           mb-4
-          bg-amber-400
-          text-neutral-950
+          bg-[var(--color-lavender-pale)]
+          text-[var(--color-text-primary)]
           text-sm
           rounded-full
         "
@@ -554,7 +554,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
     <>
       {showDateDivider && (
         <div className="flex justify-center items-center my-4">
-          <div className="px-4 py-1 bg-gray-200 dark:bg-neutral-700 text-gray-700 dark:text-gray-200 rounded-full">
+          <div className="px-4 py-1 bg-[var(--color-lavender-pale)] text-[var(--color-text-secondary)] rounded-full">
             {new Date(data.createdAt).toLocaleDateString("ko-KR", {
               year: "numeric",
               month: "long",
@@ -591,10 +591,10 @@ const MessageView: React.FC<MessageBoxProps> = ({
               isError
                 ? "bg-red-100 border-l-4 border-red-400"
                 : isAIMessage
-                  ? "bg-gray-100"
+                  ? "bg-[var(--color-ivory-soft)]"
                   : isOwn
-                    ? "bg-sky-300"
-                    : "bg-sky-100",
+                    ? "bg-[#b094e0] dark:bg-[#7c5eb0]"
+                    : "bg-[var(--color-lavender-pale)] dark:bg-[#4d4272] dark:text-[var(--color-text-primary)]",
               data.type === "image"
                 ? "max-[360px]:w-full rounded-md p-0"
                 : "py-2 px-3 rounded-2xl",
@@ -635,7 +635,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
                   </div>
                 )}
                 <pre
-                  className="whitespace-pre-wrap dark:text-neutral-950"
+                  className="whitespace-pre-wrap text-[var(--color-text-primary)]"
                   dangerouslySetInnerHTML={{
                     __html: sanitizedMessageBody,
                   }}
@@ -649,14 +649,14 @@ const MessageView: React.FC<MessageBoxProps> = ({
               isOwn && "justify-end",
             )}
           >
-            <div className="text-sm text-neutral-700 dark:text-neutral-300">
+            <div className="text-sm text-[var(--color-text-secondary)]">
               {isAIMessage
                 ? "향수 AI 어시스턴트"
                 : isConversationUser
                   ? data.sender.name
                   : "(알 수 없음)"}
             </div>
-            <div className="text-xs text-neutral-500 dark:text-neutral-400">
+            <div className="text-xs text-[var(--color-text-secondary)] opacity-75">
               {new Date(data.createdAt).toLocaleString("ko-KR", {
                 hour: "numeric",
                 minute: "numeric",
@@ -669,7 +669,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
                 className="
                   text-sm
                   font-light
-                  text-neutral-500 dark:text-neutral-400
+                  text-[var(--color-text-secondary)]
                 "
               >
                 읽음{(data.conversation?.isGroup && !!seenNames) && ` : ${seenNames}`}
