@@ -40,11 +40,11 @@ interface Props {
   isAIChat?: boolean;
 }
 
-interface seenUser { 
-  id: string; 
-  name: string | null; 
-  email: string | null; 
-  image: string | null 
+interface seenUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null
 }
 
 // ✅ 빈 배열 상수 - 참조 안정화를 위해
@@ -100,7 +100,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const bId = (b.id ?? "").toString();
     if (aId && bId) return aId.localeCompare(bId); // ✅ 순서대로
     return 0;
-  },[]);
+  }, []);
 
   // === 1) readStateMutation: onMutate에서 낙관적 워터마크 반영 유지 ===
   const { mutate: readStateMutation } = useMutation({
@@ -143,7 +143,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
       // 총합 갱신 / 소켓 통지 등 기존 코드 유지
       const totalUnread = setTotalUnreadFromList(queryClient);
       if (totalUnread !== undefined) setUnreadCount(totalUnread);
-      
+
       // ✅ 서버가 includeSeenUsers로 계산해준 최신 읽은 사용자 목록 반영
       if (includeSeenUsers && lastMessageId && Array.isArray(data.seenUsers)) {
         setSeenUsersForLastMessage(
@@ -153,11 +153,11 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
           data.seenUsers
         );
       }
-      
+
       if (socket && !suppressSocketEmit) {
         // ✅ API에서 전달받은 메시지 발신자 ID 사용 (효율적)
         const messageSenderId = data.messageSenderId;
-        
+
         socket?.emit("read:state", {
           conversationId: targetConversationId,
           lastMessageId: vars.lastMessageId, // ✅ lastMessageId 포함
@@ -177,7 +177,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   // ✅ 방 입장/퇴장: 대화방 들어올 때 1회 join, 나갈 때 leave
   useEffect(() => {
     if (!socket || !conversationId) return;
-    
+
     const join = () => {
       socket.emit("join:room", conversationId);
     };
@@ -185,7 +185,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     socket.off("connect", join);
     socket.on("connect", join);
     if (socket.connected) join();
-    
+
     return () => {
       socket.emit("leave:room", conversationId);
       socket.off("connect", join);
@@ -195,10 +195,10 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   // 모든 페이지의 메시지를 FlatMap으로 합친 후 정렬하여 반환 (UI 렌더링용)
   const allMessages = useMemo(() => {
     const serverMessages = data?.pages.flatMap((page) => page.messages) || [];
-    
+
     // ✅ undefined 메시지 필터링
     const validServerMessages = serverMessages.filter((m) => m && m.id);
-    
+
     // 서버 메시지만 정렬
     return validServerMessages.sort(compareMessages);
   }, [data?.pages, compareMessages]);
@@ -207,7 +207,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   const lastMessageId = useMemo(() => {
     return allMessages[allMessages.length - 1]?.id;
   }, [allMessages]);
-  
+
   const myId = String(session?.user?.id ?? "");
 
   // 2) liveUsersKey 계산 (참여자 키) - 실제 대화방 참여자 목록 사용
@@ -222,7 +222,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
         .sort()
         .join(",");
     }
-    
+
     // 메시지가 없는 경우 (빈 대화방) - 현재 사용자만 포함
     // 메시지가 생기면 자동으로 동기화됨
     return myId ? myId : "";
@@ -246,15 +246,15 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   const allMessagesRef = useRef<FullMessageType[]>([]);
   const lastMessageCountRef = useRef(0);
   const processedConversationRef = useRef<string | null>(null);
-  
+
   useEffect(() => {
     allMessagesRef.current = allMessages;
     const currentCount = allMessages.length;
-    
+
     // ✅ 메시지 추가됐을 때만 스크롤 (업데이트는 스크롤 안 함)
     if (currentCount > 0 && currentCount > lastMessageCountRef.current) {
       lastMessageCountRef.current = currentCount;
-      
+
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           // ✅ 초기 로딩: 무조건 하단으로 (낙관적 메시지 포함)
@@ -270,7 +270,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
       lastMessageCountRef.current = currentCount;
     }
   }, [allMessages, scrollToBottom, onNewContent]);
-  
+
   // === 3) 통합된 읽음 처리 로직 ===
   const hasProcessedReadRef = useRef<Set<string>>(new Set()); // read-state api 중복 처리 방지
   const readThrottleRef = useRef<number | null>(null); // 재호출 방지
@@ -286,7 +286,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const key = `${conversationId}-${messageId}`;
     // 중복 처리 방지
     if (hasProcessedReadRef.current.has(key)) return;
-    
+
     // ✅ 실시간 메시지인 경우 받은 데이터 직접 사용, 아니면 allMessagesRef에서 찾기
     const message = messageData || allMessagesRef.current.find(m => m.id === messageId);
     if (!message) return;
@@ -298,13 +298,13 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const isSystemMessage = message.type === "system";
     const isAIResponse = !!message.isAIResponse;
     const shouldIncludeSeenUsers = !!isGroup && !isSystemMessage;
-    
+
     if (isFromMe || isAIResponse || isAIChat) {
       hasProcessedReadRef.current.add(key);
       return;
     }
 
-    hasProcessedReadRef.current.add(key); 
+    hasProcessedReadRef.current.add(key);
     readStateMutation({
       conversationId,
       seenUntilMs: Date.now(),
@@ -391,12 +391,12 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     // ✅ conversationId가 없으면 읽음 처리 스킵
     if (!conversationId) return;
 
-    const senderId   = getMessageSenderId(m);
+    const senderId = getMessageSenderId(m);
     const senderMail = m.sender?.email;
-    const myId       = session?.user?.id;
-    const myMail     = session?.user?.email;
+    const myId = session?.user?.id;
+    const myMail = session?.user?.email;
     const isFromMe = (senderId && myId && String(senderId) === String(myId))
-                  || (senderMail && myMail && String(senderMail) === String(myMail));
+      || (senderMail && myMail && String(senderMail) === String(myMail));
     const isAIResponse = !!m.isAIResponse;
 
     // ✅ 내 메시지 / AI는 early return
@@ -487,9 +487,9 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   }, [refreshFlags]);
 
   const shouldShowArrow =
-    !isScrollingInitialRef.current && 
-    status === "success" && 
-    !isFetchingNextPage && 
+    !isScrollingInitialRef.current &&
+    status === "success" &&
+    !isFetchingNextPage &&
     showArrow; // ✅ 자동 스크롤 중일 때 화살표 숨김  
 
   // 안정적인 getLastMessageId 함수 (dependency 변경 없음)
@@ -500,7 +500,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   const scrollTrigger = useMemo(() => {
     return status === "success" && !!data?.pages?.length;
   }, [status, data?.pages?.length]);
-  
+
   // ✅ 초기 진입 시 마지막 메시지 렌더링 완료 후 스크롤
   useInitialScroll({
     scrollRef,
@@ -520,29 +520,29 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
         ? new Date(prevMessage.createdAt).toDateString()
         : null;
       const showDateDivider = currentDate !== prevDate;
-      
-        const isLastOwnForThisMessage = String(message.id) === String(lastOwnMessageId);
-        // ✅ 핵심: 내 마지막 메시지가 전체 대화의 마지막 메시지일 때만 읽음 UI 표시
-        const isMyLastAndOverallLast = isLastOwnForThisMessage && String(lastOwnMessageId) === String(lastMessageId);
-        
-        // ✅ 핵심: 마지막 내 메시지일 때만 seenUsersForLastMessage 전달, 아니면 빈 배열 상수 사용
-        const seenUsersForThisMessage = isMyLastAndOverallLast 
-          ? seenUsersForLastMessageRaw 
-          : EMPTY_SEEN_USERS;
-      
-        return (
-          <MessageView
-            key={message.id}
-            data={message}
-            currentUser={session?.user}
-            conversationId={conversationId}
-            showDateDivider={showDateDivider}
-            isAIChat={isAIChat}
-            seenUsersForLastMessage={seenUsersForThisMessage} // 읽은 사용자 목록 전달
-            isLastOwnForThisMessage={isMyLastAndOverallLast} // 내 마지막 메시지 여부
-            liveUsersKey={liveUsersKey} // 참여자 ID 문자열
-          />
-        );
+
+      const isLastOwnForThisMessage = String(message.id) === String(lastOwnMessageId);
+      // ✅ 핵심: 내 마지막 메시지가 전체 대화의 마지막 메시지일 때만 읽음 UI 표시
+      const isMyLastAndOverallLast = isLastOwnForThisMessage && String(lastOwnMessageId) === String(lastMessageId);
+
+      // ✅ 핵심: 마지막 내 메시지일 때만 seenUsersForLastMessage 전달, 아니면 빈 배열 상수 사용
+      const seenUsersForThisMessage = isMyLastAndOverallLast
+        ? seenUsersForLastMessageRaw
+        : EMPTY_SEEN_USERS;
+
+      return (
+        <MessageView
+          key={message.id}
+          data={message}
+          currentUser={session?.user}
+          conversationId={conversationId}
+          showDateDivider={showDateDivider}
+          isAIChat={isAIChat}
+          seenUsersForLastMessage={seenUsersForThisMessage} // 읽은 사용자 목록 전달
+          isLastOwnForThisMessage={isMyLastAndOverallLast} // 내 마지막 메시지 여부
+          liveUsersKey={liveUsersKey} // 참여자 ID 문자열
+        />
+      );
     });
   }, [allMessages, lastOwnMessageId, lastMessageId, seenUsersForLastMessageRaw, session?.user, conversationId, isAIChat, liveUsersKey]);
 
@@ -559,17 +559,16 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
             bottom-28
             right-1/2
             p-2
-            bg-default-reverse
-            text-reverse
+            bg-gradient-scent
             rounded-full
             shadow-lg
-            opacity-70
+            opacity-90
             translate-x-[50%]
           "
           onClick={handleClickToBottom}
           title="맨 아래로 스크롤"
         >
-          <PiArrowFatDownFill size="20" />
+          <PiArrowFatDownFill size="14" className="text-white dark:text-neutral-900" />
         </button>
       )}
       <div ref={bottomRef} />
