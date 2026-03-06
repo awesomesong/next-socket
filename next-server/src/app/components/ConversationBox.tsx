@@ -87,11 +87,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
               items-center
               gap-2
           ">
-            <p className="
-                truncate
-                text-md
-                font-medium
-            ">
+            <p className="chat-item__title">
               {data.isAIChat
                 ? "향수 AI 어시스턴트"
                 : data.name || otherUser.name}
@@ -120,13 +116,10 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
               gap-2
             ">
             <p
-              className={clsx(`
-                truncate
-                text-neutral-600 
-                dark:text-neutral-400
-              `,
+              className={clsx(
+                "chat-item__status truncate",
                 !selected && unReadMessageLength > 0
-                  ? "font-bold"
+                  ? "font-bold text-neutral-800 dark:text-neutral-200"
                   : "font-normal",
               )}
             >

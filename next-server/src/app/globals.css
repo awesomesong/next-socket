@@ -1314,6 +1314,14 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
     @apply text-xs sm:text-sm text-neutral-500 dark:text-lavender-muted leading-relaxed;
   }
 
+  .chat-item__title {
+    @apply line-clamp-1 text-gradient-scent tracking-tight;
+  }
+
+  .chat-item__status {
+    @apply text-sm font-light text-neutral-500 dark:text-lavender-muted;
+  }
+
   .line-gradient-deco {
     height: 1px;
     width: 100%;

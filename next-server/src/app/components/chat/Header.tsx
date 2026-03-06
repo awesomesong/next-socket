@@ -85,16 +85,12 @@ const Header: React.FC<HeaderProps> = ({ conversation, currentUser }) => {
             )}
           </div>
           <div className="flex flex-col">
-            <div className="line-clamp-2 text-gradient-scent">
+            <div className="chat-item__title">
               {conversation?.isAIChat
                 ? "향수 AI 어시스턴트"
                 : conversation?.name || otherUser.name}
             </div>
-            <div className="
-                text-sm
-                font-light
-                text-neutral-500
-            ">
+            <div className="chat-item__status">
               {statusText}
             </div>
           </div>
