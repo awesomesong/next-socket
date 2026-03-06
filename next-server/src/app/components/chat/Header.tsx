@@ -68,12 +68,11 @@ const Header: React.FC<HeaderProps> = ({ conversation, currentUser }) => {
             className="
               lg:hidden
               block
-              text-sky-500
-              hover:text-sky-600
               transition
               cursor-pointer
+              hover:opacity-70
           ">
-            <HiChevronLeft size={32} />
+            <HiChevronLeft size={32} fill="url(#scent-nav-gradient)" />
           </Link>
           <div className="shrink">
             {conversation?.isGroup && conversation?.userIds?.length > 2 ? (
@@ -96,13 +95,13 @@ const Header: React.FC<HeaderProps> = ({ conversation, currentUser }) => {
         <HiEllipsisHorizontal
           size={32}
           onClick={() => setIsDrawerOpen(true)}
+          fill="url(#scent-nav-gradient)"
           className="
             shrink-0
             w-8
             h-8
-            text-sky-500
             cursor-pointer
-            hover:text-sky-600
+            hover:opacity-70
             transition
         "/>
       </div>
