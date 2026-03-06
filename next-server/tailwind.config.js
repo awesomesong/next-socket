@@ -1,4 +1,4 @@
-const {heroui} = require("@heroui/react");
+const { heroui } = require("@heroui/react");
 
 module.exports = {
     content: [
@@ -12,10 +12,24 @@ module.exports = {
             screens: {
                 'xs': '320px', // min-width
             },
+            colors: {
+                lavender: {
+                    DEFAULT: 'var(--color-lavender)',
+                    light: 'var(--color-lavender-light)',
+                    muted: 'var(--color-lavender-muted)',
+                    pale: 'var(--color-lavender-pale)',
+                    border: 'var(--color-lavender-border)',
+                },
+                ivory: 'var(--color-ivory)',
+                text: {
+                    primary: 'var(--color-text-primary)',
+                    secondary: 'var(--color-text-secondary)',
+                }
+            }
         },
         container: {
             center: true,
-            padding: '1rem',  
+            padding: '1rem',
         },
     },
     plugins: [
