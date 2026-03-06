@@ -103,81 +103,64 @@ const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
 
   return (
     <Modal isOpen={isOpen} onCloseModal={onCloseModal}>
-      <div className="sm:flex sm:items-start">
-        <div
-          className="
-            mx-auto
-            flex
-            w-12
-            h-12
-            flex-shrink-0
-            items-center
-            justify-center
-            rounded-full
-            bg-red-100
-            sm:mx-0
-            sm:w-10
-            sm:h-10
-          "
-        >
-          <FiAlertTriangle className="w-6 h-6 text-red-600" />
-        </div>
-        <div
-          className="
-            mt-3
-            text-center
-            sm:ml-4
-            sm:mt-0
-            sm:text-left
-          "
-        >
+      <div className="max-sm:px-1">
+        <div className="flex flex-row items-center gap-x-4 pt-2 pb-1">
           <div
             className="
-              text-base
-              font-semibold
-              leading-6
+              shrink-0
+              flex
+              w-12
+              h-12
+              items-center
+              justify-center
+              rounded-full
+              bg-red-50
+              dark:bg-red-900/20
+              border border-red-100
+              dark:border-red-900/30
             "
           >
-            {name}(의) 대화방을 나가겠습니까?
+            <FiAlertTriangle className="w-6 h-6 text-red-500" />
           </div>
-          <div className="mt-2">
-            <p className="text-sm text-gray-500">
+
+          <div className="flex flex-col space-y-1">
+            <p className="text-lg font-semibold text-[var(--color-text-primary)]">
+              {name}(의) 대화방을 나가겠습니까?
+            </p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">
               대화방의 모든 내용이 삭제됩니다.
             </p>
           </div>
         </div>
-      </div>
-      <div
-        className="
-          flex
-          justify-center
-          sm:justify-start
-          sm:flex-row-reverse
-          gap-2
-          mt-3
-          sm:mt-4
-        "
-      >
-        <Button
-          disabled={isLoading}
-          danger
-          onClick={onDelete}
-          color="primary"
-          variant="solid"
+
+        <div
+          className="
+            flex
+            items-center
+            justify-end
+            gap-x-4
+            mt-6
+          "
         >
-          확인
-        </Button>
-        <Button
-          disabled={isLoading}
-          secondary
-          onClick={onCloseModal}
-          color="danger"
-          variant="solid"
-        >
-          취소
-        </Button>
+          <Button
+            disabled={isLoading}
+            onClick={onCloseModal}
+            variant="ghostLavender"
+            className="px-8"
+          >
+            취소
+          </Button>
+          <Button
+            disabled={isLoading}
+            onClick={onDelete}
+            variant="scent"
+            className="px-8"
+          >
+            확인
+          </Button>
+        </div>
       </div>
-    </Modal>
+    </Modal >
   );
 };
 
