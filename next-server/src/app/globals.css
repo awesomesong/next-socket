@@ -43,6 +43,8 @@ blockquote{
   --scent-gradient-start: #a67d5c;
   --scent-gradient-mid: #5c4a7a;
   --scent-gradient-end: #b07d82;
+  /* 공통 브랜드 그라데이션 */
+  --bg-gradient-scent: linear-gradient(115deg, var(--scent-gradient-start) 0%, var(--scent-gradient-mid) 55%, var(--scent-gradient-end) 100%);
   /* 라이트: 아이보리 + 라벤더 악센트 */
   --color-ivory: #fffcfa;
   --color-ivory-soft: #f8f6f3;
@@ -399,11 +401,11 @@ h6 {
   border-radius: 1px;
   transition: all 0.55s cubic-bezier(0.075, 0.82, 0.165, 1);
   /* 라이트: 어두운 그라데이션, 다크: 밝은 그라데이션 (text-gradient-scent 계열) */
-  background: linear-gradient(115deg, var(--scent-gradient-start) 0%, var(--scent-gradient-mid) 55%, var(--scent-gradient-end) 100%);
+  background: var(--bg-gradient-scent);
 }
 
 .dark .hamburger-menu > div {
-  background: linear-gradient(115deg, var(--scent-gradient-start) 0%, var(--scent-gradient-mid) 55%, var(--scent-gradient-end) 100%);
+  background: var(--bg-gradient-scent);
 }
 
 .hamburger-menu.animate div:first-child {
@@ -1270,7 +1272,7 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
   /* 라이트 모드: 흰 배경에 잘 보이도록 같은 계열, 채도·명도 조정 (웜브라운→퍼플→더스티로즈) */
   .text-gradient-scent {
     display: inline-block;
-    background: linear-gradient(115deg, var(--scent-gradient-start) 0%, var(--scent-gradient-mid) 55%, var(--scent-gradient-end) 100%);
+    background: var(--bg-gradient-scent);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1298,7 +1300,7 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
 
   /* 다크 모드: 기존 밝은 그라데이션만 적용, 배경색 없이 글자에만 표시 */
   .dark .text-gradient-scent {
-    background: linear-gradient(115deg, var(--scent-gradient-start) 0%, var(--scent-gradient-mid) 55%, var(--scent-gradient-end) 100%);
+    background: var(--bg-gradient-scent);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1311,6 +1313,10 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
+  }
+
+  .bg-gradient-scent {
+    background: var(--bg-gradient-scent);
   }
 
   .modal-title {

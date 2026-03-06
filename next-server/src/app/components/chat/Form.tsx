@@ -22,7 +22,7 @@ import {
 } from "@/src/app/lib/react-query/utils";
 import { validateUserMessage } from "@/src/app/utils/aiPolicy";
 import { ObjectId } from "bson";
-import { 
+import {
   messagesKey,
   bumpConversationOnNewMessage,
   updateMessagePartialById,
@@ -47,7 +47,7 @@ const Form = () => {
 
   // 커스텀 훅을 사용하여 로딩 상태 확인
   const { isLoading: isConversationLoading } = useConversationLoading();
-  
+
   // 실패한 메시지 관리 훅
   const { addFailedMessage, removeFailedMessage } = useFailedMessages(conversationId);
 
@@ -60,7 +60,7 @@ const Form = () => {
       const body = newMessage.data?.message?.trim() || null;
       const image = newMessage.image || null;
       const optimisticType = image ? "image" : "text";
-      
+
       // ✅ conversationList 미리보기용 body
       // 이미지 메시지는 body를 null로 설정 (ConversationBox에서 type으로 판단)
       const previewBody = image ? null : (body || "");
@@ -95,9 +95,9 @@ const Form = () => {
           email: user.email ?? null,
           image: user.image ?? null,
         },
-        conversation: { 
-          isGroup: isGroupChat, 
-          userIds 
+        conversation: {
+          isGroup: isGroupChat,
+          userIds
         },
         isAIResponse: false,
         isWaiting: false,
@@ -138,7 +138,7 @@ const Form = () => {
 
       // ✅ 낙관적 업데이트: conversationList 미리보기도 즉시 업데이트
       const prevPreview = getPrevPreview(queryClient, conversationId);
-      
+
       bumpConversationOnNewMessage(queryClient, conversationId, {
         id: tempId,
         clientMessageId: tempId, // ✅ 낙관적 업데이트용 중복 체크
@@ -149,8 +149,8 @@ const Form = () => {
         isAIResponse: false,
       });
 
-      return { 
-        previousData, 
+      return {
+        previousData,
         messageId: tempId,
         optimisticType,
         body,
@@ -171,7 +171,7 @@ const Form = () => {
         // 성공 시 실패 목록에서 제거 (재전송 성공한 경우)
         removeFailedMessage(conversationId, context.messageId);
       }
-      
+
       // ✅ 성공 시에만 conversationList 업데이트 (로딩 상태 확인)
       // 스크롤 호출하지 않음 - 중복 가드로 리스트 재정렬 방지
       if (!isConversationLoading && context) {
@@ -185,13 +185,13 @@ const Form = () => {
           isAIResponse: false,
         });
       }
-      
+
       // 소켓으로 메시지 브로드캐스트 (소켓 서버가 기대하는 구조로 전송)
       if (socket && data.newMessage) {
         // ✅ conversationUsers에서 참여자 정보 가져오기
         const currentConversationUsers = conversationUsers.find((item) => item.conversationId === conversationId);
         const userIds = currentConversationUsers?.userIds || [];
-        
+
         // 소켓 전송용 메시지 정규화 (FullMessageType 구조 보장)
         const socketMessage = normalizeMessage({
           ...data.newMessage,
@@ -200,7 +200,7 @@ const Form = () => {
             userIds: userIds,
           },
         });
-        
+
         socket.emit("send:message", {
           newMessage: socketMessage,
         });
@@ -216,13 +216,13 @@ const Form = () => {
           context.messageId,
           { isError: true },
         );
-        
+
         // 실패한 메시지를 localStorage에 저장하여 리패치 후에도 보이도록 함
         const failedMessage = queryClient.getQueryData<InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }>>(
-            messagesKey(_variables.conversationId)
-          )
+          messagesKey(_variables.conversationId)
+        )
           ?.pages[0]?.messages.find((m) => String(m.id) === String(context.messageId));
-        
+
         if (failedMessage) {
           addFailedMessage(_variables.conversationId, {
             ...failedMessage,
@@ -250,7 +250,7 @@ const Form = () => {
         ),
       );
     },
-    onSettled: () => {},
+    onSettled: () => { },
   });
 
   // ✅ 전송 직렬화를 위한 큐
@@ -284,10 +284,10 @@ const Form = () => {
   }, [mutateAsync]);
 
   const enqueueSend = useCallback((vars: SendVariables) => {
-      queueRef.current.push(vars);
-      // 즉시 처리 시도 (진행 중이면 반환)
-      void processQueue();
-  },[processQueue]);
+    queueRef.current.push(vars);
+    // 즉시 처리 시도 (진행 중이면 반환)
+    void processQueue();
+  }, [processQueue]);
 
   const { register, handleSubmit, setValue, getValues, setFocus } =
     useForm<Form>({
@@ -385,13 +385,13 @@ const Form = () => {
           className="
             rounded-full
             p-2
-            bg-sky-500
+            bg-gradient-scent
             cursor-pointer
-            hover:bg-sky-600
+            hover:opacity-80
             transition
           "
         >
-          <HiPaperAirplane size={20} className="text-white" />
+          <HiPaperAirplane size={20} className="text-white dark:text-neutral-900" />
         </button>
       </form>
     </div>

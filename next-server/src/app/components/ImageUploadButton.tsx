@@ -20,9 +20,9 @@ const ImageUploadButton = ({
 
   const icon =
     variant === 'compact' ? (
-        <HiPhoto size={30} className="text-sky-500"/>
+      <HiPhoto size={30} fill="url(#scent-nav-gradient)" />
     ) : (
-        <span className='
+      <span className='
             flex 
             flex-row
             items-center
@@ -35,16 +35,16 @@ const ImageUploadButton = ({
             bg-blue-600
             cursor-pointer
         '>
-            <FaFileUpload size={16}/>
-            사진 업로드
-        </span>
+        <FaFileUpload size={16} />
+        사진 업로드
+      </span>
     );
 
   return (
     <CldUploadButton
-      options={{ 
+      options={{
         maxFiles,
-        clientAllowedFormats: ["jpg", "jpeg", "png", "gif", "webp"], 
+        clientAllowedFormats: ["jpg", "jpeg", "png", "gif", "webp"],
         resourceType: "image",
         sources: ['local', 'camera'],
         showAdvancedOptions: false,
