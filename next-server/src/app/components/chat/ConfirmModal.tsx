@@ -138,7 +138,6 @@ const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
             items-center
             justify-end
             gap-x-3
-            mt-8
           "
         >
           <Button
