@@ -6,7 +6,7 @@ import ConversationBox from "./ConversationBox";
 import getConversations from "@/src/app/lib/getConversations";
 import { useQuery } from "@tanstack/react-query";
 import ShapesSkeleton from "./skeleton/ShapesSkeleton";
-import ChatConversationSkeleton from "./skeleton/ChatConversationSkeleton";
+import ChatListSkeleton from "./skeleton/ChatListSkeleton";
 import StatusMessage from "./StatusMessage";
 import clsx from "clsx";
 import useConversation from "@/src/app/hooks/useConversation";
@@ -173,7 +173,10 @@ const ConversationList = memo(function ConversationList() {
         </div>
         <div className="flex flex-col">
           {status !== "success" ? (
-            <ChatConversationSkeleton />
+            <ChatListSkeleton
+              variant="conversation"
+              widths={{ primary: "w-[130px] xs:w-40", secondary: "w-40 xs:w-60" }}
+            />
           ) : !Array.isArray(listData?.conversations) ||
             listData.conversations.length === 0 ? (
             <StatusMessage

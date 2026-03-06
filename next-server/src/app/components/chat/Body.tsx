@@ -18,7 +18,7 @@ import {
 import { useSession } from "next-auth/react";
 import getMessages from "@/src/app/lib/getMessages";
 import { readState } from "@/src/app/lib/readState";
-import ChatSkeleton from "@/src/app/components/skeleton/ChatSkeleton";
+import ChatListSkeleton from "@/src/app/components/skeleton/ChatListSkeleton";
 import { PiArrowFatDownFill } from "react-icons/pi";
 import CircularProgress from "@/src/app/components/CircularProgress";
 import { useSocket } from "../../context/socketContext";
@@ -549,7 +549,12 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   return (
     <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
       {isFetchingNextPage && <CircularProgress aria-label="메시지 로딩중" />}
-      {status === "success" ? messageListElements : <ChatSkeleton />}
+      {status === "success" ? messageListElements : (
+        <ChatListSkeleton
+          variant="message"
+          widths={{ primary: "w-80 md:w-[500px] max-[480px]:w-60 max-[320px]:w-36", secondary: "w-[100px] xs:w-40" }}
+        />
+      )}
       {shouldShowArrow && (
         <button
           type="button"
