@@ -20,6 +20,7 @@ export const Header = async () => {
             md:px-8
             py-2
             header-bg
+            border-b border-b-[var(--header-border)]
             backdrop-blur-md
         '>
             <div className='

@@ -212,7 +212,6 @@ h6 {
 /* 헤더 전용: 반투명 + 블러, 은은한 하단 테두리 */
 .header-bg {
   background-color: var(--header-bg);
-  border-bottom: 1px solid var(--header-border);
   backdrop-filter: blur(12px);
   @apply backdrop-blur-md sticky top-0 z-10;
 }

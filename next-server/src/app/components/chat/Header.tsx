@@ -61,6 +61,7 @@ const Header: React.FC<HeaderProps> = ({ conversation, currentUser }) => {
           px-2
           sm:px-4
           header-bg
+          border-b border-b-[var(--header-border)]
       ">
         <div className="flex gap-3 items-center">
           <Link
