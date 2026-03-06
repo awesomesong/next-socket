@@ -2,8 +2,20 @@
 const path = require('path');
 
 const nextConfig = {
-    webpack: (config) => {
+    webpack: (config, { dev }) => {
       config.resolve.alias['@'] = path.resolve(__dirname);
+      if (dev) {
+        config.watchOptions = {
+          ignored: [
+            '**/node_modules/**',
+            '**/.git/**',
+            '**/.next/**',
+            '**/prisma/migrations/**',
+          ],
+          aggregateTimeout: 300,
+          poll: false,
+        };
+      }
       return config;
     },
     async headers() {
