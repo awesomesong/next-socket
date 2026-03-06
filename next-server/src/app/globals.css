@@ -211,6 +211,8 @@ h6 {
 .header-bg {
   background-color: var(--header-bg);
   border-bottom: 1px solid var(--header-border);
+  backdrop-filter: blur(12px);
+  @apply backdrop-blur-md sticky top-0 z-10;
 }
 
 .text-default {
@@ -1279,7 +1281,7 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
   }
 
   .chat-sidebar__header {
-    @apply flex items-center h-16 px-3;
+    @apply header-bg flex items-center h-16 px-3;
   }
 
   .chat-sidebar__title {
