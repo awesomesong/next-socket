@@ -76,6 +76,10 @@ blockquote{
   --notice-card-divider: rgba(200, 180, 255, 0.35);
   --notice-card-title-color: var(--color-text-primary);
   --notice-card-meta-color: var(--color-text-secondary);
+  /* 사이드바 hover/active 상태 */
+  --color-sidebar-hover-bg: #e0d7ed;
+  --color-sidebar-active-bg: #e0d7ed;
+  --color-sidebar-state-text: var(--color-text-primary);
 }
 
 .dark {
@@ -116,6 +120,10 @@ blockquote{
   --notice-card-shadow-hover: rgba(200, 180, 255, 0.18);
   --notice-card-body-bg: rgba(48, 42, 65, 0.6);
   --notice-card-divider: rgba(210, 195, 255, 0.2);
+  /* 사이드바 hover/active 상태 */
+  --color-sidebar-hover-bg: rgb(109 90 138 / 0.25);
+  --color-sidebar-active-bg: rgb(109 90 138 / 0.5);
+  --color-sidebar-state-text: rgb(23 23 23);
 }
 
 :root,
@@ -1320,6 +1328,19 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
 
   .chat-item__status {
     @apply text-sm font-light text-neutral-500 dark:text-lavender-muted;
+  }
+
+  .sidebar-item--hover {
+    @apply transition-colors;
+  }
+  .sidebar-item--hover:hover {
+    background-color: var(--color-sidebar-hover-bg);
+    color: var(--color-sidebar-state-text);
+  }
+
+  .sidebar-item--active {
+    background-color: var(--color-sidebar-active-bg);
+    color: var(--color-sidebar-state-text);
   }
 
   .line-gradient-deco {

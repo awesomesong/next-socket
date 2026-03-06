@@ -21,20 +21,20 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
 }) => {
 
   const handleClick = useCallback(() => {
-    if(onClick) {
+    if (onClick) {
       return onClick();
     }
   }, [onClick]);
 
   return (
-    <li 
+    <li
       onClick={handleClick}
       className="
         w-full
         max-md:h-full
       "
     >
-      <Link 
+      <Link
         href={href}
         className={clsx(`
           flex
@@ -49,19 +49,17 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
           font-semibold
           text-neutral-900
           dark:text-neutral-200
-          hover:bg-[#e0d7ed]
-          hover:dark:bg-[#6d5a8a]/25
-          hover:dark:text-neutral-900
+          sidebar-item--hover
           md:rounded-md
           md:py-3
           max-md:h-full
         `,
-        active && `bg-[#e0d7ed] dark:bg-[#6d5a8a]/50 dark:text-neutral-900`
+          active && `sidebar-item--active`
         )}
       >
         <Icon className="h-6 w-6 shrink-0" fill="url(#scent-nav-gradient)" />
         <span className="sr-only">{label}</span>
-        {label === '채팅' && 
+        {label === '채팅' &&
           <ChatUnReadCount size="mobile-small" />
         }
       </Link>

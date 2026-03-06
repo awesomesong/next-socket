@@ -61,15 +61,13 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
         items-center
         space-x-3
         p-3
-        hover:bg-neutral-100
-        hover:dark:bg-neutral-800
         transition
         cursor-pointer
       `,
         !data.isAIChat && data.userIds?.length < 2 && "opacity-40",
         selected
-          ? "bg-neutral-100 dark:bg-neutral-800"
-          : "bg-white dark:bg-neutral-900",
+          ? "sidebar-item--active"
+          : "bg-transparent sidebar-item--hover",
       )}
     >
       {showGroup ? (
