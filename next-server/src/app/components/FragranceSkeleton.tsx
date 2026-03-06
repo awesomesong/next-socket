@@ -243,3 +243,16 @@ export const ReviewFormSkeleton = () => {
         </div>
     );
 };
+
+/**
+ * FormInputSkeleton
+ * Reusable skeleton for form inputs (TextField/SelectBox) with label and underline.
+ */
+export const FormInputSkeleton = () => {
+    return (
+        <div className="form-input-skeleton pb-1">
+            <div className="form-input-skeleton__label" />
+            <div className="form-input-skeleton__input" />
+        </div>
+    );
+};

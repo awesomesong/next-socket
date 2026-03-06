@@ -10,15 +10,16 @@ import { Input as HeroInput, Textarea as HeroTextarea } from "@heroui/react";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { IoClose } from "react-icons/io5";
 import { useState, useCallback, type ChangeEvent, forwardRef } from "react";
+import { formInputLayout } from "@/src/app/components/formLayoutClasses";
 
 // ─── 공통 스타일 ───────────────────────────────────────────────────────────────
 
 const sharedTextStyle = [
-  "text-[#2d2040] dark:text-[#e0dcf5]",
-  "placeholder:text-[#8e84b8] dark:placeholder:text-[#c4b8e0]",
+  "text-[var(--color-text-primary)]",
+  "placeholder:text-[var(--color-lavender-muted)] placeholder:opacity-60",
   "focus:outline-none focus:ring-0 focus:shadow-none",
   "focus-visible:outline-2 focus-visible:outline-offset-1",
-  "focus-visible:outline-[#b094e0] dark:focus-visible:outline-[#c8b4ff]",
+  "focus-visible:outline-[var(--color-lavender)] dark:focus-visible:outline-[var(--color-lavender-light)]",
   "focus-visible:ring-0",
 ].join(" ");
 
@@ -30,7 +31,7 @@ const sharedWrapperStyle = [
 
 const sharedItemClassNames = {
   base: "focus:outline-none focus:ring-0",
-  label: "text-[0.75rem] uppercase tracking-[0.2em] text-[#b094e0] dark:text-[#c8b4ff] font-bold mb-2",
+  label: formInputLayout.label,
   errorMessage: "text-[0.7rem] text-danger mt-1",
 };
 
@@ -46,7 +47,7 @@ const fontLight = "text-[0.95rem] font-light";
 export const formClassNames = {
   underlined: {
     ...sharedItemClassNames,
-    input: `${sharedTextStyle} ${fontLight} py-1 rounded-sm`,
+    input: `${sharedTextStyle} ${fontLight} py-1 !px-0 rounded-sm`,
     inputWrapper,
     innerWrapper: "gap-3",
     description,

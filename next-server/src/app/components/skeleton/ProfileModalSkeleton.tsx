@@ -1,22 +1,21 @@
-import {Skeleton} from "@heroui/react";
 
 const ProfileModalSkeleton = () => {
-    
     return (
-        <div className="flex max-sm:flex-col items-center gap-4 p-3">
-            <div className="flex max-sm:justify-center">
-                <Skeleton className="rounded-full w-40 h-40"/>
+        <div className="profile-modal__container skeleton-pulse">
+            <div className="avatar-block__container">
+                {/* Direct sizing to ensure roundness and visibility without .avatar-block__box interference */}
+                <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full skeleton-bg" />
             </div>
-            <div className="flex flex-col gap-3 w-60">
-                <Skeleton className="flex w-4/5 h-5 rounded-lg"/>
-                <Skeleton className="flex w-3/5 h-5 rounded-lg"/>
-                <Skeleton className="flex w-2/5 h-5 rounded-lg"/>
-                <Skeleton className="flex w-3/5 h-5 rounded-lg"/>
-                <Skeleton className="flex w-4/5 h-5 rounded-lg"/>
-                <Skeleton className="flex w-3/5 h-5 rounded-lg"/>
+            <div className="profile-info-wrap">
+                <div className="profile-identity">
+                    <div className="w-32 h-8 skeleton-bg rounded-xl" />
+                    <div className="w-16 h-4 skeleton-bg-muted rounded-full" />
+                </div>
+                {/* Simplified to a single content block as requested */}
+                <div className="w-full h-[168px] skeleton-bg-muted-80 rounded-2xl" />
             </div>
         </div>
-    )
-}
+    );
+};
 
 export default ProfileModalSkeleton;

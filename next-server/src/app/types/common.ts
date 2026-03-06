@@ -26,11 +26,13 @@ export interface IUserListOptions {
 export interface ModalProps {
     isOpen?: boolean;
     onCloseModal: () => void;
-    children?: React.ReactNode; 
+    children?: React.ReactNode;
     name?: string | null | undefined;
+    title?: React.ReactNode;
+    footer?: React.ReactNode;
 }
 
 export interface AuthSocialProps {
     onClick: (value: boolean) => void;
-    disabled?: boolean; 
+    disabled?: boolean;
 }

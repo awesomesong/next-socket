@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 import { SelectInstance, GroupBase, MultiValue } from "react-select";
 import getUsers from "@/src/app/lib/getUsers";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import ShapesSkeleton from "@/src/app/components/skeleton/ShapesSkeleton";
+import { FormInputSkeleton } from "@/src/app/components/FragranceSkeleton";
 import { createChatConversation } from "@/src/app/lib/createChatConversation";
 import { useSocket } from "../../context/socketContext";
 import { SOCKET_EVENTS } from "@/src/app/lib/react-query/utils";
@@ -32,7 +32,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
   const selectRef = useRef<SelectInstance<OptionType, true, GroupBase<OptionType>>>(null);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const {
     data: chatMember,
     status: statusMember,
@@ -43,10 +43,10 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
     staleTime: 1000 * 60, // 1분 동안 데이터 유지
   });
 
-  const { 
+  const {
     mutate,
   } = useMutation({
-    mutationFn: ({ data, isGroup, userId }: { data: FieldValues; isGroup: boolean; userId: string; }) => 
+    mutationFn: ({ data, isGroup, userId }: { data: FieldValues; isGroup: boolean; userId: string; }) =>
       createChatConversation({ data, isGroup, userId }),
     onSuccess: (data) => {
       router.push(`/conversations/${data.id}`);
@@ -71,8 +71,8 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
     setError,
     clearErrors,
     reset,
-    formState: { 
-      errors 
+    formState: {
+      errors
     },
   } = useForm<FieldValues>({
     defaultValues: {
@@ -84,7 +84,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
   const members = watch("members");
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {
     if (isLoading) return; // 이미 로딩 중이면 중복 제출 방지
-    
+
     setIsLoading(true);
 
     const membersArr = Array.isArray(data.members) ? data.members : [];
@@ -108,114 +108,100 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
       }, { shouldFocus: true });
       return;
     }
-    
-    
+
+
     const userId = memberNum === 1 ? (membersArr[0].value as string) : undefined;
     const isGroup = memberNum > 1;
 
-    mutate({ 
-      data, 
-      isGroup, 
-      userId: userId as string, 
+    mutate({
+      data,
+      isGroup,
+      userId: userId as string,
     });
   };
 
   return (
-    <Modal isOpen={isOpen} onCloseModal={onCloseModal}>
-      <form onSubmit={handleSubmit(onSubmit)} id="form">
-        <div className="space-y-12">
-          <div className="pb-12">
-            <h2 className="
-              text-xl
-              font-semibold  
-              leading-7
-            "
-            >
-              대화 상대 선택
-            </h2>
-            <div
-              className="
-                mt-10
-                flex
-                flex-col
-                gap-y-8
-              "
-            >
-              <TextField
-                register={register}
-                label="채팅 이름"
-                id="name"
-                type="text"
-                placeholder="채팅 이름을 입력해주세요."
-                disabled={isLoading}
-                errors={errors}
-                placement="outside"
-                variant="bordered"
-                fullWidth={true}
-              />
-              {statusMember === "success" 
-               ? ( <SelectBox
-                  isOpen={isOpen}
-                  disabled={isLoading}
-                  label="채팅 멤버"
-                  options={chatMember?.users?.map((user: IUserList) => ({
-                    value: user.id,
-                    label: user.name,
-                  })) ?? []}
-                  onChange={(value: MultiValue<OptionType> | null) =>
-                    setValue("members", value, {
-                      shouldValidate: true,
-                    })
-                  }
-                  value={members}
-                  selectRef={selectRef}
-                  errors={errors}
-                />
-              ) : (
-                <div
-                  className="
-                    overflow-hidden
-                    inline-block
-                    relative
-                    rounded-full
-                    w-full
-                    h-[40px]
-                  "
-                >
-                  <ShapesSkeleton width="100%" height="100%" radius="lg" />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+    <Modal
+      isOpen={isOpen}
+      onCloseModal={onCloseModal}
+      title="대화 상대 선택"
+      footer={
         <div
           className="
             flex
             items-center
             justify-end
-            gap-x-6
+            gap-x-4
+            mt-6
           "
         >
           <Button
             disabled={isLoading}
             onClick={onCloseModal}
             type="button"
-            color="primary"
-            variant="solid"
+            variant="ghostLavender"
+            className="px-8"
           >
             취소
           </Button>
           <Button
             disabled={isLoading}
+            form="form"
             type="submit"
-            color="danger"
-            variant="solid"
+            variant="scent"
+            className="px-8"
           >
             확인
           </Button>
         </div>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} id="form">
+        <div className="space-y-6 pb-6">
+          <div
+            className="
+                flex
+                flex-col
+                gap-y-6
+              "
+          >
+            <TextField
+              register={register}
+              label="채팅 이름"
+              id="name"
+              type="text"
+              placeholder="채팅 이름을 입력해주세요."
+              disabled={isLoading}
+              errors={errors}
+              placement="outside"
+              variant="underlined"
+              fullWidth={true}
+            />
+            {statusMember === "success"
+              ? (<SelectBox
+                isOpen={isOpen}
+                disabled={isLoading}
+                label="채팅 멤버"
+                options={chatMember?.users?.map((user: IUserList) => ({
+                  value: user.id,
+                  label: user.name,
+                })) ?? []}
+                onChange={(value: MultiValue<OptionType> | null) =>
+                  setValue("members", value, {
+                    shouldValidate: true,
+                  })
+                }
+                value={members}
+                selectRef={selectRef}
+                errors={errors}
+              />
+              ) : (
+                <FormInputSkeleton />
+              )}
+          </div>
+        </div>
       </form>
-    </Modal>
+    </Modal >
   );
 };
 

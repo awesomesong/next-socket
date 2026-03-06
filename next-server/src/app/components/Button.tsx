@@ -76,6 +76,7 @@ interface ButtonProps {
   size?: 'sm' | 'md' | 'lg';
   radius?: 'none' | 'sm' | 'md' | 'lg' | 'full';
   className?: string;
+  form?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -90,6 +91,7 @@ const Button: React.FC<ButtonProps> = ({
   size,
   radius,
   className,
+  form,
 }) => {
   const handleClick = onPress ?? onClick;
   const isGhostLavender = variant === "ghostLavender";
@@ -107,6 +109,7 @@ const Button: React.FC<ButtonProps> = ({
         type={type ?? "button"}
         disabled={disabled}
         onClick={handleClick}
+        form={form}
         className={clsx(
           "inline-flex items-center justify-center gap-2 cursor-pointer transition-all duration-300",
           appliedClass,
@@ -129,6 +132,7 @@ const Button: React.FC<ButtonProps> = ({
       variant={variant}
       size={size}
       radius={radius}
+      form={form}
       className={clsx(fullWidth && "w-full", className)}
     >
       {children}

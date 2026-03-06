@@ -4,4 +4,6 @@ export const formInputLayout = {
   wrapper: "w-full my-4",
   /** 제출/취소 버튼 영역 */
   actions: "flex gap-2 mt-4",
+  /** 공통 라벨 스타일 */
+  label: "block text-[0.75rem] uppercase tracking-[0.2em] !text-[var(--scent-gradient-mid)] dark:!text-[var(--color-lavender-light)] font-bold mb-2",
 } as const;

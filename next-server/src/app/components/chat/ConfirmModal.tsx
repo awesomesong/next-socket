@@ -102,15 +102,19 @@ const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
   ]);
 
   return (
-    <Modal isOpen={isOpen} onCloseModal={onCloseModal}>
-      <div className="max-sm:px-1">
-        <div className="flex flex-row items-center gap-x-4 pt-2 pb-1">
+    <Modal
+      isOpen={isOpen}
+      onCloseModal={onCloseModal}
+      title={
+        <div className="flex flex-row items-center gap-x-4">
           <div
             className="
               shrink-0
               flex
-              w-12
-              h-12
+              w-8
+              h-8
+              sm:w-10
+              sm:h-10
               items-center
               justify-center
               rounded-full
@@ -120,33 +124,28 @@ const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
               dark:border-red-900/30
             "
           >
-            <FiAlertTriangle className="w-6 h-6 text-red-500" />
+            <FiAlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
           </div>
-
-          <div className="flex flex-col space-y-1">
-            <p className="text-lg font-semibold text-[var(--color-text-primary)]">
-              {name}(의) 대화방을 나가겠습니까?
-            </p>
-            <p className="text-sm text-gray-400 dark:text-gray-500">
-              대화방의 모든 내용이 삭제됩니다.
-            </p>
-          </div>
+          <p className="modal-title">
+            '{name}' 대화방에서 나갈까요?
+          </p>
         </div>
-
+      }
+      footer={
         <div
           className="
             flex
             items-center
             justify-end
-            gap-x-4
-            mt-6
+            gap-x-3
+            mt-8
           "
         >
           <Button
             disabled={isLoading}
             onClick={onCloseModal}
             variant="ghostLavender"
-            className="px-8"
+            className="px-6"
           >
             취소
           </Button>
@@ -154,10 +153,21 @@ const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
             disabled={isLoading}
             onClick={onDelete}
             variant="scent"
-            className="px-8"
+            className="px-6"
           >
             확인
           </Button>
+        </div>
+      }
+    >
+      <div className="max-sm:px-1">
+        <div className="flex flex-col space-y-1 ml-0 text-left sm:text-center sm:items-center">
+          <p className="modal-description">
+            나가시면 모든 대화 기록이 삭제되며 복구할 수 없습니다.
+          </p>
+          <p className="modal-description">
+            그래도 정말 나가시겠어요?
+          </p>
         </div>
       </div>
     </Modal >

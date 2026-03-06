@@ -36,7 +36,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   const openConfirm = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setConfirmOpen(true);
-  }, []);  
+  }, []);
 
   return (
     <>
@@ -107,7 +107,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                       "
                     >
                       <div>
-                        <span className="text-xl font-semibold">채팅방 서랍</span>
+                        <h2 className="modal-title">채팅방 서랍</h2>
                         {data?.isGroup && (
                           <p>
                             {data.name}{" "}

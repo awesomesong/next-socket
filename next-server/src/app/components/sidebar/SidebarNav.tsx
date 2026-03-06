@@ -1,6 +1,6 @@
 "use client";
 import useRouterChat from "@/src/app/hooks/useRouterChat";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import SidebarNavItem from "./SidebarNavItem";
 import Avatar from "../Avatar";
 import ProfileModal from "./ProfileModal";
@@ -12,9 +12,9 @@ const SidebarNav = () => {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleCloseModal = () => {
-    return setIsOpen(false);
-  };
+  const handleCloseModal = useCallback(() => {
+    setIsOpen(false);
+  }, []);
 
   const user = session?.user;
 

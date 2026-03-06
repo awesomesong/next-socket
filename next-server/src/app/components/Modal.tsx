@@ -5,124 +5,100 @@ import { ModalProps } from "@/src/app/types/common";
 import useIsMobileDevice from "../hooks/useIsMobileDevice";
 import { useEffect } from "react";
 
-const Modal:React.FC<ModalProps> = ({
+const Modal: React.FC<ModalProps> = ({
     isOpen,
     onCloseModal,
     children,
+    title,
+    footer,
 }) => {
     const isMobileDevice = useIsMobileDevice();
 
     useEffect(() => {
         if (!isOpen) return;
-      
+
         const onKey = (e: KeyboardEvent) => {
-          if (e.key === "Escape") onCloseModal();
+            if (e.key === "Escape") onCloseModal();
         };
         window.addEventListener("keydown", onKey);
-      
+
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-      
+
         return () => {
-          window.removeEventListener("keydown", onKey);
-          document.body.style.overflow = prev;
+            window.removeEventListener("keydown", onKey);
+            document.body.style.overflow = prev;
         };
     }, [isOpen, onCloseModal]);
 
     return (
+        <div
+            className={clsx(
+                "fixed inset-0 z-[9999] flex items-center justify-center transition-all duration-300",
+                isOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+            )}
+        >
+            {/* Backdrop */}
             <div
                 className={clsx(
-                    "fixed inset-0 z-[9999]",
-                    isOpen? "block" : "hidden"
+                    "fixed inset-0 bg-neutral-900/60 backdrop-blur-md transition-opacity duration-300",
+                    isOpen ? "opacity-100" : "opacity-0"
                 )}
                 onClick={onCloseModal}
+            />
+
+            {/* Modal Content Wrapper */}
+            <div
+                className={clsx(
+                    "relative z-10 w-[calc(100%-2rem)] max-w-lg transition-all duration-300 ease-out",
+                    isOpen ? "scale-100 translate-y-0 opacity-100" : "scale-95 translate-y-4 opacity-0"
+                )}
             >
-                <div 
-                    className={clsx(`
-                            fixed
-                            inset-0
-                            bg-neutral-800
-                            backdrop-blur-sm
-                            transition-opacity
-                        `,
-                        isOpen? "bg-opacity-75" : "opacity-0"
+                <div
+                    className={clsx(
+                        "overflow-hidden relative bg-[var(--bg-page)]",
+                        "border-1 border-[var(--color-lavender-border)]",
+                        "shadow-2xl rounded-2xl transition-all duration-300",
                     )}
+                    onClick={(e) => e.stopPropagation()}
                 >
-                    <div className={clsx(`
-                        fixed 
-                        inset-0 
-                        z-10 
-                        overflow-y-hidden`,
-                        isOpen && "effect-downUp"
-                    )}
-                    >
-                        <div
-                            className={clsx(`
-                                    flex
-                                    overflow-hidden
-                                    h-full
-                                    justify-center
-                                    m-4
-                                    text-center
-                                    sm:p-0
-                                `,
-                                isMobileDevice ? "items-start" : "items-center"
+                    {/* Header with Title and Close Button */}
+                    <div className="flex items-center justify-between px-4 pt-4 sm:px-5 sm:pt-5 pb-0">
+                        {title ? (
+                            <h2 className="modal-title">{title}</h2>
+                        ) : (
+                            <div />
+                        )}
+                        <button
+                            onClick={onCloseModal}
+                            type="button"
+                            className={clsx(
+                                "flex items-center justify-center p-1 sm:p-1.5 rounded-full transition-all duration-300",
+                                "bg-[var(--color-lavender-pale)]/50 backdrop-blur-sm text-[var(--color-text-primary)]",
+                                "hover:bg-[var(--color-lavender-light)]/80 hover:scale-110 active:scale-95",
+                                "border-1 border-[var(--color-lavender-border)] shadow-sm"
                             )}
                         >
-                            <div
-                                className={clsx(`
-                                        overflow-auto
-                                        relative
-                                        bg-default
-                                        my-4
-                                        p-4
-                                        text-left
-                                        shadow-xsl
-                                        sm:w-full
-                                        sm:max-w-lg
-                                        max-sm:w-full
-                                        h-auto
-                                        max-h-screen
-                                        sm:py-6
-                                        sm:px-6
-                                        rounded-lg
-                                    `,
-                                    isOpen && "effect-downUp"
-                                )}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-
-                                <div
-                                    className="
-                                        absolute
-                                        right-[2px]
-                                        top-[3px]
-                                        z-10
-                                    "
-                                >
-                                    <button
-                                        onClick={onCloseModal}
-                                        type="button"
-                                        className="
-                                            rounded-md
-                                            text-gray-400
-                                            focus:outline-none
-                                            focus:ring-2
-                                            focus:ring-sky-500
-                                            focus:ring-offset-2
-                                        "
-                                    >
-                                        <span className="sr-only">닫기</span>
-                                        <IoClose size={24} />
-                                    </button>
-                                </div>
-                                {children}
-                            </div>
-                        </div>
+                            <span className="sr-only">닫기</span>
+                            <IoClose size={20} />
+                        </button>
                     </div>
+
+                    {/* Content Section */}
+                    <div className="p-5 max-h-[calc(100vh-160px)] overflow-y-auto">
+                        {children}
+                    </div>
+
+                    {/* Footer Section */}
+                    {footer && (
+                        <div className="px-4 pt-2 pb-4">
+                            {footer}
+                        </div>
+                    )}
                 </div>
             </div>
-    )
-}
+        </div>
+    );
+};
 
 export default Modal;
