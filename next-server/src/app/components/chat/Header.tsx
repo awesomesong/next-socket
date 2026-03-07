@@ -60,8 +60,8 @@ const Header: React.FC<HeaderProps> = ({ conversation, currentUser }) => {
           h-16
           px-2
           sm:px-4
-          header-bg
-          border-b border-b-[var(--header-border)]
+          bg-default
+          header-border-b
       ">
         <div className="flex gap-3 items-center">
           <Link
@@ -83,7 +83,7 @@ const Header: React.FC<HeaderProps> = ({ conversation, currentUser }) => {
             )}
           </div>
           <div className="flex flex-col">
-            <div className="chat-item__title">
+            <div className="line-clamp-1 tracking-tight font-medium text-[var(--color-text-primary)]">
               {conversation?.isAIChat
                 ? "향수 AI 어시스턴트"
                 : conversation?.name || otherUser.name}

@@ -19,9 +19,9 @@ export const Header = async () => {
             px-4
             md:px-8
             py-2
-            header-bg
-            border-b border-b-[var(--header-border)]
+            bg-[var(--header-bg)]
             backdrop-blur-md
+            header-border-b
         '>
             <div className='
                 flex 
