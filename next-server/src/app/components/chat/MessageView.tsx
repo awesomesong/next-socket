@@ -79,8 +79,8 @@ const areEqual = (prev: MessageBoxProps, next: MessageBoxProps) => {
   const isAIComplete = p.isAIResponse && n.isAIResponse && isStreamingComplete;
 
   if (isAIComplete) {
-    // AI 응답이 완료된 경우 모든 변경을 무시하고 리렌더링 차단
-    return true;
+    // AI 응답이 완료된 경우 isError 변경만 허용 (재시도 UI 반영)
+    return p.isError === n.isError;
   }
 
   // 3) 데이터의 핵심 스칼라만 비교
@@ -183,12 +183,10 @@ const MessageView: React.FC<MessageBoxProps> = ({
   }, [liveUsersKey]);
 
   // 2) 현재 사용자/발신자 id도 문자열화
-  const currentUserId = useMemo(() => String(currentUser?.id ?? ""), [currentUser]);
+  const currentUserId = useMemo(() => String(currentUser?.id ?? ""), [currentUser?.id]);
   const senderId = useMemo(() => String(data?.sender?.id ?? ""), [data?.sender?.id]);
-  const isAIMessage = useMemo(() => data.isAIResponse, [data.isAIResponse]);
-  const isOwn = useMemo(() => !isAIMessage && currentUser?.email === data?.sender?.email,
-    [isAIMessage, currentUser?.email, data?.sender?.email],
-  );
+  const isAIMessage = data.isAIResponse;
+  const isOwn = !isAIMessage && currentUser?.email === data?.sender?.email;
   const isLastOwn = isLastOwnForThisMessage;
 
   const filteredSeenUsers = useMemo(() => {
@@ -223,9 +221,9 @@ const MessageView: React.FC<MessageBoxProps> = ({
     return liveIdSet.has(senderIdStr);
   }, [liveIdSet, data?.sender?.id]);
 
-  const isWaiting = useMemo(() => data.isWaiting, [data.isWaiting]);
-  const isError = useMemo(() => data.isError, [data.isError]);
-  const isTyping = useMemo(() => data.isTyping, [data.isTyping]);
+  const isWaiting = data.isWaiting;
+  const isError = data.isError;
+  const isTyping = data.isTyping;
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const seenNames = useMemo(() => {
@@ -443,7 +441,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
     data.body,
     data.image,
     data.conversation,
-    data.sender,
+    data.sender?.id,
     resendMessage,
     requestAI,
   ]);
