@@ -36,7 +36,7 @@ const useRouterChat = () => {
             href: '#',
             onClick: () => {
                 const result = confirm('로그아웃 하시겠습니까?');
-                if( result ) signOut();
+                if( result ) signOut({ callbackUrl: '/' });
                 return;
             },
             icon: RiLogoutBoxFill
