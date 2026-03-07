@@ -264,7 +264,7 @@ export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewCo
             // 실패한 AI 메시지 생성 (캐시 + localStorage)
             const failedAIMessage: FullMessageType = {
                 ...aiWaitingMessage,
-                body: "AI 응답 실패. 위의 버튼을 눌러 재시도하세요.",
+                body: "AI 응답을 불러오지 못했습니다. 아래 재시도 버튼을 눌러 다시 시도해 주세요.",    
                 isError: true,
                 isTyping: false,
                 isWaiting: false,
