@@ -1,7 +1,6 @@
 "use client";
 import useConversation from "@/src/app/hooks/useConversation";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
-import { HiPaperAirplane } from "react-icons/hi2";
 import TextareaAutosize from "react-textarea-autosize";
 import {
   InfiniteData,
@@ -35,6 +34,7 @@ import { getPrevPreview } from "@/src/app/lib/react-query/chatCache";
 import { useConversationLoading } from "@/src/app/hooks/useConversationLoading";
 import { useFailedMessages } from "@/src/app/hooks/useFailedMessages";
 import useConversationUserList from "../../hooks/useConversationUserList";
+import ChatSubmitButton from "./ChatSubmitButton";
 
 type Form = { message: string };
 
@@ -379,20 +379,7 @@ const Form = () => {
             focus:outline-none
           "
         />
-        <button
-          type="button"
-          onClick={submit}
-          className="
-            rounded-full
-            p-2
-            bg-gradient-scent
-            cursor-pointer
-            hover:opacity-80
-            transition
-          "
-        >
-          <HiPaperAirplane size={20} className="text-white dark:text-neutral-900" />
-        </button>
+        <ChatSubmitButton type="button" onClick={submit} />
       </form>
     </div>
   );

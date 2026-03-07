@@ -10,7 +10,6 @@ import {
   memo,
 } from "react";
 import useComposition from "@/src/app/hooks/useComposition";
-import { HiPaperAirplane } from "react-icons/hi2";
 import TextareaAutosize from "react-textarea-autosize";
 import { useSession } from "next-auth/react";
 import { ObjectId } from "bson";
@@ -27,6 +26,7 @@ import { useConversationLoading } from "@/src/app/hooks/useConversationLoading";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import { useFailedMessages } from "@/src/app/hooks/useFailedMessages";
 import { useAIStream } from "@/src/app/hooks/useAIStream";
+import ChatSubmitButton from "./ChatSubmitButton";
 
 // Form 타입 정의
 type Form = { message: string };
@@ -259,22 +259,10 @@ const AIChatForm = ({
             focus:outline-none
           "
         />
-        <button
+        <ChatSubmitButton
           type="submit"
           disabled={isDisabled || isSessionLoading}
-          className="
-            rounded-full
-            p-2
-            bg-sky-500
-            cursor-pointer
-            hover:bg-sky-600
-            transition
-            disabled:opacity-50
-            disabled:cursor-not-allowed
-          "
-        >
-          <HiPaperAirplane size={20} className="text-white" />
-        </button>
+        />
       </form>
     </div>
   );
