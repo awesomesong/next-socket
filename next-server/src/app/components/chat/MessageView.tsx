@@ -589,7 +589,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
               isError
                 ? "bg-red-100 border-l-4 border-red-400"
                 : isAIMessage
-                  ? "bg-[var(--color-ivory-soft)]"
+                  ? "bg-[#ede8f5] dark:bg-[var(--color-ivory-soft)]"
                   : isOwn
                     ? "bg-[#b094e0] dark:bg-[#7c5eb0]"
                     : "bg-[var(--color-lavender-pale)] dark:bg-[#4d4272] dark:text-[var(--color-text-primary)]",
