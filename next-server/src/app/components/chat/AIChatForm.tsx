@@ -1,6 +1,6 @@
 "use client";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useQueryClient, InfiniteData } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import {
   useEffect,
@@ -20,7 +20,6 @@ import { FullMessageType, normalizePreviewType } from "@/src/app/types/conversat
 import {
   upsertMessageSortedInCache,
   replaceOptimisticMessage,
-  messagesKey,
   bumpConversationOnNewMessage,
   updateMessagePartialById,
 } from "@/src/app/lib/react-query/chatCache";
@@ -188,10 +187,7 @@ const AIChatForm = ({
       });
     } catch (err) {
       updateMessagePartialById(queryClient, conversationId, userMessageId, { isError: true });
-      const failed = queryClient.getQueryData<InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }>>(
-        messagesKey(conversationId)
-      )?.pages[0]?.messages.find(m => String(m.id) === String(userMessageId));
-      if (failed) addFailedMessage(conversationId, { ...failed, isError: true });
+      addFailedMessage(conversationId, { ...optimisticUserMessage, isError: true });
       toast.error(formatErrorMessage(err, "사용자 메시지 저장에 실패했습니다."));
     } finally {
       setIsDisabled(false);
@@ -212,14 +208,14 @@ const AIChatForm = ({
 
   const { isComposing, handleCompositionStart, handleCompositionEnd } = useComposition();
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (isComposing()) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (isDisabled || isSessionLoading || getValues("message").trim().length === 0) return;
       submit();
     }
-  };
+  }, [isComposing, isSessionLoading, getValues, submit]);
 
   return (
     <div
