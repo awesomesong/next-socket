@@ -539,7 +539,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
           showDateDivider={showDateDivider}
           isAIChat={isAIChat}
           seenUsersForLastMessage={seenUsersForThisMessage} // 읽은 사용자 목록 전달
-          isLastOwnForThisMessage={isMyLastAndOverallLast} // 내 마지막 메시지 여부
+          isLastOwn={isMyLastAndOverallLast} // 내 마지막 메시지 여부
           liveUsersKey={liveUsersKey} // 참여자 ID 문자열
         />
       );
