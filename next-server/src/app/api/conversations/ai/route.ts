@@ -55,6 +55,7 @@ export async function POST(req: Request) {
                 isAIChat: true,
                 aiAgentType: aiAgentType,
                 isGroup: false,
+                userIds: [user.id],
                 users: {
                     connect: [{ id: user.id }]
                 }
