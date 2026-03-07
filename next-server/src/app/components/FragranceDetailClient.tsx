@@ -100,7 +100,7 @@ export default function FragranceDetailClient({ slug }: Props) {
                 {hasEditPermission && (
                     <>
                         <Link
-                            href={`/fragrance/edit/${fragrance.slug}`}
+                            href={`/fragrance/${fragrance.slug}/edit`}
                             className="action-btn"
                         >
                             수정
