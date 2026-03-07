@@ -4,19 +4,19 @@ import ScrollToTopOnMount from '@/src/app/components/ScrollToTopOnMount';
 
 interface Props {
   children: React.ReactNode;
-  params: Promise<{ name: string }>;
+  params: Promise<{ id: string }>;
 }
 
-const getParams = cache(async (params: Promise<{ name: string }>) => {
+const getParams = cache(async (params: Promise<{ id: string }>) => {
   return await params;
 });
 
 const base = 'https://www.devsonghee.com';
 
-export async function generateMetadata({ params }: { params: Promise<{ name: string }> }) {
-  const { name } = await getParams(params);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await getParams(params);
   try {
-    const { fragrance } = await getFragranceBySlugServer(name);
+    const { fragrance } = await getFragranceBySlugServer(id);
     const raw = fragrance?.description ?? '';
     const description = raw.replace(/<[^>]*>/g, '').slice(0, 150);
     return {
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ name: str
       openGraph: {
         title: `${fragrance.brand} · ${fragrance.name}`,
         description,
-        url: `${base}/fragrance/${name}`,
+        url: `${base}/fragrance/${id}`,
         type: 'article',
       },
       keywords: ['향수', '퍼퓸', 'Fragrance', 'Perfume', fragrance.brand],
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ name: str
       openGraph: {
         title: 'Fragrance',
         description: '향수 상세',
-        url: `${base}/fragrance/${name}`,
+        url: `${base}/fragrance/${id}`,
         type: 'article',
       },
       keywords: ['향수', '퍼퓸', 'Fragrance', 'Perfume'],
@@ -47,10 +47,10 @@ export async function generateMetadata({ params }: { params: Promise<{ name: str
   }
 }
 
-export default async function FragranceNameLayout({ children }: Props) {
+export default async function FragranceIdLayout({ children }: Props) {
   return (
     <>
-      <ScrollToTopOnMount /> 
+      <ScrollToTopOnMount />
       {children}
     </>
   );
