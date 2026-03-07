@@ -69,7 +69,7 @@ export default function EditableItemRow({
           avatarFallback
         )}
       </span>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <div className="inline-flex items-center flex-wrap">
           <span className="break-all mr-2 text-sm text-stone-700 dark:text-stone-200">
             {authorName}
