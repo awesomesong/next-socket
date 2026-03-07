@@ -1,5 +1,4 @@
 "use client";
-import dayjs from "@/src/app/utils/day";
 import {
   useInfiniteQuery,
   useMutation,
@@ -8,7 +7,6 @@ import {
 import ScentUserAvatar from "./ScentUserAvatar";
 import { getFragranceReviews } from "@/src/app/lib/getFragranceReviews";
 import { Fragment, useEffect, useState, useMemo } from "react";
-import clsx from "clsx";
 import { useInView } from "react-intersection-observer";
 import { FragranceReviewType } from "@/src/app/types/fragrance";
 import type {
