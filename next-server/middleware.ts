@@ -26,9 +26,9 @@ export const config = {
     "/chatMember/:path*",
     "/conversations/:path*",
     "/profile",
-    "/blogs/create",
-    "/blogs/:id/edit",
-    "/posts/create",
-    "/posts/:id/edit",
+    "/fragrance/create",
+    "/fragrance/:id/edit",
+    "/notice/create",
+    "/notice/:id/edit",
   ],
 };
