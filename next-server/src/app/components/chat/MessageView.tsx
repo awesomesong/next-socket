@@ -635,7 +635,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
                   </div>
                 )}
                 <pre
-                  className="whitespace-pre-wrap text-[var(--color-text-primary)]"
+                  className={clsx("whitespace-pre-wrap", isError ? "text-red-800" : "text-[var(--color-text-primary)]")}
                   dangerouslySetInnerHTML={{
                     __html: sanitizedMessageBody,
                   }}
