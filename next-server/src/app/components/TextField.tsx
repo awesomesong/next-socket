@@ -189,17 +189,19 @@ const TextField = forwardRef<any, TextFieldProps>((props, ref) => {
     const errorMessage = errors[id]?.message;
     const isError = Boolean(errorMessage);
 
+    const { ref: registerRef, ...registerProps } = register(id, {
+      ...rules,
+      onChange: (e: any) => {
+        setHasValue(!!e.target.value);
+        rules?.onChange?.(e);
+      },
+    });
+
     const commonProps = {
       label,
       autoComplete: id,
       isDisabled: disabled,
-      ...register(id, {
-        ...rules,
-        onChange: (e: any) => {
-          setHasValue(!!e.target.value);
-          rules?.onChange?.(e);
-        },
-      }),
+      ...registerProps,
       placeholder,
       labelPlacement: placement ?? "outside",
       description,
@@ -214,7 +216,7 @@ const TextField = forwardRef<any, TextFieldProps>((props, ref) => {
         <div className="flex w-full flex-wrap">
           <HeroTextarea
             {...commonProps}
-            ref={ref}
+            ref={ref || registerRef}
             minRows={minRows}
             className="w-full"
             classNames={formClassNames.textarea}
@@ -227,7 +229,7 @@ const TextField = forwardRef<any, TextFieldProps>((props, ref) => {
       <div className="flex w-full flex-wrap">
         <HeroInput
           {...commonProps}
-          ref={ref}
+          ref={ref || registerRef}
           type={type === "password" ? (isVisible ? "text" : "password") : type}
           fullWidth={fullWidth}
           classNames={formClassNames.underlined}
