@@ -10,7 +10,7 @@ export const getFragranceReviews = async ({
   const [_key, id] = queryKey;
   const cursor = pageParam ?? null;
 
-  const res = await fetch(`/api/fragrance/review/${id}?cursor=${cursor}`, {
+  const res = await fetch(`/api/fragrance/${id}/reviews?cursor=${cursor}`, {
     next: {
       tags: [_key],
     },

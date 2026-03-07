@@ -4,7 +4,7 @@ interface Props {
 }
 
 export const createFragranceReviews = async ({ id, text }: Props) => {
-  const res = await fetch(`/api/fragrance/review/${id}`, {
+  const res = await fetch(`/api/fragrance/${id}/reviews`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

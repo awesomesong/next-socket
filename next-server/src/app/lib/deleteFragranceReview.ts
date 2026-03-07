@@ -1,5 +1,5 @@
 export const deleteFragranceReview = async (id: string) => {
-  const res = await fetch(`/api/fragrance/review/${id}`, {
+  const res = await fetch(`/api/fragrance/reviews/${id}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
