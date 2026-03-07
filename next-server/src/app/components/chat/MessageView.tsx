@@ -40,7 +40,7 @@ interface MessageBoxProps {
   conversationId: string;
   showDateDivider?: boolean;
   isAIChat?: boolean;
-  isLastOwnForThisMessage: boolean;
+  isLastOwn: boolean;
   liveUsersKey: string;        // 참여자 id 집합 (문자열 "id1,id2,…")
   seenUsersForLastMessage?: Array<{ id: string; name: string | null; image: string | null }>;
 }
@@ -58,7 +58,7 @@ const areEqual = (prev: MessageBoxProps, next: MessageBoxProps) => {
 
   // 1) 가장 흔한 동일성 빠른 탈출 (참조 비교 우선)
   if (p === n &&
-    prev.isLastOwnForThisMessage === next.isLastOwnForThisMessage &&
+    prev.isLastOwn === next.isLastOwn &&
     prev.liveUsersKey === next.liveUsersKey &&
     prev.showDateDivider === next.showDateDivider &&
     prev.isAIChat === next.isAIChat &&
@@ -103,7 +103,7 @@ const areEqual = (prev: MessageBoxProps, next: MessageBoxProps) => {
       p.type !== n.type ||
       p.body !== n.body ||
       p.image !== n.image ||
-      +new Date(p.createdAt) !== +new Date(n.createdAt) ||
+      p.createdAt !== n.createdAt ||
       p.isAIResponse !== n.isAIResponse ||
       p.isWaiting !== n.isWaiting ||
       p.isTyping !== n.isTyping ||
@@ -117,7 +117,7 @@ const areEqual = (prev: MessageBoxProps, next: MessageBoxProps) => {
 
   // 4) 부모에서 계산한 키/불린 비교
   if (
-    prev.isLastOwnForThisMessage !== next.isLastOwnForThisMessage ||
+    prev.isLastOwn !== next.isLastOwn ||
     prev.liveUsersKey !== next.liveUsersKey ||
     prev.showDateDivider !== next.showDateDivider ||
     prev.isAIChat !== next.isAIChat ||
@@ -149,7 +149,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
   showDateDivider,
   isAIChat = false,
   seenUsersForLastMessage = [],
-  isLastOwnForThisMessage,
+  isLastOwn,
   liveUsersKey,
 }) => {
   const socket = useSocket();
@@ -174,7 +174,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
   }, [data.body]);
 
   const seenIdSetRef = useRef<Set<string>>(new Set());
-  const [dots, setDots] = useState("");
+  const [dotCount, setDotCount] = useState(0);
 
   // 1) 멤버 Set을 문자열로 보관
   const liveIdSet = useMemo(() => {
@@ -183,15 +183,14 @@ const MessageView: React.FC<MessageBoxProps> = ({
   }, [liveUsersKey]);
 
   // 2) 현재 사용자/발신자 id도 문자열화
-  const currentUserId = useMemo(() => String(currentUser?.id ?? ""), [currentUser?.id]);
-  const senderId = useMemo(() => String(data?.sender?.id ?? ""), [data?.sender?.id]);
+  const currentUserId = String(currentUser?.id ?? "");
+  const senderId = String(data?.sender?.id ?? "");
   const isAIMessage = data.isAIResponse;
   const isOwn = !isAIMessage && currentUser?.email === data?.sender?.email;
-  const isLastOwn = isLastOwnForThisMessage;
 
   const filteredSeenUsers = useMemo(() => {
-    // ✅ 핵심: isLastOwnForThisMessage가 false면 무조건 빈 배열 반환
-    if (!isLastOwnForThisMessage) {
+    // ✅ 핵심: isLastOwn가 false면 무조건 빈 배열 반환
+    if (!isLastOwn) {
       return [];
     }
 
@@ -212,20 +211,17 @@ const MessageView: React.FC<MessageBoxProps> = ({
     // ✅ 성능 개선: Set을 사용한 필터링 (excludeSet 사용)
     const excludeSet = new Set([currentUserId, senderId].filter(Boolean));
     return merged.filter(u => !excludeSet.has(u.id));
-  }, [isLastOwnForThisMessage, seenUsersForLastMessage, seenUsers, currentUserId, senderId]);
+  }, [isLastOwn, seenUsersForLastMessage, seenUsers, currentUserId, senderId]);
 
 
   // 3) 대화 참여자인지 여부 판정도 문자열 Set.has로
   const isConversationUser = useMemo(() => {
-    const senderIdStr = String(data?.sender?.id ?? "");
-    return liveIdSet.has(senderIdStr);
-  }, [liveIdSet, data?.sender?.id]);
+    return liveIdSet.has(senderId);
+  }, [liveIdSet, senderId]);
 
   const isWaiting = data.isWaiting;
   const isError = data.isError;
   const isTyping = data.isTyping;
-  const abortControllerRef = useRef<AbortController | null>(null);
-
   const seenNames = useMemo(() => {
     const nameSet = new Set<string>();
 
@@ -238,9 +234,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
     return [...nameSet].join(", ");
   }, [filteredSeenUsers]);
 
-  const showSeenTag = useMemo(() => {
-    return isOwn && isLastOwn && filteredSeenUsers.length > 0;
-  }, [isOwn, isLastOwn, filteredSeenUsers.length]);
+  const showSeenTag = isOwn && isLastOwn && filteredSeenUsers.length > 0;
 
 
   // 초기화: seenUsersForLastMessage를 seenUsers에 반영 (내 마지막 메시지일 때만)
@@ -502,29 +496,16 @@ const MessageView: React.FC<MessageBoxProps> = ({
   useEffect(() => {
     if (!isWaiting && !isTyping) {
       // ✅ 스트리밍이 끝나면 dots 초기화하여 불필요한 상태 변경 방지
-      setDots("");
+      setDotCount(0);
       return;
     }
 
     const interval = setInterval(() => {
-      setDots((prev) => {
-        if (prev === "...") return "";
-        return prev + ".";
-      });
+      setDotCount(prev => (prev + 1) % 4);
     }, 500);
 
     return () => clearInterval(interval);
   }, [isWaiting, isTyping]);
-
-  // ✅ 컴포넌트 언마운트 시 cleanup
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
-    };
-  }, []);
 
   return data?.type === "system" ? (
     <div
@@ -629,7 +610,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
                 {isWaiting && isTyping && (
                   <div className="flex items-center gap-1">
                     <HiSparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-                    <span className="text-amber-500 font-medium">{dots}</span>
+                    <span className="text-amber-500 font-medium">{".".repeat(dotCount)}</span>
                   </div>
                 )}
                 <pre
