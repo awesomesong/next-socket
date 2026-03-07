@@ -3,32 +3,19 @@ type PointsLoadingProps = {
 }
 
 const PointsLoading = ({loadingMessage}: PointsLoadingProps) => {
-    return(
-        <div className="
-            flex
-            items-center
-            justify-center
-            fixed
-            top-0
-            bottom-0
-            left-0
-            right-0
-            z-[500]
-            bg-neutral-700/[.50]
-            dark:bg-neutral-900/[.90]
-        ">
-            <div className="flex flex-col gap-6">
-                <div className="container">
-                    <div className="ball"></div>
-                    <div className="ball"></div>
-                    <div className="ball"></div>
-                    <div className="ball"></div>
-                    <div className="ball"></div>
-                </div>
-                <div className="text-center text-lg points-loading-text">
-                    {loadingMessage}
-                </div>
+    return (
+        <div className="flex flex-col items-center justify-center gap-5 fixed inset-0 z-[500] points-loading-overlay">
+            <div className="points-loading-balls">
+                <div className="ball"></div>
+                <div className="ball"></div>
+                <div className="ball"></div>
+                <div className="ball"></div>
+                <div className="ball"></div>
             </div>
+            <p className="text-center text-lg points-loading-text">
+                {loadingMessage}
+                지금 로딩 중입니다. 지금 로딩 중입니다. 지금 로딩 중입니다. 지금 로딩 중입니다. 지금 로딩 중입니다. 지금 로딩 중입니다. 지금 로딩 중입니다. 지금 로딩 중입니다.
+            </p>
         </div>
     )
 }
