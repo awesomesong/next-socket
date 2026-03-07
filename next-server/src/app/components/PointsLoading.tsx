@@ -14,7 +14,6 @@ const PointsLoading = ({loadingMessage}: PointsLoadingProps) => {
             </div>
             <p className="text-center text-lg points-loading-text">
                 {loadingMessage}
-                지금 로딩 중입니다. 지금 로딩 중입니다. 지금 로딩 중입니다. 지금 로딩 중입니다. 지금 로딩 중입니다. 지금 로딩 중입니다. 지금 로딩 중입니다. 지금 로딩 중입니다.
             </p>
         </div>
     )
