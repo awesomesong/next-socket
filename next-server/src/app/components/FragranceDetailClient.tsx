@@ -67,7 +67,7 @@ export default function FragranceDetailClient({ slug }: Props) {
             queryClient.removeQueries({ queryKey: fragranceDetailKey(slug), exact: true });
 
             toast.success('향수가 삭제되었습니다.');
-            router.push('/fragrance');
+            router.push('/');
         } catch (err: unknown) {
             toast.error(err instanceof Error ? err.message : '향수 삭제 중 오류가 발생했습니다.');
         } finally {
@@ -94,7 +94,7 @@ export default function FragranceDetailClient({ slug }: Props) {
         <div className="fragrance-detail-layout">
             {/* 목록 / 수정 / 삭제 */}
             <div className="detail-action-bar">
-                <Link href="/fragrance" className="action-btn">
+                <Link href="/" className="action-btn">
                     목록
                 </Link>
                 {hasEditPermission && (
