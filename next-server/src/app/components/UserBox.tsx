@@ -57,7 +57,7 @@ const UserBox: React.FC<UserBoxProps> = ({ userInfo }) => {
       aria-busy={isClicked || isPending}
       tabIndex={(isClicked || isPending) ? -1 : 0}
       className={clsx(
-        "flex items-center space-x-3 w-full relative p-3 transition cursor-pointer sidebar-item--hover",
+        "flex items-center space-x-3 w-full relative p-3 transition cursor-pointer sidebar-item--state",
         (isClicked || isPending) && "pointer-events-none opacity-60"
       )}
     >

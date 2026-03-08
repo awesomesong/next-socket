@@ -49,13 +49,12 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
           font-semibold
           text-neutral-900
           dark:text-neutral-200
-          sidebar-item--hover
+          sidebar-item--state
           md:rounded-md
           md:py-3
           max-md:h-full
-        `,
-          active && `sidebar-item--active`
-        )}
+        `)}
+        data-selected={active}
       >
         <Icon className="h-6 w-6 shrink-0" fill="url(#scent-nav-gradient)" />
         <span className="sr-only">{label}</span>

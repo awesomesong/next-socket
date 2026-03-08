@@ -65,10 +65,9 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
         cursor-pointer
       `,
         !data.isAIChat && data.userIds?.length < 2 && "opacity-40",
-        selected
-          ? "sidebar-item--active"
-          : "bg-transparent sidebar-item--hover",
+        "sidebar-item--state",
       )}
+      data-selected={selected}
     >
       {showGroup ? (
         <AvatarGroup users={data.users} />
