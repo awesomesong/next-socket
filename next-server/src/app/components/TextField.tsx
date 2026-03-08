@@ -9,7 +9,7 @@ import {
 import { Input as HeroInput, Textarea as HeroTextarea } from "@heroui/react";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { IoClose } from "react-icons/io5";
-import { useState, useCallback, type ChangeEvent, forwardRef } from "react";
+import { useState, useCallback, type ChangeEvent, forwardRef, type Ref } from "react";
 import { formInputLayout } from "@/src/app/components/formLayoutClasses";
 
 // ─── 공통 스타일 ───────────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ interface TextFieldControlledProps {
   isRequired?: boolean;
   onBlur?: () => void;
   onFocus?: () => void;
-  onKeyDown?: (e: React.KeyboardEvent<any>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onCompositionStart?: () => void;
   onCompositionEnd?: () => void;
   minRows?: number;
@@ -121,18 +121,32 @@ function isRegisterProps(props: TextFieldProps): props is TextFieldRegisterProps
 
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
 
-const TextField = forwardRef<any, TextFieldProps>((props, ref) => {
+const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, TextFieldProps>((props, ref) => {
   const label = props.label;
   const placeholder = props.placeholder;
   const variant = props.variant ?? "underlined";
   const description = props.description;
   const disabled = props.disabled;
-  const type = (props as any).type ?? "text";
+  const type = props.type ?? "text";
 
   const [isVisible, setIsVisible] = useState(false); // password일 때만 사용: false = 마스킹, true = 글자 노출
   const [hasValue, setHasValue] = useState(false);
 
   const toggleVisibility = useCallback(() => setIsVisible((v) => !v), []);
+
+  const handleRegisterClear = useCallback(() => {
+    if (!isRegisterProps(props)) return;
+    props.setValue?.(props.id, "");
+    setHasValue(false);
+  }, [props]);
+
+  const handleControlledClear = useCallback(() => {
+    if (isRegisterProps(props)) return;
+    props.onChange({
+      target: { name: props.name, value: "" },
+    } as ChangeEvent<HTMLInputElement | HTMLTextAreaElement>);
+    setHasValue(false);
+  }, [props]);
 
   const iconButtonClass =
     "text-2xl text-default-400 pointer-events-none hover:text-[#b094e0] transition-colors";
@@ -182,16 +196,12 @@ const TextField = forwardRef<any, TextFieldProps>((props, ref) => {
       minRows,
       fullWidth,
     } = props;
-    const handleRegisterClear = useCallback(() => {
-      setValue?.(id, "");
-      setHasValue(false);
-    }, [id, setValue]);
     const errorMessage = errors[id]?.message;
     const isError = Boolean(errorMessage);
 
     const { ref: registerRef, ...registerProps } = register(id, {
       ...rules,
-      onChange: (e: any) => {
+      onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setHasValue(!!e.target.value);
         rules?.onChange?.(e);
       },
@@ -216,7 +226,7 @@ const TextField = forwardRef<any, TextFieldProps>((props, ref) => {
         <div className="flex w-full flex-wrap">
           <HeroTextarea
             {...commonProps}
-            ref={ref || registerRef}
+            ref={(ref as Ref<HTMLTextAreaElement>) || registerRef}
             minRows={minRows}
             className="w-full"
             classNames={formClassNames.textarea}
@@ -229,7 +239,7 @@ const TextField = forwardRef<any, TextFieldProps>((props, ref) => {
       <div className="flex w-full flex-wrap">
         <HeroInput
           {...commonProps}
-          ref={ref || registerRef}
+          ref={(ref as Ref<HTMLInputElement>) || registerRef}
           type={type === "password" ? (isVisible ? "text" : "password") : type}
           fullWidth={fullWidth}
           classNames={formClassNames.underlined}
@@ -260,11 +270,6 @@ const TextField = forwardRef<any, TextFieldProps>((props, ref) => {
 
   const isTextarea = minRows !== undefined;
   const isError = Boolean(isInvalid ?? errorMessage);
-
-  const handleControlledClear = useCallback(() => {
-    onChange({ target: { name, value: "" } } as ChangeEvent<HTMLInputElement>);
-    setHasValue(false);
-  }, [name, onChange]);
 
   // 초기 값에 따른 hasValue 설정
   if (!hasValue && value) setHasValue(true);
@@ -298,7 +303,7 @@ const TextField = forwardRef<any, TextFieldProps>((props, ref) => {
       <div className="flex w-full flex-wrap">
         <HeroTextarea
           {...commonControlled}
-          ref={ref}
+          ref={ref as Ref<HTMLTextAreaElement>}
           minRows={minRows}
           className={className ?? "w-full"}
           classNames={classNames}
@@ -311,7 +316,7 @@ const TextField = forwardRef<any, TextFieldProps>((props, ref) => {
     <div className="flex w-full flex-wrap">
       <HeroInput
         {...commonControlled}
-        ref={ref}
+        ref={ref as Ref<HTMLInputElement>}
         type={type === "password" ? (isVisible ? "text" : "password") : type}
         classNames={classNames}
         endContent={renderEndContent(handleControlledClear)}
@@ -319,5 +324,7 @@ const TextField = forwardRef<any, TextFieldProps>((props, ref) => {
     </div>
   );
 });
+
+TextField.displayName = "TextField";
 
 export default TextField;
