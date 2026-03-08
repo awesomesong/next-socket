@@ -127,7 +127,7 @@ const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
             <FiAlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
           </div>
           <p className="modal-title">
-            '{name}' 대화방에서 나갈까요?
+            &apos;{name}&apos; 대화방에서 나갈까요?
           </p>
         </div>
       }
