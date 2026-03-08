@@ -34,7 +34,7 @@ const ChatMenu = () => {
                         priority={true}
                         className="object-cover"
                     />
-                    {/* <ChatUnReadCount /> */}
+                    <ChatUnReadCount />
                 </Link>
             </Tooltip>
         </>
