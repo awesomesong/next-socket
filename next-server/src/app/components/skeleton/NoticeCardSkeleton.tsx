@@ -25,34 +25,12 @@ const NoticeCardSkeletonItem = () => (
   </div>
 );
 
-const NoticeCardSkeleton = () => {
-  return (
-    <div className="notice-grid">
-      {Array.from({ length: 2 }).map((_, index) => (
-        <div key={`xs-${index}`} className="block">
-          <NoticeCardSkeletonItem />
-        </div>
-      ))}
-
-      {Array.from({ length: 2 }).map((_, index) => (
-        <div key={`sm-${index}`} className="hidden sm:block">
-          <NoticeCardSkeletonItem />
-        </div>
-      ))}
-
-      {Array.from({ length: 5 }).map((_, index) => (
-        <div key={`md-${index}`} className="hidden md:block">
-          <NoticeCardSkeletonItem />
-        </div>
-      ))}
-
-      {Array.from({ length: 3 }).map((_, index) => (
-        <div key={`lg-${index}`} className="hidden lg:block">
-          <NoticeCardSkeletonItem />
-        </div>
-      ))}
-    </div>
-  );
-};
+const NoticeCardSkeleton = () => (
+  <div className="notice-grid notice-grid-skeleton">
+    {Array.from({ length: 8 }).map((_, i) => (
+      <NoticeCardSkeletonItem key={i} />
+    ))}
+  </div>
+);
 
 export default NoticeCardSkeleton;

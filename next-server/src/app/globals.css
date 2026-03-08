@@ -308,6 +308,12 @@ h6 {
   }
 }
 
+/* 스켈레톤: 그리드 열 수에 맞게 아이템 수 제한 (2행) */
+.notice-grid-skeleton > *:nth-child(n + 3) { display: none; }
+@media (min-width: 580px)  { .notice-grid-skeleton > *:nth-child(n + 5) { display: none; } }
+@media (min-width: 1280px) { .notice-grid-skeleton > *:nth-child(n + 7) { display: none; } }
+@media (min-width: 1536px) { .notice-grid-skeleton > *:nth-child(n + 9) { display: none; } }
+
 /* 공지사항 카드 — 글자 그라데이션(scent) 색상 기반, 라이트 파스텔 / 다크 연하게 */
 .notice-card {
   background: var(--notice-card-bg);

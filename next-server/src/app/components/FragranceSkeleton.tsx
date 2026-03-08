@@ -37,6 +37,10 @@ export const FragranceCardSkeleton = () => {
 export const FragranceDetailSkeleton = () => {
     return (
         <div className="fragrance-detail-layout skeleton-pulse">
+            {/* 목록/수정/삭제 영역과 동일한 상단 여백 유지 */}
+            <div className="detail-action-bar">
+                <div className="h-8 w-14 rounded-full skeleton-bg-muted" aria-hidden />
+            </div>
             <div className="fragrance-form-layout">
                 <div className="fragrance-form-left">
                     <div className="fragrance-detail-image-box">
@@ -62,6 +66,8 @@ export const FragranceDetailSkeleton = () => {
                     </div>
                 </div>
             </div>
+            <ReviewFormSkeleton />
+            <ReviewsSkeleton />
         </div>
     );
 };
