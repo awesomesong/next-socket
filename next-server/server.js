@@ -9,6 +9,14 @@ const port = parseInt(process.env.PORT, 10) || 3001;
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
+// dev 모드에서 10분마다 GC 실행
+if (dev && global.gc) {
+  setInterval(() => {
+    global.gc();
+    console.log(`> [GC] Manual GC triggered (heap: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB)`);
+  }, 10 * 60 * 1000);
+}
+
 app.prepare().then(() => {
   const server = express();
 
