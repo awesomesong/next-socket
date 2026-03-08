@@ -1334,8 +1334,21 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
     @apply line-clamp-1 text-gradient-scent tracking-tight;
   }
 
+  /* 사이드바 리스트: 제목 가독성 위해 단색 적용 */
+  .chat-sidebar .chat-item__title {
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: unset;
+    color: var(--color-text-primary);
+  }
+
   .chat-item__status {
-    @apply text-sm font-light text-neutral-500 dark:text-lavender-muted;
+    @apply text-sm font-medium text-neutral-800 dark:text-slate-300;
+  }
+
+  .chat-item__date {
+    @apply text-xs font-medium text-neutral-600 dark:text-slate-400;
   }
 
   .sidebar-item--hover {

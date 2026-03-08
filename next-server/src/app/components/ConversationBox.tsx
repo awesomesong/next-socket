@@ -85,23 +85,20 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
               items-center
               gap-2
           ">
-            <p className="chat-item__title">
-              {data.isAIChat
-                ? "향수 AI 어시스턴트"
-                : data.name || otherUser.name}
+            <p className="chat-item__title flex items-center min-w-0">
+              <span className="truncate">
+                {data.isAIChat
+                  ? "향수 AI 어시스턴트"
+                  : data.name || otherUser.name}
+              </span>
               {data.isGroup && (
-                <span className="ml-2 text-neutral-500">
+                <span className="ml-1.5 shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-semibold rounded-md leading-none text-[#4a4238] dark:text-[#e6e2da] bg-[#f0ede8] dark:bg-[#3d3835] border border-[#ddd6cc] dark:border-[#5c5650]">
                   {data.userIds?.length}
                 </span>
               )}
             </p>
             {createdAtLabel && (
-              <p
-                className="
-                shrink-0
-                text-xs
-                font-light
-              ">
+              <p className="chat-item__date shrink-0">
                 {createdAtLabel}
               </p>
             )}
@@ -117,25 +114,14 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
               className={clsx(
                 "chat-item__status truncate",
                 !selected && unReadMessageLength > 0
-                  ? "font-bold text-neutral-800 dark:text-neutral-200"
-                  : "font-normal",
+                  ? "font-bold text-neutral-900 dark:text-slate-100"
+                  : "font-medium",
               )}
             >
               {lastMessageText}
             </p>
             {!selected && unReadMessageLength > 0 && (
-              <p className="
-                  inline-flex
-                  justify-center
-                  items-center
-                  shrink-0
-                  px-2
-                  py-1
-                  bg-red-500
-                  text-neutral-50
-                  rounded-full
-                  leading-none
-              ">
+              <p className="inline-flex justify-center items-center shrink-0 min-w-[1.25rem] h-5 px-2 text-xs font-semibold text-white bg-rose-500 dark:bg-rose-500/90 ring-1 ring-inset ring-rose-400/30 dark:ring-rose-400/20 rounded-full leading-none">
                 {unReadMessageLength}
               </p>
             )}
