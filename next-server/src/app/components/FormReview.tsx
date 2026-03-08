@@ -4,7 +4,6 @@ import { formInputLayout } from "./formLayoutClasses";
 import React, {
   useRef,
   useState,
-  FormEvent,
   useEffect,
   useCallback,
 } from "react";
@@ -179,7 +178,7 @@ const FormReview = ({
   }, [review, submitReview]);
 
   // Enter 키 이벤트 핸들러
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<any>) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // 한글 입력 조합 중이면 제출하지 않음
     if (isComposing()) return;
     if (e.key === "Enter" && !e.shiftKey) {
