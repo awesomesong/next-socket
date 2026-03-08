@@ -91,7 +91,7 @@ export function useLaunchAiConversation(options?: UseCreateAIConversationOptions
       if (data) options?.onSuccess?.(data as FullConversationType);
       return { reused: false, id: String(data?.id ?? "") };
     },
-    [qc, router, create],
+    [qc, router, create, options],
   );
 
   return {
