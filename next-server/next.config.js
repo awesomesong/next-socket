@@ -15,6 +15,8 @@ const nextConfig = {
           aggregateTimeout: 300,
           poll: false,
         };
+        // dev 모드에서 webpack 파일시스템 캐시 비활성화 (메모리 절약)
+        config.cache = false;
       }
       return config;
     },

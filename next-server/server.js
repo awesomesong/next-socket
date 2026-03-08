@@ -14,7 +14,7 @@ if (dev && global.gc) {
   setInterval(() => {
     global.gc();
     console.log(`> [GC] Manual GC triggered (heap: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB)`);
-  }, 10 * 60 * 1000);
+  }, 3 * 60 * 1000);
 }
 
 app.prepare().then(() => {
