@@ -221,12 +221,12 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                     router.push(`/fragrance/${result.newFragrance.slug}`);
                 }
             }
-        } catch (error: any) {
-            toast.error(error.message || "작업 중 오류가 발생했습니다.");
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : "작업 중 오류가 발생했습니다.");
         } finally {
             setIsLoading(false);
         }
-    }, [formData, isEdit, id, queryClient, router]);
+    }, [formData, isEdit, id, queryClient, router, slugError]);
 
     const closeLightbox = useCallback(() => setIsLightboxOpen(false), []);
 
