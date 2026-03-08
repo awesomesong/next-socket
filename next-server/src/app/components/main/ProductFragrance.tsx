@@ -194,7 +194,7 @@ const ProductFragrance = () => {
   const measureForSticky = useCallback(() => {
     if (typeof window === 'undefined') return;
     const el = pillsMeasureRef.current;
-    let m = getPillsMeasure(el);
+    const m = getPillsMeasure(el);
     if (m.valid) {
       setFilterExpand((prev) => ({ ...prev, showToggle: m.totalHeight > m.oneLinePx }));
       return;
@@ -327,7 +327,7 @@ const ProductFragrance = () => {
       }
       window.removeEventListener('resize', onResize);
     };
-  }, [isLoading, stickyBarMounted]);
+  }, [isLoading, stickyBarMounted, measureForSticky, measurePillsHeight]);
 
   useEffect(() => {
     if (!isFilterSticky) {
