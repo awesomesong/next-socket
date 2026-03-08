@@ -13,7 +13,13 @@
 import { PrismaClient } from "@prisma/client";
 
 const prismaClientSingleton = () => {
-  return new PrismaClient();
+  return new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL + "?connection_limit=5&pool_timeout=30",
+      },
+    },
+  });
 };
 
 declare global {
