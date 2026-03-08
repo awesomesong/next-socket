@@ -2,7 +2,6 @@
 import { IoClose } from "react-icons/io5";
 import clsx from "clsx";
 import { ModalProps } from "@/src/app/types/common";
-import useIsMobileDevice from "../hooks/useIsMobileDevice";
 import { useEffect } from "react";
 
 const Modal: React.FC<ModalProps> = ({
@@ -12,8 +11,6 @@ const Modal: React.FC<ModalProps> = ({
     title,
     footer,
 }) => {
-    const isMobileDevice = useIsMobileDevice();
-
     useEffect(() => {
         if (!isOpen) return;
 
