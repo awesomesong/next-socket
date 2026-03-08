@@ -481,7 +481,9 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
             });
             if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
         };
-    }, []); // 마운트 시 한 번만 실행 — 지오메트리 재생성 없음
+        // 마운트 시 한 번만 실행(지오메트리 재생성 없음). 테마 변경은 아래 useEffect에서 uniform만 갱신함.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // ── 테마 변경 시: uniform + 블렌딩만 갱신 (지오메트리 유지)
     useEffect(() => {
