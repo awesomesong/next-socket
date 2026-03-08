@@ -196,7 +196,7 @@ const FormComment = ({
   }, [comment, submitComment]);
 
   // Enter 키 이벤트 핸들러
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     // 한글 입력 조합 중이면 제출하지 않음
     if (isComposing()) return;
     if (e.key === "Enter" && !e.shiftKey) {
