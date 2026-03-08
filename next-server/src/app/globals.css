@@ -1278,8 +1278,12 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
   }
 
   .chat-sidebar__header {
-    @apply flex items-center h-16 px-3 sticky top-0 z-10;
+    @apply flex items-center justify-between h-16 sticky top-0 z-10 px-3;
     background-color: var(--bg-page);
+  }
+
+  .chat-sidebar__body {
+    @apply flex flex-col;
   }
 
   .chat-sidebar__title {

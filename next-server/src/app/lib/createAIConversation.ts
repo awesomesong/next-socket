@@ -2,13 +2,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { ConversationListData, conversationListKey } from "@/src/app/lib/react-query/chatCache";
+import type { FullConversationType } from "@/src/app/types/conversation";
 import { formatErrorMessage, SOCKET_EVENTS } from "@/src/app/lib/react-query/utils";
 import { useCallback } from "react";
 import { isReusableEmptyAiRoom } from "../utils/chat";
 import { useSocket } from "../context/socketContext";
-import { FullConversationType } from "../types/conversation";
 interface UseCreateAIConversationOptions {
   onSettled?: () => void;
+  onSuccess?: (data: FullConversationType) => void;
 }
 
 type CreateArgs = { aiAgentType: string };
@@ -42,12 +43,16 @@ export const useCreateAIConversation = (
     onSuccess: (data) => {
       const id = String(data?.id ?? "");
       if (!id) return;
-      
+
+      if (data.existingConversation) {
+        toast("기존에 생성된 AI 채팅방으로 이동합니다.");
+      }
+
       // ✅ 소켓 이벤트 발송 (본인 포함 모든 탭/기기에 전달됨)
-      if (socket) {
+      if (!data.existingConversation && socket) {
         socket.emit(SOCKET_EVENTS.CONVERSATION_NEW, data);
       }
-      
+
       router.push(`/conversations/${id}`);
     },
     onError: (error: unknown) => {
@@ -76,12 +81,14 @@ export function useLaunchAiConversation(options?: UseCreateAIConversationOptions
       const reusable = convs.find((c: FullConversationType) => isReusableEmptyAiRoom(c));
 
       if (reusable?.id) {
+        toast("기존에 생성된 AI 채팅방으로 이동합니다.");
         router.push(`/conversations/${reusable.id}`);
         return { reused: true, id: String(reusable.id) };
       }
 
       // 2) 없으면 생성 (성공 시 useCreateAIConversation의 onSuccess가 push)
       const data = await create.mutateAsync({ aiAgentType });
+      if (data) options?.onSuccess?.(data as FullConversationType);
       return { reused: false, id: String(data?.id ?? "") };
     },
     [qc, router, create],

@@ -5,7 +5,7 @@ import Modal from "@/src/app/components/Modal";
 import SelectBox from "@/src/app/components/SelectBox";
 import { IUserList } from "@/src/app/types/common";
 import { useRouter } from "next/navigation";
-import { memo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { SelectInstance, GroupBase, MultiValue } from "react-select";
@@ -15,10 +15,12 @@ import { FormInputSkeleton } from "@/src/app/components/FragranceSkeleton";
 import { createChatConversation } from "@/src/app/lib/createChatConversation";
 import { useSocket } from "../../context/socketContext";
 import { SOCKET_EVENTS } from "@/src/app/lib/react-query/utils";
+import type { FullConversationType } from "@/src/app/types/conversation";
 
 interface GroupChatModalProps {
   isOpen?: boolean;
   onCloseModal: () => void;
+  onSuccess?: (data: FullConversationType) => void;
   // users: DefaultSession["user"] & IUserList[];
 }
 
@@ -27,6 +29,7 @@ type OptionType = { value: string; label: string };
 const GroupChatModal: React.FC<GroupChatModalProps> = ({
   isOpen,
   onCloseModal,
+  onSuccess,
 }) => {
   const socket = useSocket();
   const selectRef = useRef<SelectInstance<OptionType, true, GroupBase<OptionType>>>(null);
@@ -49,9 +52,15 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
     mutationFn: ({ data, isGroup, userId }: { data: FieldValues; isGroup: boolean; userId: string; }) =>
       createChatConversation({ data, isGroup, userId }),
     onSuccess: (data) => {
+      if (data.existingConversation) {
+        toast("이미 동일한 멤버의 단체 대화방이 있어 해당 방으로 이동합니다.");
+      }
+      onSuccess?.(data as FullConversationType);
       router.push(`/conversations/${data.id}`);
       onCloseModal();
-      if (socket) socket.emit(SOCKET_EVENTS.CONVERSATION_NEW, data);
+      if (!data.existingConversation && socket) {
+        socket.emit(SOCKET_EVENTS.CONVERSATION_NEW, data);
+      }
     },
     onError: () => {
       toast.error("대화방 생성에 실패했습니다.");
@@ -80,6 +89,14 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
       members: [],
     },
   });
+
+  useEffect(() => {
+    if (!isOpen) {
+      reset();
+      clearErrors();
+      setIsLoading(false);
+    }
+  }, [isOpen, reset, clearErrors]);
 
   const members = watch("members");
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {

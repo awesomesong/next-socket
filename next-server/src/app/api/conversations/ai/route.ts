@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
         if (existingEmptyAIConversation) {
             // 메시지가 없는 AI 대화방이 있으면 그 대화방 반환
-            return NextResponse.json(existingEmptyAIConversation, {status: 200});
+            return NextResponse.json({ ...existingEmptyAIConversation, existingConversation: true }, {status: 200});
         }
 
         // 메시지가 없는 AI 대화방이 없으면 새로 생성

@@ -8,11 +8,11 @@ import ChatMemberSkeleton from "./skeleton/ChatMemberSkeleton";
 import StatusMessage from "./StatusMessage";
 import { useSocket } from "../context/socketContext";
 import { CHAT_MEMBER_KEY } from "@/src/app/lib/react-query/chatCache";
+import ChatSidebarMenu from "./ChatSidebarMenu";
 
 const UserList = () => {
   const socket = useSocket();
   const queryClient = useQueryClient();
-
   const { data: users, status } = useQuery({
     queryKey: CHAT_MEMBER_KEY,
     queryFn: getUsers,
@@ -114,7 +114,11 @@ const UserList = () => {
             >
               멤버
             </span>
+            <ChatSidebarMenu
+              isLoading={status === "pending"}
+            />
           </div>
+          <div className="chat-sidebar__body">
           {status === "pending" ? (
             <ChatMemberSkeleton />
           ) : users?.length ? (
@@ -126,6 +130,7 @@ const UserList = () => {
               className="py-4"
             />
           )}
+          </div>
         </>
       )}
     </aside>
