@@ -192,7 +192,7 @@ const AIChatForm = ({
     } finally {
       setIsDisabled(false);
     }
-  }, [conversationId, queryClient, requestAI, removeFailedMessage, addFailedMessage, isConversationLoading, setFocus, setValue, session, sessionStatus, isSessionLoading, isDisabled, notifyNewContent]);
+  }, [conversationId, queryClient, requestAI, removeFailedMessage, addFailedMessage, isConversationLoading, setFocus, setValue, session, isSessionLoading, isDisabled, notifyNewContent]);
 
   // ✅ 제출 경로 통일 (사파리 모바일 호환: 명시적 preventDefault)
   // handleSubmit은 이벤트 객체가 없어도 작동하지만, 폼 제출 시에는 명시적으로 전달
@@ -215,7 +215,7 @@ const AIChatForm = ({
       if (isDisabled || isSessionLoading || getValues("message").trim().length === 0) return;
       submit();
     }
-  }, [isComposing, isSessionLoading, getValues, submit]);
+  }, [isComposing, isSessionLoading, isDisabled, getValues, submit]);
 
   return (
     <div
