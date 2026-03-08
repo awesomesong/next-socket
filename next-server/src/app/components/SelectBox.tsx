@@ -66,7 +66,7 @@ const SelectBox: React.FC<SelctProps> = ({
                     menuPosition='fixed'
                     menuPlacement='auto'
                     styles={{
-                        control: (base, state) => ({
+                        control: (base) => ({
                             ...base,
                             backgroundColor: 'transparent',
                             border: 'none',
