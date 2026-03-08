@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
 
         if (slug) {
             // DB에서 먼저 찾고 없으면 정적 데이터에서 찾음
-            let fragrance = await prisma.fragrance.findUnique({
+            const fragrance = await prisma.fragrance.findUnique({
                 where: { slug },
                 include: {
                     author: { select: { id: true, name: true, email: true, image: true, profileImage: true, role: true } }
@@ -78,8 +78,8 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json({ newFragrance }, { status: 200 });
-    } catch (error: any) {
-        if (error.code === 'P2002') {
+    } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002') {
             return NextResponse.json({ message: '이미 존재하는 슬러그입니다.' }, { status: 400 });
         }
         return NextResponse.json({ message: 'Something went wrong!' }, { status: 500 });
