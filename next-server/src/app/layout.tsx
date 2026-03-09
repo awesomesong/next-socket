@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     "프론트엔드 개발자",
   ],
   icons: {
-    icon: "/image/scent_memories.jpg",
+    icon: "/image/scent_memories.png",
   },
   openGraph: {
     title: "강송희 포트폴리오 | 프론트엔드 개발자",
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     siteName: "강송희 포트폴리오",
     images: [
       {
-        url: "/image/scent_memories.jpg", // og:image 경로
+        url: "/image/scent_memories.png", // og:image 경로
         width: 992,
         height: 1056,
         alt: "강송희 포트폴리오 로고",
