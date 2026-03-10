@@ -7,6 +7,7 @@ import useOtherUser from "@/src/app/hooks/useOtherUser";
 import Avatar from "./Avatar";
 import AvatarGroup from "./AvatarGroup";
 import { formatDate } from "@/src/app/utils/formatDate";
+import { formatMessageCount } from "@/src/app/utils/formatMessageCount";
 import { IUserList } from "@/src/app/types/common";
 
 interface ConversationBoxProps {
@@ -120,8 +121,8 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
               {lastMessageText}
             </p>
             {!selected && unReadMessageLength > 0 && (
-              <p className="inline-flex justify-center items-center shrink-0 min-w-[1.25rem] h-5 px-2 text-xs font-semibold text-white bg-rose-500 dark:bg-rose-500/90 ring-1 ring-inset ring-rose-400/30 dark:ring-rose-400/20 rounded-full leading-none">
-                {unReadMessageLength}
+              <p className="unread-badge">
+                {formatMessageCount(unReadMessageLength)}
               </p>
             )}
           </div>

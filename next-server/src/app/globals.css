@@ -65,6 +65,9 @@ blockquote{
   --footer-badge-bg: rgba(176, 148, 224, 0.08);
   --footer-badge-border: rgba(176, 148, 224, 0.28);
   --footer-line: linear-gradient(90deg, transparent 0%, rgba(147, 132, 179, 0.32) 35%, rgba(184, 148, 224, 0.28) 65%, transparent 100%);
+  /* 안 읽은 메시지 배지: 빨간 계열 (라이트/다크 동일) */
+  --unread-badge-bg: #dc2626;
+  --unread-badge-text: #ffffff;
   /* CTA 그라데이션(라이트): 톤을 살짝 올려 연보라·아이보리·크림옐로우 구별되게 */
   --gradient-add-btn: linear-gradient(135deg, #ddd0f8 0%, #ebe2ff 28%, #fffcfa 52%, #fff0d8 78%, #ffecce 100%);
   /* 공지 카드: 연보라 · 아이보리 · 연노랑 어울리게, 밝은 파스텔 */
@@ -1363,6 +1366,24 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
   .sidebar-item--state:hover,
   .sidebar-item--state[data-selected="true"] {
     background-color: var(--color-sidebar-state-bg);
+  }
+
+  /* 안 읽은 메시지 배지 — ConversationBox, ChatUnReadCount 공통 */
+  .unread-badge {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    min-width: 1.25rem;
+    min-height: 1.25rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--unread-badge-text);
+    background-color: var(--unread-badge-bg);
+    border-radius: 9999px;
   }
 
   .line-gradient-deco {
