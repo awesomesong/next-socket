@@ -332,7 +332,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                     </div>
 
                     {/* 640px~1023px: 업로드 오른쪽에 배치, 1024px+ 에서는 아래로 */}
-                    <div className="flex flex-col gap-6 sm:flex-grow lg:w-full shrink-0 min-w-0">
+                    <div className="flex flex-col gap-6 sm:flex-grow w-full sm:w-auto lg:w-full shrink-0 min-w-0">
                         <div className="flex justify-between items-end border-b border-[#ede8f5] dark:border-[#c8b4ff30] pb-2">
                         <p className="text-[0.7rem] uppercase tracking-[0.2em] text-[#b094e0] font-bold">등록된 이미지</p>
                         <input
