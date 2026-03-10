@@ -21,6 +21,7 @@ import PointsLoading from "./PointsLoading";
 import TextField, { formClassNames } from "./TextField";
 import { HiSparkles } from "react-icons/hi2";
 import ImageSlider from "./ImageSlider";
+import ImageModal from "./ImageModal";
 
 const ACCEPT_IMAGE = "image/jpeg,image/jpg,image/png,image/gif,image/webp";
 
@@ -230,51 +231,18 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
 
     const closeLightbox = useCallback(() => setIsLightboxOpen(false), []);
 
-    useEffect(() => {
-        if (!isLightboxOpen) return;
-        const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") closeLightbox();
-        };
-        window.addEventListener("keydown", onKeyDown);
-        return () => window.removeEventListener("keydown", onKeyDown);
-    }, [isLightboxOpen, closeLightbox]);
-
     const isDisabled = isLoading || isUploading || isAnalyzing || isValidating;
 
     return (
         <section className="product-layout">
             {isLoading && <PointsLoading loadingMessage={loadingMessage} />}
 
-            {isLightboxOpen && previewImages[sliderIndex] && (
-                <div
-                    className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
-                    onClick={closeLightbox}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Image Zoom"
-                >
-                    <button
-                        type="button"
-                        className="absolute top-8 right-8 z-10 p-3 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-all"
-                        onClick={(e) => { e.stopPropagation(); closeLightbox(); }}
-                        aria-label="Close"
-                    >
-                        <span className="text-2xl leading-none">&times;</span>
-                    </button>
-                    <div
-                        className="relative max-w-[95vw] max-h-[95vh] w-full h-full flex items-center justify-center"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <Image
-                            src={previewImages[sliderIndex].src}
-                            alt={previewImages[sliderIndex].name}
-                            width={1600}
-                            height={1600}
-                            className="max-w-full max-h-[90vh] w-auto h-auto object-contain drop-shadow-2xl"
-                        />
-                    </div>
-                </div>
-            )}
+            <ImageModal
+                src={previewImages[sliderIndex]?.src ?? ""}
+                isOpen={isLightboxOpen && !!previewImages[sliderIndex]}
+                onClose={closeLightbox}
+                alt={previewImages[sliderIndex]?.name ?? "향수 이미지"}
+            />
 
             <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8 items-start">
                 {/* Left Column: Image Upload & Gallery */}
