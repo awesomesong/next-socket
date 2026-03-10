@@ -13,10 +13,12 @@
 import { PrismaClient } from "@prisma/client";
 
 const prismaClientSingleton = () => {
+  const baseUrl = process.env.DATABASE_URL ?? "";
+  const separator = baseUrl.includes("?") ? "&" : "?";
   return new PrismaClient({
     datasources: {
       db: {
-        url: process.env.DATABASE_URL + "?connection_limit=5&pool_timeout=30",
+        url: baseUrl + separator + "connection_limit=5&pool_timeout=30",
       },
     },
   });
@@ -30,4 +32,4 @@ const prisma = globalThis.prisma ?? prismaClientSingleton();
 
 export default prisma;
 
-if (process.env.NODE_ENV !== "production") globalThis.prisma = prisma;
+globalThis.prisma = prisma;
