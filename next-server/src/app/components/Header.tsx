@@ -50,8 +50,7 @@ export const Header = async () => {
                         flex-row 
                         items-center 
                         justify-end
-                        space-x-3 
-                        md:min-w-[121px]
+                        space-x-3
                     '>
                     {user?.name ? (
                         <>
