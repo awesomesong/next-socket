@@ -746,6 +746,11 @@ h6 {
   align-items: flex-start;
   width: 100%;
 }
+@media (max-width: 639px) {
+  .fragrance-form-layout {
+    align-items: stretch;
+  }
+}
 @media (min-width: 1024px) {
   .fragrance-form-layout {
     flex-direction: row;
@@ -802,6 +807,17 @@ h6 {
   flex: 1 1 50%;
   margin-left: auto;
   margin-right: auto;
+}
+@media (max-width: 639px) {
+  .fragrance-detail-image-box {
+    flex: 0 0 auto;
+    min-height: 160px;
+    width: 100%;
+  }
+  .fragrance-form-left .fragrance-img-size {
+    min-height: 160px;
+    flex-shrink: 0;
+  }
 }
 .fragrance-detail-info {
   flex: 1 1 50%;
