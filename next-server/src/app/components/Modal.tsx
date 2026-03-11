@@ -3,6 +3,7 @@ import { IoClose } from "react-icons/io5";
 import clsx from "clsx";
 import { ModalProps } from "@/src/app/types/common";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 const Modal: React.FC<ModalProps> = ({
     isOpen,
@@ -28,7 +29,7 @@ const Modal: React.FC<ModalProps> = ({
         };
     }, [isOpen, onCloseModal]);
 
-    return (
+    const modalContent = (
         <div
             className={clsx(
                 "fixed inset-0 z-[9999] flex items-center justify-center transition-all duration-300",
@@ -96,6 +97,9 @@ const Modal: React.FC<ModalProps> = ({
             </div>
         </div>
     );
+
+    if (typeof document === "undefined") return null;
+    return createPortal(modalContent, document.body);
 };
 
 export default Modal;
