@@ -699,6 +699,7 @@ io.on("connection", (socket) => {
       userId,
       ts: Date.now(),
       rev: nextRev,
+      ...(type === "member.left" && recipients && Array.isArray(recipients) && { recipients }),
     };
 
     // 4) 알림 대상 사용자들 (남은 사용자들 + 나간 사용자)
