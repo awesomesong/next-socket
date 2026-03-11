@@ -1903,4 +1903,17 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
   .section-title {
     @apply text-[clamp(16px,1.5vw,24px)];
   }
+
+  /* Notice intro: responsive preview images */
+  .notice-preview-frame {
+    @apply flex justify-center rounded-xl overflow-hidden border border-[var(--color-card-border)] md:border-0;
+  }
+
+  .notice-preview-btn {
+    @apply inline-flex cursor-zoom-in max-w-full w-auto md:w-full;
+  }
+
+  .notice-preview-img {
+    @apply max-w-full w-auto h-auto md:w-full;
+  }
 }
