@@ -60,7 +60,6 @@ const Header: React.FC<HeaderProps> = ({ conversation, currentUser }) => {
           h-16
           px-2
           sm:px-4
-          bg-default
           header-border-b
       ">
         <div className="flex gap-3 items-center">

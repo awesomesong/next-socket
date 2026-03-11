@@ -73,6 +73,7 @@ import type {
   FragranceReviewDeletedPayload,
 } from "@/src/app/types/fragrance";
 import { lastMessageMs, serverLooksEmpty } from "../utils/chat";
+import { arraysEqualUnordered } from "../utils/arraysEqualUnordered";
 import type { ConvSnap, BufferedMsg } from "../types/socket";
 import type { QueryClient } from "@tanstack/react-query";
 import type { PartialConversationType, UnnormalizedMessage, FullConversationType } from "../types/conversation";
@@ -218,7 +219,7 @@ const SocketState = () => {
   const pathname = usePathname();
   const socket = useSocket();
   const { conversationId } = useConversation();
-  const { set } = useConversationUserList();
+  const { set, remove } = useConversationUserList();
   const queryClient = useQueryClient();
   const { data: session, status } = useSession();
   const conversationIdRef = useRef(conversationId);
@@ -592,138 +593,87 @@ const SocketState = () => {
           if (!userId) return; // 잘못된 델타 방어
           const id = conversationId;
           const leftUserId = userId;
-          const myUserId = session?.user?.id ?? "";
+          const myUserId = userIdRef.current ?? "";
 
           if (leftUserId === myUserId) {
             // 멱등 가드
             if (exitedByMeRef.current.has(id)) return;
             exitedByMeRef.current.add(id);
-
-            // 로컬 상태 정리
-
-            // 진행 중 상세 쿼리만 취소
             try { await queryClient.cancelQueries({ queryKey: conversationKey(id), exact: true }); } catch { }
-
-            return; // ⬅️ 전역 캐시/배지 업데이트 없이 함수 종료
+            return;
           }
 
-          // ✅ conversationKey 업데이트 (대화방 상세 데이터)
+          // 1) 남은 사용자 ID 목록 — 이벤트 recipients 우선, 없으면 캐시에서 계산
+          const eventRecipients = event.recipients && Array.isArray(event.recipients) ? event.recipients : null;
+          const listNow = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
+          const currentConv = listNow?.conversations?.find((c: FullConversationType) => String(c.id) === id);
+          const detailData = queryClient.getQueryData(conversationKey(id)) as { conversation?: FullConversationType } | undefined;
+          const cacheUserIds = (currentConv?.userIds?.length ? currentConv.userIds : detailData?.conversation?.userIds) ?? [];
+          const remainingUserIds = eventRecipients !== null
+            ? eventRecipients
+            : cacheUserIds.filter((uid: string) => uid !== leftUserId);
+
+          // 2) conversationKey — 상세 캐시 (남은 사용자로 통일)
           queryClient.setQueryData(conversationKey(id), (prev: { conversation?: FullConversationType } | undefined) => {
-            if (!prev?.conversation?.userIds) return prev;
-
-            const beforeUserIds = prev.conversation.userIds;
-            const updatedUserIds = beforeUserIds.filter((userId: string) => userId !== leftUserId);
-
-            // 변경사항이 없으면 기존 데이터 반환
-            if (beforeUserIds.length === updatedUserIds.length) return prev;
-
-            const beforeUsers = prev.conversation.users || [];
-            const updatedUsers = beforeUsers.filter((user) => user.id !== leftUserId);
-
+            if (!prev?.conversation) return prev;
+            const prevUserIds = prev.conversation.userIds ?? [];
+            if (arraysEqualUnordered(prevUserIds, remainingUserIds)) return prev;
+            const updatedUsers = (prev.conversation.users ?? []).filter((u) => u.id !== leftUserId);
             return {
               ...prev,
               conversation: {
                 ...prev.conversation,
-                userIds: updatedUserIds,
+                userIds: [...remainingUserIds],
                 users: updatedUsers,
               },
             };
           });
 
-          // ✅ conversationListKey의 해당 아이템만 새 객체로 바꾸고, 나머지 아이템은 같은 참조 유지
+          // 3) conversationListKey — 리스트 캐시 (남은 사용자로 통일)
           queryClient.setQueryData(conversationListKey, (prev: ConversationListData | undefined) => {
             if (!prev?.conversations?.length) return prev;
-
             const idx = prev.conversations.findIndex((c: FullConversationType) => String(c.id) === id);
             if (idx < 0) return prev;
-
-            const currentConv = prev.conversations[idx];
-            const beforeUserIds = currentConv.userIds || [];
-            const updatedUserIds = beforeUserIds.filter((userId: string) => userId !== leftUserId);
-
-            // 변경사항이 없으면 기존 데이터 반환 (리렌더링 방지)
-            if (beforeUserIds.length === updatedUserIds.length) return prev;
-
-            // ✅ users 배열에서도 나간 유저 제거
-            const updatedUsers = (currentConv.users || []).filter((user) =>
-              user.id !== leftUserId
-            );
-
-            // ✅ 변경된 대화방만 새 객체로 생성
-            const updatedConversation = {
-              ...currentConv,
-              userIds: [...updatedUserIds],
-              users: [...updatedUsers]
-            };
-
-            // ✅ 변경된 대화방만 교체, 나머지는 같은 참조 유지
-            const newConversations = [...prev.conversations];
-            newConversations[idx] = updatedConversation;
-
-            const result = {
-              ...prev,
-              conversations: newConversations
-            };
-
-            return result;
+            const item = prev.conversations[idx];
+            const prevUserIds = item.userIds ?? [];
+            if (arraysEqualUnordered(prevUserIds, remainingUserIds)) return prev;
+            const updatedUsers = (item.users ?? []).filter((u) => u.id !== leftUserId);
+            const next = [...prev.conversations];
+            next[idx] = { ...item, userIds: [...remainingUserIds], users: updatedUsers };
+            return { ...prev, conversations: next };
           });
 
-          // ✅ messagesKey에서 나간 사용자 정보 제거
+          // 4) useConversationUserList 스토어
+          set({ conversationId: id, userIds: remainingUserIds });
+
+          // 5) messagesKey — 메시지 내 conversation.userIds / seenUsers에서 나간 사용자 제거
           queryClient.setQueryData(messagesKey(id), (prev: MessagesInfinite) => {
             if (!prev?.pages) return prev;
-
             let hasChanges = false;
             const newPages = prev.pages.map((page: MessagesPage) => {
               if (!Array.isArray(page?.messages)) return page;
-
               let pageHasChanges = false;
               const newMessages = page.messages.map((m: FullMessageType) => {
-                // 메시지의 conversation.userIds에서 나간 사용자 제거
-                if (m?.conversation?.userIds) {
-                  const hasLeftUser = m.conversation.userIds.includes(leftUserId);
-                  if (hasLeftUser) {
-                    pageHasChanges = true;
-                    hasChanges = true;
-
-                    return {
-                      ...m,
-                      conversation: {
-                        ...m.conversation,
-                        userIds: m.conversation.userIds.filter((userId: string) => userId !== leftUserId)
-                      }
-                    };
-                  }
-                }
-                return m;
+                if (!m?.conversation?.userIds?.includes(leftUserId)) return m;
+                pageHasChanges = true;
+                hasChanges = true;
+                return {
+                  ...m,
+                  conversation: {
+                    ...m.conversation,
+                    userIds: m.conversation.userIds.filter((uid: string) => uid !== leftUserId),
+                  },
+                };
               });
-
-              // seenUsersForLastMessage에서 나간 사용자 제거 (첫 번째 페이지만)
               let updatedSeenUsers = page.seenUsersForLastMessage;
-              if (page.seenUsersForLastMessage) {
-                const hasLeftUserInSeen = page.seenUsersForLastMessage.some((user: { id: string }) => user.id === leftUserId);
-                if (hasLeftUserInSeen) {
-                  pageHasChanges = true;
-                  hasChanges = true;
-                  updatedSeenUsers = page.seenUsersForLastMessage.filter((user: { id: string }) =>
-                    user.id !== leftUserId
-                  );
-                }
+              if (page.seenUsersForLastMessage?.some((u: { id: string }) => u.id === leftUserId)) {
+                pageHasChanges = true;
+                hasChanges = true;
+                updatedSeenUsers = page.seenUsersForLastMessage.filter((u: { id: string }) => u.id !== leftUserId);
               }
-
-              return pageHasChanges ? {
-                ...page,
-                messages: newMessages,
-                seenUsersForLastMessage: updatedSeenUsers
-              } : page;
+              return pageHasChanges ? { ...page, messages: newMessages, seenUsersForLastMessage: updatedSeenUsers } : page;
             });
-
-            // 변경사항이 없으면 기존 데이터 반환
-            if (!hasChanges) return prev;
-
-            return {
-              ...prev,
-              pages: newPages
-            };
+            return hasChanges ? { ...prev, pages: newPages } : prev;
           });
           break;
         }
@@ -737,7 +687,10 @@ const SocketState = () => {
           queryClient.removeQueries({ queryKey: messagesKey(id), exact: false });
           queryClient.removeQueries({ queryKey: conversationKey(id), exact: true });
 
-          // ✅ 2) 잔여 상태 정리 (메모리 누수 방지)
+          // 3) useConversationUserList에서 해당 방 제거 (삭제된 방이 스토어에 남지 않도록)
+          remove(id);
+
+          // ✅ 잔여 상태 정리 (메모리 누수 방지)
           bufferedRef.current.delete(id);
           bufferedIdSetRef.current.delete(id);
           snapshotRef.current.delete(id);
@@ -751,7 +704,7 @@ const SocketState = () => {
     } catch {
       // 에러 무시
     }
-  }, [queryClient, session?.user?.id]);
+  }, [queryClient, set, remove]);
 
   const handleConversationNew = useCallback((conversation: PartialConversationType & { id: string }) => {
     try {

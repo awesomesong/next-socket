@@ -97,12 +97,6 @@ const useOtherUser = (
     resetKey: session?.user?.email ?? currentUser?.email, // undefined면 리셋 없음
   });
 
-  // 리스너 재등록 방지: 최신 이메일은 ref로 참조
-  const emailRef = useRef<string | null>(stickyEmail);
-  useEffect(() => {
-    emailRef.current = stickyEmail;
-  }, [stickyEmail]);
-
   // 2) 대화방 (sticky)
   const convCandidate: MinimalConv | null = useMemo(() => {
     if (!conversation) return null;
@@ -146,18 +140,15 @@ const useOtherUser = (
         markTomb(key);
         return;
       }
-      if (p?.type === "member.left" || p?.type === "member.removed") {
-        const email = p?.userEmail;
-        // 이메일이 없거나(보수적) / "나 이외"가 나간 경우만 tombstone
-        if (!email || email !== emailRef.current) markTomb(key);
-      }
+      // member.left / member.removed 시에는 tombstone 하지 않음.
+      // SocketState가 캐시(users/userIds)를 이미 갱신하므로, 상대 계산은 캐시 기준으로 함.
     };
 
     socket.on("room.event", onRoomEvent);
     return () => {
       socket.off("room.event", onRoomEvent);
     };
-  }, [socket]); // stickyEmail 의존 제거(Ref로 처리)
+  }, [socket]);
 
   // 5) React Query 신호로 권위적 비움 승격
   const convKey = toKey(stickyConv?.id ?? "");

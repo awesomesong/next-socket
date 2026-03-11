@@ -95,6 +95,56 @@ const AIChatForm = ({
     }
   }, [sessionStatus, setFocus]);
 
+  // 드래프트 페이지에서 첫 메시지 전송 후 이동해온 경우: pending AI 스트림 자동 시작
+  const hasPendingTriggeredRef = useRef(false);
+  useEffect(() => {
+    if (hasPendingTriggeredRef.current) return;
+    if (sessionStatus !== "authenticated" || !session?.user?.id) return;
+
+    const pendingStr = sessionStorage.getItem("scent:pendingAI");
+    if (!pendingStr) return;
+
+    let pending: { conversationId: string; userMessage: string; userMessageId: string };
+    try {
+      pending = JSON.parse(pendingStr);
+    } catch {
+      sessionStorage.removeItem("scent:pendingAI"); return;
+    }
+    if (pending.conversationId !== conversationId) return;
+
+    hasPendingTriggeredRef.current = true;
+    sessionStorage.removeItem("scent:pendingAI");
+
+    const user = session.user;
+    // setTimeout(0): React Strict Mode의 effect→cleanup→effect 사이클 이후에 실행되도록 지연
+    // cleanup이 먼저 실행되면 'started = false'이므로 sessionStorage를 복원해 재시도 가능
+    let started = false;
+    const tid = setTimeout(() => {
+      started = true;
+      setIsDisabled(true);
+      requestAI({
+        userMessage: pending.userMessage,
+        userMessageId: pending.userMessageId,
+        currentUser: {
+          id: user.id,
+          name: user.name ?? null,
+          email: user.email ?? null,
+          image: user.image ?? null,
+        },
+        conversation: { isGroup: false, userIds: [user.id] },
+      }).finally(() => setIsDisabled(false));
+    }, 0);
+
+    return () => {
+      clearTimeout(tid);
+      if (!started) {
+        // Strict Mode cleanup: sessionStorage 복원 + 플래그 초기화 → 재실행 시 재시도 가능
+        hasPendingTriggeredRef.current = false;
+        sessionStorage.setItem("scent:pendingAI", JSON.stringify(pending));
+      }
+    };
+  }, [sessionStatus, session, conversationId, requestAI]);
+
   const onSubmit = useCallback<SubmitHandler<Form>>(async ({ message }) => {
     if (isDisabled) return;
     if (isSessionLoading) return; // 세션 로딩 중 조용히 대기 (에러 toast 없음)
@@ -226,7 +276,6 @@ const AIChatForm = ({
         w-full
         px-4
         py-2
-        bg-default
         border-t-default
     ">
       <form

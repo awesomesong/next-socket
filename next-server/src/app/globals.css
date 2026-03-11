@@ -1344,6 +1344,14 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
     background: var(--bg-gradient-scent);
   }
 
+  /* 아바타/아이콘 배경용: 다크 모드에서도 흰 아이콘 대비를 위해 어두운 그라데이션 유지 */
+  .bg-gradient-scent-avatar {
+    background: var(--bg-gradient-scent);
+  }
+  .dark .bg-gradient-scent-avatar {
+    background: linear-gradient(115deg, #a67d5c 0%, #5c4a7a 55%, #b07d82 100%);
+  }
+
   .modal-title {
     @apply font-bold tracking-tight text-gradient-scent;
     font-size: clamp(1rem, 3vw, 1.2rem);

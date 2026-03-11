@@ -4,7 +4,7 @@ import { toast } from "react-hot-toast";
 type createChatProps = {
     data?: FieldValues;
     isGroup?: boolean;
-    userId: string;
+    userId?: string;
 }
 
 export const createChatConversation = async ({data, isGroup, userId}: createChatProps) => {
@@ -28,11 +28,6 @@ export const createChatConversation = async ({data, isGroup, userId}: createChat
         return payload;
     }
 
-    // ✅ 기존 대화방 vs 새 대화방에 따라 다른 토스트
-    if (!payload.existingConversation) {
-        toast.success("새 대화방이 생성되었습니다.");
-    }
-    
     // ✅ GroupChatModal.tsx에서 data.id를 사용할 수 있도록 id 필드 보장
     return { ...payload, id: payload.id || payload.conversationId };
-};  
+};

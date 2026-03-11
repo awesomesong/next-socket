@@ -351,7 +351,6 @@ const Form = () => {
         w-full
         px-4
         py-2
-        bg-default
         border-t-default
     ">
       <ImageUploadButton onUploadSuccess={handleUpload} variant="compact" />

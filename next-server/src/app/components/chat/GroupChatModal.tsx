@@ -7,21 +7,16 @@ import { IUserList } from "@/src/app/types/common";
 import { useRouter } from "next/navigation";
 import { memo, useEffect, useRef, useState } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
-import toast from "react-hot-toast";
 import { SelectInstance, GroupBase, MultiValue } from "react-select";
 import getUsers from "@/src/app/lib/getUsers";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { FormInputSkeleton } from "@/src/app/components/FragranceSkeleton";
-import { createChatConversation } from "@/src/app/lib/createChatConversation";
-import { useSocket } from "../../context/socketContext";
-import { SOCKET_EVENTS } from "@/src/app/lib/react-query/utils";
 import type { FullConversationType } from "@/src/app/types/conversation";
 
 interface GroupChatModalProps {
   isOpen?: boolean;
   onCloseModal: () => void;
   onSuccess?: (data: FullConversationType) => void;
-  // users: DefaultSession["user"] & IUserList[];
 }
 
 type OptionType = { value: string; label: string };
@@ -29,9 +24,7 @@ type OptionType = { value: string; label: string };
 const GroupChatModal: React.FC<GroupChatModalProps> = ({
   isOpen,
   onCloseModal,
-  onSuccess,
 }) => {
-  const socket = useSocket();
   const selectRef = useRef<SelectInstance<OptionType, true, GroupBase<OptionType>>>(null);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -43,33 +36,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
     queryKey: ["chatMember"],
     queryFn: getUsers,
     enabled: isOpen,
-    staleTime: 1000 * 60, // 1분 동안 데이터 유지
-  });
-
-  const {
-    mutate,
-  } = useMutation({
-    mutationFn: ({ data, isGroup, userId }: { data: FieldValues; isGroup: boolean; userId: string; }) =>
-      createChatConversation({ data, isGroup, userId }),
-    onSuccess: (data) => {
-      if (data.existingConversation) {
-        toast("이미 동일한 멤버의 단체 대화방이 있어 해당 방으로 이동합니다.");
-      }
-      onSuccess?.(data as FullConversationType);
-      router.push(`/conversations/${data.id}`);
-      onCloseModal();
-      if (!data.existingConversation && socket) {
-        socket.emit(SOCKET_EVENTS.CONVERSATION_NEW, data);
-      }
-    },
-    onError: () => {
-      toast.error("대화방 생성에 실패했습니다.");
-    },
-    onSettled: () => {
-      clearErrors();
-      reset();
-      setIsLoading(false);
-    },
+    staleTime: 1000 * 60,
   });
 
   const {
@@ -100,14 +67,13 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
 
   const members = watch("members");
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {
-    if (isLoading) return; // 이미 로딩 중이면 중복 제출 방지
+    if (isLoading) return;
 
     setIsLoading(true);
 
     const membersArr = Array.isArray(data.members) ? data.members : [];
     const memberNum = membersArr.length;
 
-    // ( 유효성 검사 ) 그룹채팅 설정 : 2명 이상일 때만 이름 필수
     if (memberNum > 1 && !String(data.name ?? "").trim()) {
       setIsLoading(false);
       setError("name", {
@@ -126,15 +92,38 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
       return;
     }
 
+    onCloseModal();
+    reset();
+    clearErrors();
 
-    const userId = memberNum === 1 ? (membersArr[0].value as string) : undefined;
-    const isGroup = memberNum > 1;
-
-    mutate({
-      data,
-      isGroup,
-      userId: userId as string,
-    });
+    try {
+      if (memberNum === 1) {
+        // 1:1 대화: 기존 대화방 확인
+        const userId = membersArr[0].value;
+        const res = await fetch(`/api/conversations/find?userId=${encodeURIComponent(userId)}`);
+        const { conversationId } = await res.json();
+        if (conversationId) {
+          router.push(`/conversations/${conversationId}`);
+        } else {
+          router.push(`/conversations/new?userId=${userId}`);
+        }
+      } else {
+        // 그룹 대화: 기존 대화방 확인
+        const memberIds = membersArr.map((m: OptionType) => m.value).join(',');
+        const params = new URLSearchParams({ isGroup: 'true', members: memberIds });
+        const res = await fetch(`/api/conversations/find?${params.toString()}`);
+        const { conversationId } = await res.json();
+        if (conversationId) {
+          router.push(`/conversations/${conversationId}`);
+        } else {
+          const name = String(data.name ?? '').trim();
+          if (name) params.set('name', name);
+          router.push(`/conversations/new?${params.toString()}`);
+        }
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -151,11 +151,12 @@ export async function DELETE(req: Request, { params }: ParamsProp) {
         },
       });
 
-      // 5) 멤버 업데이트
+      // 5) 멤버 업데이트: userIds와 users 관계를 동기화 (나간 유저 제거)
       await tx.conversation.update({
         where: { id: conversationId },
         data: {
           userIds: { set: nextUserIds },
+          users: { set: nextUserIds.map((id) => ({ id })) },
         },
       });
 

@@ -256,8 +256,29 @@ export async function POST(req: Request) {
     }
 
     // 1:1 대화방 생성
-    if (!userId || userId === user.id) {
-      return new NextResponse("상대 유저 ID가 올바르지 않습니다.", { status: 400 });
+    if (!userId) {
+      return NextResponse.json(
+        { message: "상대 유저 ID가 필요합니다." },
+        { status: 400 }
+      );
+    }
+    if (userId === user.id) {
+      return NextResponse.json(
+        { message: "본인과는 1:1 대화를 시작할 수 없습니다." },
+        { status: 400 }
+      );
+    }
+
+    // 상대 회원 존재 여부 검사
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!targetUser) {
+      return NextResponse.json(
+        { message: "해당 회원을 찾을 수 없습니다." },
+        { status: 404 }
+      );
     }
 
     const userIdsSorted = toSortedIds([user.id, userId]);

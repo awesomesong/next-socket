@@ -2,7 +2,7 @@
 import { IoClose } from "react-icons/io5";
 import clsx from "clsx";
 import { ModalProps } from "@/src/app/types/common";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 const Modal: React.FC<ModalProps> = ({
@@ -12,6 +12,13 @@ const Modal: React.FC<ModalProps> = ({
     title,
     footer,
 }) => {
+    const [mounted, setMounted] = useState(false);
+
+    // useLayoutEffect: 포털을 paint 전에 넣어서 깜빡임 없이 hydration 일치
+    useLayoutEffect(() => {
+        setMounted(true);
+    }, []);
+
     useEffect(() => {
         if (!isOpen) return;
 
@@ -98,7 +105,7 @@ const Modal: React.FC<ModalProps> = ({
         </div>
     );
 
-    if (typeof document === "undefined") return null;
+    if (!mounted) return null;
     return createPortal(modalContent, document.body);
 };
 

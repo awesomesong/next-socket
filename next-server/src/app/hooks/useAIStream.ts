@@ -116,8 +116,11 @@ export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewCo
             isTyping: true,
         };
 
+        // Body의 useInfiniteQuery가 refetchOnMount로 진행 중인 refetch가
+        // AI 대기 메시지를 덮어쓰지 않도록 먼저 취소
+        await queryClient.cancelQueries({ queryKey: messagesKey(conversationId) });
         upsertMessageSortedInCache(queryClient, conversationId, aiWaitingMessage);
-      
+
         // ✅ AI 대기 메시지 추가 후 스크롤 이벤트 발생 (재시도 시에도 동작)
         onNewContent?.();
 
