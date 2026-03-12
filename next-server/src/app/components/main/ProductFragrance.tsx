@@ -684,8 +684,6 @@ const ProductFragrance = () => {
                                 alt={`${fragrance.brand} ${fragrance.name}`}
                                 variant="compact"
                                 stopPropagation
-                                className="relative w-full h-full"
-                                imageClassName="object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.13)]"
                                 sizes="(max-width: 640px) 45vw, (max-width: 1024px) 22vw, 200px"
                               />
                             </motion.div>

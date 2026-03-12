@@ -615,6 +615,13 @@ h6 {
   max-height: 260px;
 }
 
+/* 640px+에서 카드 폭이 줄어 이미지가 작아지는 문제 보정 */
+@media (min-width: 640px) {
+  .product-fragrance-card-image-box {
+    min-height: 200px;
+  }
+}
+
 /* 헤더·필터 레이아웃 — ProductFragrance와 FragranceHeaderSkeleton / FragranceFilterSkeleton에서 동일 클래스로 공유 */
 .product-fragrance-header-layout {
   padding-bottom: 1.25rem;

@@ -26,9 +26,9 @@ const NoticeCard = ({ notice }: { notice: Notice }) => {
               onSelectIndex={setSliderIndex}
               alt={notice.title + " 글의 대표 이미지"}
               variant="compact"
+              aspectRatio="16/10"
+              fit="cover"
               stopPropagation
-              className="relative w-full h-full"
-              imageClassName="object-cover"
               sizes="(max-width: 580px) 100vw, (max-width: 1280px) 50vw, (max-width: 1536px) 33vw, 25vw"
             />
           ) : (

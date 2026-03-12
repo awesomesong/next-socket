@@ -127,9 +127,9 @@ export default function FragranceDetailClient({ slug }: Props) {
                                     currentIndex={sliderIndex}
                                     onSelectIndex={setSliderIndex}
                                     alt={`${fragrance.brand} ${fragrance.name}`}
-                                    imageClassName="object-contain drop-shadow-2xl"
                                     sizes="(max-width: 480px) 100vw, (max-width: 768px) 200px, (max-width: 1024px) 240px, 280px"
-                                    className="relative w-full h-full min-h-[160px] sm:min-h-0"
+                                    variant="default"
+                                    aspectRatio="3/4"
                                 />
                             </div>
                         </div>
