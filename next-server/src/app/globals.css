@@ -1203,7 +1203,7 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
   .scent-select__menu {
     /* Always use ivory background to support the dark text requested by user */
     @apply bg-[var(--color-ivory)] border-1 border-[var(--color-lavender-border)] rounded-xl shadow-2xl overflow-hidden mt-1;
-    z-index: 9999 !important;
+    z-index: 1000 !important;
   }
 
   .scent-select__option {

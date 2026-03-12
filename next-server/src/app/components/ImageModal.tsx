@@ -152,7 +152,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
     return (
         <div
             className={clsx(
-                "fixed inset-0 z-[9999] flex flex-col transition-all duration-300",
+                "fixed inset-0 z-[1000] flex flex-col transition-all duration-300",
                 "bg-black/80 backdrop-blur-md",
                 isOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
             )}

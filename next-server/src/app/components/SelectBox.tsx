@@ -86,7 +86,7 @@ const SelectBox: React.FC<SelctProps> = ({
                             border: '1px solid var(--color-lavender-border)',
                             boxShadow: '0 10px 25px rgba(45, 32, 64, 0.1)',
                             overflow: 'hidden',
-                            zIndex: 9999,
+                            zIndex: 1000,
                         }),
                         option: (base, state) => ({
                             ...base,
@@ -135,7 +135,7 @@ const SelectBox: React.FC<SelctProps> = ({
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 9999,
+                            zIndex: 1000,
                         }),
                     }}
                 />)}

@@ -39,7 +39,7 @@ const Modal: React.FC<ModalProps> = ({
     const modalContent = (
         <div
             className={clsx(
-                "fixed inset-0 z-[9999] flex items-center justify-center transition-all duration-300",
+                "fixed inset-0 z-[1000] flex items-center justify-center transition-all duration-300",
                 isOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
             )}
         >
