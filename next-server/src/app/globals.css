@@ -476,12 +476,6 @@ h6 {
   margin-right: auto;
   flex-shrink: 0;
 }
-@media (min-width: 640px) {
-  .fragrance-form-left {
-    flex-direction: row;
-    align-items: flex-start;
-  }
-}
 @media (min-width: 1024px) {
   .fragrance-form-left {
     flex-direction: column;
