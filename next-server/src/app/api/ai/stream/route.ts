@@ -511,7 +511,7 @@ async function callOpenAI(apiKey: string, contextMessages: ChatMessage[]) {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
-        "User-Agent": "hitejinro-ai-assistant/1.0",
+        "User-Agent": "scentMemories-ai-assistant/1.0",
       },
       body: JSON.stringify(requestBody),
       signal: controller.signal,
