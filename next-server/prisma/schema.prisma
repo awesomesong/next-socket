@@ -76,6 +76,8 @@ model Conversation {
   conversationReads ConversationRead[]
   messages          Message[]
   users             User[]             @relation("ConversationToUser")
+
+  @@index([isGroup])
 }
 
 model ConversationRead {
