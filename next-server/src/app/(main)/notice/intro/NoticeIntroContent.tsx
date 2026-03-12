@@ -5,11 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import ImageModal from '@/src/app/components/ImageModal';
 
-const PAGE_LINKS = [
-  { label: 'Site', href: 'https://www.devsonghee.com', display: 'devsonghee.com' },
-  { label: 'GitHub', href: 'https://github.com/gangsonghui', display: 'github.com/gangsonghui' },
-] as const;
-
 const ON_THIS_PAGE = [
   { href: '#overview', label: 'Scent Memories란?' },
   { href: '#preview', label: '화면 미리보기' },
