@@ -59,7 +59,7 @@ export type DeleteCommentRequest = {
 };
 
 /**
- * React Query에 사용되는 페이지 데이터 타입
+ * TanStack Query에 사용되는 페이지 데이터 타입
  */
 export type CommentPageItem =
   | { comments: CommentType[] }

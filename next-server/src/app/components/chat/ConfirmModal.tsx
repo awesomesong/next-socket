@@ -48,7 +48,7 @@ const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
         return;
       }
 
-      // ✅ 시스템 메시지가 있으면 소켓으로 전송하고 React Query 캐시 업데이트
+      // ✅ 시스템 메시지가 있으면 소켓으로 전송하고 TanStack Query 캐시 업데이트
       if (event.type === "member.left" && event.systemMessage) {
         // 1) 시스템 메시지를 서버로 전송 (서버에서 대화방 참여자들에게 브로드캐스트)
         if (socket) {
@@ -65,7 +65,7 @@ const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
           });
         }
 
-        // 2) React Query 캐시에 시스템 메시지 추가
+        // 2) TanStack Query 캐시에 시스템 메시지 추가
         upsertMessageSortedInCache(queryClient, String(conversationId), event.systemMessage);
       }
 

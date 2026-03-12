@@ -284,7 +284,7 @@ const SocketState = () => {
   // 대화방 리스트 API 응답이 처리되었는지 여부
   // ⚠️ 중요: 초기값을 false로 설정하여 새로고침 시에도 버퍼 저장이 시작되도록 함
   const listReadyRef = useRef(false);
-  // React Query 구독 콜백의 재진입 방지 가드
+  // TanStack Query 구독 콜백의 재진입 방지 가드
   const listSyncGuardRef = useRef(false);
   // API 응답 전에 도착한 실시간 메시지 임시 저장소
   const bufferedRef = useRef(new Map<string, BufferedMsg[]>()); // convId -> buffered msgs
@@ -1066,7 +1066,7 @@ const SocketState = () => {
     if (listSyncGuardRef.current) return;
 
     // ✅ 서버 응답 데이터를 우선 사용 (API 응답의 가장 fresh한 데이터)
-    // React Query 구독 이벤트는 캐시 업데이트 후에 발생하므로,
+    // TanStack Query 구독 이벤트는 캐시 업데이트 후에 발생하므로,
     // serverData 파라미터로 받은 데이터가 서버 응답의 원본 데이터입니다
     // optimisticListUpdate 등으로 캐시가 변경되었을 수 있으므로,
     // 서버 응답 원본 데이터를 사용해야 버퍼 메시지와 정확히 비교할 수 있습니다
@@ -1084,7 +1084,7 @@ const SocketState = () => {
       return;
     }
 
-    // ✅ 서버 응답은 이미 React Query 캐시에 반영된 상태 (subscribe 이벤트가 캐시 업데이트 후 발생)
+    // ✅ 서버 응답은 이미 TanStack Query 캐시에 반영된 상태 (subscribe 이벤트가 캐시 업데이트 후 발생)
     // 따라서 여기서는 버퍼 처리만 수행
     // 리스트 스냅샷 만들기
     const next = new Map<string, ConvSnap>();
@@ -1441,7 +1441,7 @@ const SocketState = () => {
     // ✅ 주기적으로 체크 (API 호출 시작 감지용)
     const interval = setInterval(checkFetching, 100);
 
-    // ✅ React Query 구독: API 응답 완료 후 processList 실행 (초기 로드든 새로고침이든 동일)
+    // ✅ TanStack Query 구독: API 응답 완료 후 processList 실행 (초기 로드든 새로고침이든 동일)
     // ⚠️ 중요: API 응답 완료 시점에 listReadyRef는 여전히 false이어야 함 (버퍼에 저장된 메시지 처리 전까지)
     const unsub = queryClient.getQueryCache().subscribe((event) => {
       if (event?.type !== "updated") return;

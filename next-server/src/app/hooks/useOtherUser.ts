@@ -150,7 +150,7 @@ const useOtherUser = (
     };
   }, [socket]);
 
-  // 5) React Query 신호로 권위적 비움 승격
+  // 5) TanStack Query 신호로 권위적 비움 승격
   const convKey = toKey(stickyConv?.id ?? "");
   useEffect(() => {
     if (!convKey) return;

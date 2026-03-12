@@ -1,6 +1,6 @@
 import AnimatedLogo from './AnimatedLogo';
 
-const TECH_STACK = ['Next.js 15', 'React 19', 'TypeScript', 'socket.io', 'React Query', 'Prisma'];
+const TECH_STACK = ['Next.js 15', 'React 19', 'TypeScript', 'socket.io', 'TanStack Query', 'Prisma'];
 
 export default function Footer() {
     const year = new Date().getFullYear();
