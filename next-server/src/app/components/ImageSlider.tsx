@@ -51,9 +51,9 @@ const ImageSlider = ({
   aspectRatio = '3/4',
   fit = 'contain',
 }: ImageSliderProps) => {
-  if (images.length === 0) return null;
-
-  const safeIndex = Math.max(0, Math.min(currentIndex, images.length - 1));
+  const imagesLen = images.length;
+  const safeIndex =
+    imagesLen === 0 ? 0 : Math.max(0, Math.min(currentIndex, imagesLen - 1));
 
   const handlePrev = (e: React.MouseEvent) => {
     if (stopPropagation) {
@@ -93,6 +93,8 @@ const ImageSlider = ({
   const imgStyle = fit === 'cover'
     ? ({ width: '100%', height: '100%' } as React.CSSProperties)
     : ({ width: '100%', height: '100%' } as React.CSSProperties);
+
+  if (imagesLen === 0) return null;
 
   return (
     <div className="card-image-slider w-full">
@@ -154,7 +156,7 @@ const ImageSlider = ({
           </motion.div>
         )}
 
-        {images.length > 1 && (
+        {imagesLen > 1 && (
           <div className="col-start-1 row-start-1 w-full h-full flex items-center justify-between px-2 pointer-events-none z-10">
             <button
               type="button"
@@ -174,10 +176,10 @@ const ImageSlider = ({
               className={clsx(
                 chevronBtnClass,
                 'pointer-events-auto',
-                safeIndex === images.length - 1 && 'opacity-60 cursor-not-allowed'
+                safeIndex === imagesLen - 1 && 'opacity-60 cursor-not-allowed'
               )}
               onClick={handleNext}
-              disabled={safeIndex === images.length - 1}
+              disabled={safeIndex === imagesLen - 1}
               aria-label={isCompact ? '다음 이미지' : 'Next'}
             >
               <HiChevronRight className={chevronIconClass} />
@@ -186,12 +188,12 @@ const ImageSlider = ({
         )}
       </div>
 
-      {(images.length > 1 || (showAnalyzeButton && onAnalyze)) && (
+      {(imagesLen > 1 || (showAnalyzeButton && onAnalyze)) && (
         <div className={clsx('mt-2 flex items-center justify-between', isCompact ? 'px-1' : 'px-0')}>
-          {images.length > 1 ? (
+          {imagesLen > 1 ? (
             <div className="flex items-center gap-2">
               <span className="text-[11px] tracking-widest text-[var(--color-text-secondary)]">
-                {safeIndex + 1}/{images.length}
+                {safeIndex + 1}/{imagesLen}
               </span>
             </div>
           ) : (
