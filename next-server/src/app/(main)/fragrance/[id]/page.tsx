@@ -1,15 +1,8 @@
-import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
-import { getFragranceSlugsServer, getFragranceBySlugServer } from '@/src/app/lib/getFragrances';
-import FragranceDetailClient from '@/src/app/components/FragranceDetailClient';
+import { getFragranceBySlugServer } from '@/src/app/lib/getFragrances';
+import FragranceDetail from '@/src/app/components/fragrance/FragranceDetail';
 
-// 빌드 시 DB에서 slug 목록을 직접 조회하여 정적 경로 생성
-export async function generateStaticParams() {
-  const slugs = await getFragranceSlugsServer();
-  return slugs.map((slug) => ({ id: slug }));
-}
-
-// DB에 없는 slug도 요청 시 on-demand SSR로 처리
-export const dynamicParams = true;
+// 향수 상세는 데이터 변경 빈도가 낮으므로 ISR로 캐싱
+export const revalidate = 60;
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -17,17 +10,7 @@ type Props = {
 
 export default async function FragrancePage({ params }: Props) {
   const { id: slug } = await params;
-  const queryClient = new QueryClient();
+  const { fragrance } = await getFragranceBySlugServer(slug);
 
-  // Prisma를 직접 호출하여 서버에서 prefetch (HTTP 왕복 없음)
-  await queryClient.prefetchQuery({
-    queryKey: ['fragrance', slug],
-    queryFn: () => getFragranceBySlugServer(slug),
-  });
-
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <FragranceDetailClient slug={slug} />
-    </HydrationBoundary>
-  );
+  return <FragranceDetail slug={slug} fragrance={fragrance} />;
 }

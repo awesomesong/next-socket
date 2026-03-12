@@ -30,6 +30,9 @@ export default function FragranceDetailClient({ slug }: Props) {
     const { data, isLoading, error } = useQuery({
         queryKey: ['fragrance', slug],
         queryFn: () => getFragranceBySlug(slug),
+        // 서버에서 hydration 된 값을 바로 쓰고, 마운트 직후 중복 refetch를 줄임
+        staleTime: 60 * 1000,
+        refetchOnMount: false,
     });
 
     useEffect(() => {
