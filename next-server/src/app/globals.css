@@ -820,6 +820,13 @@ h6 {
   .fragrance-form-left .fragrance-img-size {
     min-height: 160px;
     flex-shrink: 0;
+    /* 모바일에서 전체가 보이되 과하게 커지지 않게 */
+    height: auto;
+    aspect-ratio: 3 / 4;
+    width: min(260px, 100%);
+    max-height: 320px;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 .fragrance-detail-info {
