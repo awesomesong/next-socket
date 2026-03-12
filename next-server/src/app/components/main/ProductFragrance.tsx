@@ -13,6 +13,7 @@ import { FragranceCardSkeleton, FragranceHeaderSkeleton, FragranceFilterSkeleton
 import CircularProgress from '@/src/app/components/CircularProgress';
 import StatusMessage from '@/src/app/components/StatusMessage';
 import clsx from 'clsx';
+import FragranceAuthorMetaClient from '@/src/app/components/fragrance/FragranceAuthorMetaClient';
 
 const FRAGRANCE_MOTION_TRANSITION = {
   duration: 0.5,
@@ -697,6 +698,15 @@ const ProductFragrance = () => {
                             <p className="product-fragrance-name text-[0.9rem] font-medium m-0 leading-[1.35]">
                               {fragrance.name}
                             </p>
+                            {fragrance.author?.name && (
+                              <FragranceAuthorMetaClient
+                                authorName={fragrance.author.name}
+                                authorImage={fragrance.author?.profileImage ?? fragrance.author?.image}
+                                className="mt-3"
+                                variant="light"
+                                align="center"
+                              />
+                            )}
                           </div>
 
                           {/* Hover line */}

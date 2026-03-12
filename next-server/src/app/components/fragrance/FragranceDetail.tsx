@@ -3,6 +3,7 @@ import FragranceReviewSection from '@/src/app/components/FragranceReviewSection'
 import type { FragranceWithAuthor } from '@/src/app/types/fragrance';
 
 import FragranceActionBarClient from './FragranceActionBarClient';
+import FragranceAuthorMetaClient from './FragranceAuthorMetaClient';
 import FragranceHeroClient from './FragranceHeroClient';
 
 type Props = {
@@ -12,6 +13,8 @@ type Props = {
 
 export default function FragranceDetail({ slug, fragrance }: Props) {
   const title = `${fragrance.brand} ${fragrance.name}`.trim();
+  const authorImage =
+    fragrance.author?.profileImage ?? fragrance.author?.image ?? null;
 
   return (
     <div className="fragrance-detail-layout">
@@ -31,12 +34,24 @@ export default function FragranceDetail({ slug, fragrance }: Props) {
             </div>
 
             <div className="fragrance-form-right">
-              {fragrance.brand && (
-                <h2 className="text-top">
-                  <span className="text-gradient-scent">
-                    {fragrance.brand} · {fragrance.name}
-                  </span>
-                </h2>
+              {(fragrance.brand || fragrance.author?.name) && (
+                <div className="flex flex-col">
+                  {fragrance.brand && (
+                    <h2 className="text-top">
+                      <span className="text-gradient-scent">
+                        {fragrance.brand} · {fragrance.name}
+                      </span>
+                    </h2>
+                  )}
+
+                  {fragrance.author?.name && (
+                    <FragranceAuthorMetaClient
+                      authorName={fragrance.author.name}
+                      authorImage={authorImage}
+                      className="w-auto"
+                    />
+                  )}
+                </div>
               )}
 
               {fragrance.description && (

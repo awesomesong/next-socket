@@ -28,6 +28,9 @@ export async function GET(req: NextRequest) {
         const limit = 12;
 
         const fragrances = await prisma.fragrance.findMany({
+            include: {
+                author: { select: { id: true, name: true, email: true, image: true, profileImage: true, role: true } }
+            },
             orderBy: [
                 { createdAt: 'desc' },
                 { id: 'desc' },

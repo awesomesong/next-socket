@@ -139,6 +139,14 @@ blockquote{
   --points-ball-5: #ddd0f8;
 }
 
+:root .force-light-scent-gradient,
+.dark .force-light-scent-gradient,
+[data-theme] .force-light-scent-gradient {
+  --scent-gradient-start: #a67d5c;
+  --scent-gradient-mid: #5c4a7a;
+  --scent-gradient-end: #b07d82;
+}
+
 :root,
 [data-theme] {
   background-color: transparent;

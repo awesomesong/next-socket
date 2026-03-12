@@ -38,7 +38,7 @@ type FragranceListParam = {
 
 export const getFragrances = async (
     { pageParam }: FragranceListParam
-): Promise<FragranceType[]> => {
+): Promise<FragranceWithAuthor[]> => {
     const searchParams = '?cursor=' + encodeURIComponent(pageParam ?? '');
     const res = await fetch(`/api/fragrance${searchParams}`, {
         method: 'GET',

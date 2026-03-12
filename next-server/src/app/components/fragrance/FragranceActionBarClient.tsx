@@ -9,7 +9,7 @@ import { useQueryClient, InfiniteData } from '@tanstack/react-query';
 
 import { deleteFragrance } from '@/src/app/lib/deleteFragrance';
 import { fragranceDetailKey, fragranceListKey } from '@/src/app/lib/react-query/fragranceCache';
-import { FragranceType } from '@/src/app/types/fragrance';
+import type { FragranceWithAuthor } from '@/src/app/types/fragrance';
 
 type Props = {
   fragranceId: string;
@@ -47,7 +47,7 @@ export default function FragranceActionBarClient({
       await deleteFragrance(fragranceId);
 
       // 목록 캐시에서 제거 (목록 화면이 RQ를 쓰는 경우 UX 개선)
-      queryClient.setQueryData<InfiniteData<FragranceType[]>>(fragranceListKey, (old) => {
+      queryClient.setQueryData<InfiniteData<FragranceWithAuthor[]>>(fragranceListKey, (old) => {
         if (!old) return old;
         return {
           ...old,
