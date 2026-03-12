@@ -154,7 +154,7 @@ const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
             variant="scent"
             className="px-6"
           >
-            확인
+            {isLoading ? "삭제 중" : "확인"}
           </Button>
         </div>
       }
