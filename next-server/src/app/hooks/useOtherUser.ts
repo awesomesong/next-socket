@@ -174,7 +174,9 @@ const useOtherUser = (
   }, [queryClient, convKey, stickyConv?.users]);
 
   // 6) 상대 유저 계산
-  const allowInvalid = tombstones.has(convKey);
+  // 리스트만 보고 있을 때도 '나만 남은 방'을 반영: users.length <= 1이면 fallback 허용
+  const allowInvalid =
+    tombstones.has(convKey) || (Number(stickyConv?.users?.length) <= 1);
   const computedOtherUser = useMemo((): IUserList | FallbackUser => {
     if (allowInvalid || !stickyConv) return FALLBACK_USER;
     const users = stickyConv.users ?? [];

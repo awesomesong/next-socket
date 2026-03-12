@@ -613,6 +613,11 @@ const SocketState = () => {
             ? eventRecipients
             : cacheUserIds.filter((uid: string) => uid !== leftUserId);
 
+          // list 로딩 중이면 pendingExitRef에도 저장 (fetch 완료 후 processList에서 재적용)
+          if (!listReadyRef.current || listSyncGuardRef.current) {
+            pendingExitRef.current.set(id, remainingUserIds);
+          }
+
           // 2) conversationKey — 상세 캐시 (남은 사용자로 통일)
           queryClient.setQueryData(conversationKey(id), (prev: { conversation?: FullConversationType } | undefined) => {
             if (!prev?.conversation) return prev;
@@ -1396,6 +1401,8 @@ const SocketState = () => {
 
       updateTotalUnreadStore(queryClient);
 
+      // fetch 결과가 소켓 업데이트를 덮어쓴 경우 재적용 (member.left 등)
+      reconcileAfterList();
     } finally {
       // ✅ listSyncGuardRef를 false로 설정한 후에 listReadyRef를 true로 설정
       // 이렇게 하면 processList 실행 중에 실시간 메시지가 오면 버퍼에만 저장되고,
@@ -1403,7 +1410,7 @@ const SocketState = () => {
       listSyncGuardRef.current = false;
       listReadyRef.current = true;
     }
-  }, [queryClient, ts, isBumpableType]);
+  }, [queryClient, ts, isBumpableType, reconcileAfterList]);
 
   // ✅ 단순화된 버퍼 로직 (초기 로드와 새로고침 모두 동일하게 처리)
   // 1. listReadyRef는 false로 시작
