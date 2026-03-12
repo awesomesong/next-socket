@@ -57,8 +57,6 @@ model User {
   fragranceReviews  FragranceReview[]
   fragrances        Fragrance[]
   messages          Message[]
-  posts             Post[]
-  postComments      PostComment[]
   sessions          Session[]
   conversations     Conversation[]     @relation("ConversationToUser")
 }
@@ -143,33 +141,6 @@ model Comment {
   noticeId    String?
   author      User?    @relation(fields: [authorEmail], references: [email])
   notice      Notice?  @relation(fields: [noticeId], references: [id], onDelete: Cascade)
-}
-
-model Post {
-  id           String        @id @default(cuid())
-  title        String
-  description  String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  category     String
-  published    Boolean?      @default(true)
-  image        String?
-  imageName    String?
-  writerEmail  String
-  writer       User          @relation(fields: [writerEmail], references: [email])
-  postComments PostComment[]
-}
-
-model PostComment {
-  id          String   @id @default(cuid())
-  text        String
-  postId      String?
-  writerEmail String?
-  createdAt   DateTime @default(now())
-  post        Post?    @relation(fields: [postId], references: [id])
-  writer      User?    @relation(fields: [writerEmail], references: [email], onDelete: Cascade)
-
-  @@index([postId])
 }
 
 model FragranceReview {
