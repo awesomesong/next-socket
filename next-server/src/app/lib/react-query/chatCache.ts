@@ -393,6 +393,68 @@ export function upsertConversation(
   });
 }
 
+/**
+ * 첫 메시지와 함께 대화방을 리스트에 한 번만 반영 (리렌더 1회로 제한)
+ */
+export function upsertConversationWithFirstMessage(
+  queryClient: QueryClient,
+  conversation: Partial<FullConversationType> & { id: string },
+  message: ConversationMessagePreview,
+): void {
+  const incomingAt = normalizeDate(message.createdAt);
+  const nextLastAt = new Date(incomingAt.getTime());
+  const previewType = normalizePreviewType(message.type) ?? "text";
+  const previewBody =
+    message.type === "system"
+      ? null
+      : message.type === "image"
+        ? (message.body !== undefined ? message.body : null)
+        : (message.body ?? null);
+  const preview: FullMessageType = {
+    id: message.id,
+    clientMessageId: message.clientMessageId,
+    type: previewType,
+    body: previewBody,
+    image: message.image ?? null,
+    isAIResponse: !!message.isAIResponse,
+    createdAt: nextLastAt,
+    conversationId: conversation.id,
+    sender: {
+      id: getMessageSenderId(message),
+      name: message.sender?.name ?? null,
+      email: message.sender?.email ?? null,
+      image: message.sender?.image ?? null,
+    },
+    senderId: message.senderId,
+  } as FullMessageType;
+
+  const convWithPreview: FullConversationType = {
+    ...(conversation as FullConversationType),
+    lastMessageAt: nextLastAt,
+    lastMessageAtMs: incomingAt.getTime(),
+    messages: [preview],
+  };
+
+  withConversationList(queryClient, (old) => {
+    const prev = old?.conversations ?? [];
+    const idx = prev.findIndex((c) => String(c.id) === String(convWithPreview.id));
+    const next: FullConversationType[] =
+      idx === -1
+        ? [convWithPreview, ...prev]
+        : prev.map((c, i) => (i === idx ? convWithPreview : c));
+    const reordered = [...next].sort((a, b) => {
+      const aTime = new Date(a.lastMessageAt || a.messages?.[0]?.createdAt || 0).getTime();
+      const bTime = new Date(b.lastMessageAt || b.messages?.[0]?.createdAt || 0).getTime();
+      if (aTime !== bTime) return bTime - aTime;
+      const aMsgId = a.messages?.[0]?.id ? String(a.messages[0].id) : "";
+      const bMsgId = b.messages?.[0]?.id ? String(b.messages[0].id) : "";
+      if (aMsgId && bMsgId && aMsgId !== bMsgId) return bMsgId.localeCompare(aMsgId);
+      return String(b.id).localeCompare(String(a.id));
+    });
+    return { ...(old ?? {}), conversations: reordered };
+  });
+}
+
 // 대화 리스트의 대화방의 일부만 수정
 export function updateConversationById(
   queryClient: QueryClient,
@@ -543,7 +605,7 @@ export function bumpConversationOnNewMessage(
         // ✅ 과거 메시지면 아무 것도 바꾸지 않음
         if (incMs < prevMs) return c;
 
-        // ✅ 중복 메시지 체크: 낙관적 → 서버 확정 전환 허용
+        // ✅ 중복 메시지 체크: (1) 동일 소켓 메시지 재수신 (2) 발신자가 자신의 메시지를 소켓으로 다시 받는 경우(첫 메시지 시 upsertConversationWithFirstMessage 후 send:message 수신) 방어
         const last = c.messages?.[0] as FullMessageType | undefined;
         
         // 1) 동일한 ID면 무조건 스킵

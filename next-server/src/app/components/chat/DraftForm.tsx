@@ -2,12 +2,12 @@
 import { useRouter } from 'next/navigation';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import TextareaAutosize from 'react-textarea-autosize';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, startTransition } from 'react';
 import { useSocket } from '@/src/app/context/socketContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { createConversationWithFirstMessage } from '@/src/app/lib/createConversationWithFirstMessage';
 import { SOCKET_EVENTS } from '@/src/app/lib/react-query/utils';
-import { conversationKey, messagesKey, normalizeMessage, upsertConversation, bumpConversationOnNewMessage } from '@/src/app/lib/react-query/chatCache';
+import { conversationKey, messagesKey, normalizeMessage, upsertConversationWithFirstMessage } from '@/src/app/lib/react-query/chatCache';
 import type { FullConversationType, ConversationMessagePreview } from '@/src/app/types/conversation';
 import { ObjectId } from 'bson';
 import toast from 'react-hot-toast';
@@ -87,9 +87,8 @@ const DraftForm: React.FC<DraftFormProps> = ({
                 pageParams: [null],
             });
 
-            // conversationList 캐시에 즉시 반영 (소켓 round-trip 전에 사이드바 업데이트)
-            upsertConversation(queryClient, convForCache as Partial<FullConversationType> & { id: string });
-            bumpConversationOnNewMessage(queryClient, conv.id, newMessage as unknown as ConversationMessagePreview);
+            // conversationList 캐시에 한 번만 반영 (리렌더 1회)
+            upsertConversationWithFirstMessage(queryClient, convForCache as Partial<FullConversationType> & { id: string }, newMessage as unknown as ConversationMessagePreview);
 
             if (isAI && messageText) {
                 // AI 대화방: AIChatForm 마운트 시 스트림 자동 시작을 위해 sessionStorage에 저장
@@ -106,8 +105,10 @@ const DraftForm: React.FC<DraftFormProps> = ({
                 socket.emit('send:message', { newMessage });
             }
 
-            // replace: 뒤로가기 시 드래프트 페이지로 돌아가지 않도록
-            router.replace(`/conversations/${conv.id}`);
+            // replace: 뒤로가기 시 드래프트 페이지로 돌아가지 않도록 (전환만 배치해 리렌더 완화)
+            startTransition(() => {
+                router.replace(`/conversations/${conv.id}`);
+            });
         } catch {
             toast.error('메시지 전송에 실패했습니다.');
             setIsSending(false);
