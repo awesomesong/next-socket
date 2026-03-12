@@ -14,7 +14,7 @@ const ChatMemberSkeleton = () => {
         </Fragment>
     ));
 
-    return <div className="fixed -z-10">{userList}</div>;
+    return <div className="flex flex-col">{userList}</div>;
 };
 
 export default ChatMemberSkeleton;
