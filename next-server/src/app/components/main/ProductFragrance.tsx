@@ -611,11 +611,14 @@ const ProductFragrance = () => {
                         }, 400);
                       }
                     }}
-                    className="action-btn action-btn--sm leading-none"
+                    className={
+                      clsx("action-btn action-btn--sm leading-none", 
+                      filterExpand.expanded ? "mt-2" : "mt-0")
+                    }
                     aria-expanded={filterExpand.expanded}
                   >
                     {filterExpand.expanded ? (
-                      <><HiChevronUp className="shrink-0 mt-2"/>접기</>
+                      <><HiChevronUp className="shrink-0"/>접기</>
                     ) : (
                       <><HiChevronDown className="shrink-0"/>펼치기</>
                     )}
