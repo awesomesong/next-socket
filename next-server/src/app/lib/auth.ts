@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { AuthOptions } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import type { Adapter } from "@auth/core/adapters";
+import type { Adapter } from "next-auth/adapters";
 import prisma from "@/prisma/db";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
