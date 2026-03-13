@@ -19,7 +19,6 @@ export type FragranceWithAuthor = Fragrance & {
 export type CreateFragranceRequest = {
   brand: string;
   name: string;
-  slug: string;
   images: string[];
   description: string;
   notes: string;

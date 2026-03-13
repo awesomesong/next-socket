@@ -1,6 +1,7 @@
 import prisma from '../../../../../prisma/db';
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from '../../../lib/session';
+import { generateBrandIndexSlug } from '../../../lib/fragranceSlug';
 
 interface IParams {
     id: string;
@@ -42,7 +43,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<IParams>
         }
 
         const body = await req.json();
-        const { brand, name, slug, images, description, notes } = body;
+        const { brand, name, images, description, notes } = body;
 
         // GET과 동일하게 id 또는 slug로 레코드 찾기 (edit URL이 slug일 수 있음)
         const existing = await prisma.fragrance.findFirst({
@@ -66,14 +67,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<IParams>
                 ? null
                 : notes;
 
+        const nextBrand = brand ?? existing.brand;
+        const nextName = name ?? existing.name;
+
+        let nextSlug = existing.slug;
+        if (nextBrand !== existing.brand) {
+            nextSlug = await generateBrandIndexSlug(nextBrand);
+        }
+
         const updatedFragrance = await prisma.fragrance.update({
             where: { id: existing.id },
             data: {
-                brand,
-                name,
-                slug,
-                images: Array.isArray(images) ? images : [],
-                description,
+                brand: nextBrand,
+                name: nextName,
+                slug: nextSlug,
+                images: Array.isArray(images) ? images : existing.images,
+                description: description ?? existing.description,
                 notes: notesValue,
             },
         });

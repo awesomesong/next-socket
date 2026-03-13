@@ -11,7 +11,6 @@ import toast from "react-hot-toast";
 
 import { createFragrance } from "@/src/app/lib/createFragrance";
 import { updateFragrance } from "@/src/app/lib/updateFragrance";
-import { checkFragranceSlugExists } from "@/src/app/lib/getFragrances";
 import { fragranceDetailKey, prependFragranceCard, upsertFragranceCardById } from "@/src/app/lib/react-query/fragranceCache";
 import { useImageUpload, type PreviewImage } from "@/src/app/lib/useImageUpload";
 import { analyzeFragranceImage } from "@/src/app/lib/analyzeFragranceImage";
@@ -32,7 +31,6 @@ type FormFragranceProps =
 const InitFragranceData = {
     brand: '',
     name: '',
-    slug: '',
     images: [] as string[],
     description: '',
     notes: '',
@@ -46,7 +44,6 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
     const [loadingMessage, setLoadingMessage] = useState('');
     const [formData, setFormData] = useState(InitFragranceData);
     const [brandError, setBrandError] = useState('');
-    const [slugError, setSlugError] = useState('');
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
@@ -69,7 +66,6 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
             setFormData((prev) => ({
                 brand: result.brand && !prev.brand ? result.brand.toUpperCase() : prev.brand,
                 name: result.name && !prev.name ? result.name : prev.name,
-                slug: result.slug && !prev.slug ? result.slug : prev.slug,
                 images: prev.images,
                 description: result.description && !prev.description ? result.description : prev.description,
                 notes: result.notes && !prev.notes ? result.notes : prev.notes,
@@ -89,7 +85,6 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
             const hasInput =
                 (fd.brand ?? "").trim() ||
                 (fd.name ?? "").trim() ||
-                (fd.slug ?? "").trim() ||
                 (fd.description ?? "").trim() ||
                 (fd.notes ?? "").trim();
             if (hasInput) return;
@@ -121,7 +116,6 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
         setFormData({
             brand: initialData.brand,
             name: initialData.name,
-            slug: initialData.slug,
             images: initialData.images,
             description: initialData.description,
             notes: initialData.notes ?? '',
@@ -140,25 +134,8 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
             setFormData(prev => ({ ...prev, brand: filtered }));
             return;
         }
-        if (name === 'slug') {
-            setSlugError('');
-        }
         setFormData(prev => ({ ...prev, [name]: value }));
     }, []);
-
-    const handleSlugBlur = useCallback(async () => {
-        const slug = formDataRef.current.slug;
-        if (!slug) return;
-        try {
-            const { exists, id: existingId } = await checkFragranceSlugExists(slug);
-            if (!exists) return;
-            // 수정 모드에서 자기 자신의 슬러그인 경우 중복 아님
-            if (isEdit && id && existingId === Number(id)) return;
-            setSlugError('이미 사용 중인 슬러그입니다. 다른 슬러그를 입력해주세요.');
-        } catch {
-            // 네트워크 오류는 무시 (submit 시 서버에서 검증)
-        }
-    }, [isEdit, id]);
 
     const handleFileInputChange = useCallback(
         (e: ChangeEvent<HTMLInputElement>) => {
@@ -179,12 +156,6 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
         }
         if (!formData.name) {
             return toast.error("향수 이름을 입력해주세요.");
-        }
-        if (!formData.slug) {
-            return toast.error("URL 슬러그를 입력해주세요.");
-        }
-        if (slugError) {
-            return toast.error(slugError);
         }
         if (!formData.description) {
             return toast.error("향수 상세 설명을 입력해주세요.");
@@ -227,7 +198,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
         } finally {
             setIsLoading(false);
         }
-    }, [formData, isEdit, id, queryClient, router, slugError]);
+    }, [formData, isEdit, id, queryClient, router]);
 
     const closeLightbox = useCallback(() => setIsLightboxOpen(false), []);
 
@@ -391,21 +362,6 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                                 classNames={formClassNames.underlined}
                             />
                         </div>
-
-                        <TextField
-                            name="slug"
-                            label="URL 슬러그"
-                            placeholder="예: diptyque_philosykos"
-                            value={formData.slug}
-                            onChange={handleChange}
-                            onBlur={handleSlugBlur}
-                            isRequired
-                            isInvalid={!!slugError}
-                            errorMessage={slugError}
-                            variant="underlined"
-                            description={slugError ? undefined : "브라우저 주소창에 사용됩니다. 소문자와 언더바(_)를 사용하세요."}
-                            classNames={formClassNames.underlined}
-                        />
 
                         <div className="space-y-10">
                             <TextField

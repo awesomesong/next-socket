@@ -1,6 +1,7 @@
 import prisma from '../../../../prisma/db';
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from '../../lib/session';
+import { generateBrandIndexSlug } from '../../lib/fragranceSlug';
 
 export async function GET(req: NextRequest) {
     try {
@@ -59,14 +60,16 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: '로그인 후에 글을 작성해주세요.' }, { status: 401 });
         }
 
-        const { brand, name, slug, images, description, notes } = await req.json();
+        const { brand, name, images, description, notes } = await req.json();
 
-        if (!brand || !name || !slug) {
-            return NextResponse.json({ message: '브랜드, 이름, 슬러그는 필수 입력값입니다.' }, { status: 400 });
+        if (!brand || !name) {
+            return NextResponse.json({ message: '브랜드와 이름은 필수 입력값입니다.' }, { status: 400 });
         }
 
         // optional 필드(notes): 빈 문자열이면 DB에 null로 저장
         const notesValue = (notes?.trim() ?? '') === '' ? null : notes;
+
+        const slug = await generateBrandIndexSlug(brand);
 
         const newFragrance = await prisma.fragrance.create({
             data: {
