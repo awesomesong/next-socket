@@ -374,6 +374,7 @@ Scent-Memories/
 |------|----------|
 | **인증** | JWT 세션(24h), NextAuth 미들웨어, 소켓 핸드셰이크 인증 |
 | **입력 검증** | 서버 라우트 단 검증, DOMPurify XSS 새니타이징 |
+| **대화 콘텐츠 정책** | AI 채팅과 1:1·단체 채팅 전체에서 공통 금지어 필터로 부적절한 단어·표현을 서버·클라이언트 양쪽에서 사전 차단 |
 | **레이트 리미팅** | AI 스트리밍: 유저당 슬라이딩 윈도우 (분당 10req/user) |
 | **서비스 간 통신** | 웹훅 Secret 검증 (socket-server ↔ next-server) |
 | **이미지** | Next/Image + Cloudinary CDN, WebP 자동 변환 |
