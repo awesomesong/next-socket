@@ -244,14 +244,14 @@ export default function NoticeIntroContent({
             >
               <p>
                 <strong>Scent Memories</strong>는 사용자가 좋아하는 향수를{' '}
-                <strong>탐색하고, 기록하고, 공유</strong>할 수 있는 향기
+                <strong>탐색하고, 기록하고, 공유</strong>할 수 있는 향수
                 아카이브 서비스입니다.
               </p>
               <p className="text-[var(--color-text-secondary)]">
-                단순한 향수 정보 제공을 넘어, 사용자가 향기와 함께한 기억과
-                감상을 직접 남길 수 있도록 설계되었습니다. 마치 향기가 특정
-                순간의 기억을 불러오듯, Scent Memories는 나만의 향기 일지를
-                만들어 가는 공간입니다.
+                향수의 향조, 브랜드, 계열 등 다양한 정보를 한곳에서 탐색하고,
+                관심 있는 향수를 저장하거나 커뮤니티에서 다른 사용자와 정보를
+                나눌 수 있도록 설계되었습니다. Scent Memories는 향수를 사랑하는
+                사람들을 위한 향수 정보 공유 아카이브입니다.
               </p>
               <p className="text-[var(--color-text-secondary)]">
                 본 서비스는{' '}
