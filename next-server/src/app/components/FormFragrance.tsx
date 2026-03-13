@@ -217,7 +217,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
 
             <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8 items-start">
                 {/* Left Column: Image Upload & Gallery */}
-                <div className="fragrance-detail-image-box flex flex-col gap-8 w-full sm:flex-row lg:flex-col lg:mx-0 lg:flex-none lg:shrink-0 lg:w-auto sm:items-start lg:justify-start">
+                <div className="fragrance-form-left fragrance-detail-image-box sm:flex-row">
                     <div
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
