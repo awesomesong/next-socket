@@ -48,9 +48,7 @@ function ResponsivePreview({
   return (
     <div className="flex flex-col items-start gap-4 max-md:w-full md:flex-row md:gap-3">
       <div className="w-full max-md:max-w-full md:flex-1 md:min-w-0">
-        <p className="text-[11px] text-center mb-2 text-[var(--color-text-secondary)]">
-          Desktop
-        </p>
+        <p className="notice-preview__label">Desktop</p>
         <div className="notice-preview-frame">
           <button
             type="button"
@@ -70,10 +68,8 @@ function ResponsivePreview({
         </div>
       </div>
 
-      <div className="w-full max-md:max-w-full md:w-[128px] md:basis-[128px] md:flex-none">
-        <p className="text-[11px] text-center mb-2 text-[var(--color-text-secondary)]">
-          Mobile
-        </p>
+      <div className="w-full max-md:max-w-full md:w-[220px] md:basis-[128px] md:flex-none">
+        <p className="notice-preview__label">Mobile</p>
         <div className="notice-preview-frame">
           <button
             type="button"

@@ -1935,6 +1935,10 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
   }
 
   /* Notice intro: responsive preview images */
+  .notice-preview__label {
+    @apply text-[12px] mb-2 text-[var(--color-text-secondary)];
+  }
+
   .notice-preview-frame {
     @apply flex justify-center rounded-xl overflow-hidden border border-[var(--color-card-border)] md:border-0;
   }
