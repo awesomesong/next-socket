@@ -564,7 +564,7 @@ const ScentMemoriesHero = memo(function ScentMemoriesHero() {
                 >
                     <div className="scent-deco-line" />
                     <h1 className="scent-brand-title">Scent Memories</h1>
-                    <p className="scent-brand-desc">향기를 수집하고 기록하는 공간</p>
+                    <p className="scent-brand-desc">향수를 수집하고 기록하는 공간</p>
                     <div className="scent-deco-line" />
                 </motion.div>
             </div>

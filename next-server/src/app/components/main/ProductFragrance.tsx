@@ -496,7 +496,7 @@ const ProductFragrance = () => {
               <div className="product-fragrance-header-grid">
                 <div className="hidden sm:block" aria-hidden />
                 <h2 className="text-gradient-scent page-title-gradient text-center sm:whitespace-nowrap">
-                  시그니처 향기 갤러리
+                  시그니처 향수 갤러리
                 </h2>
                 <div className="flex justify-center sm:justify-end">
                   {session?.user && (
