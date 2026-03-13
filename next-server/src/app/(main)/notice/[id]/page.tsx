@@ -200,6 +200,7 @@ const NoticeDetailPage = ({ params } : {
                         <article
                             dangerouslySetInnerHTML={{ __html : sanitizedContent }}
                             className='
+                                notice-article
                                 mt-4 min-w-0 break-words
                                 text-sm
                                 scrollbar-thin

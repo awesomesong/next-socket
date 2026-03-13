@@ -1601,6 +1601,10 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
     "Courier New", monospace;
 }
 
+.notice-article p:empty {
+  margin: 1rem 0;          /* 진짜 빈 <p></p> 만 위아래 1rem 띄우기 */
+}
+
 /* =============================================
    Scent Memories Hero Section
    ============================================= */
