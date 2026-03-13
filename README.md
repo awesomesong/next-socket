@@ -173,14 +173,24 @@ const io = new Server(httpServer, {
 ```typescript
 // /api/ai/stream/route.ts
 // - 슬라이딩 윈도우 레이트 리미팅: 분당 10회/유저
-// - 대화 컨텍스트: 최근 8개 메시지 포함
-// - 30초 타임아웃 보호
-// - 모바일 Safari 스트림 버퍼 핸들링
-// - 스트리밍 중 DB 동시 저장 (메시지 유실 방지)
-const stream = await openai.chat.completions.create({
-  model: 'gpt-4',
+// - 대화 컨텍스트: 최근 8개 메시지 포함 (buildConversationContext)
+// - 30초 타임아웃 보호 (AbortController)
+// - 모바일 Safari 스트림 버퍼 핸들링 (X-Accel-Buffering: no)
+// - 스트리밍 완료 후 DB 저장 (메시지 유실 방지)
+
+// OpenAI SDK 대신 fetch 직접 호출
+const requestBody = {
+  model: "gpt-4",
+  messages: contextMessages, // system + 이전 대화 + 현재 메시지 포함
   stream: true,
-  messages: [...contextMessages, { role: 'user', content: prompt }],
+  temperature: 0.7,
+  max_tokens: 1000,
+};
+const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+  body: JSON.stringify(requestBody),
+  signal: controller.signal, // 30초 타임아웃
 });
 ```
 
