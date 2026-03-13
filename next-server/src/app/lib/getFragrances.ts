@@ -1,4 +1,4 @@
-import { FragranceType, FragranceWithAuthor } from "@/src/app/types/fragrance";
+import { FragranceWithAuthor } from "@/src/app/types/fragrance";
 import prisma from "@/prisma/db";
 
 // ─────────────────────────────────────────────
