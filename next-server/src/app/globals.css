@@ -1151,7 +1151,7 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
 }
 
 .profile-modal__container {
-  @apply flex flex-col sm:flex-row gap-6 sm:gap-10 items-center sm:items-start justify-center sm:justify-between py-4 sm:py-6;
+  @apply flex flex-col sm:flex-row gap-6 sm:gap-10 items-center sm:items-start justify-center sm:justify-between py-4 sm:py-0;
 }
 
 .profile-info-wrap {
