@@ -7,7 +7,7 @@ import NoticeIntroContent, {
 export const metadata: Metadata = {
   title: 'Scent Memories 소개 및 이용 안내',
   description:
-    'Scent Memories는 향기를 수집하고 기록하는 프론트엔드 포트폴리오 사이트입니다. 서비스 소개와 이용 방법을 안내합니다.',
+    'Scent Memories는 향수를 수집하고 기록하는 프론트엔드 포트폴리오 사이트입니다. 서비스 소개와 이용 방법을 안내합니다.',
 };
 
 const features = [
@@ -15,7 +15,7 @@ const features = [
   { icon: '⭐', title: '리뷰 & 별점', desc: '향수에 대한 개인 감상과 별점을 남기고, 다른 사용자의 리뷰도 열람할 수 있습니다.' },
   { icon: '📋', title: '공지사항', desc: '서비스 안내와 업데이트 내용을 게시합니다. 로그인한 사용자는 글 작성과 댓글이 가능합니다.' },
   { icon: '💬', title: '실시간 채팅', desc: 'Socket.io 기반의 실시간 채팅으로 다른 사용자와 향수에 대한 이야기를 나눌 수 있습니다.' },
-  { icon: '🤖', title: 'AI 향기 대화', desc: 'Claude API를 활용한 AI 어시스턴트와 향수 추천 및 향기에 대한 대화를 즐길 수 있습니다.' },
+  { icon: '🤖', title: 'AI 향수 대화', desc: 'OpenAI GPT-4 기반 AI 어시스턴트에게 향수에 관한 궁금한 점을 자유롭게 물어볼 수 있습니다. 취향이나 상황을 이야기하면 어울리는 향수를 추천받을 수도 있습니다.' },
   { icon: '🌙', title: '다크 모드', desc: '라이트·다크 테마를 자유롭게 전환합니다. 시스템 설정과 연동되며 언제든지 변경 가능합니다.' },
 ];
 
@@ -32,12 +32,12 @@ const techStack = [
   { category: 'Language', items: ['TypeScript'] },
   { category: 'Styling', items: ['Tailwind CSS v4', 'HeroUI'] },
   { category: 'Backend', items: ['Prisma ORM', 'PostgreSQL'] },
-  { category: 'Data Fetching', items: ['TanStack Query (React Query)', 'GraphQL'] },
+  { category: 'Data Fetching', items: ['TanStack Query (React Query)'] },
   { category: 'Real-time', items: ['Socket.io'] },
   { category: 'Auth', items: ['NextAuth.js (Google · Kakao)'] },
   { category: 'Media', items: ['Cloudinary'] },
   { category: '3D · Animation', items: ['Three.js'] },
-  { category: 'AI', items: ['Claude API', 'OpenAI Vision (이미지 분석)'] },
+  { category: 'AI', items: ['OpenAI GPT-4', 'OpenAI Vision (이미지 분석)'] },
 ];
 
 const fragranceGuideSteps: FragranceGuideStep[] = [
