@@ -5,6 +5,8 @@ import type ReactQuillOriginal from 'react-quill-new';
 import type { DeltaStatic, EmitterSource } from 'react-quill-new';
 import ShapesSkeleton from "./skeleton/ShapesSkeleton";
 
+import "quill-resize-module/dist/resize.css";
+
 interface UnprivilegedEditor {
   getLength: () => number;
   getText: (index?: number, length?: number) => string;
@@ -34,11 +36,15 @@ interface MyQuillEditorProps {
 
 const ReactQuill = dynamic(
   async () => {
-    const { default: RQ } = await import('react-quill-new');
+    const [{ default: RQ, Quill }, QuillResize] = await Promise.all([
+      import("react-quill-new"),
+      import("quill-resize-module"),
+    ]);
+    Quill.register("modules/resize", QuillResize.default);
     const ForwardedReactQuill = forwardRef<ReactQuillOriginal, MyQuillEditorProps>((props, ref) => {
       return <RQ ref={ref} {...props} />;
     });
-    ForwardedReactQuill.displayName = 'ForwardedReactQuill';
+    ForwardedReactQuill.displayName = "ForwardedReactQuill";
     return ForwardedReactQuill;
   },
   {

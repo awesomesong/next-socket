@@ -239,7 +239,7 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
     }
   }, []);
 
-  // Quill modules 설정
+  // Quill modules 설정 (resize: 에디터 내 이미지 드래그 리사이즈)
   const modules = useMemo(
     () => ({
       toolbar: {
@@ -262,6 +262,15 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
         delay: 2000,
         maxStack: 50,
         userOnly: true,
+      },
+      resize: {
+        modules: ["Resize", "DisplaySize"],
+        parchment: {
+          image: {
+            attribute: ["width"],
+            limit: { minWidth: 100, maxWidth: 1300 },
+          },
+        },
       },
     }),
     [imageHandler, linkHandler],
