@@ -20,12 +20,14 @@
 
 | 기능 | 설명 |
 |------|------|
-| **향수 카탈로그** | 브랜드·이름·노트·이미지 기반 CRUD, slug 기반 SEO, Infinite Query + 낙관적 업데이트 |
-| **리뷰 시스템** | 향수별 리뷰 작성·수정·삭제, 커서 기반 무한 스크롤, React Query 캐시 무효화 전략 |
-| **실시간 채팅** | Socket.IO 룸 기반 1:1·그룹 채팅, 오프라인 메시지 큐잉(재연결 시 전달), 읽음 상태 동기화 |
-| **AI 어시스턴트** | GPT-4 SSE 스트리밍, 유저당 레이트 리미팅, 컨텍스트 유지 |
-| **공지사항** | CRUD + 댓글 + 조회수, WYSIWYG 에디터(React Quill), 이미지 업로드 |
-| **인증** | NextAuth v4 JWT 전략, Google/Kakao OAuth, 이메일/비밀번호 Credentials |
+| **향수 카탈로그** | 브랜드·이름·노트·이미지 기반 CRUD, slug 기반 SEO URL, 커서 기반 Infinite Query, 성공 시 캐시 반영 |
+| **리뷰 시스템** | 향수별 리뷰 작성·수정·삭제, 커서 기반 무한 스크롤, React Query 도메인별 캐시 선택적 무효화 |
+| **실시간 채팅** | Socket.IO 룸 기반 1:1·그룹 채팅, 오프라인 메시지 큐잉(24h TTL, 재연결 시 일괄 전달), 읽음 상태 실시간 동기화 |
+| **AI 어시스턴트** | GPT-4 SSE 스트리밍(토큰 단위 실시간 렌더링), 슬라이딩 윈도우 레이트 리미팅(분당 10회/유저), 최근 8개 메시지 컨텍스트 유지 |
+| **공지사항** | CRUD + 댓글 + 조회수, WYSIWYG 에디터(React Quill), Cloudinary 이미지 업로드, DOMPurify XSS 방지 |
+| **인증** | NextAuth v4 JWT 전략(24h), Google·Kakao OAuth + 이메일/비밀번호 Credentials, bcryptjs 해싱, 미들웨어 보호 라우팅 |
+| **3D 히어로 섹션** | Three.js WebGL 커스텀 셰이더 기반 은하수 배경, 다크/라이트 테마 대응 |
+| **테마·반응형** | 라벤더·아이보리 커스텀 테마, Tailwind 반응형 브레이크포인트, Framer Motion 페이지 전환 애니메이션 |
 
 ---
 
