@@ -95,7 +95,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     const bTime = new Date(b.createdAt).getTime();
     if (aTime !== bTime) return aTime - bTime; // ✅ 오래된 → 최신 (올바름)
 
-    // 동시간대에는 ObjectId(혹은 문자열 id) 순으로 보조 정렬
+    // 동시간대에는 randomUUID(혹은 문자열 id) 순으로 보조 정렬
     const aId = (a.id ?? "").toString();
     const bId = (b.id ?? "").toString();
     if (aId && bId) return aId.localeCompare(bId); // ✅ 순서대로

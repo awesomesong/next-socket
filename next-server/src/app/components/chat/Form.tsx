@@ -20,7 +20,6 @@ import {
   formatErrorMessage,
 } from "@/src/app/lib/react-query/utils";
 import { validateUserMessage } from "@/src/app/utils/aiPolicy";
-import { ObjectId } from "bson";
 import {
   messagesKey,
   bumpConversationOnNewMessage,
@@ -309,7 +308,7 @@ const Form = () => {
       return;
     }
 
-    const messageId = new ObjectId().toHexString();
+    const messageId = crypto.randomUUID();
     // 즉시 비우기 + 포커스
     setValue("message", "", { shouldValidate: true });
     setFocus("message");
@@ -320,7 +319,7 @@ const Form = () => {
   const handleUpload = async (result: CloudinaryUploadWidgetResults) => {
     if (typeof result.info === 'string' || !result.info || !('secure_url' in result.info)) return;
 
-    const messageId = new ObjectId().toHexString();
+    const messageId = crypto.randomUUID();
     enqueueSend({ conversationId, image: result.info.secure_url, messageId });
   };
 

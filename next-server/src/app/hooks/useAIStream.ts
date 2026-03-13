@@ -1,7 +1,6 @@
 import { useRef, useCallback } from "react";
 import { useQueryClient, InfiniteData } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
-import { ObjectId } from "bson";
 import { aiStream } from "@/src/app/lib/aiStream";
 import { formatErrorMessage } from "@/src/app/lib/react-query/utils";
 import {
@@ -74,7 +73,7 @@ export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewCo
         }
 
         // ✅ AI 대기 메시지 생성 (재시도 시에도 항상 새 ID 생성)
-        const aiWaitingMessageId = new ObjectId().toHexString();
+        const aiWaitingMessageId = crypto.randomUUID();
         const userId = currentUser?.id || userMessageId;
         
         // ✅ AI 대기 메시지의 createdAt 계산

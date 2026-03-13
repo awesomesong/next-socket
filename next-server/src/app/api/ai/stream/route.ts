@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/src/app/lib/session";
 import prisma from "@/prisma/db";
-import { ObjectId } from "bson";
+import { randomUUID } from "crypto";
 import { validatePrompt } from "@/src/app/utils/aiPolicy";
 
 // OPTIONS 요청 처리
@@ -210,7 +210,7 @@ async function handleStreamingResponse(
     try {
       await prisma.message.create({
         data: {
-          id: new ObjectId().toHexString(),
+          id: randomUUID(),
           body: "AI 응답을 생성할 수 없습니다. 다시 시도해주세요.",
           type: "text",
           conversation: { connect: { id: conversationId } },
@@ -356,7 +356,7 @@ async function handleStreamingResponse(
         }
 
         // ✅ messageId가 있고 기존 메시지가 있으면 업데이트, 없으면 생성
-        const savedMessageId = messageId || new ObjectId().toHexString();
+        const savedMessageId = messageId || randomUUID();
 
         if (messageId) {
           const existingMessage = await prisma.message.findUnique({
@@ -415,7 +415,7 @@ async function handleStreamingResponse(
         console.error("AI 메시지 저장 오류:", error);
         // ✅ 메시지 저장 실패 시에도 메타데이터 전송 시도 (클라이언트에 알림)
         try {
-          const errorMessageId = messageId || new ObjectId().toHexString();
+          const errorMessageId = messageId || randomUUID();
           const errorMetadata = JSON.stringify({
             type: 'metadata',
             messageId: errorMessageId,
@@ -433,7 +433,7 @@ async function handleStreamingResponse(
       try {
         const emptyMetadata = JSON.stringify({
           type: 'metadata',
-          messageId: messageId || new ObjectId().toHexString(),
+          messageId: messageId || randomUUID(),
           createdAt: new Date().toISOString(),
           empty: true,
         });
@@ -452,7 +452,7 @@ async function handleStreamingResponse(
     try {
       await prisma.message.create({
         data: {
-          id: new ObjectId().toHexString(),
+          id: randomUUID(),
           body: "AI 응답 생성 중 오류가 발생했습니다. 다시 시도해주세요.",
           type: "text",
           conversation: { connect: { id: conversationId } },

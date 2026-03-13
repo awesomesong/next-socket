@@ -12,7 +12,6 @@ import {
 import useComposition from "@/src/app/hooks/useComposition";
 import TextareaAutosize from "react-textarea-autosize";
 import { useSession } from "next-auth/react";
-import { ObjectId } from "bson";
 import { formatErrorMessage } from "@/src/app/lib/react-query/utils";
 import { validatePrompt as validateAIPrompt } from "@/src/app/utils/aiPolicy";
 import { FullMessageType, normalizePreviewType } from "@/src/app/types/conversation";
@@ -170,7 +169,7 @@ const AIChatForm = ({
     setValue("message", "", { shouldValidate: true });
     setFocus("message");
 
-    const userMessageId = new ObjectId().toHexString();
+    const userMessageId = crypto.randomUUID();
     const now = new Date();
 
     // ✅ 사용자 메시지

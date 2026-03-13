@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/src/app/lib/session";
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/db";
-import { ObjectId } from "bson";
+import { randomUUID } from "crypto";
 
 // OPTIONS 요청 처리
 export async function OPTIONS() {
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     }
 
     // 사용자 메시지 저장
-    const userMessageId = new ObjectId().toHexString();
+    const userMessageId = randomUUID();
     const userMessage = await prisma.message.create({
       data: {
         id: userMessageId,
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
     );
 
     // AI 메시지 저장
-    const aiMessageId = new ObjectId().toHexString();
+    const aiMessageId = randomUUID();
     const aiMessage = await prisma.message.create({
       data: {
         id: aiMessageId,

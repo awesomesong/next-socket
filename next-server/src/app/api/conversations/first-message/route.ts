@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/src/app/lib/session";
 import { NextResponse } from "next/server";
 import prisma from "@/prisma/db";
-import { ObjectId } from "bson";
+import { randomUUID } from "crypto";
 import { containsProhibited } from "@/src/app/utils/aiPolicy";
 
 export const runtime = "nodejs";
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
       return new NextResponse("부적절한 내용은 허용되지 않습니다.", { status: 400 });
     }
 
-    const msgId = messageId || new ObjectId().toHexString();
+    const msgId = messageId || randomUUID();
     const inferredType = image ? "image" : "text";
 
     let memberIdsSorted: string[] = [];

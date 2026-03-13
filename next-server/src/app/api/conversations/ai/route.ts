@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/src/app/lib/session";
 import { NextResponse } from "next/server";
 import prisma from '@/prisma/db';
-import { ObjectId } from 'bson';
+import { randomUUID } from "crypto";
 
 export async function POST(req: Request) {
     try {
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         }
 
         // 메시지가 없는 AI 대화방이 없으면 새로 생성
-        const conversationId = new ObjectId().toHexString();
+        const conversationId = randomUUID();
         const newConversation = await prisma.conversation.create({
             data: {
                 id: conversationId,

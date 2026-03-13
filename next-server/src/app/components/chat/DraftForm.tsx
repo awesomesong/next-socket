@@ -9,7 +9,6 @@ import { createConversationWithFirstMessage } from '@/src/app/lib/createConversa
 import { SOCKET_EVENTS } from '@/src/app/lib/react-query/utils';
 import { conversationKey, messagesKey, normalizeMessage, upsertConversationWithFirstMessage } from '@/src/app/lib/react-query/chatCache';
 import type { FullConversationType, ConversationMessagePreview } from '@/src/app/types/conversation';
-import { ObjectId } from 'bson';
 import toast from 'react-hot-toast';
 import { validateUserMessage } from '@/src/app/utils/aiPolicy';
 import { validatePrompt as validateAIPrompt } from '@/src/app/utils/aiPolicy';
@@ -49,7 +48,7 @@ const DraftForm: React.FC<DraftFormProps> = ({
         if (isSending) return;
         setIsSending(true);
 
-        const messageId = new ObjectId().toHexString();
+        const messageId = crypto.randomUUID();
 
         try {
             // 대화방 생성 + 첫 메시지 저장을 1번의 요청으로 처리
