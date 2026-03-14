@@ -1,7 +1,7 @@
 "use client";
 
 import FormFragrance from "@/src/app/components/FormFragrance";
-import { FragranceFormSkeleton } from "@/src/app/components/FragranceSkeleton";
+import FragranceDetailSkeleton from "@/src/app/components/FragranceDetailSkeleton";
 import { getFragrance } from "@/src/app/lib/getFragrance";
 import { fragranceDetailKey } from "@/src/app/lib/react-query/fragranceCache";
 import { useQuery } from "@tanstack/react-query";
@@ -27,7 +27,7 @@ const FragranceEditPage = ({ params }: ParamsProps) => {
                 <h2 className="w-full text-center text-2xl font-light tracking-widest mb-8">
                     <span className="text-gradient-scent">향수 정보 수정</span>
                 </h2>
-                <FragranceFormSkeleton />
+                <FragranceDetailSkeleton variant="form" />
             </div>
         );
     }

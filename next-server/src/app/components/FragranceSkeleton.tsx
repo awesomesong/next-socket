@@ -31,47 +31,6 @@ export const FragranceCardSkeleton = () => {
 };
 
 /**
- * FragranceDetailSkeleton
- * Reusable skeleton for the fragrance detail view — same layout/classes as FragranceDetailClient.
- */
-export const FragranceDetailSkeleton = () => {
-    return (
-        <div className="fragrance-detail-layout skeleton-pulse">
-            {/* 목록/수정/삭제 영역과 동일한 상단 여백 유지 */}
-            <div className="detail-action-bar">
-                <div className="h-8 w-14 rounded-full skeleton-bg-muted" aria-hidden />
-            </div>
-            <div className="fragrance-form-layout">
-                <div className="fragrance-form-left">
-                    <div className="fragrance-detail-image-box">
-                        <div className="fragrance-img-size skeleton-bg" />
-                    </div>
-                </div>
-                <div className="fragrance-form-right">
-                    <div className="space-y-6">
-                        <div className="w-1/3 h-2 rounded-full skeleton-bg-muted" />
-                        <div className="w-1/2 h-6 rounded-full skeleton-bg" />
-                        <div className="space-y-3 pt-4">
-                            <div className="w-full h-3 rounded-full skeleton-bg-muted-80" />
-                            <div className="w-11/12 h-3 rounded-full skeleton-bg-muted-80" />
-                            <div className="w-full h-3 rounded-full skeleton-bg-muted-80" />
-                        </div>
-                    </div>
-                    <div className="pt-8 border-t border-stone-200/60 dark:border-stone-700/40 space-y-4">
-                        <div className="w-24 h-2 rounded-full skeleton-bg-muted" />
-                        <div className="space-y-3">
-                            <div className="w-full h-3 rounded-full skeleton-bg-muted-80" />
-                            <div className="w-3/4 h-3 rounded-full skeleton-bg-muted-80" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <ReviewFormSkeleton />
-            <ReviewsSkeleton />
-        </div>
-    );
-};
-/**
  * FragranceHeaderSkeleton
  * Skeleton for the page header — same layout/classes as ProductFragrance header.
  */
@@ -110,67 +69,6 @@ export const FragranceFilterSkeleton = () => {
                 </div>
             </div>
         </div>
-    );
-};
-
-/**
- * FragranceFormSkeleton
- * 로딩 시 향수 생성/수정 폼 영역 스켈레톤 (제목은 페이지에서 렌더)
- */
-export const FragranceFormSkeleton = () => {
-    return (
-        <section className="product-layout skeleton-pulse">
-            <div className="fragrance-form-layout">
-                {/* Left Column */}
-                <div className="fragrance-form-left-col">
-                    <div className="fragrance-img-size skeleton-bg mx-auto sm:mx-0 lg:mx-auto" />
-                    <div className="fragrance-form-thumbnails">
-                        <div className="flex justify-between items-end border-b border-[#ede8f5] dark:border-[#c8b4ff30] pb-2">
-                            <div className="w-20 h-2 rounded-full skeleton-bg-muted" />
-                            <div className="w-14 h-2 rounded-full skeleton-bg-muted" />
-                        </div>
-                        <ul className="grid grid-cols-4 gap-3">
-                            {[0, 1, 2, 3].map(i => (
-                                <li key={i} className="aspect-square rounded-xl skeleton-bg" />
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-                {/* Right Column */}
-                <div className="fragrance-form-right-col">
-                    <div className="space-y-10">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
-                            <div className="space-y-3">
-                                <div className="w-16 h-2 rounded-full skeleton-bg-muted" />
-                                <div className="w-full h-px skeleton-bg" />
-                            </div>
-                            <div className="space-y-3">
-                                <div className="w-16 h-2 rounded-full skeleton-bg-muted" />
-                                <div className="w-full h-px skeleton-bg" />
-                            </div>
-                        </div>
-                        <div className="space-y-3">
-                            <div className="w-20 h-2 rounded-full skeleton-bg-muted" />
-                            <div className="w-full h-px skeleton-bg" />
-                        </div>
-                        <div className="space-y-10">
-                            <div className="space-y-3">
-                                <div className="w-24 h-2 rounded-full skeleton-bg-muted" />
-                                <div className="w-full h-24 rounded-lg skeleton-bg-muted-80" />
-                            </div>
-                            <div className="space-y-3">
-                                <div className="w-24 h-2 rounded-full skeleton-bg-muted" />
-                                <div className="w-full h-16 rounded-lg skeleton-bg-muted-80" />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex flex-row gap-2 sm:gap-4">
-                        <div className="flex-1 h-10 rounded-full skeleton-bg" />
-                        <div className="w-16 h-10 rounded-full skeleton-bg-muted" />
-                    </div>
-                </div>
-            </div>
-        </section>
     );
 };
 
