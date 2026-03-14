@@ -1601,8 +1601,10 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
     "Courier New", monospace;
 }
 
+/* Quill .ql-editor와 동일: line-height 1.42 → 빈 줄 한 줄 = 1.42em (padding 사용 시 마진 상쇄 없음) */
 .notice-article p:empty {
-  margin: 1rem 0;          /* 진짜 빈 <p></p> 만 위아래 1rem 띄우기 */
+  margin: 0;
+  padding: 0.71em 0; /* 0.71em × 2 = 1.42em = Quill line-height 한 줄 높이 */
 }
 
 /* =============================================
