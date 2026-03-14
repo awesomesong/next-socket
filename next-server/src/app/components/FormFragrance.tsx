@@ -215,9 +215,9 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                 alt={previewImages[sliderIndex]?.name ?? "향수 이미지"}
             />
 
-            <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8 items-start">
-                {/* Left Column: Image Upload & Gallery */}
-                <div className="fragrance-form-left fragrance-detail-image-box sm:flex-row lg:flex-none">
+            <form onSubmit={handleSubmit} className="fragrance-form-layout">
+                {/* Left Column: Image Upload & Gallery (FragranceDetail과 동일한 fragrance-form-left 사용) */}
+                <div className="fragrance-form-left sm:flex-row lg:flex-col">
                     <div
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
@@ -326,8 +326,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                     </div>
                 </div>
 
-                {/* Right Column: Information Inputs */}
-                <div className="flex-grow w-full flex flex-col gap-12">
+                <div className="fragrance-form-right gap-12">
                     {isAnalyzing && (
                         <div className="flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-[#f1ecfe] dark:bg-[#2d2040]/60 border border-[#c8b4ff40]">
                             <HiSparkles className="text-[#b094e0] w-4 h-4 shrink-0 animate-pulse" />
