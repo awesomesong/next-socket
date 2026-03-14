@@ -397,16 +397,26 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                                     />
                                 )}
                             />
-                            <TextField
-                                id="name"
-                                label="향수 이름"
-                                placeholder="예: Philosykos"
-                                register={register}
+                            <Controller
+                                name="name"
+                                control={control}
                                 rules={{ required: "향수 이름을 입력해주세요." }}
-                                errors={errors}
-                                variant="underlined"
-                                isRequired
-                                onFocus={triggerName}
+                                render={({ field }) => (
+                                    <TextField
+                                        name="name"
+                                        label="향수 이름"
+                                        placeholder="예: Philosykos"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        onBlur={field.onBlur}
+                                        onFocus={triggerName}
+                                        isRequired
+                                        isInvalid={!!errors.name}
+                                        errorMessage={errors.name?.message as string}
+                                        variant="underlined"
+                                        classNames={formClassNames.underlined}
+                                    />
+                                )}
                             />
                         </div>
 
