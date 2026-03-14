@@ -3,7 +3,6 @@ import dynamic from "next/dynamic";
 import { forwardRef, memo } from "react";
 import type ReactQuillOriginal from 'react-quill-new';
 import type { DeltaStatic, EmitterSource } from 'react-quill-new';
-import ShapesSkeleton from "./skeleton/ShapesSkeleton";
 
 import "quill-resize-module/dist/resize.css";
 
@@ -49,13 +48,9 @@ const ReactQuill = dynamic(
   },
   {
     ssr: false,
-    loading: () => {
-        return (
-            <div className="flex flex-1 w-full">
-                <ShapesSkeleton width="100%" height="100%" radius="md" />
-            </div>
-        );
-    }
+    loading: () => (
+        <div className="flex flex-1 w-full rounded-md border border-gray-300" />
+    )
   }
 );
 
