@@ -1,6 +1,7 @@
 "use client";
-import { useState, ChangeEvent, FormEvent, useEffect, useCallback, useRef } from "react";
+import { useState, ChangeEvent, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useForm, Controller } from "react-hook-form";
 import Image from "next/image";
 import { useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
@@ -40,15 +41,44 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
     const router = useRouter();
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageSectionRef = useRef<HTMLDivElement>(null);
+    const [imageError, setImageError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState('');
     const [formData, setFormData] = useState(InitFragranceData);
-    const [brandError, setBrandError] = useState('');
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+    const {
+        register,
+        control,
+        setValue,
+        trigger,
+        handleSubmit: rhfHandleSubmit,
+        reset,
+        formState: { errors },
+    } = useForm({
+        mode: "onBlur",
+        defaultValues: {
+            brand: "",
+            name: "",
+            description: "",
+            notes: "",
+        },
+    });
+
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
     const formDataRef = useRef(formData);
     useEffect(() => { formDataRef.current = formData; }, [formData]);
+
+    const triggerBrand = useCallback(() => trigger("brand"), [trigger]);
+    const triggerName = useCallback(() => trigger("name"), [trigger]);
+    const triggerDescription = useCallback(() => trigger("description"), [trigger]);
+
+    const onImagesChange = useCallback((urls: string[]) => {
+        setFormData((prev) => ({ ...prev, images: urls }));
+        if (urls.length > 0) setImageError(null);
+    }, []);
 
     const handleAnalyzeImage = useCallback(async (src: string) => {
         if (!src) return;
@@ -107,7 +137,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
         handleDrop,
     } = useImageUpload({
         isEdit,
-        onImagesChange: (urls) => setFormData((prev) => ({ ...prev, images: urls })),
+        onImagesChange,
         onUploadComplete,
     });
 
@@ -120,22 +150,16 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
             description: initialData.description,
             notes: initialData.notes ?? '',
         });
+        reset({
+            brand: initialData.brand,
+            name: initialData.name,
+            description: initialData.description,
+            notes: initialData.notes ?? '',
+        });
         if (initialData.images?.length) {
             initImages(initialData.images);
         }
-    }, [initialData, initImages]);
-
-    const handleChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        if (name === 'brand') {
-            const hasKorean = /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(value);
-            const filtered = value.replace(/[가-힣ㄱ-ㅎㅏ-ㅣ]/g, '').toUpperCase();
-            setBrandError(hasKorean ? '브랜드는 영문으로만 입력해주세요.' : '');
-            setFormData(prev => ({ ...prev, brand: filtered }));
-            return;
-        }
-        setFormData(prev => ({ ...prev, [name]: value }));
-    }, []);
+    }, [initialData, initImages, reset]);
 
     const handleFileInputChange = useCallback(
         (e: ChangeEvent<HTMLInputElement>) => {
@@ -145,25 +169,17 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
         [processFiles]
     );
 
-    const handleSubmit = useCallback(async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const onSubmit = useCallback(
+        async (data: { brand: string; name: string; description: string; notes: string }) => {
+            if (!formData.images.length) {
+                setImageError("이미지를 한 장 이상 업로드해주세요.");
+                imageSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                return;
+            }
 
-        if (!formData.images.length) {
-            return toast.error("향수 이미지를 업로드해주세요.");
-        }
-        if (!formData.brand) {
-            return toast.error("향수 브랜드를 입력해주세요.");
-        }
-        if (!formData.name) {
-            return toast.error("향수 이름을 입력해주세요.");
-        }
-        if (!formData.description) {
-            return toast.error("향수 상세 설명을 입력해주세요.");
-        }
-
-        setIsValidating(true);
+            setIsValidating(true);
         try {
-            const isFragrance = await validateFragranceContent(formData.description, formData.notes);
+            const isFragrance = await validateFragranceContent(data.description, data.notes);
             if (!isFragrance) {
                 toast.error("향수와 관련된 내용이 아닙니다. 향수 설명과 노트 정보를 올바르게 입력해주세요.");
                 return;
@@ -172,12 +188,13 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
             setIsValidating(false);
         }
 
+        const payload = { ...data, images: formData.images };
         setIsLoading(true);
 
         try {
             if (isEdit && id) {
                 setLoadingMessage('향수 정보를 수정하고 있습니다.');
-                const result = await updateFragrance(id, formData);
+                const result = await updateFragrance(id, payload);
                 if (result.success && result.updatedFragrance) {
                     upsertFragranceCardById(queryClient, result.updatedFragrance);
                     queryClient.invalidateQueries({ queryKey: fragranceDetailKey(id) });
@@ -186,7 +203,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                 }
             } else {
                 setLoadingMessage('새 향수를 등록하고 있습니다.');
-                const result = await createFragrance(formData);
+                const result = await createFragrance(payload);
                 if (result.success && result.newFragrance) {
                     prependFragranceCard(queryClient, result.newFragrance);
                     toast.success("향수가 등록되었습니다.");
@@ -198,9 +215,12 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
         } finally {
             setIsLoading(false);
         }
-    }, [formData, isEdit, id, queryClient, router]);
+        },
+        [formData.images, isEdit, id, queryClient, router]
+    );
 
     const closeLightbox = useCallback(() => setIsLightboxOpen(false), []);
+    const handleCancel = useCallback(() => router.back(), [router]);
 
     const isDisabled = isLoading || isUploading || isAnalyzing || isValidating;
 
@@ -215,16 +235,17 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                 alt={previewImages[sliderIndex]?.name ?? "향수 이미지"}
             />
 
-            <form onSubmit={handleSubmit} className="fragrance-form-layout">
+            <form onSubmit={rhfHandleSubmit(onSubmit)} className="fragrance-form-layout">
                 {/* Left Column: Image Upload & Gallery (FragranceDetail과 동일한 fragrance-form-left 사용) */}
-                <div className="fragrance-form-left sm:flex-row lg:flex-col">
+                <div ref={imageSectionRef} className="fragrance-form-left sm:flex-row lg:flex-col">
                     <div
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, isDisabled)}
                         className={clsx(
                             "fragrance-img-size transition-all duration-300 group mx-auto",
-                            isDragging ? "bg-[#f1ecfe]/50 scale-[1.01]" : "bg-[#fffcfa] dark:bg-[#1a1425]"
+                            isDragging ? "bg-[#f1ecfe]/50 scale-[1.01]" : "bg-[#fffcfa] dark:bg-[#1a1425]",
+                            imageError && "ring-2 ring-red-400/60 dark:ring-red-400/50 rounded-[28px]"
                         )}
                     >
                         {isUploading && (
@@ -253,7 +274,10 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                             <button
                                 type="button"
                                 className="flex flex-col justify-center items-center gap-3 md:gap-6 w-full h-full border-2 border-dashed border-[#ede8f5] dark:border-[#c8b4ff40] rounded-[28px] bg-transparent text-[#b094e0] hover:bg-[#fafafc] dark:hover:bg-[#2d2040]/40 transition-colors duration-200 cursor-pointer"
-                                onClick={() => fileInputRef.current?.click()}
+                                onClick={() => {
+                                    setImageError(null);
+                                    fileInputRef.current?.click();
+                                }}
                                 disabled={isDisabled}
                             >
                                 <div className="p-3 md:p-6 rounded-full bg-[#f8f6ff] dark:bg-[#2d2040] text-[#b094e0] dark:text-[#c8b4ff]">
@@ -266,6 +290,11 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                                         {!isEdit && <><br />첫 이미지는 AI가 자동으로 분석합니다</>}
                                     </p>
                                 </div>
+                                {imageError && (
+                                    <p className="text-xs text-red-500 dark:text-red-400 font-medium mt-1" role="alert">
+                                        {imageError}
+                                    </p>
+                                )}
                             </button>
                         )}
                     </div>
@@ -286,7 +315,10 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                         <button
                             type="button"
                             disabled={isDisabled}
-                            onClick={() => fileInputRef.current?.click()}
+                            onClick={() => {
+                                setImageError(null);
+                                fileInputRef.current?.click();
+                            }}
                             className="text-[10px] uppercase tracking-widest text-[#5c4a7a] dark:text-[#c8b4ff] hover:text-[#b094e0] transition-colors font-medium"
                         >
                             {isUploading ? "이미지 업로드 중" : "+ 이미지 추가"}
@@ -338,53 +370,73 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                     <div className="space-y-10">
                         {/* Primary Info Segment */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
-                            <TextField
+                            <Controller
                                 name="brand"
-                                label="향수 브랜드"
-                                placeholder="예: DIPTYQUE"
-                                value={formData.brand}
-                                onChange={handleChange}
-                                isRequired
-                                isInvalid={!!brandError}
-                                errorMessage={brandError}
-                                variant="underlined"
-                                classNames={formClassNames.underlined}
+                                control={control}
+                                rules={{
+                                    required: "향수 브랜드를 입력해주세요.",
+                                    validate: (v) =>
+                                        !/[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(v) || "브랜드는 영문으로만 입력해주세요.",
+                                }}
+                                render={({ field }) => (
+                                    <TextField
+                                        name="brand"
+                                        label="향수 브랜드"
+                                        placeholder="예: DIPTYQUE"
+                                        value={field.value}
+                                        onChange={(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                                            const filtered = e.target.value.replace(/[가-힣ㄱ-ㅎㅏ-ㅣ]/g, "").toUpperCase();
+                                            field.onChange(filtered);
+                                        }}
+                                        onBlur={field.onBlur}
+                                        onFocus={triggerBrand}
+                                        isRequired
+                                        isInvalid={!!errors.brand}
+                                        errorMessage={errors.brand?.message as string}
+                                        variant="underlined"
+                                        classNames={formClassNames.underlined}
+                                    />
+                                )}
                             />
                             <TextField
-                                name="name"
+                                id="name"
                                 label="향수 이름"
                                 placeholder="예: Philosykos"
-                                value={formData.name}
-                                onChange={handleChange}
-                                isRequired
+                                register={register}
+                                rules={{ required: "향수 이름을 입력해주세요." }}
+                                errors={errors}
                                 variant="underlined"
-                                classNames={formClassNames.underlined}
+                                isRequired
+                                onFocus={triggerName}
                             />
                         </div>
 
                         <div className="space-y-10">
                             <TextField
-                                name="description"
+                                id="description"
                                 label="제품 상세 설명"
                                 placeholder="향수에 대해서 공유하고 싶은 내용을 작성하세요."
                                 minRows={6}
-                                value={formData.description}
-                                onChange={handleChange}
+                                multiline
+                                register={register}
+                                setValue={setValue}
+                                rules={{ required: "향수 상세 설명을 입력해주세요." }}
+                                errors={errors}
                                 variant="underlined"
-                                className="w-full"
-                                classNames={formClassNames.textarea}
+                                isRequired
+                                onFocus={triggerDescription}
                             />
 
                             <TextField
-                                name="notes"
+                                id="notes"
                                 label="노트 상세 정보"
                                 placeholder={"예:\nTOP: 레몬\nHEART: 우드\nBASE: 머스크"}
                                 minRows={4}
-                                value={formData.notes}
-                                onChange={handleChange}
+                                multiline
+                                register={register}
+                                setValue={setValue}
+                                errors={errors}
                                 variant="underlined"
-                                className="w-full"
-                                classNames={formClassNames.textarea}
                             />
                         </div>
                     </div>
@@ -393,7 +445,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                     <FormSubmitActions
                         submitLabel={isUploading ? "이미지 업로드 중" : isAnalyzing ? "이미지 AI 분석 중" : isValidating ? "향수 정보 확인 중" : isEdit ? "변경 사항 저장" : "향수 등록하기"}
                         submitDisabled={isDisabled}
-                        onCancel={() => router.back()}
+                        onCancel={handleCancel}
                     />
                 </div>
             </form>

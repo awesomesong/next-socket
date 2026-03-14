@@ -65,6 +65,12 @@ export async function POST(req: Request) {
         if (!brand || !name) {
             return NextResponse.json({ message: '브랜드와 이름은 필수 입력값입니다.' }, { status: 400 });
         }
+        if (!description) {
+            return NextResponse.json({ message: '향수 상세 설명은 필수 입력값입니다.' }, { status: 400 });
+        }
+        if (!images?.length) {
+            return NextResponse.json({ message: '향수 이미지는 필수 입력값입니다.' }, { status: 400 });
+        }
 
         // optional 필드(notes): 빈 문자열이면 DB에 null로 저장
         const notesValue = (notes?.trim() ?? '') === '' ? null : notes;

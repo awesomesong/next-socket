@@ -61,6 +61,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<IParams>
             return NextResponse.json({ message: '수정 권한이 없습니다.' }, { status: 403 });
         }
 
+        if (description !== undefined && !description) {
+            return NextResponse.json({ message: '향수 상세 설명은 필수 입력값입니다.' }, { status: 400 });
+        }
+        if (Array.isArray(images) && images.length === 0) {
+            return NextResponse.json({ message: '향수 이미지는 필수 입력값입니다.' }, { status: 400 });
+        }
+
         // optional 필드(notes): 빈 문자열/undefined면 DB에 null로 저장 (POST와 동일)
         const notesValue =
             notes === undefined || notes === null || (typeof notes === "string" && notes.trim() === "")

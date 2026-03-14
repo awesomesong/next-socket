@@ -9,7 +9,7 @@ import {
 import { Input as HeroInput, Textarea as HeroTextarea } from "@heroui/react";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { IoClose } from "react-icons/io5";
-import { useState, useCallback, type ChangeEvent, forwardRef, type Ref } from "react";
+import { useState, useCallback, type ChangeEvent, forwardRef, type Ref, type ReactElement } from "react";
 import { formInputLayout } from "@/src/app/components/formLayoutClasses";
 
 // ─── 공통 스타일 ───────────────────────────────────────────────────────────────
@@ -69,12 +69,12 @@ export const textareaClassNames = formClassNames.textarea;
 type HeroUIClassNames = typeof formClassNames.underlined | typeof formClassNames.textarea;
 
 /** react-hook-form 사용 시 (setValue 전달 시 텍스트 필드 X 버튼으로 입력 지우기 가능) */
-interface TextFieldRegisterProps {
+interface TextFieldRegisterProps<TFieldValues extends FieldValues = FieldValues> {
   id: string;
-  register: UseFormRegister<FieldValues>;
-  setValue?: UseFormSetValue<FieldValues>;
-  rules?: RegisterOptions<FieldValues>;
-  errors: FieldErrors;
+  register: UseFormRegister<TFieldValues>;
+  setValue?: UseFormSetValue<TFieldValues>;
+  rules?: RegisterOptions<TFieldValues>;
+  errors: FieldErrors<TFieldValues>;
   type?: string;
   required?: boolean;
   placement?: "inside" | "outside" | "outside-left";
@@ -84,6 +84,8 @@ interface TextFieldRegisterProps {
   placeholder?: string;
   variant?: "flat" | "bordered" | "faded" | "underlined";
   description?: string;
+  isRequired?: boolean;
+  onFocus?: () => void;
   disabled?: boolean;
   fullWidth?: boolean;
 }
@@ -113,15 +115,24 @@ interface TextFieldControlledProps {
   placement?: "inside" | "outside" | "outside-left";
 }
 
-type TextFieldProps = TextFieldRegisterProps | TextFieldControlledProps;
+type TextFieldProps<TFieldValues extends FieldValues = FieldValues> =
+  | TextFieldRegisterProps<TFieldValues>
+  | TextFieldControlledProps;
 
-function isRegisterProps(props: TextFieldProps): props is TextFieldRegisterProps {
+function isRegisterProps<TFieldValues extends FieldValues = FieldValues>(
+  props: TextFieldProps<TFieldValues>
+): props is TextFieldRegisterProps<TFieldValues> {
   return "register" in props && "errors" in props;
 }
 
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
 
-const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, TextFieldProps>((props, ref) => {
+type TextFieldRef = HTMLInputElement | HTMLTextAreaElement;
+
+const TextFieldInner = <TFieldValues extends FieldValues = FieldValues>(
+  props: TextFieldProps<TFieldValues>,
+  ref: Ref<TextFieldRef>
+) => {
   const label = props.label;
   const placeholder = props.placeholder;
   const variant = props.variant ?? "underlined";
@@ -134,25 +145,26 @@ const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, TextFieldPr
 
   const toggleVisibility = useCallback(() => setIsVisible((v) => !v), []);
 
+  const registerSetValue = isRegisterProps(props) ? props.setValue : undefined;
+  const registerId = isRegisterProps(props) ? props.id : undefined;
   const handleRegisterClear = useCallback(() => {
-    if (!isRegisterProps(props)) return;
-    props.setValue?.(props.id, "");
+    registerSetValue?.(registerId as never, "" as never);
     setHasValue(false);
-  }, [props]);
+  }, [registerSetValue, registerId]);
 
+  const controlledOnChange = !isRegisterProps(props) ? props.onChange : undefined;
+  const controlledName = !isRegisterProps(props) ? props.name : undefined;
   const handleControlledClear = useCallback(() => {
-    if (isRegisterProps(props)) return;
-    props.onChange({
-      target: { name: props.name, value: "" },
+    controlledOnChange?.({
+      target: { name: controlledName ?? "", value: "" },
     } as ChangeEvent<HTMLInputElement | HTMLTextAreaElement>);
-    setHasValue(false);
-  }, [props]);
+  }, [controlledOnChange, controlledName]);
 
   const iconButtonClass =
     "text-2xl text-default-400 pointer-events-none hover:text-[#b094e0] transition-colors";
 
   // ─── End Content: text = X(지우기), password = 눈(표시/숨기기) ─────────────────
-  const renderEndContent = (onClear?: () => void) => {
+  const renderEndContent = (onClear?: () => void, showClear?: boolean) => {
     if (type === "password") {
       return (
         <button
@@ -169,7 +181,8 @@ const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, TextFieldPr
         </button>
       );
     }
-    if (hasValue && onClear) {
+    const showClearButton = showClear !== undefined ? showClear : hasValue;
+    if (showClearButton && onClear) {
       return (
         <button
           type="button"
@@ -184,7 +197,7 @@ const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, TextFieldPr
     return undefined;
   };
 
-  if (isRegisterProps(props)) {
+  if (isRegisterProps<TFieldValues>(props)) {
     const {
       id,
       register,
@@ -194,12 +207,14 @@ const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, TextFieldPr
       placement,
       multiline,
       minRows,
+      isRequired,
+      onFocus,
       fullWidth,
     } = props;
     const errorMessage = errors[id]?.message;
     const isError = Boolean(errorMessage);
 
-    const { ref: registerRef, ...registerProps } = register(id, {
+    const { ref: registerRef, ...registerProps } = register(id as never, {
       ...rules,
       onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setHasValue(!!e.target.value);
@@ -211,6 +226,8 @@ const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, TextFieldPr
       label,
       autoComplete: id,
       isDisabled: disabled,
+      isRequired,
+      onFocus,
       ...registerProps,
       placeholder,
       labelPlacement: placement ?? "outside",
@@ -270,18 +287,14 @@ const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, TextFieldPr
 
   const isTextarea = minRows !== undefined;
   const isError = Boolean(isInvalid ?? errorMessage);
-
-  // 초기 값에 따른 hasValue 설정
-  if (!hasValue && value) setHasValue(true);
+  /** Controlled 모드에서는 value로부터 파생 (렌더 중 setState 방지) */
+  const displayHasValue = !!value;
 
   const commonControlled = {
     name,
     label,
     value,
-    onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setHasValue(!!e.target.value);
-      onChange(e);
-    },
+    onChange,
     placeholder,
     labelPlacement: placement ?? "outside",
     variant,
@@ -319,11 +332,15 @@ const TextField = forwardRef<HTMLInputElement | HTMLTextAreaElement, TextFieldPr
         ref={ref as Ref<HTMLInputElement>}
         type={type === "password" ? (isVisible ? "text" : "password") : type}
         classNames={classNames}
-        endContent={renderEndContent(handleControlledClear)}
+        endContent={renderEndContent(handleControlledClear, displayHasValue)}
       />
     </div>
   );
-});
+};
+
+const TextField = forwardRef(TextFieldInner) as (<TFieldValues extends FieldValues = FieldValues>(
+  props: TextFieldProps<TFieldValues> & { ref?: Ref<TextFieldRef> }
+) => ReactElement) & { displayName?: string };
 
 TextField.displayName = "TextField";
 
