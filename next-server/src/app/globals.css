@@ -319,11 +319,24 @@ h6 {
   }
 }
 
-/* 스켈레톤: 그리드 열 수에 맞게 아이템 수 제한 (2행) */
+/* 스켈레톤: .notice-grid와 동일한 breakpoint(580/1280/1536) 기준, 2행만 노출
+   - ~579px: 1열 → 2개
+   - 580~1279px: 2열 → 4개
+   - 1280~1535px: 3열 → 6개
+   - 1536px~: 4열 → 8개 */
 .notice-grid-skeleton > *:nth-child(n + 3) { display: none; }
-@media (min-width: 580px)  { .notice-grid-skeleton > *:nth-child(n + 5) { display: none; } }
-@media (min-width: 1280px) { .notice-grid-skeleton > *:nth-child(n + 7) { display: none; } }
-@media (min-width: 1536px) { .notice-grid-skeleton > *:nth-child(n + 9) { display: none; } }
+@media (min-width: 580px) {
+  .notice-grid-skeleton > *:nth-child(n + 3) { display: revert; }
+  .notice-grid-skeleton > *:nth-child(n + 5) { display: none; }
+}
+@media (min-width: 1280px) {
+  .notice-grid-skeleton > *:nth-child(n + 5) { display: revert; }
+  .notice-grid-skeleton > *:nth-child(n + 7) { display: none; }
+}
+@media (min-width: 1536px) {
+  .notice-grid-skeleton > *:nth-child(n + 7) { display: revert; }
+  .notice-grid-skeleton > *:nth-child(n + 9) { display: none; }
+}
 
 /* 공지사항 카드 — 글자 그라데이션(scent) 색상 기반, 라이트 파스텔 / 다크 연하게 */
 .notice-card {
