@@ -17,6 +17,7 @@ import {
 import { SOCKET_EVENTS } from "@/src/app/lib/react-query/utils";
 import { deleteNotice } from "@/src/app/lib/deleteNotice";
 import toast from "react-hot-toast";
+import { withToastParams } from "../lib/withToastParams";
 
 type NoticeTitleProps = {
   noticeTitle: string;
@@ -56,8 +57,7 @@ const NoticeDelete = ({ noticeId, noticeTitle }: NoticeIdProps & NoticeTitleProp
 
         socket?.emit(SOCKET_EVENTS.NOTICE_DELETED, { noticeId: noticeIdStr });
 
-        toast.success(deleteResult.message!);
-        router.push(`/notice`);
+        router.push(withToastParams(`/notice`, "success", deleteResult.message!));
       } else {
         // Fix 4: success: false 케이스 롤백 처리
         restoreNoticeCardPosition(queryClient, backup, snapshot);
@@ -73,8 +73,7 @@ const NoticeDelete = ({ noticeId, noticeTitle }: NoticeIdProps & NoticeTitleProp
         router.push("/notice");
       }
       toast.error("공지사항 삭제 중 오류가 발생했습니다.");
-    } finally {
-      setIsLoading(false); // Fix 3
+      setIsLoading(false);
     }
   }, [noticeId, noticeTitle, queryClient, socket, router]);
 

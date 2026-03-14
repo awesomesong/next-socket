@@ -25,6 +25,7 @@ import { uploadImage } from "@/src/app/lib/uploadImage";
 import { deleteImage as deleteCloudinaryImage } from "@/src/app/lib/deleteImage";
 import { createNotice } from "@/src/app/lib/createNotice";
 import { updateNotice } from "@/src/app/lib/updateNotice";
+import { withToastParams } from "@/src/app/lib/withToastParams";
 import MyQuillEditor from "./QuillEditor";
 import ReactQuillOriginal from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
@@ -360,7 +361,7 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
 
           setImages(finalImages);
           setImageDelete([]);
-          router.push(`/notice/${updateResult.updateNotice!.id}`);
+          router.push(withToastParams(`/notice/${updateResult.updateNotice!.id}`, "success", result.message!));
         } else {
           const createResult = result as CreateNoticeResponse;
 
@@ -383,10 +384,8 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
 
           setImages([]);
           setImageDelete([]);
-          router.replace(`/notice/${createResult.newNotice!.id}`);
+          router.replace(withToastParams(`/notice/${createResult.newNotice!.id}`, "success", result.message!));
         }
-
-        toast.success(result.message!);
       }
     } catch (error: unknown) {
       console.error(error);
@@ -395,7 +394,6 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
         router.push("/notice");
       }
       toast.error(errorMessage);
-    } finally {
       setIsLoading(false);
     }
   }, [

@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 
 import { createFragrance } from "@/src/app/lib/createFragrance";
 import { updateFragrance } from "@/src/app/lib/updateFragrance";
+import { withToastParams } from "@/src/app/lib/withToastParams";
 import { fragranceDetailKey, prependFragranceCard, upsertFragranceCardById } from "@/src/app/lib/react-query/fragranceCache";
 import { useImageUpload, type PreviewImage } from "@/src/app/lib/useImageUpload";
 import { analyzeFragranceImage } from "@/src/app/lib/analyzeFragranceImage";
@@ -198,16 +199,14 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                 if (result.success && result.updatedFragrance) {
                     upsertFragranceCardById(queryClient, result.updatedFragrance);
                     queryClient.invalidateQueries({ queryKey: fragranceDetailKey(id) });
-                    toast.success("향수 정보가 수정되었습니다.");
-                    router.push(`/fragrance/${result.updatedFragrance.slug}`);
+                    router.push(withToastParams(`/fragrance/${result.updatedFragrance.slug}`, "success", "향수 정보가 수정되었습니다."));
                 }
             } else {
                 setLoadingMessage('새 향수를 등록하고 있습니다.');
                 const result = await createFragrance(payload);
                 if (result.success && result.newFragrance) {
                     prependFragranceCard(queryClient, result.newFragrance);
-                    toast.success("향수가 등록되었습니다.");
-                    router.push(`/fragrance/${result.newFragrance.slug}`);
+                    router.push(withToastParams(`/fragrance/${result.newFragrance.slug}`, "success", "향수가 등록되었습니다."));
                 }
             }
         } catch (error: unknown) {

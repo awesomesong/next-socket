@@ -1,8 +1,10 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Nanum_Gothic, Josefin_Sans } from 'next/font/google';
 import NextAuthProvider from "@/src/app/context/NextAuthProvider";
 import ToasterContext from "@/src/app/context/ToasterContext";
+import ToastFromUrl from "@/src/app/components/ToastFromUrl";
 import ThemeProvider from "@/src/app/context/ThemeProvider";
 import { HeroUIProvider } from "@heroui/react";
 import RQProviders from "@/src/app/context/RQProvider";
@@ -91,6 +93,9 @@ export default async function RootLayout({
         <NextAuthProvider>
           <RQProviders>
             <ToasterContext />
+            <Suspense fallback={null}>
+              <ToastFromUrl />
+            </Suspense>
             <HeroUIProvider className="flex flex-col flex-1">
               <ThemeProvider>
                 <SocketProvider>

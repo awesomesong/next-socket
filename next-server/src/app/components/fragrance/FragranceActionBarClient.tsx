@@ -10,6 +10,7 @@ import { useQueryClient, InfiniteData } from '@tanstack/react-query';
 import { deleteFragrance } from '@/src/app/lib/deleteFragrance';
 import { fragranceDetailKey, fragranceListKey } from '@/src/app/lib/react-query/fragranceCache';
 import type { FragranceWithAuthor } from '@/src/app/types/fragrance';
+import { withToastParams } from '../../lib/withToastParams';
 
 type Props = {
   fragranceId: string;
@@ -56,12 +57,9 @@ export default function FragranceActionBarClient({
       });
       queryClient.removeQueries({ queryKey: fragranceDetailKey(slug), exact: true });
 
-      toast.success('향수가 삭제되었습니다.');
-      router.push('/');
-      router.refresh();
+      router.push(withToastParams('/', 'success', '향수가 삭제되었습니다.'));
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : '향수 삭제 중 오류가 발생했습니다.');
-    } finally {
       setIsDeleting(false);
     }
   };

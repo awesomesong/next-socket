@@ -1,5 +1,6 @@
 'use client';
 import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import AuthSocialButton from "./AuthSocialButton";
 import { BsGoogle } from 'react-icons/bs';
 import { RiKakaoTalkFill } from "react-icons/ri";
@@ -8,6 +9,7 @@ import toast from "react-hot-toast";
 import { useSearchParams } from "next/navigation";
 import { AuthSocialProps } from "@/src/app/types/common";
 import { useEffect, useRef } from "react";
+import { withToastParams } from "@/src/app/lib/withToastParams";
 
 const AuthSocial: React.FC<AuthSocialProps> = ({
     onClick,
@@ -16,23 +18,17 @@ const AuthSocial: React.FC<AuthSocialProps> = ({
     const searchParams = useSearchParams();
     const callbackUrl = searchParams?.get('callbackUrl') || '/';
     const { data: session, status, update } = useSession();
+    const router = useRouter();
     const pendingRedirectRef = useRef<string | null>(null);
 
-    // ✅ 세션이 실제로 인증된 후 리다이렉트 처리 (모바일 Safari 및 WebView 호환성)
-    // useEffect로 세션 상태 변경을 감지하여 실제 세션이 준비되었을 때만 리다이렉트
+    // 세션이 준비된 후 리다이렉트 처리 (소셜 로그인처럼 세션 반영이 늦는 경우 대비)
     useEffect(() => {
         if (status === 'authenticated' && pendingRedirectRef.current && session?.user?.id && session?.user?.email) {
             const targetUrl = pendingRedirectRef.current;
             pendingRedirectRef.current = null;
-
-            // ✅ 아이폰 사파리 및 모바일 WebView 환경에서도 작동하도록 window.location 사용
-            // replace로 히스토리 스택 관리 (뒤로가기 시 로그인 페이지로 가지 않음)
-            // requestAnimationFrame으로 브라우저 렌더링과 동기화 후 리다이렉트
-            requestAnimationFrame(() => {
-                window.location.replace(targetUrl);
-            });
+            router.replace(targetUrl);
         }
-    }, [status, session?.user?.id, session?.user?.email]);
+    }, [status, session?.user?.id, session?.user?.email, router]);
 
     const handleLoginResult = async (res: Awaited<ReturnType<typeof signIn>>) => {
         if (res?.error) {
@@ -41,31 +37,18 @@ const AuthSocial: React.FC<AuthSocialProps> = ({
         }
 
         if (res?.ok && !res?.error) {
-            toast.success("로그인이 되었습니다.");
+            const toastUrl = withToastParams(callbackUrl, "success", "로그인이 되었습니다.");
 
-            // ✅ 모바일 앱 WebView 환경에서도 작동하도록 절대 URL 생성
-            const targetUrl = callbackUrl.startsWith('/')
-                ? `${window.location.origin}${callbackUrl}`
-                : callbackUrl;
-
-            // ✅ 세션 업데이트 강제 (모바일 WebView에서 세션 동기화 보장)
             try {
                 await update();
             } catch (error) {
                 console.warn('세션 업데이트 실패, 계속 진행:', error);
             }
 
-            // ✅ 세션이 이미 인증된 경우 즉시 리다이렉트
-            // 세션이 아직 준비되지 않은 경우, useEffect에서 세션 상태 변경을 감지하여 리다이렉트
             if (status === 'authenticated' && session?.user?.id && session?.user?.email) {
-                // 세션이 이미 준비되었으므로 즉시 리다이렉트
-                requestAnimationFrame(() => {
-                    window.location.replace(targetUrl);
-                });
+                router.replace(toastUrl);
             } else {
-                // 세션이 아직 준비되지 않았으므로, useEffect에서 세션 상태 변경을 감지할 때까지 대기
-                // pendingRedirectRef에 URL을 저장하면 useEffect가 세션 준비를 감지하고 리다이렉트
-                pendingRedirectRef.current = targetUrl;
+                pendingRedirectRef.current = toastUrl;
             }
         }
     };

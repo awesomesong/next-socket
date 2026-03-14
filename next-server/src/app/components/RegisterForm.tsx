@@ -10,6 +10,7 @@ import TextField from "./TextField";
 import Button, { submitButtonClassName } from "./Button";
 import AuthSocial from "./AuthSocail";
 import { registerUser } from "@/src/app/lib/register";
+import { withToastParams } from "../lib/withToastParams";
 
 const RegisterForm = () => {
     const router = useRouter();
@@ -60,16 +61,14 @@ const RegisterForm = () => {
                 passwordConfirm: data.passwordConfirm,
             });
 
-            toast.success(result.message);
             clearErrors();
             reset();
-
-            router.replace(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+            
+            router.replace(withToastParams(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`, "success", result.message!));
 
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : '회원가입 중 오류가 발생했습니다.';
             toast.error(errorMessage);
-        } finally {
             setIsLoading(false);
         }
     }, [router, callbackUrl, setError, clearErrors, reset]);
