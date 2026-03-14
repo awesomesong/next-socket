@@ -1,5 +1,5 @@
 'use client';
-import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 const ButtonLogin = () => {
@@ -8,14 +8,15 @@ const ButtonLogin = () => {
 
     const queryString = searchParams?.toString();
     const fullPath = `${pathname}${queryString ? `?${queryString}` : ''}`;
+    const signInHref = `/auth/signin${fullPath ? `?callbackUrl=${encodeURIComponent(fullPath)}` : ''}`;
 
     return (
-        <button
+        <Link
+            href={signInHref}
             className="font-josefin text-gradient-scent font-semibold tracking-[0.03em] capitalize drop-shadow-sm focus:outline-none"
-            onClick={() => signIn(undefined, { callbackUrl: fullPath })}
         >
             login
-        </button>
+        </Link>
     );
 }
 
