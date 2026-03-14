@@ -50,11 +50,11 @@ const ReactQuill = dynamic(
   {
     ssr: false,
     loading: () => {
-        return  (
-            <div className='flex flex-1 h-full'>
-                <ShapesSkeleton width='100%' height='100%' radius='md' />
+        return (
+            <div className="flex flex-1 w-full">
+                <ShapesSkeleton width="100%" height="100%" radius="md" />
             </div>
-        )
+        );
     }
   }
 );
