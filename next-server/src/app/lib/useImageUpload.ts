@@ -27,7 +27,7 @@ export function useImageUpload({ isEdit, onImagesChange, onUploadComplete }: Use
         setSliderIndex(0);
     }, []);
 
-    // Fix 2 & 3: 상태 업데이터 외부에서 next 계산 + Promise.allSettled 병렬 업로드
+    // 상태 업데이터 외부에서 next 계산 + Promise.allSettled 병렬 업로드
     const processFiles = useCallback(async (files: FileList | null) => {
         if (!files?.length) return;
         const imageFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));

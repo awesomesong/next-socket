@@ -27,12 +27,9 @@ const NoticeDelete = ({ noticeId, noticeTitle }: NoticeIdProps & NoticeTitleProp
   const router = useRouter();
   const queryClient = useQueryClient();
   const socket = useSocket();
-  const [isLoading, setIsLoading] = useState(false); // Fix 3: 중복 클릭 방지
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Fix 2: 파라미터 제거 (props 클로저 직접 사용)
-  // Fix 5: useCallback으로 메모이제이션
   const handleDeleteNotice = useCallback(async () => {
-    // Fix 1: 변수명 shadowing 제거 (result → confirmed, deleteResult)
     const confirmed = confirm(`"${noticeTitle}" 글을 삭제하겠습니까?`);
     if (!confirmed) return;
 
@@ -45,9 +42,9 @@ const NoticeDelete = ({ noticeId, noticeTitle }: NoticeIdProps & NoticeTitleProp
 
     removeNoticeCardById(queryClient, noticeIdStr);
 
-    setIsLoading(true); // Fix 3
-    try {
-      const deleteResult = await deleteNotice(noticeIdStr); // Fix 1
+    setIsLoading(true);
+    try { 
+      const deleteResult = await deleteNotice(noticeIdStr);
 
       if (deleteResult.success) {
         queryClient.removeQueries({
@@ -59,7 +56,6 @@ const NoticeDelete = ({ noticeId, noticeTitle }: NoticeIdProps & NoticeTitleProp
 
         router.push(withToastParams(`/notice`, "success", deleteResult.message!));
       } else {
-        // Fix 4: success: false 케이스 롤백 처리
         restoreNoticeCardPosition(queryClient, backup, snapshot);
         restoreNoticeDetail(queryClient, noticeIdStr, prevDetail);
         toast.error(deleteResult.message ?? "삭제에 실패했습니다.");
@@ -77,7 +73,6 @@ const NoticeDelete = ({ noticeId, noticeTitle }: NoticeIdProps & NoticeTitleProp
     }
   }, [noticeId, noticeTitle, queryClient, socket, router]);
 
-  // Fix 6: 불필요한 Fragment 제거
   return (
     <button
       type="button"

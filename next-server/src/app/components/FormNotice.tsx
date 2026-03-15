@@ -44,10 +44,8 @@ type ImageProps = {
 const inputClass = `w-full py-2 px-3 border border-gray-300 rounded-md bg-transparent
                     focus:outline-none focus:ring focus:border-blue-300`;
 
-// Fix 5: 컴포넌트 외부 상수 (매 렌더마다 재생성 방지)
 const FOLDER_NAME = "notices";
 
-// Fix 3: useMemo 대신 모듈 레벨 순수 함수 (클로저 의존성 없음)
 const extractImageUrls = (htmlContent: string) => {
   const imgRegex = /<img[^>]+src="([^"]+)"/g;
   const imageUrls: string[] = [];
@@ -68,7 +66,6 @@ const normalizeContent = (html: string): string =>
 const CONFIRM_LEAVE_MESSAGE =
   "작성 중인 내용이 있습니다. 페이지를 벗어나시겠습니까?";
 
-// Fix 7: 의존성 없는 배열이므로 컴포넌트 외부 상수
 const formats = [
   "header", "bold", "italic", "underline", "strike", "blockquote",
   "align", "list", "color", "background",
@@ -177,7 +174,6 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
             throw new Error("이미지 파일만 업로드 가능합니다.");
           }
 
-          // Fix 5: folderName 변수 대신 모듈 상수 FOLDER_NAME 사용
           const { url, message } = await uploadImage(file, FOLDER_NAME);
           if (!url) {
             toast.error(message ?? "이미지 업로드에 실패했습니다.");
@@ -209,9 +205,8 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
         }
       }
     };
-  }, [status]); // Fix 5: folderName 의존성 제거 (FOLDER_NAME은 모듈 상수)
+  }, [status]);
 
-  // Fix 6: try/catch 추가로 deleteCloudinaryImage throw 시 unhandled rejection 방지
   const deleteImage = useCallback(async (url: string): Promise<boolean> => {
     if (!url) return false;
     try {
@@ -286,11 +281,9 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
     [imageHandler, linkHandler],
   );
 
-  // Fix 4: quillRef 대신 content 상태를 단일 소스로 사용
   const handleSubmitOrEdit = useCallback(async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Fix 4: quillRef.current?.getEditor()?.root.innerHTML 대신 content 상태 사용
     const imagesToSave = extractImageUrls(content);
 
     const validationError = validateNoticeData(title, content, imagesToSave);
@@ -407,7 +400,7 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
     }
   }, [
     title,
-    content, // Fix 4: content 추가 (quillRef 대체)
+    content,
     images,
     imageDelete,
     isEdit,
@@ -418,19 +411,14 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
     socket,
     router,
     id,
-    // Fix 3: extractImageUrls 제거 (모듈 레벨 함수로 이동)
   ]);
 
-  // Fix 2: create 모드에서 imageDelete가 아닌 images 상태의 이미지를 정리
-  // (create 모드에서 편집 중 삭제된 이미지는 즉시 Cloudinary에서 삭제되므로
-  //  imageDelete는 항상 비어있음 → 페이지 이탈 시 남아있는 images를 정리해야 함)
   const resetImage = useCallback(async () => {
     if (!isEdit && images.length > 0) {
       await Promise.all(images.map((img) => deleteImage(img.url)));
     }
   }, [isEdit, images, deleteImage]);
 
-  // Fix 1: quillRef.current(non-reactive) 대신 content 상태(reactive) 사용
   const isDirtyState = useMemo(() => {
     const isTitleDirty = title !== (initialData?.title || "");
     const isContentDirty = normalizeContent(content) !== normalizeContent(initialData?.content || "");
@@ -449,12 +437,11 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
     return isTitleDirty || isContentDirty || isImagesDirty;
   }, [
     title,
-    content, // Fix 1: content 추가 (quillRef 대체)
+    content,
     imageDelete.length,
     initialData?.title,
     initialData?.content,
     initialDataImage,
-    // Fix 3: extractImageUrls 제거 (모듈 레벨 함수로 이동)
   ]);
 
   // 브라우저 뒤로가기/새로고침 시 dirty 상태 경고
@@ -600,7 +587,7 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
         return updatedImages;
       });
     }
-  }, [images, isEdit, deleteImage]); // Fix 3: extractImageUrls 의존성 제거 (모듈 레벨 함수)
+  }, [images, isEdit, deleteImage]);
 
   // Quill 'text-change' 이벤트 리스너 등록
   useEffect(() => {
