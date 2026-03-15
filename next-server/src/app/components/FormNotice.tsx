@@ -60,6 +60,14 @@ const extractImageUrls = (htmlContent: string) => {
   return imageUrls.map((url, i) => ({ index: i, url }));
 };
 
+/** Quill 빈 상태(<p><br></p> 등)를 ""로 정규화. dirty 감지·유효성 검사에서 단일 사용 */
+const normalizeContent = (html: string): string =>
+  html.replace(/<[\s\S]*?>/g, "").trim().length === 0 ? "" : html;
+
+// 이탈 확인 메시지 (popstate / 링크·이미지 클릭에서 단일 사용)
+const CONFIRM_LEAVE_MESSAGE =
+  "작성 중인 내용이 있습니다. 페이지를 벗어나시겠습니까?";
+
 // Fix 7: 의존성 없는 배열이므로 컴포넌트 외부 상수
 const formats = [
   "header", "bold", "italic", "underline", "strike", "blockquote",
@@ -72,8 +80,7 @@ const validateNoticeData = (title: string, content: string, images: ImageProps[]
     return "제목을 작성해주세요.";
   }
 
-  const isEmpty = content.replace(/<(.|\n)*?>/g, "").trim().length === 0;
-  if (isEmpty && images.length === 0) {
+  if (normalizeContent(content) === "" && images.length === 0) {
     return "글의 내용을 작성하거나 이미지를 첨부해주세요.";
   }
 
@@ -118,6 +125,8 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
   const [images, setImages] = useState<ImageProps[]>(initialDataImage);
   const [imageDelete, setImageDelete] = useState<ImageProps[]>([]);
   const isNavigating = useRef(false);
+  /** 뒤로가기 후 "아니오" 선택으로 go(1) 복귀 시 발생하는 popstate에서는 confirm 생략 */
+  const isReturningFromPopState = useRef(false);
   const formTitle = useRef<HTMLInputElement>(null);
   const quillRef = useRef<ReactQuillOriginal>(null);
   const { data: session, status } = useSession();
@@ -424,7 +433,7 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
   // Fix 1: quillRef.current(non-reactive) 대신 content 상태(reactive) 사용
   const isDirtyState = useMemo(() => {
     const isTitleDirty = title !== (initialData?.title || "");
-    const isContentDirty = content !== (initialData?.content || "");
+    const isContentDirty = normalizeContent(content) !== normalizeContent(initialData?.content || "");
 
     const currentImageUrlsInEditor = extractImageUrls(content).map(img => img.url);
     const initialImageUrls = initialDataImage.map((img) => img.url);
@@ -458,25 +467,34 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
     }
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (!isDirtyState) return;
+      // isNavigating: 사용자가 이미 커스텀 confirm에서 "예"를 선택한 경우 브라우저 기본 다이얼로그 생략
+      if (!isDirtyState || isNavigating.current) return;
       e.preventDefault();
       e.returnValue = "";
     };
 
     const handlePopState = () => {
+      // go(1) 복귀 시 발생하는 popstate에서는 confirm 생략, isNavigating 즉시 해제
+      if (isReturningFromPopState.current) {
+        isReturningFromPopState.current = false;
+        isNavigating.current = false; // 100ms 타임아웃 대신 즉시 해제
+        return;
+      }
       if (!isDirtyState || isNavigating.current) return;
 
-      const confirmLeave = window.confirm(
-        "작성 중인 내용이 있습니다. 페이지를 벗어나시겠습니까?",
-      );
+      const confirmLeave = window.confirm(CONFIRM_LEAVE_MESSAGE);
 
       if (!confirmLeave) {
-        history.pushState({ isDummy: true }, "", location.href);
+        // popstate로 이미 한 단계 뒤로 이동한 상태이므로 앞으로 이동해 복귀
+        // 다음 popstate(폼 복귀)에서는 confirm 생략
+        isReturningFromPopState.current = true;
+        isNavigating.current = true;
+        history.go(1);
+        setTimeout(() => { isNavigating.current = false; }, 100);
       } else {
+        // popstate 이벤트로 이미 이전 페이지로 이동 완료 - 정리만 수행
         isNavigating.current = true;
         resetImage();
-        history.go(-1);
-        // Fix 8: 네비게이션 실패 시를 대비해 플래그 리셋 (history.go(-1)은 비동기)
         setTimeout(() => { isNavigating.current = false; }, 100);
       }
     };
@@ -493,6 +511,8 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
   // 내부 링크 클릭 또는 외부 이미지 클릭 시 dirty 상태 경고
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
+      if (isNavigating.current) return;
+
       const target = e.target as HTMLElement;
 
       const isInsideQuillEditorUI = !!target.closest(
@@ -514,27 +534,27 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
         linkElement ||
         (isImageClicked && !images.some((img) => target.src.includes(img.url)))
       ) {
-        const confirmLeave = window.confirm(
-          "작성 중인 내용이 있습니다. 페이지를 벗어나시겠습니까?",
-        );
-        if (!confirmLeave) {
-          e.preventDefault();
-          history.pushState(null, "", location.href);
-        } else {
-          resetImage();
+        // 캡처 단계에서 실행되므로 confirm 전에 전파를 차단해
+        // Next.js 라우터(React 이벤트 위임)의 pushState를 원천 방지
+        e.stopImmediatePropagation();
+        e.preventDefault();
 
+        const confirmLeave = window.confirm(CONFIRM_LEAVE_MESSAGE);
+        if (confirmLeave) {
+          isNavigating.current = true;
+          resetImage();
           if (linkElement) {
-            e.preventDefault();
             window.location.href = linkElement.href;
           }
         }
       }
     };
 
-    window.addEventListener("click", handleClick);
+    // capture: true — React 이벤트 위임보다 먼저 실행되어 pushState 이전에 차단 가능
+    window.addEventListener("click", handleClick, true);
 
     return () => {
-      window.removeEventListener("click", handleClick);
+      window.removeEventListener("click", handleClick, true);
     };
   }, [isDirtyState, images, resetImage]);
 
