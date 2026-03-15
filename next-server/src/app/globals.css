@@ -147,6 +147,14 @@ blockquote{
   --scent-gradient-end: #b07d82;
 }
 
+/* ScentUserAvatar: 다크모드에서만 밝은 그라데이션 (컴포넌트 내부 한 곳에서 처리) */
+.dark .scent-avatar-root,
+[data-theme="dark"] .scent-avatar-root {
+  --scent-gradient-start: #fff5f8;
+  --scent-gradient-mid: #ddd0ff;
+  --scent-gradient-end: #ffe8b4;
+}
+
 :root,
 [data-theme] {
   background-color: transparent;
