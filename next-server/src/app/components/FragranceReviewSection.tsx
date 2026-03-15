@@ -13,13 +13,13 @@ export default function FragranceReviewSection({ fragranceName, fragranceSlug }:
     const { data: session, status } = useSession();
 
     return (
-        <>
+        <section className="pt-8">
             {status === 'loading' ? (
                 <ReviewFormSkeleton />
             ) : (
                 session?.user && <FormReview id={fragranceSlug} user={session.user} />
             )}
             <Reviews id={fragranceSlug} name={fragranceName} user={session?.user} />
-        </>
+        </section>
     );
 }
