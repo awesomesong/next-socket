@@ -530,7 +530,7 @@ const ProductFragrance = () => {
                 setStickyBarMounted(!!el);
               }}
               className={clsx(
-                'sticky z-40 top-[59px] w-full overflow-hidden',
+                'sticky z-40 top-[56px] w-full overflow-hidden',
                 isFilterSticky && 'bg-[var(--header-bg)] backdrop-blur-md border-b border-b-[var(--header-border)]',
                 !stickyFilterVisible && isFilterSticky && 'max-md:pointer-events-none',
               )}

@@ -39,7 +39,7 @@ const MobileNav = () => {
                     left-0
                     right-0
                     bottom-0
-                    top-[60px]
+                    top-[58px]
                     h-dvh
                     p-4
                     bg-default
