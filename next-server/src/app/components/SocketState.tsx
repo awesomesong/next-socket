@@ -28,6 +28,7 @@ import {
   conversationKey,
   messagesKey,
   upsertConversation,
+  upsertConversationWithFirstMessage,
   markConversationRead,
   bumpConversationOnNewMessage,
   upsertMessageSortedInCache,
@@ -55,6 +56,7 @@ import {
   normalizePreviewType,
   RoomEventPayload,
   getMessageSenderId,
+  ConversationMessagePreview,
 } from "@/src/app/types/conversation";
 import type {
   NoticeCommentNewPayload,
@@ -755,10 +757,16 @@ const SocketState = () => {
         return;
       }
 
-      upsertConversation(queryClient, conv as Partial<FullConversationType> & { id: string });
-      if (!lastMessageMs(conv)) {
-        const lastAt = normalizeDate(conv.lastMessageAt ?? (conv as { createdAt?: Date | string }).createdAt ?? new Date());
-        updateConversationById(queryClient, id, { lastMessageAt: lastAt });
+      // firstMessage가 있으면 한 번에 preview까지 설정 (상대방 flash 방지)
+      const firstMsg = (conv as unknown as { firstMessage?: ConversationMessagePreview }).firstMessage;
+      if (firstMsg) {
+        upsertConversationWithFirstMessage(queryClient, conv as Partial<FullConversationType> & { id: string }, firstMsg);
+      } else {
+        upsertConversation(queryClient, conv as Partial<FullConversationType> & { id: string });
+        if (!lastMessageMs(conv)) {
+          const lastAt = normalizeDate(conv.lastMessageAt ?? (conv as { createdAt?: Date | string }).createdAt ?? new Date());
+          updateConversationById(queryClient, id, { lastMessageAt: lastAt });
+        }
       }
       zeroAndClampUnread(queryClient, id, conversationIdRef.current);
 
@@ -767,12 +775,19 @@ const SocketState = () => {
       const list = queryClient.getQueryData(conversationListKey) as ConversationListData | undefined;
       const item = list?.conversations?.find((c: FullConversationType) => String(c.id) === id);
       const lastMsgMs = lastMessageMs(item || conv) || 0;
-      const lastMsgId = item?.lastMessageId || (item || conv as FullConversationType).lastMessageId || undefined;
+      // firstMessage가 있으면 그 ID를 lastId로 등록 → receive:conversation 중복 스킵
+      const rawLastId =
+        item?.lastMessageId ?? (item || conv as FullConversationType).lastMessageId;
+      const lastMsgId = firstMsg?.id
+        ? String(firstMsg.id)
+        : rawLastId != null
+          ? String(rawLastId)
+          : undefined;
       snapshotRef.current.set(id, {
         baseUnread: 0,
         isAI: !!conv.isAIChat,
         lastMessageAtMs: lastMsgMs,
-        lastId: lastMsgId ? String(lastMsgId) : undefined,
+        lastId: lastMsgId,
       });
 
     } catch {

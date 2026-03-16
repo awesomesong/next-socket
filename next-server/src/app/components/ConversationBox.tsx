@@ -42,7 +42,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
     if (lastMessage?.type === "system") return undefined;
     if (lastMessage?.type === "image") return "사진을 보냈습니다.";
     if (lastMessage?.body) return lastMessage.body;
-    return "대화방이 생성되었습니다.";
+    return undefined;
   }, [data.isAIChat, lastMessage?.type, lastMessage?.body]);
 
   // formatDate 비용이 크다면 메모

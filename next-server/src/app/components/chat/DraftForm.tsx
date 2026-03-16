@@ -107,7 +107,8 @@ const DraftForm: React.FC<DraftFormProps> = ({
             } else if (socket) {
                 // 일반/그룹 대화방: 소켓 이벤트 emit
                 if (!conv.existingConversation) {
-                    socket.emit(SOCKET_EVENTS.CONVERSATION_NEW, conv);
+                    // firstMessage를 포함시켜 상대방이 즉시 올바른 preview 표시 가능
+                    socket.emit(SOCKET_EVENTS.CONVERSATION_NEW, { ...conv, firstMessage: newMessage });
                 }
                 socket.emit('send:message', { newMessage });
             }
