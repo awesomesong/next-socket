@@ -32,20 +32,19 @@ const MobileNav = () => {
             </div>
             <ul 
                 className={clsx(`
-                        flex
-                        flex-col
-                        gap-3
-                        fixed
-                        left-0
-                        right-0
-                        bottom-0
-                        top-[60px]
-                        h-screen
-                        p-4
-                        bg-white
-                        dark:bg-[#0d0d0d]
-                        capitalize
-                    `,
+                    flex
+                    flex-col
+                    gap-3
+                    fixed
+                    left-0
+                    right-0
+                    bottom-0
+                    top-[60px]
+                    h-dvh
+                    p-4
+                    bg-default
+                    capitalize
+                `,
                     isOpen ? 'block' : 'hidden'
                 )}
             >
