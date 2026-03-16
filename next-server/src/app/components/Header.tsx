@@ -13,9 +13,10 @@ export const Header = async () => {
         <header className='
             shrink-0
             sticky
-            -top-px
+            top-0
             z-50
-            h-auto
+            h-[var(--header-height)]
+            box-border
             px-4
             md:px-8
             py-2

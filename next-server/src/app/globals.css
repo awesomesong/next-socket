@@ -38,6 +38,8 @@ blockquote{
 :root {
   --bg-page: #f7f5f2;
   --bg-page-reverse: #1a1625;
+  /* 히어로 영역 = 100dvh - 이 값 (헤더 높이 변경 시 여기만 수정) */
+  --header-height: 56px;
   --header-bg: rgba(255, 252, 250, 0.88);
   --header-border: rgba(45, 32, 64, 0.08);
   --scent-gradient-start: #a67d5c;
@@ -1631,11 +1633,11 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
 /* =============================================
    Scent Memories Hero Section
    ============================================= */
-/* 헤더 높이(64px) 제외한 보이는 뷰포트 1화면. 100dvh = 개발자도구/주소창 등으로 줄어든 높이 자동 반영 */
+/* 헤더 영역 제외한 브라우저 전체 높이(100dvh - header). 스켈레톤·히어로 동일 적용 */
 .scent-hero {
   position: relative;
   width: 100%;
-  height: calc(100dvh - 64px);
+  height: calc(100dvh - var(--header-height));
   min-height: 0;
   overflow: hidden;
   display: flex;
