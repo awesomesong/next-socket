@@ -79,6 +79,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     initialPageParam: null, // 최신 메시지부터 로드
     getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
     enabled: true,
+    staleTime: 30_000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });

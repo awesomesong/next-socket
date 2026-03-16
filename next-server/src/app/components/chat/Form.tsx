@@ -9,7 +9,8 @@ import {
 } from "@tanstack/react-query";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";
-import { useCallback, useEffect, useRef, memo } from "react";
+import { useCallback, useLayoutEffect, useRef, memo } from "react";
+import { useFocusInput } from "@/src/app/hooks/useFocusInput";
 import ImageUploadButton from "@/src/app/components/ImageUploadButton";
 import { CloudinaryUploadWidgetResults } from "next-cloudinary";
 import { useSocket } from "../../context/socketContext";
@@ -192,8 +193,10 @@ const Form = () => {
         const userIds = currentConversationUsers?.userIds || [];
 
         // 소켓 전송용 메시지 정규화 (FullMessageType 구조 보장)
+        // clientMessageId 포함: 수신 측에서 낙관 메시지와 정확히 매칭 → 중복 삽입 방지
         const socketMessage = normalizeMessage({
           ...data.newMessage,
+          clientMessageId: context.messageId,
           conversation: {
             isGroup: userIds.length > 2,
             userIds: userIds,
@@ -249,7 +252,14 @@ const Form = () => {
         ),
       );
     },
-    onSettled: () => { },
+    onSettled: () => {
+      // 에러 케이스에서도 사용자가 바로 다시 입력할 수 있도록 포커스 복구
+      if (typeof window !== "undefined") {
+        requestAnimationFrame(() => {
+          focusInput();
+        });
+      }
+    },
   });
 
   // ✅ 전송 직렬화를 위한 큐
@@ -288,16 +298,25 @@ const Form = () => {
     void processQueue();
   }, [processQueue]);
 
-  const { register, handleSubmit, setValue, getValues, setFocus } =
+  const { register, handleSubmit, setValue, getValues } =
     useForm<Form>({
       defaultValues: {
         message: "",
       },
     });
 
-  useEffect(() => {
-    setFocus("message");
-  }, [setFocus]);
+  const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const { ref: registerRef, ...registerRest } = register("message", { required: true });
+  const { focusInput, focusAndHold, cancelFocus } = useFocusInput("message", messageInputRef);
+
+  // 마운트 시 포커스 유지: 즉시 포커스 후 1.5s 내 focusout 발생 시 즉시 복구 (CldUploadButton 초기화 대응)
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return;
+    const fromDraft = sessionStorage.getItem("scent:focusMessage");
+    if (fromDraft) sessionStorage.removeItem("scent:focusMessage");
+    focusAndHold(1500);
+    return cancelFocus;
+  }, [focusAndHold, cancelFocus, conversationId]);
 
   // 2) 실제 제출 로직: RHF 데이터 받음
   const onSubmit = useCallback<SubmitHandler<Form>>(async ({ message }) => {
@@ -309,19 +328,28 @@ const Form = () => {
     }
 
     const messageId = crypto.randomUUID();
-    // 즉시 비우기 + 포커스
     setValue("message", "", { shouldValidate: true });
-    setFocus("message");
-
+    cancelFocus(); // focusAndHold 리스너 해제 (onSettled에서 focusInput으로 복구)
     enqueueSend({ conversationId, data: { message }, messageId });
-  }, [conversationId, enqueueSend, setValue, setFocus]);
+  }, [conversationId, enqueueSend, setValue, cancelFocus]);
 
-  const handleUpload = async (result: CloudinaryUploadWidgetResults) => {
-    if (typeof result.info === 'string' || !result.info || !('secure_url' in result.info)) return;
-
-    const messageId = crypto.randomUUID();
-    enqueueSend({ conversationId, image: result.info.secure_url, messageId });
-  };
+  const handleUpload = useCallback(
+    async (result: CloudinaryUploadWidgetResults) => {
+      if (
+        typeof result.info === "string" ||
+        !result.info ||
+        !("secure_url" in result.info)
+      )
+        return;
+      const messageId = crypto.randomUUID();
+      enqueueSend({
+        conversationId,
+        image: result.info.secure_url,
+        messageId,
+      });
+    },
+    [conversationId, enqueueSend]
+  );
 
   // 3) RHF 핸들러를 메모이즈해서 모든 제출 경로에서 사용
   const submit = useCallback(() => handleSubmit(onSubmit)(), [handleSubmit, onSubmit]);
@@ -359,9 +387,13 @@ const Form = () => {
       >
         <TextareaAutosize
           id="message"
+          ref={(el) => {
+            registerRef(el);
+            messageInputRef.current = el;
+          }}
           minRows={2}
           maxRows={4}
-          {...register("message", { required: true })}
+          {...registerRest}
           placeholder="메시지를 작성해주세요."
           onKeyDown={handleKeyPress}
           onCompositionStart={handleCompositionStart}

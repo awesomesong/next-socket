@@ -1,7 +1,8 @@
 'use client';
-import { CldUploadButton, CloudinaryUploadWidgetResults } from 'next-cloudinary';
+import { CldUploadButton, CloudinaryUploadWidgetResults, type CloudinaryUploadWidgetOptions } from 'next-cloudinary';
 import { HiPhoto } from 'react-icons/hi2';
 import { FaFileUpload } from "react-icons/fa";
+import { memo, useMemo } from 'react';
 
 type Variant = 'default' | 'compact';
 
@@ -18,12 +19,26 @@ const ImageUploadButton = ({
   maxFiles = 1,
 }: ImageUploadButtonProps) => {
 
+  const options: CloudinaryUploadWidgetOptions = useMemo(
+    () => ({
+      maxFiles,
+      clientAllowedFormats: ["jpg", "jpeg", "png", "gif", "webp"],
+      resourceType: "image",
+      sources: ["local", "camera"],
+      showAdvancedOptions: false,
+      showSkipCropButton: true,
+      showPoweredBy: false,
+      singleUploadAutoClose: true,
+    }),
+    [maxFiles]
+  );
+
   const icon =
     variant === 'compact' ? (
       <HiPhoto size={30} fill="url(#scent-nav-gradient)" />
     ) : (
       <span className='
-            flex 
+            flex
             flex-row
             items-center
             gap-1
@@ -42,16 +57,7 @@ const ImageUploadButton = ({
 
   return (
     <CldUploadButton
-      options={{
-        maxFiles,
-        clientAllowedFormats: ["jpg", "jpeg", "png", "gif", "webp"],
-        resourceType: "image",
-        sources: ['local', 'camera'],
-        showAdvancedOptions: false,
-        showSkipCropButton: true,
-        showPoweredBy: false,
-        singleUploadAutoClose: true,
-      }}
+      options={options}
       onSuccess={onUploadSuccess}
       uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET}
     >
@@ -60,4 +66,4 @@ const ImageUploadButton = ({
   );
 };
 
-export default ImageUploadButton;
+export default memo(ImageUploadButton);

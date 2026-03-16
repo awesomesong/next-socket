@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import TextareaAutosize from 'react-textarea-autosize';
-import { useState, useCallback, startTransition } from 'react';
+import { useState, useCallback, startTransition, useLayoutEffect } from 'react';
 import { useSocket } from '@/src/app/context/socketContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { createConversationWithFirstMessage } from '@/src/app/lib/createConversationWithFirstMessage';
@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 import { validateUserMessage } from '@/src/app/utils/aiPolicy';
 import { validatePrompt as validateAIPrompt } from '@/src/app/utils/aiPolicy';
 import useComposition from '@/src/app/hooks/useComposition';
+import { useFocusInput } from '@/src/app/hooks/useFocusInput';
 import ChatSubmitButton from './ChatSubmitButton';
 import ImageUploadButton from '@/src/app/components/ImageUploadButton';
 import { CloudinaryUploadWidgetResults } from 'next-cloudinary';
@@ -43,6 +44,13 @@ const DraftForm: React.FC<DraftFormProps> = ({
     const { register, handleSubmit, setValue, getValues } = useForm<Form>({
         defaultValues: { message: '' },
     });
+
+    const { focusAndHold, cancelFocus } = useFocusInput('message');
+
+    useLayoutEffect(() => {
+        focusAndHold(1500);
+        return () => cancelFocus();
+    }, [focusAndHold, cancelFocus]);
 
     const sendFirstMessage = useCallback(async (messageText?: string, imageUrl?: string) => {
         if (isSending) return;
@@ -104,6 +112,10 @@ const DraftForm: React.FC<DraftFormProps> = ({
                 socket.emit('send:message', { newMessage });
             }
 
+            // 대화방 Form이 마운트 후 입력창에 포커스되도록 플래그 설정
+            if (typeof window !== 'undefined') {
+                sessionStorage.setItem('scent:focusMessage', '1');
+            }
             // replace: 뒤로가기 시 드래프트 페이지로 돌아가지 않도록 (전환만 배치해 리렌더 완화)
             startTransition(() => {
                 router.replace(`/conversations/${conv.id}`);

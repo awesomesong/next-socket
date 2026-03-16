@@ -135,6 +135,7 @@ export function useInitialScroll({
         // 타임아웃: 메시지 없음
         clearInterval(pollingInterval);
         isScrollingInitialRef.current = false;
+        onComplete?.();
       }
     }, 50);
     
