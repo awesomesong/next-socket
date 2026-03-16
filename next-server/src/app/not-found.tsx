@@ -12,7 +12,7 @@ export default function NotFound() {
       <div className="w-full sm:w-[320px] flex flex-col flex-1 gap-4 sm:gap-8 px-4 sm:px-0">
         {/* 상단 헤더 — 이미지와 같은 너비, 왼쪽 정렬 */}
         <header className="shrink-0 pt-6 sm:pt-8 flex justify-start">
-          <AnimatedLogo responsive={true} />
+          <AnimatedLogo />
         </header>
 
         {/* 메인 콘텐츠 */}

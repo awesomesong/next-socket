@@ -1,7 +1,6 @@
 'use client';
 import Link from 'next/link';
 import { motion, Variants } from 'framer-motion';
-import clsx from 'clsx';
 
 // 단어 단위 fade-up — 스태거 없이 부드럽게
 const wordVariants: Variants = {
@@ -27,13 +26,9 @@ const lineVariants: Variants = {
   },
 };
 
-interface AnimatedLogoProps {
-  responsive?: boolean;
-}
-
-const AnimatedLogo: React.FC<AnimatedLogoProps> = ({ responsive = true }) => {
+const AnimatedLogo = () => {
   return (
-    <Link href="/" className="inline-flex flex-col items-start leading-none select-none gap-[0px]">
+    <Link href="/" className="inline-flex flex-col items-start leading-none select-none gap-0">
 
       {/* "Scent" — italic, normal weight */}
       <motion.div
@@ -41,10 +36,7 @@ const AnimatedLogo: React.FC<AnimatedLogoProps> = ({ responsive = true }) => {
         variants={wordVariants}
         initial="hidden"
         animate="visible"
-        className={clsx(
-          'text-gradient-scent font-josefin text-lg italic font-light tracking-[0.02em]',
-          responsive && 'max-[480px]:text-base',
-        )}
+        className="text-gradient-scent font-josefin text-sm italic font-light tracking-[0.02em]"
       >
         Scent
       </motion.div>
@@ -55,10 +47,7 @@ const AnimatedLogo: React.FC<AnimatedLogoProps> = ({ responsive = true }) => {
         variants={wordVariants}
         initial="hidden"
         animate="visible"
-        className={clsx(
-          'text-gradient-memories font-josefin font-normal tracking-[0.03em]',
-          responsive && 'max-[480px]:text-base',
-        )}
+        className="text-gradient-memories font-josefin text-sm font-normal tracking-[0.03em]"
       >
         Memories
       </motion.div>

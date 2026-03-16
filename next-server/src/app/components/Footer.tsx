@@ -14,7 +14,7 @@ export default function Footer() {
                 {/* 좌: 브랜드 */}
                 <div className="footer-brand">
                     <div className="[&_.line-gradient-deco]:hidden">
-                        <AnimatedLogo responsive={false} />
+                        <AnimatedLogo />
                     </div>
                     <p className="footer-brand-sub">향수를 수집하고 기록하는 공간</p>
                 </div>

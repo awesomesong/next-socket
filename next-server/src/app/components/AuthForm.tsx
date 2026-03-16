@@ -27,7 +27,7 @@ const AuthForm: React.FC<AuthFormProps> = ({
                 sm:w-full 
                 sm:max-w-md
             '>
-                <AnimatedLogo responsive={false} />
+                <AnimatedLogo />
                 <h2 className='
                     mt-1
                     text-center
