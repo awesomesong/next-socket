@@ -41,116 +41,63 @@ export async function POST(req: NextRequest) {
       return new NextResponse("부적절한 내용은 허용되지 않습니다.", { status: 400 });
     }
 
-    // (선택) 대화방 존재/참여자 확인 — userIds만 필요
-    const conv = await prisma.conversation.findUnique({
-      where: { id: conversationId },
+    // 대화방 존재 + 참여자 확인을 한 쿼리로
+    const conv = await prisma.conversation.findFirst({
+      where: { id: conversationId, userIds: { has: user.id } },
       select: { id: true, userIds: true },
     });
     if (!conv) {
-      return new NextResponse("대화방을 찾을 수 없습니다.", { status: 404 });
-    }
-    // (선택) 권한: 요청자가 참여자인지 확인
-    if (!conv.userIds.includes(user.id)) {
-      return new NextResponse("대화방 참여자가 아닙니다.", { status: 403 });
+      return new NextResponse("대화방을 찾을 수 없거나 참여자가 아닙니다.", { status: 403 });
     }
 
-    // === 메시지 생성 (AI 응답이면 트랜잭션 분리) ===
+    // now를 미리 생성 → create + updateMany 간 데이터 의존성 제거
     const msgId = messageId || crypto.randomUUID();
+    const now = new Date();
     const inferredType = image ? "image" : "text";
 
+    const msgSelect = {
+      id: true,
+      body: true,
+      image: true,
+      type: true,
+      createdAt: true,
+      conversationId: true,
+      sender: { select: { id: true, name: true, email: true, image: true } },
+    } as const;
+
+    // 배치 트랜잭션: create + updateMany를 한 번에 전송
     let result;
-    if (isAIResponse) {
-      // AI 응답은 트랜잭션 없이 단순 생성 (AI 스트림에서 처리)
-      result = await prisma.message.create({
-        data: {
-          id: msgId,
-          body: body || message,
-          image,
-          type: type || inferredType,
-          conversation: { connect: { id: conversationId } },
-          sender: { connect: { id: user.id } },
-          isAIResponse: true,
-          isError: !!isError,
-        },
-        select: {
-          id: true,
-          body: true,
-          image: true,
-          type: true,
-          createdAt: true,
-          conversationId: true,
-          sender: { select: { id: true, name: true, email: true, image: true } },
-        },
-      });
-      
-      // ✅ AI 응답도 대화방 최신시각 갱신 (일반 메시지와 동일)
-      await prisma.conversation.updateMany({
-        where: { id: conversationId, lastMessageAt: { lt: result.createdAt } },
-        data: { 
-          lastMessageAt: result.createdAt,
-          lastMessageId: result.id,
-        },
-      });
-    } else {
-      // 일반 메시지는 트랜잭션으로 처리
-      result = await prisma.$transaction(async (tx) => {
-        // 1) 메시지 생성 (멱등: P2002면 회수)
-        let newMessage;
-        try {
-          newMessage = await tx.message.create({
-            data: {
-              id: msgId,
-              body: body || message,
-              image,
-              type: type || inferredType,
-              conversation: { connect: { id: conversationId } },
-              sender: { connect: { id: user.id } },
-              isAIResponse: false,
-              isError: !!isError,
-            },
-            select: {
-              id: true,
-              body: true,
-              image: true,
-              type: true,
-              createdAt: true,
-              conversationId: true,
-              sender: { select: { id: true, name: true, email: true, image: true } },
-            },
-          });
-        } catch (e: {code?: string} | unknown) {
-          if ((e as {code?: string})?.code === "P2002") {
-            newMessage = await tx.message.findUniqueOrThrow({
-              where: { id: msgId },
-              select: {
-                id: true,
-                body: true,
-                image: true,
-                type: true,
-                createdAt: true,
-                conversationId: true,
-                sender: { select: { id: true, name: true, email: true, image: true } },
-              },
-            });
-          } else {
-            throw e;
-          }
-        }
-
-        // 2) 대화방 최신시각 갱신 (조건부, 충돌 없음)
-        await tx.conversation.updateMany({
-          where: { id: conversationId, lastMessageAt: { lt: newMessage.createdAt } },
-          data: { 
-            lastMessageAt: newMessage.createdAt,
-            lastMessageId: newMessage.id,
+    try {
+      [result] = await prisma.$transaction([
+        prisma.message.create({
+          data: {
+            id: msgId,
+            createdAt: now,
+            body: body || message,
+            image,
+            type: type || inferredType,
+            conversation: { connect: { id: conversationId } },
+            sender: { connect: { id: user.id } },
+            isAIResponse: !!isAIResponse,
+            isError: !!isError,
           },
+          select: msgSelect,
+        }),
+        prisma.conversation.updateMany({
+          where: { id: conversationId, lastMessageAt: { lt: now } },
+          data: { lastMessageAt: now, lastMessageId: msgId },
+        }),
+      ]);
+    } catch (e) {
+      if ((e as { code?: string })?.code === "P2002") {
+        // 멱등: 이미 존재하는 메시지 반환
+        result = await prisma.message.findUniqueOrThrow({
+          where: { id: msgId },
+          select: msgSelect,
         });
-
-        return newMessage;
-      }, {
-        maxWait: 5000, // 5초 대기
-        timeout: 10000, // 10초 타임아웃
-      });
+      } else {
+        throw e;
+      }
     }
 
     // 응답
