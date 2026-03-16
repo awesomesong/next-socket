@@ -5,9 +5,10 @@ import clsx from "clsx";
 
 type Props = {
     size?: 'mobile-small';
+    className?: string;
 }
 
-const ChatUnReadCount = ({ size }: Props) => {
+const ChatUnReadCount = ({ size, className }: Props) => {
     const { unReadCount } = useUnreadStore();
 
     if (!unReadCount) return null;
@@ -15,12 +16,9 @@ const ChatUnReadCount = ({ size }: Props) => {
     return (
         <span className={clsx(
             "unread-badge",
-            "absolute -right-[2px] -top-[2px]",
-            size === 'mobile-small' && `
-                max-md:top-0
-                max-md:right-0
-                max-md:text-[11px]
-        `)}>
+            size === 'mobile-small' && "max-md:text-[11px]",
+            className,
+        )}>
             {formatMessageCount(unReadCount)}
         </span>
     )

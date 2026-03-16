@@ -56,11 +56,16 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
         `)}
         data-selected={active}
       >
-        <Icon className="h-6 w-6 shrink-0" fill="url(#scent-nav-gradient)" />
+        <div className="relative inline-flex">
+          <Icon className="h-6 w-6 shrink-0" fill="url(#scent-nav-gradient)" />
+          {label === '채팅' && (
+            <ChatUnReadCount
+              size="mobile-small"
+              className="absolute right-0 top-0 translate-x-1/2 -translate-y-1/2"
+            />
+          )}
+        </div>
         <span className="sr-only">{label}</span>
-        {label === '채팅' &&
-          <ChatUnReadCount size="mobile-small" />
-        }
       </Link>
     </li>
   )
