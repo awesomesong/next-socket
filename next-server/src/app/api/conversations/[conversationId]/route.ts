@@ -107,7 +107,7 @@ export async function DELETE(req: Request, { params }: ParamsProp) {
     if (!existingConversation.userIds.includes(user.id)) {
       return NextResponse.json({ message: "해당 대화방에 접근할 수 없습니다." }, { status: 403 });
     }
-    // ✅ 2) 트랜잭션으로 원자화 + 이벤트 타입 결정
+    // ✅ 2) 트랜잭션으로 원자화 + 이벤트 타입 결정 (timeout 15s: M2M set + message.create 지연 대비)
     const result = await prisma.$transaction(async (tx) => {
       const conv = await tx.conversation.findUnique({
         where: { id: conversationId },
@@ -160,7 +160,7 @@ export async function DELETE(req: Request, { params }: ParamsProp) {
         },
       });
 
-      // 6) 그룹방이면 시스템 메시지 남기고 lastMessageAt/lastMessageId 갱신 (조건부 updateMany)
+      // 6) 그룹방이면 시스템 메시지 생성 (lastMessageAt/lastMessageId 갱신은 트랜잭션 밖에서)
       let systemMessage = null;
       if (conv.isGroup && conv._count.messages > 0) {
         systemMessage = await tx.message.create({
@@ -170,8 +170,8 @@ export async function DELETE(req: Request, { params }: ParamsProp) {
             conversation: { connect: { id: conversationId } },
             sender: { connect: { id: user.id } },
           },
-          select: { 
-            id: true, 
+          select: {
+            id: true,
             createdAt: true,
             body: true,
             type: true,
@@ -187,28 +187,30 @@ export async function DELETE(req: Request, { params }: ParamsProp) {
             },
           },
         });
-
-        // ✅ 시스템 메시지도 lastMessageId로 업데이트 (읽음 상태 기준점 역할)
-        // 시스템 메시지 이후에 들어온 사용자는 이 시점까지만 읽었다고 처리되어야 함
-        await tx.conversation.updateMany({
-          where: { id: conversationId, lastMessageAt: { lt: systemMessage.createdAt } },
-          data: { 
-            lastMessageAt: systemMessage.createdAt, 
-            lastMessageId: systemMessage.id 
-          },
-        });
       }
 
-      return { 
-        event: "member.left" as const, 
-        userId: user.id, 
+      return {
+        event: "member.left" as const,
+        userId: user.id,
         recipients: nextUserIds,
-        systemMessage // ✅ 시스템 메시지도 함께 반환
+        systemMessage
       };
-    });
+    }, { timeout: 15000 });
+
+    // lastMessageAt/lastMessageId 갱신: 트랜잭션 밖에서 실행 (트랜잭션 시간 단축 목적)
+    // prisma 전역 클라이언트는 풀에서 새 연결을 사용하므로 P2028 위험 없음
+    if (result.event === "member.left" && result.systemMessage) {
+      await prisma.conversation.update({
+        where: { id: conversationId },
+        data: {
+          lastMessageAt: result.systemMessage.createdAt,
+          lastMessageId: result.systemMessage.id,
+        },
+      });
+    }
 
     // ✅ 3) 응답 페이로드에 이벤트 정보 포함 (클라이언트에서 소켓 발송용)
-    const response = { 
+    const response = {
       ok: true, 
       event: {
         type: result.event,
