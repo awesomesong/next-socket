@@ -26,7 +26,6 @@ export const deleteConversation = async (conversationId: string): Promise<{ succ
       return { success: false };
     }
 
-    toast.success("대화방이 삭제되었습니다.");
     return { success: true, payload: payload as DeleteConversationSuccessResponse };
   } catch (error) {
     console.error("대화방 삭제 중 오류:", error);

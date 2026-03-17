@@ -19,6 +19,7 @@ import {
   setTotalUnreadFromList,
 } from "@/src/app/lib/react-query/chatCache";
 import toast from "react-hot-toast";
+import { withToastParams } from "../../lib/withToastParams";
 
 const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
   const socket = useSocket();
@@ -81,7 +82,7 @@ const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
       if (totalUnread !== undefined) setUnreadCount(totalUnread);
 
       if (socket) socket.emit("room.event", event); // 서버/클라 규격에 맞춰 payload 유지
-      router.push("/conversations");
+      router.push(withToastParams("/conversations", "success", "대화방이 삭제되었습니다."));
     } catch (error) {
       toast.error(
         formatErrorMessage(
