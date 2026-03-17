@@ -10,6 +10,7 @@ const ON_THIS_PAGE = [
   { href: '#preview', label: '화면 미리보기' },
   { href: '#features', label: '주요 기능' },
   { href: '#fragrance-guide', label: '향수 등록 가이드' },
+  { href: '#chat-member-guide', label: '채팅 멤버 기능 가이드' },
   { href: '#howto', label: '이용 방법' },
 ] as const;
 
@@ -112,6 +113,7 @@ type NoticeIntroContentProps = {
   steps: IntroStep[];
   techStack: { category: string; items: string[] }[];
   fragranceGuideSteps: FragranceGuideStep[];
+  chatMemberGuideSteps: FragranceGuideStep[];
 };
 
 export default function NoticeIntroContent({
@@ -119,6 +121,7 @@ export default function NoticeIntroContent({
   steps,
   techStack,
   fragranceGuideSteps,
+  chatMemberGuideSteps,
 }: NoticeIntroContentProps) {
   const [zoomedImage, setZoomedImage] = useState<{ src: string; alt: string } | null>(null);
 
@@ -374,8 +377,58 @@ export default function NoticeIntroContent({
             </div>
           </section>
 
+          <section id="chat-member-guide" className="scroll-mt-24">
+            <SectionLabel index="04" title="채팅 멤버 기능 가이드" />
+            <p className="text-xs mb-8 leading-relaxed text-[var(--color-text-secondary)]">
+              채팅의 멤버 탭에서 다양한 대화 기능을 이용할 수 있습니다. 멤버를 클릭해 1:1 대화를 시작하거나, 우측 상단 메뉴(⋮)를 통해 단체 채팅방 만들기, AI 채팅, 다크/라이트 모드 변경이 가능합니다.
+            </p>
+
+            <div className="space-y-12">
+              {chatMemberGuideSteps.map(({ step, title, desc, webImg, mobileImg }) => (
+                <div key={step}>
+                  <div className="flex gap-3">
+                    <div className="shrink-0 pt-[2px]">
+                      <span
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white [background:var(--bg-gradient-scent)]"
+                      >
+                        {step}
+                      </span>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-left mb-2 text-[var(--color-text-primary)]">
+                        {title}
+                      </p>
+                      <p className="text-xs leading-relaxed mb-4 text-left text-[var(--color-text-secondary)]">
+                        {desc}
+                      </p>
+
+                      <ResponsivePreview
+                        openZoom={openZoom}
+                        desktop={{
+                          src: webImg.src,
+                          alt: webImg.alt,
+                          width: 900,
+                          height: 600,
+                          sizes: '(min-width: 768px) 900px, 100vw',
+                        }}
+                        mobile={{
+                          src: mobileImg.src,
+                          alt: mobileImg.alt,
+                          width: 300,
+                          height: 600,
+                          sizes: '(min-width: 768px) 128px, 100vw',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <section id="howto" className="scroll-mt-24">
-            <SectionLabel index="04" title="이용 방법" />
+            <SectionLabel index="05" title="이용 방법" />
             <p className="text-xs mb-8 leading-relaxed text-[var(--color-text-secondary)]">
               회원가입 없이도 향수 목록과 공지사항을 자유롭게 열람할 수
               있습니다. 아래 기능을 이용하려면 소셜 로그인이 필요합니다.

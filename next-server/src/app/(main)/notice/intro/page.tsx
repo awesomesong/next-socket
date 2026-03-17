@@ -78,6 +78,30 @@ const fragranceGuideSteps: FragranceGuideStep[] = [
   },
 ];
 
+const chatMemberGuideSteps: FragranceGuideStep[] = [
+  {
+    step: '01',
+    title: '멤버 목록 확인',
+    desc: '채팅 탭의 멤버 화면에서 서비스에 가입된 모든 멤버를 확인할 수 있습니다. 온라인 상태인 멤버는 프로필 아이콘 우측 하단에 초록색 점으로 표시됩니다. 우측 상단의 ⋮ 버튼을 누르면 단체 채팅, AI 채팅, 다크/라이트 모드 변경 메뉴가 나타납니다.',
+    webImg: { src: '/image/notice/chat/member/chat_member_web01.png', alt: '채팅 멤버 목록 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/member/chat_member_mobile01.png', alt: '채팅 멤버 목록 — 모바일' },
+  },
+  {
+    step: '02',
+    title: '1:1 대화방 만들기',
+    desc: '멤버 목록에서 대화하고 싶은 멤버의 이름이나 프로필을 클릭하면 해당 멤버와의 1:1 대화방이 즉시 열립니다. 이미 대화방이 존재하는 경우 기존 대화방으로 이동하며, 처음 대화를 시작하는 경우 새로운 대화방이 생성됩니다.',
+    webImg: { src: '/image/notice/chat/member/chat_member_web02.png', alt: '1:1 대화방 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/member/chat_member_mobile02.png', alt: '1:1 대화방 — 모바일' },
+  },
+  {
+    step: '03',
+    title: '더보기 메뉴 — 단체채팅 · AI 채팅 · 다크/라이트 모드',
+    desc: '멤버 화면 우측 상단의 ⋮ 버튼을 누르면 세 가지 기능을 바로 이용할 수 있습니다. ① 단체 채팅: 여러 멤버가 함께 참여할 수 있는 그룹 채팅방을 만듭니다. ② AI 채팅: 향수 AI 어시스턴트와 대화할 수 있는 전용 채팅방으로 이동합니다. ③ 다크 모드 / 라이트 모드: 현재 테마를 전환합니다. 다크 모드일 때는 "라이트 모드"로, 라이트 모드일 때는 "다크 모드"로 표시됩니다.',
+    webImg: { src: '/image/notice/chat/member/chat_member_web03.png', alt: '더보기 메뉴 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/member/chat_member_mobile03.png', alt: '더보기 메뉴 — 모바일' },
+  },
+];
+
 export default function IntroPage() {
   return (
     <NoticeIntroContent
@@ -85,6 +109,7 @@ export default function IntroPage() {
       steps={steps}
       techStack={techStack}
       fragranceGuideSteps={fragranceGuideSteps}
+      chatMemberGuideSteps={chatMemberGuideSteps}
     />
   );
 }
