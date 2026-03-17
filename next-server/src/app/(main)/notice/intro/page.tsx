@@ -102,6 +102,58 @@ const chatMemberGuideSteps: FragranceGuideStep[] = [
   },
 ];
 
+const chatConversationGuideSteps: FragranceGuideStep[] = [
+  {
+    step: '09',
+    title: '대화방 탭 진입',
+    desc: '채팅 메뉴에서 대화방 탭을 선택하면 내가 참여한 대화 목록이 표시됩니다. 참여 중인 대화방이 없는 경우 "대화방이 없습니다."가 나타나며, 화면 가운데에는 대화방이나 멤버를 선택하면 채팅이 시작된다는 안내가 표시됩니다. 하단의 "향수 AI 어시스턴트와 채팅" 버튼을 클릭하면 AI 채팅방으로 바로 이동할 수 있습니다.',
+    webImg: { src: '/image/notice/chat/conversation/chat_conversation_web01.png', alt: '대화방 탭 초기 화면 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/conversation/chat_conversation_mobile01.png', alt: '대화방 탭 초기 화면 — 모바일' },
+  },
+  {
+    step: '10',
+    title: '대화방 더보기 메뉴',
+    desc: '대화방 화면 우측 상단의 ⋮ 버튼을 클릭하면 세 가지 메뉴가 나타납니다. ① 단체 채팅: 여러 멤버가 함께 참여하는 그룹 채팅방을 만들 수 있습니다. ② AI 채팅: 향수 AI 어시스턴트와의 채팅방으로 바로 이동합니다. ③ 다크 모드 / 라이트 모드: 현재 테마를 즉시 전환합니다.',
+    webImg: { src: '/image/notice/chat/conversation/chat_conversation_web02.png', alt: '대화방 더보기 메뉴 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/conversation/chat_conversation_mobile02.png', alt: '대화방 더보기 메뉴 — 모바일' },
+  },
+  {
+    step: '11',
+    title: '단체 채팅 모달 열기',
+    desc: '⋮ 메뉴에서 "단체 채팅"을 선택하면 "대화 상대 선택" 모달이 열립니다. 채팅 이름 필드에 원하는 대화방 이름을 입력하고, 채팅 멤버 드롭다운에서 함께할 멤버를 선택합니다.',
+    webImg: { src: '/image/notice/chat/conversation/chat_conversation_web03.png', alt: '단체 채팅 모달 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/conversation/chat_conversation_mobile03.png', alt: '단체 채팅 모달 — 모바일' },
+  },
+  {
+    step: '12',
+    title: '채팅 이름과 멤버 선택',
+    desc: '채팅 이름을 입력하고 참여할 멤버를 선택한 후 "확인" 버튼을 클릭하면 단체 대화방이 생성됩니다. 선택한 멤버는 태그 형태로 표시되며, × 버튼으로 제거하거나 드롭다운에서 추가할 수 있습니다.',
+    webImg: { src: '/image/notice/chat/conversation/chat_conversation_web04.png', alt: '멤버 선택 완료 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/conversation/chat_conversation_mobile04.png', alt: '멤버 선택 완료 — 모바일' },
+  },
+  {
+    step: '13',
+    title: '단체 대화방 생성 및 입장',
+    desc: '확인 버튼을 누르면 단체 대화방이 즉시 생성되고 해당 채팅창이 열립니다. 대화방 상단에는 방 이름과 참여 인원 수가 표시되며, 하단 입력창에서 바로 메시지를 작성할 수 있습니다.',
+    webImg: { src: '/image/notice/chat/conversation/chat_conversation_web05.png', alt: '단체 대화방 생성 완료 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/conversation/chat_conversation_mobile05.png', alt: '단체 대화방 생성 완료 — 모바일' },
+  },
+  {
+    step: '14',
+    title: '실시간 메시지 전송',
+    desc: '메시지 입력창에 내용을 작성하고 전송 버튼��� 클릭하면 실시간으로 메시지가 전달됩니다. 왼쪽 대화방 목록에는 마지막 메시지와 읽지 않은 메시지 수(배지)가 실시간으로 업데이트됩니다. 날짜 구분선이 자동으로 표시되어 대화 흐름을 쉽게 파악할 수 있습니다.',
+    webImg: { src: '/image/notice/chat/conversation/chat_conversation_web06.png', alt: '메시지 전송 후 대화 화면 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/conversation/chat_conversation_mobile06.png', alt: '메시지 전송 후 대화 화면 — 모바일' },
+  },
+  {
+    step: '15',
+    title: '대화방 목록 확인',
+    desc: '대화방 목록에는 내가 참여한 모든 대화방이 표시됩니다. 각 항목에는 대화방 이름, 마지막 메시지, 전송 시각, 읽지 않은 메시지 수(배지)가 함께 표시됩니다. 목록에서 원하는 대화방을 클릭하면 해당 채팅창으로 바로 이동합니다.',
+    webImg: { src: '/image/notice/chat/conversation/chat_conversation_web07.png', alt: '대화방 목록 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/conversation/chat_conversation_mobile07.png', alt: '대화방 목록 — 모바일' },
+  },
+];
+
 export default function IntroPage() {
   return (
     <NoticeIntroContent
@@ -110,6 +162,7 @@ export default function IntroPage() {
       techStack={techStack}
       fragranceGuideSteps={fragranceGuideSteps}
       chatMemberGuideSteps={chatMemberGuideSteps}
+      chatConversationGuideSteps={chatConversationGuideSteps}
     />
   );
 }
