@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import TextareaAutosize from 'react-textarea-autosize';
-import { useState, useCallback, startTransition, useLayoutEffect } from 'react';
+import { useCallback, startTransition, useLayoutEffect } from 'react';
 import { useSocket } from '@/src/app/context/socketContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { createConversationWithFirstMessage } from '@/src/app/lib/createConversationWithFirstMessage';
@@ -26,6 +26,8 @@ interface DraftFormProps {
     memberIds?: string[];
     groupName?: string;
     aiAgentType?: string;
+    isSending: boolean;
+    setIsSending: (value: boolean) => void;
 }
 
 const DraftForm: React.FC<DraftFormProps> = ({
@@ -34,11 +36,12 @@ const DraftForm: React.FC<DraftFormProps> = ({
     memberIds,
     groupName,
     aiAgentType,
+    isSending,
+    setIsSending,
 }) => {
     const router = useRouter();
     const socket = useSocket();
     const queryClient = useQueryClient();
-    const [isSending, setIsSending] = useState(false);
     const isAI = !!aiAgentType;
 
     const { register, handleSubmit, setValue, getValues } = useForm<Form>({
@@ -125,7 +128,7 @@ const DraftForm: React.FC<DraftFormProps> = ({
             toast.error('메시지 전송에 실패했습니다.');
             setIsSending(false);
         }
-    }, [isSending, aiAgentType, isAI, isGroup, memberIds, groupName, targetUserId, queryClient, socket, router]);
+    }, [isSending, aiAgentType, isAI, isGroup, memberIds, groupName, targetUserId, queryClient, socket, router, setIsSending]);
 
     const onSubmit = useCallback<SubmitHandler<Form>>(async ({ message }) => {
         // AI 채팅은 AI 프롬프트 검증, 일반 채팅은 일반 검증

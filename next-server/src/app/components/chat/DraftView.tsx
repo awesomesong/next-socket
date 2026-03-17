@@ -5,6 +5,7 @@ import { HiChevronLeft, HiUserGroup } from 'react-icons/hi2';
 import Avatar from '@/src/app/components/Avatar';
 import DraftForm from '@/src/app/components/chat/DraftForm';
 import EmptyState from '@/src/app/components/EmptyState';
+import CircularProgress from '@/src/app/components/CircularProgress';
 import { IUserList } from '@/src/app/types/common';
 
 interface DraftViewProps {
@@ -25,6 +26,7 @@ const DraftView: React.FC<DraftViewProps> = ({
     const isAI = !!aiAgentType;
     const [targetUser, setTargetUser] = useState<IUserList | null>(null);
     const [isLoading, setIsLoading] = useState(!isAI && !isGroup && !!userId);
+    const [isSending, setIsSending] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -58,7 +60,7 @@ const DraftView: React.FC<DraftViewProps> = ({
     if (isLoading) {
         return (
             <div className="grow h-full flex items-center justify-center">
-                <progress className="pure-material-progress-circular" />
+                <CircularProgress />
             </div>
         );
     }
@@ -117,7 +119,7 @@ const DraftView: React.FC<DraftViewProps> = ({
 
             {/* 빈 채팅 영역 */}
             <div className="flex-1 flex items-center justify-center text-sm text-[var(--color-text-secondary)]">
-
+                {isSending && <CircularProgress />}
             </div>
 
             {/* 드래프트 폼 */}
@@ -127,6 +129,8 @@ const DraftView: React.FC<DraftViewProps> = ({
                 memberIds={memberIds}
                 groupName={groupName}
                 aiAgentType={aiAgentType}
+                isSending={isSending}
+                setIsSending={setIsSending}
             />
         </div>
     );
