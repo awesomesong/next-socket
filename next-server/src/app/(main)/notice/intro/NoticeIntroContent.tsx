@@ -386,7 +386,7 @@ export default function NoticeIntroContent({
           <section id="notice-guide" className="scroll-mt-24">
             <SectionLabel index="04" title="공지사항 글쓰기 가이드" />
             <p className="text-xs mb-8 leading-relaxed text-[var(--color-text-secondary)]">
-              상단 "Notice" 메뉴에서 공지사항 목록을 확인할 수 있습니다. 누구나 열람할 수 있으며, 로그인한 사용자는 글쓰기·수정·삭제와 댓글 작성이 가능합니다.
+              상단 &quot;Notice&quot; 메뉴에서 공지사항 목록을 확인할 수 있습니다. 누구나 열람할 수 있으며, 로그인한 사용자는 글쓰기·수정·삭제와 댓글 작성이 가능합니다.
             </p>
 
             <div className="space-y-12">
