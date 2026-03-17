@@ -136,12 +136,15 @@ export async function POST(req: Request) {
               });
             } catch (e: unknown) {
               if ((e as { code?: string })?.code === "P2002") {
-                const again = await tx.conversation.findFirst({
+                const existing = await tx.conversation.findFirst({
                   where: { isGroup: true, userIds: { equals: memberIdsSorted } },
+                  select: { id: true },
+                });
+                if (!existing) throw e;
+                conv = await tx.conversation.findUniqueOrThrow({
+                  where: { id: existing.id },
                   include: { users: { select: userSelect } },
                 });
-                if (!again) throw e;
-                conv = again;
                 existingConversation = true;
               } else {
                 throw e;
@@ -211,18 +214,18 @@ export async function POST(req: Request) {
           }
         }
 
-        await tx.conversation.update({
-          where: { id: conv.id },
-          data: {
-            lastMessageAt: msg.createdAt,
-            lastMessageId: msg.id,
-          },
-        });
-
         return { msg, conv };
       },
       { maxWait: 5000, timeout: 10000 }
     );
+
+    // 표시용 필드 업데이트는 트랜잭션 밖에서 fire-and-forget (트랜잭션 경합 완화)
+    prisma.conversation
+      .update({
+        where: { id: resolvedConversation.id },
+        data: { lastMessageAt: newMessage.createdAt, lastMessageId: newMessage.id },
+      })
+      .catch(console.error);
 
     return NextResponse.json({
       conversation: {
