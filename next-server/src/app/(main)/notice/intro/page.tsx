@@ -82,7 +82,7 @@ const chatMemberGuideSteps: FragranceGuideStep[] = [
   {
     step: '01',
     title: '멤버 목록 확인',
-    desc: '채팅 탭의 멤버 화���에서 서비스에 가입된 모든 멤버를 확인할 수 있습니다. 온라인 상태인 멤버는 프로필 아이콘 우측 하단에 초록색 점으로 표시됩니다. 우측 상단의 ⋮ 버튼을 누르면 단체 채팅, AI 채팅, 다크/라이트 모드 변경 메뉴가 나타납니다.',
+    desc: '채팅 탭의 멤버 화면에서 서비스에 가입된 모든 멤버를 확인할 수 있습니다. 온라인 상태인 멤버는 프로필 아이콘 우측 하단에 초록색 점으로 표시됩니다. 우측 상단의 ⋮ 버튼을 누르면 단체 채팅, AI 채팅, 다크/라이트 모드 변경 메뉴가 나타납니다.',
     webImg: { src: '/image/notice/chat/member/chat_member_web01.png', alt: '채팅 멤버 목록 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/member/chat_member_mobile01.png', alt: '채팅 멤버 목록 — 모바일' },
   },
@@ -169,7 +169,7 @@ const chatConversationGuideSteps: FragranceGuideStep[] = [
   {
     step: '18',
     title: '단체 대화방 생성 및 입장',
-    desc: '확인 버튼을 누르면 단체 대화방이 즉시 생성되고 해당 채팅창이 열립니다. 대화방 상단에는 방 이름과 참여 인원 수가 표시되며, 하단 입력창에서 바로 ���시지를 작성할 수 있습니다.',
+    desc: '확인 버튼을 누르면 단체 대화방이 즉시 생성되고 해당 채팅창이 열립니다. 대화방 상단에는 방 이름과 참여 인원 수가 표시되며, 하단 입력창에서 바로 메시지를 작성할 수 있습니다.',
     webImg: { src: '/image/notice/chat/conversation/chat_conversation_web05.png', alt: '단체 대화방 생성 완료 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/conversation/chat_conversation_mobile05.png', alt: '단체 대화방 생성 완료 — 모바일' },
   },
