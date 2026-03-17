@@ -770,7 +770,16 @@ const SocketState = () => {
       }
       zeroAndClampUnread(queryClient, id, conversationIdRef.current);
       // firstMessage가 있는 새 대화방이고 현재 보고 있지 않으면 안읽은 수 1 증가
-      if (firstMsg && String(id) !== String(conversationIdRef.current)) addAndClampUnread(queryClient, id, 1);
+      // 단, 내가 보낸 첫 메시지는 안읽음 카운트에서 제외 (conversationIdRef 미갱신 타이밍 대응)
+      if (firstMsg && String(id) !== String(conversationIdRef.current)) {
+        const myEmail = (emailRef.current ?? "").toLowerCase();
+        const myUserId = (userIdRef.current ?? "").toLowerCase();
+        const senderEmail = String(firstMsg.sender?.email ?? "").toLowerCase();
+        const senderId = String(firstMsg.sender?.id ?? firstMsg.senderId ?? "").toLowerCase();
+        const isFirstMsgMine =
+          (myEmail && senderEmail === myEmail) || (myUserId && senderId === myUserId);
+        if (!isFirstMsgMine) addAndClampUnread(queryClient, id, 1);
+      }
 
       // ✅ ⚠️ 중요: 새로운 대화방을 snapshotRef에 추가하여 실시간 메시지 중복 체크 가능하도록 함
       // API 호출 중에 생성된 새로운 대화방도 processList 완료 후 실시간 메시지를 받을 수 있도록 함
