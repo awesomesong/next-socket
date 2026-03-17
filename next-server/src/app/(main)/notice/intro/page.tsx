@@ -102,6 +102,37 @@ const chatMemberGuideSteps: FragranceGuideStep[] = [
   },
 ];
 
+const noticeGuideSteps: FragranceGuideStep[] = [
+  {
+    step: '12',
+    title: '공지사항 목록 — 로그인 시 글쓰기 버튼 활성화',
+    desc: '상단 "Notice" 메뉴를 클릭하면 공지사항 목록 페이지로 이동합니다. 로그인 여부와 관계없이 모든 공지를 자유롭게 열람할 수 있습니다. 로그인한 사용자에게만 우측 상단에 "글쓰기" 버튼이 표시되며, 비로그인 상태에서는 읽기만 가능합니다.',
+    webImg: { src: '/image/notice/chat/notice/notice_web02.png', alt: '공지사항 목록 — 데스크탑 (로그인 상태, 글쓰기 버튼 표시)' },
+    mobileImg: { src: '/image/notice/chat/notice/notice_mobile02.png', alt: '공지사항 목록 — 모바일 (로그인 상태, 글쓰기 버튼 표시)' },
+  },
+  {
+    step: '13',
+    title: '글쓰기 페이지',
+    desc: '글쓰기 버튼을 클릭하면 공지사항 작성 페이지로 이동합니다. 상단 제목 입력란에 제목을 입력하고, 아래 에디터(Quill)에서 본문을 작성합니다. 툴바에서 굵게·기울임·밑줄·취소선 등 텍스트 서식을 적용하거나 이미지를 삽입할 수 있습니다. 작성 완료 후 "등록" 버튼으로 제출하거나 "취소"로 목록에 돌아갈 수 있습니다.',
+    webImg: { src: '/image/notice/chat/notice/notice_web03.png', alt: '공지사항 글쓰기 페이지 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/notice/notice_mobile03.png', alt: '공지사항 글쓰기 페이지 — 모바일' },
+  },
+  {
+    step: '14',
+    title: '내용 작성 — 텍스트 & 이미지 입력',
+    desc: '제목을 입력하고 에디터에서 본문을 작성합니다. 이미지 아이콘을 통해 본문 중간에 이미지를 삽입할 수 있으며, 삽입된 이미지는 Cloudinary CDN을 통해 제공됩니다. 작성한 내용은 에디터에서 바로 확인할 수 있습니다.',
+    webImg: { src: '/image/notice/chat/notice/notice_web04.png', alt: '공지사항 내용 작성 중 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/notice/notice_mobile04.png', alt: '공지사항 내용 작성 중 — 모바일' },
+  },
+  {
+    step: '15',
+    title: '등록 완료 — 공지사항 상세 페이지',
+    desc: '등록 버튼을 클릭하면 공지가 저장되고 상세 페이지로 이동합니다. 제목, 작성자, 조회 수, 댓글 수와 함께 본문 내용을 확인할 수 있습니다. 작성자 본인에게는 우측 상단에 수정·삭제 버튼이 표시되며, 하단에서 댓글을 작성할 수 있습니다.',
+    webImg: { src: '/image/notice/chat/notice/notice_web05.png', alt: '공지사항 상세 페이지 — 데스크탑' },
+    mobileImg: { src: '/image/notice/chat/notice/notice_mobile05.png', alt: '공지사항 상세 페이지 — 모바일' },
+  },
+];
+
 const chatConversationGuideSteps: FragranceGuideStep[] = [
   {
     step: '09',
@@ -196,6 +227,7 @@ export default function IntroPage() {
       steps={steps}
       techStack={techStack}
       fragranceGuideSteps={fragranceGuideSteps}
+      noticeGuideSteps={noticeGuideSteps}
       chatMemberGuideSteps={chatMemberGuideSteps}
       chatConversationGuideSteps={chatConversationGuideSteps}
     />
