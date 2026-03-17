@@ -204,7 +204,7 @@ const Comments = ({ noticeId, user }: CommentsProps) => {
   );
 
   return (
-    <>
+    <section className="mt-6">
       {commentsCount !== undefined && (
         <h4 className="section-title">
           <span className="text-gradient-scent">댓글 {commentsCount}개</span>
@@ -266,13 +266,10 @@ const Comments = ({ noticeId, user }: CommentsProps) => {
           </ul>
         </>
       )}
-      <div
-        ref={ref}
-        className="infinite-scroll-sentinel"
-      >
+      <div ref={ref} className="infinite-scroll-sentinel">
         {isFetchingNextPage && <CircularProgress aria-label="로딩중" />}
       </div>
-    </>
+    </section>
   );
 };
 

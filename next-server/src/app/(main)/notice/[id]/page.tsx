@@ -159,9 +159,7 @@ const NoticeDetailPage = ({ params } : {
                 ? (
                     <>
                         <NoticeDetailSkeleton />
-                        <div className="mt-4">
-                            <Comments noticeId={id} user={session?.user ?? undefined} />
-                        </div>
+                        <Comments noticeId={id} user={session?.user ?? undefined} />
                     </>
                 )
                 : status === 'success' && data?.notice 
