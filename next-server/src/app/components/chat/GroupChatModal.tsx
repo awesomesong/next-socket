@@ -66,6 +66,47 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
   }, [isOpen, reset, clearErrors]);
 
   const members = watch("members");
+
+  // 멤버 선택 시 미리 대화방 존재 여부를 prefetch
+  const prefetchedConversationId = useRef<{ key: string; conversationId: string | null } | null>(null);
+  useEffect(() => {
+    const membersArr = Array.isArray(members) ? members : [];
+    if (membersArr.length === 0) return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        let key: string;
+        let url: string;
+        if (membersArr.length === 1) {
+          const userId = membersArr[0].value;
+          key = `1:1:${userId}`;
+          url = `/api/conversations/find?userId=${encodeURIComponent(userId)}`;
+        } else {
+          const memberIds = membersArr.map((m: OptionType) => m.value).join(',');
+          key = `group:${memberIds}`;
+          url = `/api/conversations/find?isGroup=true&members=${encodeURIComponent(memberIds)}`;
+        }
+        const res = await fetch(url);
+        const { conversationId } = await res.json();
+        if (!cancelled) {
+          prefetchedConversationId.current = { key, conversationId: conversationId ?? null };
+          // 이미 대화방이 존재하면 해당 페이지 prefetch
+          if (conversationId) {
+            router.prefetch(`/conversations/${conversationId}`);
+          }
+        }
+      } catch {
+        // prefetch 실패는 무시 (onSubmit에서 재시도)
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [members, router]);
+
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {
     if (isLoading) return;
 
@@ -92,35 +133,55 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({
       return;
     }
 
-    onCloseModal();
-    reset();
-    clearErrors();
-
     try {
+      let path: string;
       if (memberNum === 1) {
-        // 1:1 대화: 기존 대화방 확인
         const userId = membersArr[0].value;
-        const res = await fetch(`/api/conversations/find?userId=${encodeURIComponent(userId)}`);
-        const { conversationId } = await res.json();
-        if (conversationId) {
-          router.push(`/conversations/${conversationId}`);
-        } else {
-          router.push(`/conversations/new?userId=${userId}`);
+        const cacheKey = `1:1:${userId}`;
+        const cached = prefetchedConversationId.current?.key === cacheKey
+          ? prefetchedConversationId.current
+          : null;
+
+        let conversationId = cached?.conversationId;
+        if (cached === null) {
+          const res = await fetch(`/api/conversations/find?userId=${encodeURIComponent(userId)}`);
+          ({ conversationId } = await res.json());
         }
+        path = conversationId
+          ? `/conversations/${conversationId}`
+          : `/conversations/new?userId=${userId}`;
       } else {
-        // 그룹 대화: 기존 대화방 확인
         const memberIds = membersArr.map((m: OptionType) => m.value).join(',');
-        const params = new URLSearchParams({ isGroup: 'true', members: memberIds });
-        const res = await fetch(`/api/conversations/find?${params.toString()}`);
-        const { conversationId } = await res.json();
+        const cacheKey = `group:${memberIds}`;
+        const cached = prefetchedConversationId.current?.key === cacheKey
+          ? prefetchedConversationId.current
+          : null;
+
+        let conversationId = cached?.conversationId;
+        if (cached === null) {
+          const params = new URLSearchParams({ isGroup: 'true', members: memberIds });
+          const res = await fetch(`/api/conversations/find?${params.toString()}`);
+          ({ conversationId } = await res.json());
+        }
+
         if (conversationId) {
-          router.push(`/conversations/${conversationId}`);
+          path = `/conversations/${conversationId}`;
         } else {
           const name = String(data.name ?? '').trim();
+          const params = new URLSearchParams({ isGroup: 'true', members: memberIds });
           if (name) params.set('name', name);
-          router.push(`/conversations/new?${params.toString()}`);
+          path = `/conversations/new?${params.toString()}`;
         }
       }
+
+      if (path.startsWith("/conversations/")) {
+        router.prefetch(path);
+      }
+      // 모달은 닫지 않고, router가 실제로 이동할 때 같이 사라지게 함. 폼/에러만 초기화해 다음에 다시 열 때 깨끗한 상태 유지
+      reset();
+      clearErrors();
+      onCloseModal();
+      router.push(path);
     } finally {
       setIsLoading(false);
     }
