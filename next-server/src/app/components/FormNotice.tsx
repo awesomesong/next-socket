@@ -618,7 +618,7 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
           <input
             className={inputClass}
             type="text"
-            placeholder="Enter the title"
+            placeholder="제목을 입력해주세요"
             name="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
