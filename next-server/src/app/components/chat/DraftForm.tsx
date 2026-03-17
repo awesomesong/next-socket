@@ -97,30 +97,30 @@ const DraftForm: React.FC<DraftFormProps> = ({
             // conversationList 캐시에 한 번만 반영 (리렌더 1회)
             upsertConversationWithFirstMessage(queryClient, convForCache as Partial<FullConversationType> & { id: string }, newMessage as unknown as ConversationMessagePreview);
 
-            if (isAI && messageText) {
-                // AI 대화방: AIChatForm 마운트 시 스트림 자동 시작을 위해 sessionStorage에 저장
-                sessionStorage.setItem('scent:pendingAI', JSON.stringify({
-                    conversationId: conv.id,
-                    userMessage: messageText,
-                    userMessageId: messageId,
-                }));
-            } else if (socket) {
-                // 일반/그룹 대화방: 소켓 이벤트 emit
-                if (!conv.existingConversation) {
-                    // firstMessage를 포함시켜 상대방이 즉시 올바른 preview 표시 가능
-                    socket.emit(SOCKET_EVENTS.CONVERSATION_NEW, { ...conv, firstMessage: newMessage });
-                }
-                socket.emit('send:message', { newMessage });
-            }
-
-            // 대화방 Form이 마운트 후 입력창에 포커스되도록 플래그 설정
-            if (typeof window !== 'undefined') {
-                sessionStorage.setItem('scent:focusMessage', '1');
-            }
-            // replace: 뒤로가기 시 드래프트 페이지로 돌아가지 않도록 (전환만 배치해 리렌더 완화)
+            // 먼저 화면 전환해 체감 속도 개선
             startTransition(() => {
                 router.replace(`/conversations/${conv.id}`);
             });
+
+            // 소켓/스토리지는 전환 후 비동기로 처리해 페인트 블로킹 최소화
+            if (typeof window !== 'undefined') {
+                const doDeferred = () => {
+                    if (isAI && messageText) {
+                        sessionStorage.setItem('scent:pendingAI', JSON.stringify({
+                            conversationId: conv.id,
+                            userMessage: messageText,
+                            userMessageId: messageId,
+                        }));
+                    } else if (socket) {
+                        if (!conv.existingConversation) {
+                            socket.emit(SOCKET_EVENTS.CONVERSATION_NEW, { ...conv, firstMessage: newMessage });
+                        }
+                        socket.emit('send:message', { newMessage });
+                    }
+                    sessionStorage.setItem('scent:focusMessage', '1');
+                };
+                setTimeout(doDeferred, 0);
+            }
         } catch {
             toast.error('메시지 전송에 실패했습니다.');
             setIsSending(false);
