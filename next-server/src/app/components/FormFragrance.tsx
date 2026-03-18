@@ -94,18 +94,29 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                 toast.error("향수 이미지가 아닙니다. 향수 제품 사진을 업로드해주세요.");
                 return;
             }
-            setFormData((prev) => ({
-                brand: result.brand && !prev.brand ? result.brand.toUpperCase() : prev.brand,
-                name: result.name && !prev.name ? result.name : prev.name,
-                images: prev.images,
-                description: result.description && !prev.description ? result.description : prev.description,
-                notes: result.notes && !prev.notes ? result.notes : prev.notes,
-            }));
+            const prev = formDataRef.current;
+            if (result.brand && !prev.brand) {
+                const brandVal = result.brand.toUpperCase();
+                setValue("brand", brandVal);
+                setFormData((p) => ({ ...p, brand: brandVal }));
+            }
+            if (result.name && !prev.name) {
+                setValue("name", result.name);
+                setFormData((p) => ({ ...p, name: result.name }));
+            }
+            if (result.description && !prev.description) {
+                setValue("description", result.description);
+                setFormData((p) => ({ ...p, description: result.description }));
+            }
+            if (result.notes && !prev.notes) {
+                setValue("notes", result.notes);
+                setFormData((p) => ({ ...p, notes: result.notes }));
+            }
             toast.success("AI가 향수 정보를 자동으로 입력했습니다.", { icon: "✨" });
         } finally {
             setIsAnalyzing(false);
         }
-    }, []);
+    }, [setValue]);
 
     /** 업로드 직후 자동 AI 분석: 신규 등록이고 모든 입력이 비어 있을 때만, 새로 올라온 이미지 중 첫 번째로 1회만 분석 */
     const onUploadComplete = useCallback(
@@ -421,31 +432,49 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                         </div>
 
                         <div className="space-y-10">
-                            <TextField
-                                id="description"
-                                label="제품 상세 설명"
-                                placeholder="향수에 대해서 공유하고 싶은 내용을 작성하세요."
-                                minRows={6}
-                                multiline
-                                register={register}
-                                setValue={setValue}
+                            <Controller
+                                name="description"
+                                control={control}
                                 rules={{ required: "향수 상세 설명을 입력해주세요." }}
-                                errors={errors}
-                                variant="underlined"
-                                isRequired
-                                onFocus={triggerDescription}
+                                render={({ field }) => (
+                                    <TextField
+                                        name="description"
+                                        label="제품 상세 설명"
+                                        placeholder="향수에 대해서 공유하고 싶은 내용을 작성하세요."
+                                        minRows={6}
+                                        multiline
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        onBlur={field.onBlur}
+                                        onFocus={triggerDescription}
+                                        isRequired
+                                        isInvalid={!!errors.description}
+                                        errorMessage={errors.description?.message as string}
+                                        variant="underlined"
+                                        classNames={formClassNames.textarea}
+                                    />
+                                )}
                             />
 
-                            <TextField
-                                id="notes"
-                                label="노트 상세 정보"
-                                placeholder={"예:\nTOP: 레몬\nHEART: 우드\nBASE: 머스크"}
-                                minRows={4}
-                                multiline
-                                register={register}
-                                setValue={setValue}
-                                errors={errors}
-                                variant="underlined"
+                            <Controller
+                                name="notes"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        name="notes"
+                                        label="노트 상세 정보"
+                                        placeholder={"예:\nTOP: 레몬\nHEART: 우드\nBASE: 머스크"}
+                                        minRows={4}
+                                        multiline
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        onBlur={field.onBlur}
+                                        isInvalid={!!errors.notes}
+                                        errorMessage={errors.notes?.message as string}
+                                        variant="underlined"
+                                        classNames={formClassNames.textarea}
+                                    />
+                                )}
                             />
                         </div>
                     </div>
