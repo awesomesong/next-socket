@@ -90,16 +90,6 @@ const FormComment = ({
       prependNoticeCommentFirstPage(queryClient, bid, optimisticComment);
       incrementNoticeDetailCommentsCount(queryClient, bid, 1);
 
-      // ✅ 스크롤 최적화: requestAnimationFrame 사용
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          document.getElementById(`comment-${optimisticId}`)?.scrollIntoView({
-            behavior: "smooth",
-            block: "end",
-          });
-        });
-      });
-
       return { previousComments, optimisticId };
     },
     onSuccess: (result, { noticeId: bid }, context) => {
