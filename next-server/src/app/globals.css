@@ -177,7 +177,7 @@ body {
   height: 100%;
   font-family: var(--font-nanum-gothic);
   overscroll-behavior: none;
-  touch-action: manipulation;
+  touch-action: auto;
 }
 
 a {
