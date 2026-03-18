@@ -1342,7 +1342,7 @@ const SocketState = () => {
       }
 
       // ✅ 버퍼 메시지를 메시지 캐시에 추가 (최적화: 배치 처리)
-      for (const b of filteredNewer) {
+      for (const b of uniqueBuffered) {
         upsertMessageSortedInCache(queryClient, convId, b.msg);
       }
 
