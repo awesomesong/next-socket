@@ -55,7 +55,12 @@ export default function FragranceActionBarClient({
           pages: old.pages.map((page) => (page ?? []).filter((f) => f.id !== fragranceId)),
         };
       });
+      // 상세 캐시는 slug/id 둘 다 있을 수 있어 둘 다 제거
       queryClient.removeQueries({ queryKey: fragranceDetailKey(slug), exact: true });
+      queryClient.removeQueries({ queryKey: fragranceDetailKey(fragranceId), exact: true });
+
+      // 홈 목록은 refetchOnMount=false 이라, 삭제 후 빈 캐시가 남아있으면 재요청이 안 될 수 있음
+      queryClient.invalidateQueries({ queryKey: fragranceListKey });
 
       router.push(withToastParams('/', 'success', '향수가 삭제되었습니다.'));
     } catch (err: unknown) {
