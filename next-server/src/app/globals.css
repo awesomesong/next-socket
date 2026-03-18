@@ -243,6 +243,24 @@ h6 {
   border-bottom: 1px solid var(--header-border);
 }
 
+/* 1024px 미만: GuideContent "On this page" 가로 스크롤 — 스크롤은 유지, 스크롤바는 모든 브라우저·모바일에서 비표시 */
+@media (max-width: 1023px) {
+  .guide-on-this-page-nav {
+    -ms-overflow-style: none; /* IE, Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .guide-on-this-page-nav::-webkit-scrollbar {
+    display: none !important; /* Chrome, Safari, Opera, iOS Safari */
+  }
+  .guide-on-this-page-nav::-webkit-scrollbar-track,
+  .guide-on-this-page-nav::-webkit-scrollbar-thumb {
+    display: none !important;
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+}
+
 .text-default {
   @apply text-neutral-950 dark:text-neutral-200;
 }
