@@ -69,11 +69,18 @@ Do NOT include any text or markdown outside the JSON object.`,
         const content = data.choices?.[0]?.message?.content;
 
         if (!content) {
+            console.error('[OpenAI Analyze Empty Content Data]', JSON.stringify(data, null, 2));
             return NextResponse.json({ message: 'AI 응답이 비어있습니다.' }, { status: 500 });
         }
 
-        const parsed = JSON.parse(content);
-        return NextResponse.json({ result: parsed }, { status: 200 });
+        try {
+            const parsed = JSON.parse(content);
+            return NextResponse.json({ result: parsed }, { status: 200 });
+        } catch (parseError) {
+            console.error('[OpenAI JSON Parse Error]', parseError);
+            console.error('[OpenAI Raw Content]', content);
+            return NextResponse.json({ message: 'AI 응답 형식 오류입니다.' }, { status: 500 });
+        }
     } catch (error) {
         console.error('[Fragrance Analyze Error]', error);
         return NextResponse.json({ message: 'AI 분석 중 오류가 발생했습니다.' }, { status: 500 });
