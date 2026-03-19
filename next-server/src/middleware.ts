@@ -37,6 +37,10 @@ export async function middleware(req: NextRequest) {
   if (!rawTokenSecure && !rawTokenInsecure) {
     const signin = new URL("/auth/signin", req.nextUrl.origin);
     signin.searchParams.set("callbackUrl", req.nextUrl.pathname);
+    signin.searchParams.set("mw", "1");
+    signin.searchParams.set("rawS", "0");
+    signin.searchParams.set("rawI", "0");
+    signin.searchParams.set("secret", secret ? "1" : "0");
     return NextResponse.redirect(signin);
   }
 
@@ -56,14 +60,14 @@ export async function middleware(req: NextRequest) {
     }).catch(() => null));
 
   if (!token) {
-    console.error("[auth-middleware] session cookie exists but token decode failed", {
-      hasRawSecure: Boolean(rawTokenSecure),
-      hasRawInsecure: Boolean(rawTokenInsecure),
-      secretPresent: Boolean(secret),
-      url: req.nextUrl.toString(),
-    });
     const signin = new URL("/auth/signin", req.nextUrl.origin);
     signin.searchParams.set("callbackUrl", req.nextUrl.pathname);
+    // 서버 로그 대신, 브라우저 주소창에서 바로 확인 가능하도록 진단값을 쿼리로 전달
+    signin.searchParams.set("mw", "1");
+    signin.searchParams.set("rawS", rawTokenSecure ? "1" : "0");
+    signin.searchParams.set("rawI", rawTokenInsecure ? "1" : "0");
+    signin.searchParams.set("secret", secret ? "1" : "0");
+    signin.searchParams.set("reason", "decode_failed");
     return NextResponse.redirect(signin);
   }
   return NextResponse.next();
