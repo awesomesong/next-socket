@@ -7,7 +7,7 @@ interface ProviderProps {
 };
 
 const NextAuthProvider: FC<ProviderProps> = ({ children }) => {
-    return <SessionProvider>{children}</SessionProvider>
+    return <SessionProvider refetchOnWindowFocus={false}>{children}</SessionProvider>
 };
 
 export default NextAuthProvider;
