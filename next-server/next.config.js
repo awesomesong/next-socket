@@ -1,9 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    turbopack: {},
-    experimental: {
-        optimizePackageImports: ['@heroui/react', 'react-icons', 'three'],
-    },
     async redirects() {
         return [
             {
@@ -96,7 +92,7 @@ const nextConfig = {
         fullUrl: true,
       },
     },
-    reactStrictMode: process.env.NODE_ENV === 'production',
+    reactStrictMode: true,
     generateEtags: false,
 };
 
