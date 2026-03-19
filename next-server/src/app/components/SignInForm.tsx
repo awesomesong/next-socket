@@ -2,7 +2,7 @@
 import { useState, useCallback } from "react";
 import { useForm, FieldValues, SubmitHandler } from "react-hook-form";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { withToastParams } from "@/src/app/lib/withToastParams";
 import AuthForm from "@/src/app/components/AuthForm";
@@ -16,7 +16,6 @@ const SignInForm = () => {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get("callbackUrl") || "/";
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const {
     register,
@@ -48,13 +47,15 @@ const SignInForm = () => {
         setIsLoading(false);
       } else {
         reset();
-        router.replace(withToastParams(callbackUrl, "success", "로그인이 되었습니다."));
+        // router.replace는 client-side 네비게이션이라 router cache가 유지됨
+        // 로그인 후에는 full page load로 router cache를 초기화해야 함
+        window.location.replace(withToastParams(callbackUrl, "success", "로그인이 되었습니다."));
       }
     } catch {
       toast.error('로그인 중 오류가 발생했습니다.');
       setIsLoading(false);
     }
-  }, [callbackUrl, reset, router]);
+  }, [callbackUrl, reset]);
 
   return (
     <AuthForm title="로그인">

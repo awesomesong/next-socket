@@ -1,6 +1,5 @@
 'use client';
 import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import AuthSocialButton from "./AuthSocialButton";
 import { BsGoogle } from 'react-icons/bs';
 import { RiKakaoTalkFill } from "react-icons/ri";
@@ -18,7 +17,6 @@ const AuthSocial: React.FC<AuthSocialProps> = ({
     const searchParams = useSearchParams();
     const callbackUrl = searchParams?.get('callbackUrl') || '/';
     const { data: session, status, update } = useSession();
-    const router = useRouter();
     const pendingRedirectRef = useRef<string | null>(null);
 
     // 세션이 준비된 후 리다이렉트 처리 (소셜 로그인처럼 세션 반영이 늦는 경우 대비)
@@ -26,9 +24,9 @@ const AuthSocial: React.FC<AuthSocialProps> = ({
         if (status === 'authenticated' && pendingRedirectRef.current && session?.user?.id && session?.user?.email) {
             const targetUrl = pendingRedirectRef.current;
             pendingRedirectRef.current = null;
-            router.replace(targetUrl);
+            window.location.replace(targetUrl);
         }
-    }, [status, session?.user?.id, session?.user?.email, router]);
+    }, [status, session?.user?.id, session?.user?.email]);
 
     const handleLoginResult = async (res: Awaited<ReturnType<typeof signIn>>) => {
         if (res?.error) {
@@ -46,7 +44,7 @@ const AuthSocial: React.FC<AuthSocialProps> = ({
             }
 
             if (status === 'authenticated' && session?.user?.id && session?.user?.email) {
-                router.replace(toastUrl);
+                window.location.replace(toastUrl);
             } else {
                 pendingRedirectRef.current = toastUrl;
             }
