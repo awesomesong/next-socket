@@ -35,12 +35,18 @@ export async function middleware(req: NextRequest) {
 
   // 쿠키 자체가 없으면 로그인으로 리다이렉트
   if (!rawTokenSecure && !rawTokenInsecure) {
+    const cookieNames = req.cookies
+      .getAll()
+      .map((c) => c.name)
+      .filter((name) => name.includes("next-auth"))
+      .slice(0, 5);
     const signin = new URL("/auth/signin", req.nextUrl.origin);
     signin.searchParams.set("callbackUrl", req.nextUrl.pathname);
     signin.searchParams.set("mw", "1");
     signin.searchParams.set("rawS", "0");
     signin.searchParams.set("rawI", "0");
     signin.searchParams.set("secret", secret ? "1" : "0");
+    signin.searchParams.set("nextAuthCookies", cookieNames.join("|") || "none");
     return NextResponse.redirect(signin);
   }
 
