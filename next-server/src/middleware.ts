@@ -29,20 +29,26 @@ export async function middleware(req: NextRequest) {
     const signin = new URL("/auth/signin", req.nextUrl.origin);
     signin.searchParams.set("callbackUrl", req.nextUrl.pathname);
 
-    const sessionTokenCookies = req.cookies
-      .getAll()
+    const allCookies = req.cookies.getAll();
+    const sessionTokenCookies = allCookies
       .map((c) => c.name)
-      .filter((name) => name.includes("session-token"))
-      .slice(0, 20);
+      .filter((name) => name.includes("session-token"));
+    // 전체 쿠키 이름 목록 (쿠키가 아예 없는지 vs 이름이 다른지 확인용)
+    const allCookieNames = allCookies.map((c) => c.name).slice(0, 10);
 
     signin.searchParams.set("mw", "1");
     signin.searchParams.set("rawS", rawSecure ? "1" : "0");
     signin.searchParams.set("rawI", rawInsecure ? "1" : "0");
     signin.searchParams.set("secret", secret ? "1" : "0");
+    signin.searchParams.set("host", req.nextUrl.host);
     signin.searchParams.set("reason", !rawSecure && !rawInsecure ? "no_cookie" : "decode_failed");
     signin.searchParams.set(
       "sessionTokenCookies",
       sessionTokenCookies.join("|") || "none"
+    );
+    signin.searchParams.set(
+      "allCookies",
+      allCookieNames.join("|") || "empty"
     );
     return NextResponse.redirect(signin);
   }
