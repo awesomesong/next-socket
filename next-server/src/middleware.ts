@@ -13,6 +13,34 @@ export async function middleware(req: NextRequest) {
   // 예) https면 `__Secure-next-auth.session-token`, http면 `next-auth.session-token`
   // 미들웨어에서는 env 기반 추정이 어긋나면 토큰을 못 읽고 로그인으로 리다이렉트될 수 있어
   // 두 쿠키 이름을 모두 시도합니다.
+
+  // 1) 먼저 raw JWT를 읽을 수 있는지 확인(디코딩 실패 여부와 분리)
+  const rawTokenSecure =
+    (await getToken({
+      req,
+      secret,
+      raw: true,
+      cookieName: "__Secure-next-auth.session-token",
+      secureCookie: true,
+    }).catch(() => null)) ?? null;
+
+  const rawTokenInsecure =
+    (await getToken({
+      req,
+      secret,
+      raw: true,
+      cookieName: "next-auth.session-token",
+      secureCookie: false,
+    }).catch(() => null)) ?? null;
+
+  // 쿠키 자체가 없으면 로그인으로 리다이렉트
+  if (!rawTokenSecure && !rawTokenInsecure) {
+    const signin = new URL("/auth/signin", req.nextUrl.origin);
+    signin.searchParams.set("callbackUrl", req.nextUrl.pathname);
+    return NextResponse.redirect(signin);
+  }
+
+  // 2) raw JWT는 읽혔지만, secret로 디코딩이 실패하면 token이 null이 됩니다.
   const token =
     (await getToken({
       req,
@@ -26,7 +54,14 @@ export async function middleware(req: NextRequest) {
       cookieName: "next-auth.session-token",
       secureCookie: false,
     }).catch(() => null));
+
   if (!token) {
+    console.error("[auth-middleware] session cookie exists but token decode failed", {
+      hasRawSecure: Boolean(rawTokenSecure),
+      hasRawInsecure: Boolean(rawTokenInsecure),
+      secretPresent: Boolean(secret),
+      url: req.nextUrl.toString(),
+    });
     const signin = new URL("/auth/signin", req.nextUrl.origin);
     signin.searchParams.set("callbackUrl", req.nextUrl.pathname);
     return NextResponse.redirect(signin);
