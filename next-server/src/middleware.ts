@@ -1,10 +1,10 @@
 import { NextResponse, NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { getToken, decode } from "next-auth/jwt";
 
 export async function middleware(req: NextRequest) {
   const secret = process.env.NEXTAUTH_SECRET;
 
-  // 디코딩 실패인지(=secret/JWT mismatch) vs 쿠키가 요청에 실리지 않는지(=domain/host mismatch) 분리해서 확인
+  // raw: true로 쿠키 이름을 명시해서 읽음 (auto-detection은 Edge Runtime에서 NEXTAUTH_URL을 못 읽어 이름 불일치 발생)
   const rawSecure =
     (await getToken({
       req,
@@ -23,7 +23,12 @@ export async function middleware(req: NextRequest) {
       secureCookie: false,
     }).catch(() => null)) ?? null;
 
-  const token = await getToken({ req, secret }).catch(() => null);
+  // 읽은 raw JWT를 직접 디코딩 (getToken 기본 호출의 쿠키 이름 auto-detection 우회)
+  const rawToken = rawSecure ?? rawInsecure;
+  const token =
+    rawToken && secret
+      ? await decode({ token: rawToken, secret }).catch(() => null)
+      : null;
 
   if (!token) {
     const signin = new URL("/auth/signin", req.nextUrl.origin);
