@@ -39,7 +39,15 @@ export async function middleware(req: NextRequest) {
       .getAll()
       .map((c) => c.name)
       .filter((name) => name.includes("next-auth"))
-      .slice(0, 5);
+      .slice(0, 20);
+
+    const sessionCookieNames = req.cookies
+      .getAll()
+      .map((c) => c.name)
+      .filter((name) => name.includes("session-token"))
+      .slice(0, 20);
+
+    const hostHeader = req.headers.get("host") || "";
     const signin = new URL("/auth/signin", req.nextUrl.origin);
     signin.searchParams.set("callbackUrl", req.nextUrl.pathname);
     signin.searchParams.set("mw", "1");
@@ -47,6 +55,11 @@ export async function middleware(req: NextRequest) {
     signin.searchParams.set("rawI", "0");
     signin.searchParams.set("secret", secret ? "1" : "0");
     signin.searchParams.set("nextAuthCookies", cookieNames.join("|") || "none");
+    signin.searchParams.set(
+      "sessionTokenCookies",
+      sessionCookieNames.join("|") || "none"
+    );
+    signin.searchParams.set("reqHost", hostHeader);
     return NextResponse.redirect(signin);
   }
 
@@ -74,6 +87,15 @@ export async function middleware(req: NextRequest) {
     signin.searchParams.set("rawI", rawTokenInsecure ? "1" : "0");
     signin.searchParams.set("secret", secret ? "1" : "0");
     signin.searchParams.set("reason", "decode_failed");
+    const sessionCookieNames = req.cookies
+      .getAll()
+      .map((c) => c.name)
+      .filter((name) => name.includes("session-token"))
+      .slice(0, 20);
+    signin.searchParams.set(
+      "sessionTokenCookies",
+      sessionCookieNames.join("|") || "none"
+    );
     return NextResponse.redirect(signin);
   }
   return NextResponse.next();
