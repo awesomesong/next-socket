@@ -1,9 +1,14 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-const secret = process.env.NEXTAUTH_SECRET;
-
 export async function middleware(req: NextRequest) {
+  // NOTE:
+  // Next.js middleware는 기본 런타임이 edge라서, process.env 값이 빌드 시점에 인라인될 수 있습니다.
+  // 운영 배포 환경에서 NEXTAUTH_SECRET이 미들웨어 번들에 제대로 주입되지 않으면
+  // getToken() 디코드가 실패해서 token=null -> /auth/signin 리다이렉트 루프가 발생할 수 있습니다.
+  // 그래서 런타임을 nodejs로 전환하고, secret은 미들웨어 실행 시점에 읽습니다.
+  const secret = process.env.NEXTAUTH_SECRET;
+
   // NextAuth JWT 쿠키는 환경/스킴(https 여부)에 따라 secure prefix가 달라집니다.
   // 예) https면 `__Secure-next-auth.session-token`, http면 `next-auth.session-token`
   // 미들웨어에서는 env 기반 추정이 어긋나면 토큰을 못 읽고 로그인으로 리다이렉트될 수 있어
@@ -31,6 +36,9 @@ export async function middleware(req: NextRequest) {
 
 /** 로그인 필수 경로 — 여기만 수정하면 됨 (matcher에만 적용) */
 export const config = {
+  // middleware 기본값(edge) 대신 nodejs 사용:
+  // 운영에서 NEXTAUTH_SECRET이 빌드 시점에 주입되지 않아 디코드 실패하는 문제 방지
+  runtime: "nodejs",
   matcher: [
     "/chatMember",
     "/chatMember/:path*",
