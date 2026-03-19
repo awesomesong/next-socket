@@ -311,17 +311,21 @@ export default function GuideContent({
   const handleNavWheel = useCallback((event: WheelEvent<HTMLElement>) => {
     const nav = navRef.current;
     if (!nav || !isNarrowScreen() || nav.scrollWidth <= nav.clientWidth) return;
-    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-    nav.scrollLeft += event.deltaY;
+    const horizontalDelta = event.deltaX + event.deltaY;
+    if (horizontalDelta === 0) return;
+    nav.scrollLeft += horizontalDelta;
     event.preventDefault();
+    event.stopPropagation();
   }, [isNarrowScreen]);
 
   const handleNavMouseDown = useCallback((event: MouseEvent<HTMLElement>) => {
     const nav = navRef.current;
     if (!nav || !isNarrowScreen() || nav.scrollWidth <= nav.clientWidth) return;
+    if (event.button !== 0) return;
     isDraggingNavRef.current = true;
     navDragStartXRef.current = event.clientX;
     navDragStartScrollLeftRef.current = nav.scrollLeft;
+    event.preventDefault();
   }, [isNarrowScreen]);
 
   const handleNavMouseMove = useCallback((event: MouseEvent<HTMLElement>) => {
@@ -329,6 +333,7 @@ export default function GuideContent({
     if (!nav || !isDraggingNavRef.current || !isNarrowScreen()) return;
     const deltaX = event.clientX - navDragStartXRef.current;
     nav.scrollLeft = navDragStartScrollLeftRef.current - deltaX;
+    event.preventDefault();
   }, [isNarrowScreen]);
 
   const endNavMouseDrag = useCallback(() => {
@@ -786,7 +791,7 @@ export default function GuideContent({
                 onMouseMove={handleNavMouseMove}
                 onMouseUp={endNavMouseDrag}
                 onMouseLeave={endNavMouseDrag}
-                className="guide-on-this-page-nav overflow-x-auto overflow-y-hidden max-lg:touch-pan-x lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pb-0 max-lg:pb-0 lg:scrollbar-thin lg:scrollbar-track-transparent lg:scrollbar-thumb-[var(--color-lavender-border)] max-lg:select-none"
+                className="guide-on-this-page-nav overflow-x-auto overflow-y-hidden max-lg:touch-pan-x max-lg:overscroll-x-contain max-lg:overscroll-y-none lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pb-0 max-lg:pb-0 lg:scrollbar-thin lg:scrollbar-track-transparent lg:scrollbar-thumb-[var(--color-lavender-border)] max-lg:select-none"
               >
                 <ol className="flex gap-1 min-w-max lg:flex-col lg:min-w-0 lg:gap-2.5">
                   {ON_THIS_PAGE.map(({ href, label }) => {
