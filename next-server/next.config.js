@@ -1,25 +1,5 @@
 /** @type {import('next').NextConfig} */
-const path = require('path');
-
 const nextConfig = {
-    webpack: (config, { dev }) => {
-      config.resolve.alias['@'] = path.resolve(__dirname);
-      if (dev) {
-        config.watchOptions = {
-          ignored: [
-            '**/node_modules/**',
-            '**/.git/**',
-            '**/.next/**',
-            '**/prisma/migrations/**',
-          ],
-          aggregateTimeout: 300,
-          poll: false,
-        };
-        // dev 모드에서 webpack 파일시스템 캐시 비활성화 (메모리 절약)
-        config.cache = false;
-      }
-      return config;
-    },
     async headers() {
         return [
             {

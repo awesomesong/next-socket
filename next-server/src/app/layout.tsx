@@ -26,6 +26,8 @@ const josefinSans = Josefin_Sans({
   subsets: ['latin'],
   weight: ['100', '300', '400', '500', '600'],
   style: ['normal', 'italic'],
+  preload: false,
+  display: 'swap',
   variable: '--font-josefin-sans',
 });
 
