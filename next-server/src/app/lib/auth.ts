@@ -21,6 +21,25 @@ declare module "next-auth" {
     }
 }
 
+const nextAuthConfig = (() => {
+    const nextAuthUrl = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_URL;
+    const parsed =
+        nextAuthUrl != null ? new URL(nextAuthUrl) : new URL("http://localhost:3000");
+    const hostname = parsed.hostname.toLowerCase();
+
+    const useSecureCookies = nextAuthUrl?.startsWith("https://") ?? false;
+
+    if (hostname === "localhost" || hostname.endsWith(".localhost")) {
+        return { useSecureCookies, sessionTokenCookieDomain: undefined as string | undefined };
+    }
+
+    const baseHostname = hostname.startsWith("www.") ? hostname.slice(4) : hostname;
+    return {
+        useSecureCookies,
+        sessionTokenCookieDomain: `.${baseHostname}`,
+    };
+})();
+
 export const authOptions: AuthOptions = {
     adapter: PrismaAdapter(prisma) as Adapter,
     // Configure one or more authentication providers
@@ -118,6 +137,25 @@ export const authOptions: AuthOptions = {
     session: {
         strategy: "jwt",
         maxAge: 24 * 60 * 60
+    },
+    cookies: {
+        // csrf/callback-url은 기본값(호스트 스코프) 그대로 두고,
+        // session-token만 상위 도메인(.devsonghee.com)으로 공유합니다.
+        //
+        // next-auth는 cookies 기본값을 "얕게" 덮어쓰기 때문에,
+        // sessionToken도 name/options를 명시해 기본 설정이 누락되지 않게 합니다.
+        sessionToken: {
+            name: `${nextAuthConfig.useSecureCookies ? "__Secure-" : ""}next-auth.session-token`,
+            options: {
+                httpOnly: true,
+                sameSite: "lax",
+                path: "/",
+                secure: nextAuthConfig.useSecureCookies,
+                ...(nextAuthConfig.sessionTokenCookieDomain
+                    ? { domain: nextAuthConfig.sessionTokenCookieDomain }
+                    : {}),
+            },
+        },
     },
     secret: process.env.NEXTAUTH_SECRET,
     events: {
