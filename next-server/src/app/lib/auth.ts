@@ -119,6 +119,47 @@ export const authOptions: AuthOptions = {
         strategy: "jwt",
         maxAge: 24 * 60 * 60
     },
+    cookies: (() => {
+        // www/apex를 오가면 session-token 쿠키가 한쪽 호스트에만 저장되어
+        // 미들웨어에서 토큰을 못 읽는 문제가 생길 수 있습니다.
+        // session-token만 상위 도메인(.devsonghee.com)으로 공유합니다.
+        const nextAuthUrl = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_URL;
+        let useSecureCookies = false;
+        let domain: string | undefined;
+
+        try {
+            useSecureCookies = nextAuthUrl?.startsWith("https://") ?? false;
+            if (nextAuthUrl) {
+                const url = new URL(nextAuthUrl);
+                const hostname = url.hostname.toLowerCase();
+                const baseHostname = hostname.startsWith("www.")
+                    ? hostname.slice(4)
+                    : hostname;
+                // 현재 서비스 도메인에 한해서만 적용
+                if (baseHostname.endsWith("devsonghee.com")) {
+                    domain = `.${baseHostname}`;
+                }
+            }
+        } catch {
+            // ignore: 쿠키 도메인 강제 불가 상태면 기본값 사용
+        }
+
+        const cookiePrefix = useSecureCookies ? "__Secure-" : "";
+        const sessionTokenName = `${cookiePrefix}next-auth.session-token`;
+
+        return {
+            sessionToken: {
+                name: sessionTokenName,
+                options: {
+                    httpOnly: true,
+                    sameSite: "lax",
+                    path: "/",
+                    secure: useSecureCookies,
+                    ...(domain ? { domain } : {}),
+                },
+            },
+        };
+    })(),
     secret: process.env.NEXTAUTH_SECRET,
     events: {
         createUser: async ({ user }) => {
