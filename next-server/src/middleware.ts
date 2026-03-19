@@ -2,6 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { decode } from "next-auth/jwt";
 
 export async function middleware(req: NextRequest) {
+  // Next.js App Router prefetch 요청은 로그인 전에도 발생하며,
+  // 미들웨어가 redirect하면 그 결과가 라우터 캐시에 저장되어
+  // 로그인 후 클릭해도 캐시된 redirect가 사용됨 → 스킵
+  if (req.headers.get("Next-Router-Prefetch") === "1") {
+    return NextResponse.next();
+  }
+
   const secret = process.env.NEXTAUTH_SECRET;
 
   // getToken/SessionStore 우회: req.cookies.get()으로 직접 읽기
