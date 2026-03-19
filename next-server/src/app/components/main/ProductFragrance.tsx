@@ -726,11 +726,9 @@ const ProductFragrance = () => {
                 })}
               </AnimatePresence>
             </div>
-            <div ref={inViewRef}>
+            <div ref={inViewRef} className="min-h-[56px] flex items-start justify-center pb-8">
               {isFetchingNextPage && (
-                <div className="flex justify-center pb-8">
-                  <CircularProgress aria-label="로딩중" />
-                </div>
+                <CircularProgress aria-label="로딩중" />
               )}
             </div>
           </div>
