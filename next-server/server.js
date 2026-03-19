@@ -6,7 +6,8 @@ require("dotenv").config(); // 환경변수 로딩
 const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOST || "localhost";
 const port = parseInt(process.env.PORT, 10) || 3001;
-const app = next({ dev, hostname, port });
+const turbopack = dev && process.env.NEXT_ENABLE_TURBO === "1";
+const app = next({ dev, hostname, port, turbopack });
 const handle = app.getRequestHandler();
 
 
