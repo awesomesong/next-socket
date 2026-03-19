@@ -253,6 +253,15 @@ export default function GuideContent({
     const update = (entry: IntersectionObserverEntry | null, isNarrow: boolean) => {
       setIsOnThisPageSticky(isNarrow && entry !== null && !entry.isIntersecting);
     };
+    const updateFromLayout = (isNarrow: boolean) => {
+      if (!isNarrow) {
+        setIsOnThisPageSticky(false);
+        return;
+      }
+      const rect = sentinel.getBoundingClientRect();
+      const isIntersecting = rect.top >= 0 && rect.top <= window.innerHeight;
+      setIsOnThisPageSticky(!isIntersecting);
+    };
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
@@ -261,10 +270,18 @@ export default function GuideContent({
       { threshold: 0, rootMargin: '0px 0px 0px 0px' },
     );
     const onResize = () => {
-      if (!media.matches) setIsOnThisPageSticky(false);
-      else observer.observe(sentinel);
+      if (!media.matches) {
+        observer.unobserve(sentinel);
+        setIsOnThisPageSticky(false);
+        return;
+      }
+      observer.observe(sentinel);
+      updateFromLayout(true);
     };
-    if (media.matches) observer.observe(sentinel);
+    if (media.matches) {
+      observer.observe(sentinel);
+      updateFromLayout(true);
+    }
     media.addEventListener('change', onResize);
     return () => {
       observer.disconnect();
