@@ -92,6 +92,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<IParams>
                 description: description ?? existing.description,
                 notes: notesValue,
             },
+            include: {
+                author: {
+                    select: { id: true, name: true, email: true, image: true, profileImage: true },
+                },
+            },
         });
 
         return NextResponse.json({ updatedFragrance }, { status: 200 });

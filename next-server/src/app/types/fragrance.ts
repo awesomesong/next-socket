@@ -28,13 +28,13 @@ export type UpdateFragranceRequest = Partial<CreateFragranceRequest>;
 
 export type CreateFragranceResponse = {
   success: boolean;
-  newFragrance?: Fragrance;
+  newFragrance?: FragranceWithAuthor;
   message?: string;
 };
 
 export type UpdateFragranceResponse = {
   success: boolean;
-  updatedFragrance?: Fragrance;
+  updatedFragrance?: FragranceWithAuthor;
   message?: string;
 };
 

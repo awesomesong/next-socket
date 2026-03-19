@@ -87,6 +87,11 @@ export async function POST(req: Request) {
                 notes: notesValue,
                 authorEmail: user.email,
             },
+            include: {
+                author: {
+                    select: { id: true, name: true, email: true, image: true, profileImage: true },
+                },
+            },
         });
 
         return NextResponse.json({ newFragrance }, { status: 200 });

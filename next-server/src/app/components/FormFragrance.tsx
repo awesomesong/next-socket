@@ -50,7 +50,6 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
     const {
-        register,
         control,
         setValue,
         trigger,
@@ -209,7 +208,18 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                 const result = await updateFragrance(id, payload);
                 if (result.success && result.updatedFragrance) {
                     upsertFragranceCardById(queryClient, result.updatedFragrance);
-                    queryClient.invalidateQueries({ queryKey: fragranceDetailKey(id) });
+                    // detail 캐시를 즉시 채워서 refetch를 최소화한다.
+                    // (주의) brand 변경 등으로 slug가 바뀌면 queryKey가 달라질 수 있으므로 둘 다 반영.
+                    queryClient.setQueryData<{ fragrance: FragranceType }>(
+                        fragranceDetailKey(id),
+                        { fragrance: result.updatedFragrance }
+                    );
+                    if (result.updatedFragrance.slug && result.updatedFragrance.slug !== id) {
+                        queryClient.setQueryData<{ fragrance: FragranceType }>(
+                            fragranceDetailKey(result.updatedFragrance.slug),
+                            { fragrance: result.updatedFragrance }
+                        );
+                    }
                     router.push(withToastParams(`/fragrance/${result.updatedFragrance.slug}`, "success", "향수 정보가 수정되었습니다."));
                 }
             } else {
