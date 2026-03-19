@@ -224,35 +224,34 @@ export async function POST(req: Request) {
         );
       }
 
-      // 생성 (동시성 문제 대비)
-      try {
-        const created = await prisma.conversation.create({
-          data: {
-            isGroup: true,
-            name: name ?? null,
-            userIds: memberIdsSorted,
-            users: { connect: memberIdsSorted.map(id => ({ id })) },
-          },
-          include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
-        });
-        return NextResponse.json(
-          { ...created, existingConversation: false },
-          { status: 200 }
-        );
-      } catch (e: unknown) {
-        // 동시에 두 요청이 들어왔을 때를 대비해 한 번 더 조회
-        const again = await prisma.conversation.findFirst({
-          where: { isGroup: true, userIds: { equals: memberIdsSorted } },
-          include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
-        });
-        if (again) {
-          return NextResponse.json(
-            { ...again, existingConversation: true },
-            { status: 200 }
-          );
-        }
-        throw e;
-      }
+      // 생성 동시성 경합 방지 (생성 구간만 직렬화)
+      const lockKey = `conv:group:${memberIdsSorted.join(",")}`;
+      const result = await prisma.$transaction(
+        async (tx) => {
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}));`;
+
+          // 락 안에서 한 번 더 확인 (동시 생성 재검증)
+          const again = await tx.conversation.findFirst({
+            where: { isGroup: true, userIds: { equals: memberIdsSorted } },
+            include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
+          });
+          if (again) return { ...again, existingConversation: true as const };
+
+          const created = await tx.conversation.create({
+            data: {
+              isGroup: true,
+              name: name ?? null,
+              userIds: memberIdsSorted,
+              users: { connect: memberIdsSorted.map((id) => ({ id })) },
+            },
+            include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
+          });
+          return { ...created, existingConversation: false as const };
+        },
+        { maxWait: 3000, timeout: 6000 }
+      );
+
+      return NextResponse.json(result, { status: 200 });
     }
 
     // 1:1 대화방 생성
@@ -295,18 +294,32 @@ export async function POST(req: Request) {
       );
     }
 
-    const created = await prisma.conversation.create({
-      data: {
-        isGroup: false,
-        userIds: userIdsSorted,
-        users: { connect: userIdsSorted.map(id => ({ id })) },
+    // 생성 동시성 경합 방지 (생성 구간만 직렬화)
+    const lockKey = `conv:1to1:${userIdsSorted.join(",")}`;
+    const result = await prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}));`;
+
+        const again = await tx.conversation.findFirst({
+          where: { isGroup: false, userIds: { equals: userIdsSorted } },
+          include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
+        });
+        if (again) return { ...again, existingConversation: true as const };
+
+        const created = await tx.conversation.create({
+          data: {
+            isGroup: false,
+            userIds: userIdsSorted,
+            users: { connect: userIdsSorted.map((id) => ({ id })) },
+          },
+          include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
+        });
+        return { ...created, existingConversation: false as const };
       },
-      include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
-    });
-    return NextResponse.json(
-      { ...created, existingConversation: false },
-      { status: 200 }
+      { maxWait: 3000, timeout: 6000 }
     );
+
+    return NextResponse.json(result, { status: 200 });
   } catch {
     return new NextResponse("대화방을 불러오는 중 오류가 발생하였습니다.", {
       status: 500,
