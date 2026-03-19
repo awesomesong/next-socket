@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    onDemandEntries: {
+        // Keep pages in memory longer during dev to reduce route-change recompiles.
+        maxInactiveAge: 1000 * 60 * 25,
+        pagesBufferLength: 8,
+    },
     async redirects() {
         return [
             {
@@ -89,11 +94,20 @@ const nextConfig = {
     },
     logging: {
       fetches: {
-        fullUrl: true,
+        fullUrl: process.env.NODE_ENV === 'production',
       },
     },
     reactStrictMode: true,
     generateEtags: false,
+    experimental: {
+        optimizePackageImports: [
+            '@heroui/react',
+            'framer-motion',
+            'react-icons',
+            'react-select',
+            '@tanstack/react-query',
+        ],
+    },
 };
 
 module.exports = nextConfig;
