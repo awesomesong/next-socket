@@ -16,7 +16,7 @@ import clsx from 'clsx';
 import FragranceAuthorMetaClient from '@/src/app/components/fragrance/FragranceAuthorMetaClient';
 
 const FRAGRANCE_MOTION_TRANSITION = {
-  duration: 0.5,
+  duration: 0.48,
   ease: [0.25, 0.46, 0.45, 0.94],
 } satisfies Transition;
 
@@ -73,13 +73,14 @@ function FragranceCardWrapper({
   return (
     <motion.div
       ref={ref}
-      layout
+      layout="position"
       initial={{ opacity: 0, y: 48 }}
       animate={shouldReveal ? { opacity: 1, y: 0 } : { opacity: 0, y: 48 }}
-      exit={{ opacity: 0, scale: 0.88, y: -8 }}
+      exit={{ opacity: 0, y: -6 }}
       transition={{ ...FRAGRANCE_MOTION_TRANSITION, delay }}
       onHoverStart={onHoverStart}
       onHoverEnd={onHoverEnd}
+      className="will-change-[transform,opacity]"
     >
       {children}
     </motion.div>
@@ -631,7 +632,7 @@ const ProductFragrance = () => {
 
             {/* Card Grid */}
             <div className="product-box grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-5 pt-2 px-8 pb-8 max-w-[1440px] mx-auto">
-              <AnimatePresence mode="popLayout">
+              <AnimatePresence mode="popLayout" initial={false}>
                 {filteredData.map((fragrance, index) => {
                   const isHovered = hoveredSlug === fragrance.slug;
                   const cardSliderIndex = cardSliderIndices[fragrance.slug] ?? 0;
@@ -660,20 +661,20 @@ const ProductFragrance = () => {
                               : '0 2px 12px var(--color-shadow-soft)',
                             y: isHovered ? -5 : 0,
                           }}
-                          transition={{ duration: 0.28, ease: 'easeOut' }}
-                          className="product-fragrance-card product-fragrance-card-layout group cursor-pointer"
+                          transition={{ duration: 0.32, ease: 'easeOut' }}
+                          className="product-fragrance-card product-fragrance-card-layout group cursor-pointer will-change-transform"
                         >
                           {/* Image */}
                           <div className="card-image-slider-box product-fragrance-card-image-box">
                             {/* Glow — 라이트: 아이보리 / 다크: 라벤더 */}
                             <motion.div
                               animate={{ opacity: isHovered ? 0.55 : 0, scale: isHovered ? 1.1 : 0.8 }}
-                              transition={{ duration: 0.35 }}
+                              transition={{ duration: 0.4 }}
                               className="product-fragrance-glow absolute inset-[15%] rounded-full blur-[18px] z-0"
                             />
                             <motion.div
                               animate={{ scale: isHovered ? 1.05 : 1 }}
-                              transition={{ duration: 0.35, ease: 'easeOut' }}
+                              transition={{ duration: 0.4, ease: 'easeOut' }}
                               className="relative w-full h-full z-[1] group"
                             >
                               <ImageSlider
@@ -715,7 +716,7 @@ const ProductFragrance = () => {
                           {/* Hover line */}
                           <motion.div
                             animate={{ scaleX: isHovered ? 1 : 0, opacity: isHovered ? 1 : 0 }}
-                            transition={{ duration: 0.25 }}
+                            transition={{ duration: 0.28 }}
                             className="product-fragrance-accent-line w-6 h-px rounded-[1px] origin-center"
                           />
                         </motion.div>
