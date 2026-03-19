@@ -1,5 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    turbopack: {},
+    experimental: {
+        optimizePackageImports: ['@heroui/react', 'react-icons', 'three'],
+    },
+    async redirects() {
+        return [
+            {
+                source: '/:path*',
+                has: [{ type: 'host', value: 'devsonghee.com' }],
+                destination: 'https://www.devsonghee.com/:path*',
+                permanent: true,
+            },
+        ];
+    },
     async headers() {
         return [
             {
@@ -82,7 +96,7 @@ const nextConfig = {
         fullUrl: true,
       },
     },
-    reactStrictMode: true,
+    reactStrictMode: process.env.NODE_ENV === 'production',
     generateEtags: false,
 };
 
