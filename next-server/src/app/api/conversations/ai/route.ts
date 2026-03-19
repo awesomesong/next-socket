@@ -16,7 +16,7 @@ export async function POST(req: Request) {
             );
         }
 
-        // 먼저 기존 AI 대화방 중에서 메시지가 없는 대화방이 있는지 확인
+        // 기존 AI 대화방 중 메시지가 없는 대화방이 있는지 확인 (빠른 경로)
         const existingEmptyAIConversation = await prisma.conversation.findFirst({
             where: {
                 isAIChat: true,
@@ -42,38 +42,68 @@ export async function POST(req: Request) {
         });
 
         if (existingEmptyAIConversation) {
-            // 메시지가 없는 AI 대화방이 있으면 그 대화방 반환
-            return NextResponse.json({ ...existingEmptyAIConversation, existingConversation: true }, {status: 200});
+            return NextResponse.json({ ...existingEmptyAIConversation, existingConversation: true }, { status: 200 });
         }
 
-        // 메시지가 없는 AI 대화방이 없으면 새로 생성
-        const conversationId = randomUUID();
-        const newConversation = await prisma.conversation.create({
-            data: {
-                id: conversationId,
-                name: "AI 어시스턴트와의 대화",
-                isAIChat: true,
-                aiAgentType: aiAgentType,
-                isGroup: false,
-                userIds: [user.id],
-                users: {
-                    connect: [{ id: user.id }]
-                }
-            },
-            include: {
-                users: {
-                    select: {
-                        id: true,
-                        name: true,
-                        nickname: true,
-                        email: true,
-                        image: true,
-                    }
-                }
-            }
-        });
+        // 동시 호출 시 중복 생성을 막기 위해 생성 구간만 직렬화
+        const lockKey = `conv:ai:${user.id}:${aiAgentType}`;
+        const result = await prisma.$transaction(
+            async (tx) => {
+                await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}));`;
 
-        return NextResponse.json(newConversation, {status: 200});
+                const again = await tx.conversation.findFirst({
+                    where: {
+                        isAIChat: true,
+                        aiAgentType: aiAgentType,
+                        userIds: { has: user.id },
+                        messages: { none: {} },
+                    },
+                    include: {
+                        users: {
+                            select: {
+                                id: true,
+                                name: true,
+                                nickname: true,
+                                email: true,
+                                image: true,
+                            }
+                        }
+                    }
+                });
+
+                if (again) return { ...again, existingConversation: true as const };
+
+                const conversationId = randomUUID();
+                const created = await tx.conversation.create({
+                    data: {
+                        id: conversationId,
+                        name: "AI 어시스턴트와의 대화",
+                        isAIChat: true,
+                        aiAgentType: aiAgentType,
+                        isGroup: false,
+                        userIds: [user.id],
+                        users: { connect: [{ id: user.id }] }
+                    },
+                    include: {
+                        users: {
+                            select: {
+                                id: true,
+                                name: true,
+                                nickname: true,
+                                email: true,
+                                image: true,
+                            }
+                        }
+                    }
+                });
+
+                return { ...created, existingConversation: false as const };
+            },
+            { maxWait: 3000, timeout: 6000 }
+        );
+
+        // existingConversation 플래그까지 포함해서 반환
+        return NextResponse.json(result, { status: 200 });
 
     } catch (error) {
         console.log('ERROR_CREATE_AI_CONVERSATION', error);
