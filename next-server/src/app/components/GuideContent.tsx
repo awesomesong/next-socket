@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode, WheelEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import ImageModal from '@/src/app/components/ImageModal';
@@ -237,6 +237,9 @@ export default function GuideContent({
   const [activeId, setActiveId] = useState<string>('');
   const onThisPageSentinelRef = useRef<HTMLDivElement | null>(null);
   const navRef = useRef<HTMLElement | null>(null);
+  const isDraggingNavRef = useRef(false);
+  const navDragStartXRef = useRef(0);
+  const navDragStartScrollLeftRef = useRef(0);
 
   const closeZoom = useCallback(() => setZoomedImage(null), []);
   const openZoom = useCallback(
@@ -302,6 +305,35 @@ export default function GuideContent({
       nav.scrollTo({ left: scrollLeft, behavior: 'smooth' });
     }
   }, [activeId]);
+
+  const isNarrowScreen = useCallback(() => window.matchMedia('(max-width: 1023px)').matches, []);
+
+  const handleNavWheel = useCallback((event: WheelEvent<HTMLElement>) => {
+    const nav = navRef.current;
+    if (!nav || !isNarrowScreen() || nav.scrollWidth <= nav.clientWidth) return;
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+    nav.scrollLeft += event.deltaY;
+    event.preventDefault();
+  }, [isNarrowScreen]);
+
+  const handleNavMouseDown = useCallback((event: MouseEvent<HTMLElement>) => {
+    const nav = navRef.current;
+    if (!nav || !isNarrowScreen() || nav.scrollWidth <= nav.clientWidth) return;
+    isDraggingNavRef.current = true;
+    navDragStartXRef.current = event.clientX;
+    navDragStartScrollLeftRef.current = nav.scrollLeft;
+  }, [isNarrowScreen]);
+
+  const handleNavMouseMove = useCallback((event: MouseEvent<HTMLElement>) => {
+    const nav = navRef.current;
+    if (!nav || !isDraggingNavRef.current || !isNarrowScreen()) return;
+    const deltaX = event.clientX - navDragStartXRef.current;
+    nav.scrollLeft = navDragStartScrollLeftRef.current - deltaX;
+  }, [isNarrowScreen]);
+
+  const endNavMouseDrag = useCallback(() => {
+    isDraggingNavRef.current = false;
+  }, []);
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 py-8 md:px-8 md:py-12">
@@ -747,7 +779,15 @@ export default function GuideContent({
               >
                 On this page
               </p>
-              <nav ref={navRef} className="guide-on-this-page-nav overflow-x-auto overflow-y-hidden max-lg:touch-pan-x lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pb-0 max-lg:pb-0 lg:scrollbar-thin lg:scrollbar-track-transparent lg:scrollbar-thumb-[var(--color-lavender-border)]">
+              <nav
+                ref={navRef}
+                onWheel={handleNavWheel}
+                onMouseDown={handleNavMouseDown}
+                onMouseMove={handleNavMouseMove}
+                onMouseUp={endNavMouseDrag}
+                onMouseLeave={endNavMouseDrag}
+                className="guide-on-this-page-nav overflow-x-auto overflow-y-hidden max-lg:touch-pan-x lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pb-0 max-lg:pb-0 lg:scrollbar-thin lg:scrollbar-track-transparent lg:scrollbar-thumb-[var(--color-lavender-border)] max-lg:select-none"
+              >
                 <ol className="flex gap-1 min-w-max lg:flex-col lg:min-w-0 lg:gap-2.5">
                   {ON_THIS_PAGE.map(({ href, label }) => {
                     const isActive = activeId === href.replace('#', '');
