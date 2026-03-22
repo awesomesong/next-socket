@@ -223,7 +223,7 @@ const noticeGuideSteps: FragranceGuideStep[] = [
   {
     step: '02',
     title: '비로그인 상태 — 댓글 열람만 가능',
-    desc: '로그인하지 않은 상태에서는 공지 내용과 기존의 댓글을 자유롭게 열람할 수 있습니다. 단, 댓글 입력창이 표시되지 않아 댓글을 작성할 수 없습니다. 댓글을 남기려면 상단 &quot;Login&quot; 버튼을 클릭해 로그인해야 합니다.',
+    desc: '로그인하지 않은 상태에서는 공지 내용과 기존의 댓글을 자유롭게 열람할 수 있습니다. 단, 댓글 입력창이 표시되지 않아 댓글을 작성할 수 없습니다. 댓글을 남기려면 상단 "Login" 버튼을 클릭해 로그인해야 합니다.',
     webImg: { src: '/image/notice/chat/notice_detail/notice_detail_web02.png', alt: '비로그인 상태 — 댓글 열람만 가능 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/notice_detail/notice_detail_mobile02.png', alt: '비로그인 상태 — 댓글 열람만 가능 — 모바일' },
   },
@@ -237,21 +237,21 @@ const noticeGuideSteps: FragranceGuideStep[] = [
   {
     step: '04',
     title: '댓글 작성 및 등록',
-    desc: '입력창에 댓글을 작성한 뒤 &quot;등록&quot; 버튼을 클릭하면 댓글이 등록됩니다. 댓글 수가 실시간으로 증가하며 등록된 댓글이 목록에 표시됩니다. 본인이 작성한 댓글에는 수정·삭제 버튼이 함께 나타납니다.',
+    desc: '입력창에 댓글을 작성한 뒤 "등록" 버튼을 클릭하면 댓글이 등록됩니다. 댓글 수가 실시간으로 증가하며 등록된 댓글이 목록에 표시됩니다. 본인이 작성한 댓글에는 "수정·삭제" 버튼이 함께 나타납니다.',
     webImg: { src: '/image/notice/chat/notice_detail/notice_detail_web04.png', alt: '댓글 작성 및 등록 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/notice_detail/notice_detail_mobile04.png', alt: '댓글 작성 및 등록 — 모바일' },
   },
   {
     step: '05',
     title: '내 댓글에만 수정 · 삭제 버튼 표시',
-    desc: '본인이 작성한 댓글에만 &quot;수정&quot;·&quot;삭제&quot; 버튼이 표시됩니다. &quot;수정&quot; 버튼을 클릭하면 댓글 내용이 편집 가능한 입력창으로 전환됩니다. 해당 입력창에 수정할 내용을 입력할 수 있습니다. &quot;삭제&quot; 버튼을 클릭하면 해당 댓글이 삭제됩니다.',
+    desc: '본인이 작성한 댓글에만 "수정·삭제" 버튼이 표시됩니다. "수정" 버튼을 클릭하면 댓글 내용이 편집 가능한 입력창으로 전환됩니다. 해당 입력창에 수정할 내용을 입력할 수 있습니다. "삭제" 버튼을 클릭하면 해당 댓글이 삭제됩니다.',
     webImg: { src: '/image/notice/chat/notice_detail/notice_detail_web05.png', alt: '내 댓글에만 수정 · 삭제 버튼 표시 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/notice_detail/notice_detail_mobile05.png', alt: '내 댓글에만 수정 · 삭제 버튼 표시 — 모바일' },
   },
   {
     step: '06',
     title: '댓글 수정 모드 — 내용 변경 후 확인',
-    desc: '수정 모드에서 내용을 변경한 뒤 &quot;저장&quot; 버튼을 클릭하면 댓글이 즉시 수정되어 목록에 반영됩니다. &quot;취소&quot; 버튼을 클릭하면 변경 사항이 적용되지 않고 원래 내용으로 돌아갑니다.',
+    desc: '수정 모드에서 내용을 변경한 뒤 "저장" 버튼을 클릭하면 댓글이 즉시 수정되어 목록에 반영됩니다. "취소" 버튼을 클릭하면 변경 사항이 적용되지 않고 원래 내용으로 돌아갑니다.',
     webImg: { src: '/image/notice/chat/notice_detail/notice_detail_web06.png', alt: '댓글 수정 모드 — 내용 변경 후 확인 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/notice_detail/notice_detail_mobile06.png', alt: '댓글 수정 모드 — 내용 변경 후 확인 — 모바일' },
   },
