@@ -2,7 +2,6 @@
 
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import type { MouseEvent, ReactNode, WheelEvent } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import ImageModal from '@/src/app/components/ImageModal';
 import clsx from 'clsx';
