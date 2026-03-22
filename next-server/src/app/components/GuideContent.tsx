@@ -415,9 +415,6 @@ export default function GuideContent({
         >
           Tech Stack
         </p>
-        <p className="text-xs text-[var(--color-text-secondary)] mb-5 leading-relaxed">
-          이 프로젝트에서 사용한 주요 기술과 도구입니다. 풀스택·실시간·AI 연동까지 실제 서비스 수준으로 구성했습니다.
-        </p>
         <div className="space-y-3.5">
           {techStack.map(({ category, items }) => (
             <div key={category} className="flex gap-3 items-start">
@@ -458,23 +455,12 @@ export default function GuideContent({
                 className="space-y-4 text-sm leading-[1.9] text-[var(--color-text-primary)]"
               >
                 <p>
-                  <strong>Scent Memories</strong>는 사용자가 좋아하는 향수를{' '}
-                  <strong>탐색하고, 기록하고, 공유</strong>할 수 있는 향수
-                  아카이브 서비스입니다.
-                </p>
-                <p className="text-[var(--color-text-secondary)]">
-                  향수의 향조, 브랜드, 계열 등 다양한 정보를 한곳에서 탐색하고,
-                  관심 있는 향수를 저장하거나 커뮤니티에서 다른 사용자와 정보를
-                  나눌 수 있도록 설계되었습니다. Scent Memories는 향수를 사랑하는
-                  사람들을 위한 향수 정보 공유 아카이브입니다.
-                </p>
-                <p className="text-[var(--color-text-secondary)]">
-                  본 서비스는{' '}
-                  <strong className="text-[var(--color-text-primary)]">
-                    프론트엔드 개발자 강송희의 포트폴리오
-                  </strong>
-                  로 제작되었습니다. 실제 서비스를 목표로 설계하여, 인증·실시간
-                  통신·AI 연동 등 다양한 현대 웹 기술을 직접 구현했습니다.
+                  <strong>Scent Memories</strong>는 향수를 사랑하는 사람들이 모여 시향 기록을 남기고
+                  자유롭게 소통하는 커뮤니티입니다. 향수 정보를 일일이 찾아 기록하는 번거로움을 줄이기 위해
+                  AI 이미지 분석 기술을 도입했습니다.<br/>
+                  향수 사진을 업로드하면 제품 정보가 등록 폼에 자동 입력되며, 사용자는 AI가 추출한 정보를 확인하고 필요한 부분만 수정하여 빠르게 기록을 마칠 수 있습니다.<br/>
+                  이 가이드에서는 주요 기능과 로그인부터 채팅(사용자/AI 어시스턴트)의 이용 순서를 정리해 두었습니다. <br/>
+                  자세한 내용을 아래의 각 섹션에서 확인할 수 있습니다.
                 </p>
               </div>
             </section>
