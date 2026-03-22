@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import GuideContent, {
-  type IntroStep,
+  type loginStep,
   type FragranceGuideStep,
   type MainGalleryGuide,
 } from '@/src/app/components/GuideContent';
@@ -20,7 +20,7 @@ const features = [
   {
     icon: '📷',
     title: 'AI 이미지 분석 입력',
-    desc: '향수 병·라벨 이미지를 업로드하면 OpenAI GPT-4o Vision이 브랜드·향수명·향 노트 등을 분석해 향수 등록 폼을 자동으로 채워 줍니다. 비어 있거나 잘못된 항목만 직접 수정하면 되므로 신규 향수 등록이 훨씬 빨라집니다.',
+    desc: '향수 병 이미지를 업로드하면 OpenAI GPT-4o Vision이 브랜드·향수명·향 노트 등을 분석해 향수 등록 폼을 자동으로 채워 줍니다. 비어 있거나 잘못된 항목만 직접 수정하면 되고, 신규 향수 등록이 훨씬 빨라집니다.',
   },
   {
     icon: '⭐',
@@ -59,13 +59,9 @@ const features = [
   },
 ];
 
-const steps: IntroStep[] = [
-  { step: '01', title: '로그인 · 데모 체험', desc: '오른쪽 상단의 로그인 버튼을 클릭합니다. 데모 계정 버튼을 누르면 별도 가입 없이 바로 이용할 수 있으며, Google·카카오 소셜 로그인 또는 이메일/비밀번호로도 로그인할 수 있습니다.', image: { src: '/image/notice/auth/signin.png', alt: '로그인 화면' } },
+const steps: loginStep[] = [
+  { step: '01', title: '로그인 · 데모 체험', desc: '데모 계정 버튼을 누르면 별도 가입 없이 바로 이용할 수 있으며, Google·카카오 소셜 로그인 또는 이메일/비밀번호로도 로그인할 수 있습니다.', image: { src: '/image/notice/auth/signin.png', alt: '로그인 화면' } },
   { step: '02', title: '계정 등록(회원가입)', desc: '이메일과 비밀번호를 입력해 계정을 만들 수 있습니다.', image: { src: '/image/notice/auth/signup.png', alt: '계정등록(회원가입) 화면' } },
-  { step: '03', title: '향수 탐색', desc: '상단 "Fragrance" 메뉴에서 향수 컬렉션을 탐색합니다. 카드를 클릭하면 향조, 계절감, 지속력 등 상세 정보와 다른 사용자의 리뷰를 확인할 수 있습니다.' },
-  { step: '04', title: '리뷰 작성', desc: '향수 상세 페이지에서 별점과 나만의 감상을 기록합니다. 작성한 리뷰는 언제든지 수정하거나 삭제할 수 있습니다.' },
-  { step: '05', title: '실시간 채팅', desc: '화면 우측 하단의 채팅 아이콘을 클릭하거나 상단 "Chat" 메뉴를 통해 채팅 기능에 접근합니다.' },
-  { step: '06', title: '프로필 확인', desc: '상단 "Profile" 메뉴에서 내가 작성한 리뷰와 활동 내역을 한눈에 확인할 수 있습니다.' },
 ];
 
 const techStack = [
@@ -105,7 +101,7 @@ const fragranceGuideSteps: FragranceGuideStep[] = [
   {
     step: '02',
     title: '향수 정보 추가 페이지',
-    desc: '메인 페이지에서 "향수 정보 추가" 버튼을 누르면 향수 등록 폼이 열립니다. 이미지 영역에 파일을 드래그 앤 드롭하거나 클릭해 여러 장을 한 번에 업로드할 수 있으며, 업로드 후에도 "+ 이미지 추가" 버튼으로 이미지를 계속 더할 수 있습니다. 업로드가 완료되면 AI가 이미지를 분석해 브랜드·이름·설명 등을 자동으로 채워 주며, 결과에 따라 일부 항목은 직접 입력하거나 수정해야 할 수 있습니다. 필수 입력 항목은 브랜드, 향수 이름, URL 슬러그(소문자와 언더바만)이고 제품 설명과 노트(TOP·HEART·BASE)는 선택입니다. 입력을 마친 뒤 "향수 등록하기"로 제출하거나 "취소"를 눌러 폼을 닫을 수 있습니다. 데스크탑/모바일 환경에 따라 이미지 영역과 버튼 위치가 다르게 보일 수 있습니다.',
+    desc: '메인 페이지에서 "향수 정보 추가" 버튼을 누르면 향수 등록 폼이 열립니다. 이미지 영역에 파일을 드래그 앤 드롭하거나 클릭해 여러 장을 한 번에 업로드할 수 있으며, 업로드 후에도 "+ 이미지 추가" 버튼으로 이미지를 계속 더할 수 있습니다. 업로드가 완료되면 AI가 이미지를 분석해 브랜드·이름·설명·노트를 자동으로 채워 주며, 결과에 따라 일부 항목은 직접 입력하거나 수정해야 할 수 있습니다. 필수 입력 항목은 브랜드, 향수 이름이고, 제품 설명과 노트(TOP·HEART·BASE)는 선택입니다. 입력을 마친 뒤 "향수 등록하기"로 제출하거나 "취소"를 눌러 해당 페이지를 나갈 수 있습니다. 데스크탑/모바일 환경에 따라 이미지 영역과 버튼 위치가 다르게 보일 수 있습니다.',
     webImg: { src: '/image/notice/fragrance/fragrance_create_web01.png', alt: '향수 정보 추가 버튼 — 데스크탑' },
     mobileImg: { src: '/image/notice/fragrance/fragrance_create_mobile01.png', alt: '향수 정보 추가 버튼 — 모바일' },
   },
@@ -119,7 +115,7 @@ const fragranceGuideSteps: FragranceGuideStep[] = [
   {
     step: '04',
     title: '향수 정보 입력 및 수정',
-    desc: 'AI가 자동으로 채운 브랜드, 향수 이름, URL 슬러그, 제품 상세 설명, 노트 정보(TOP·HEART·BASE)를 확인합니다. 분석되지 않은 항목은 직접 입력하고, 잘못 채워진 내용은 수정합니다. 모든 필수 항목(브랜드, 향수 이름, URL 슬러그)을 채운 뒤 하단의 "향수 등록하기" 버튼을 클릭하면 향수가 등록됩니다.',
+    desc: 'AI가 자동으로 채운 브랜드, 향수 이름, 제품 상세 설명, 노트 정보(TOP·HEART·BASE)를 확인합니다. 분석되지 않은 항목은 직접 입력하고, 잘못 채워진 내용은 수정합니다. 모든 필수 항목(브랜드, 향수 이름)을 채운 뒤 하단의 "향수 등록하기" 버튼을 클릭하면 향수가 등록됩니다.',
     webImg: { src: '/image/notice/fragrance/fragrance_create_web03.png', alt: '향수 정보 입력 폼 — 데스크탑' },
     mobileImg: { src: '/image/notice/fragrance/fragrance_create_mobile03.png', alt: '향수 정보 입력 폼 — 모바일' },
   },
@@ -171,7 +167,7 @@ const fragranceDetailSteps: FragranceGuideStep[] = [
   {
     step: '06',
     title: '리뷰 수정',
-    desc: '수정 버튼을 누르면 해당 리뷰 안에 기존 내용이 채워진 수정 입력칸이 바로 열립니다. 내용을 변경한 뒤 저장 버튼을 누르면 수정이 완료되고, 취소 버튼을 누르면 원래 내용으로 돌아갑니다.',
+    desc: '수정 버튼을 클릭하면 해당 리뷰 내용이 편집 가능한 입력창으로 전환됩니다. 입력창에 수정할 내용을 입력할 수 있습니다. 내용을 변경한 뒤 저장 버튼을 누르면 수정이 완료되고, 취소 버튼을 누르면 원래 내용으로 돌아갑니다.',
     webImg: { src: '/image/notice/fragrance_detail/fragrance_detail_web06.png', alt: '리뷰 수정 — 데스크탑' },
     mobileImg: { src: '/image/notice/fragrance_detail/fragrance_detail_mobile06.png', alt: '리뷰 수정 — 모바일' },
   },
@@ -188,7 +184,7 @@ const chatMoveGuideSteps: FragranceGuideStep[] = [
   {
     step: '01',
     title: '상단 메뉴 및 아이콘을 통한 이동',
-    desc: 'Scent Memories에서 다른 멤버들과 채팅할 수 있습니다. 상단 네비게이션의 Chat을 클릭해 채팅 멤버 목록으로 이동하거나, 화면 우측 하단의 채팅 아이콘을 클릭해 대화방 목록으로 바로 진입할 수 있습니다. 아이콘의 숫자 배지는 읽지 않은 메시지 수를 의미합니다.',
+    desc: 'Scent Memories에서 다른 사용자들과 채팅할 수 있습니다. 상단 네비게이션의 Chat을 클릭해 채팅 멤버 목록으로 이동하거나, 화면 우측 하단의 채팅 아이콘을 클릭해 대화방 목록으로 바로 진입할 수 있습니다. 아이콘의 숫자 배지는 읽지 않은 메시지 수를 의미합니다.',
     webImg: { src: '/image/notice/chat/link/move_chat_web01.png', alt: '채팅 이동 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/link/move_chat_mobile01.png', alt: '채팅 이동 모바일 1 — 햄버거 메뉴' },
   },
@@ -196,8 +192,9 @@ const chatMoveGuideSteps: FragranceGuideStep[] = [
     step: '02',
     title: '모바일 환경에서 메뉴 열기',
     desc: '모바일 환경의 경우, 화면 좌측 상단의 햄버거 메뉴 아이콘을 누른 뒤 열린 메뉴 목록에서 Chat을 선택해야 채팅 화면으로 이동할 수 있습니다.',
-    webImg: { src: '/image/notice/chat/link/move_chat_web01.png', alt: '채팅 이동 — 데스크탑' },
-    mobileImg: { src: '/image/notice/chat/link/move_chat_mobile02.png', alt: '채팅 이동 모바일 2 — Chat 메뉴' },
+    twinMobilePreview: true,
+    webImg: { src: '/image/notice/chat/link/move_chat_mobile01.png', alt: '모바일 — 좌측 상단 햄버거 메뉴와 채팅 아이콘 위치 설명' },
+    mobileImg: { src: '/image/notice/chat/link/move_chat_mobile02.png', alt: '모바일 — 모바일 메뉴 목록에서 Chat을 선택해 채팅 화면으로 이동하는 화면' },
   },
 ];
 
@@ -205,20 +202,20 @@ const chatMemberGuideSteps: FragranceGuideStep[] = [
   {
     step: '01',
     title: '멤버 목록 확인',
-    desc: '채팅 탭의 멤버 화면에서 서비스에 가입된 모든 멤버를 확인할 수 있습니다. 온라인 상태인 멤버는 프로필 아이콘 우측 하단에 초록색 점으로 표시됩니다. 우측 상단의 ⋮ 버튼을 누르면 단체 채팅, AI 채팅, 다크/라이트 모드 변경 메뉴가 나타납니다.',
+    desc: '채팅 탭의 멤버 화면에서 서비스에 가입된 모든 멤버를 확인할 수 있습니다. 온라인 상태인 멤버는 프로필 아이콘 우측 상단에 초록색 점으로 표시됩니다. 채팅 멤버 목록의 우측 상단에 ⋮ 버튼을 누르면 단체 채팅, AI 채팅, 다크/라이트 모드 변경 메뉴가 나타납니다.',
     webImg: { src: '/image/notice/chat/member/chat_member_web01.png', alt: '채팅 멤버 목록 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/member/chat_member_mobile01.png', alt: '채팅 멤버 목록 — 모바일' },
   },
   {
     step: '02',
     title: '1:1 대화방 만들기',
-    desc: '멤버 목록에서 대화하고 싶은 멤버의 이름이나 프로필을 클릭하면 해당 멤버와의 1:1 대화방이 즉시 열립니다. 이미 대화방이 존재하는 경우 기존 대화방으로 이동하며, 처음 대화를 시작하는 경우 새로운 대화방이 생성됩니다.',
+    desc: '멤버 목록에서 대화하고 싶은 멤버의 이름이나 프로필을 클릭하면 해당 멤버와의 1:1 대화방이 열립니다. 이미 대화방이 존재하는 경우 기존 대화방으로 이동하며, 처음 대화를 시작하는 경우 새로운 대화방이 생성됩니다.',
     webImg: { src: '/image/notice/chat/member/chat_member_web02.png', alt: '1:1 대화방 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/member/chat_member_mobile02.png', alt: '1:1 대화방 — 모바일' },
   },
   {
     step: '03',
-    title: '더보기 메뉴 — 단체채팅 · AI 채팅 · 다크/라이트 모드',
+    title: '멤버 더보기 메뉴 (⋮) — 단체채팅 · AI 채팅 · 다크/라이트 모드',
     desc: '멤버 화면 우측 상단의 ⋮ 버튼을 누르면 세 가지 기능을 바로 이용할 수 있습니다. ① 단체 채팅: 여러 멤버가 함께 참여할 수 있는 그룹 채팅방을 만듭니다. ② AI 채팅: 향수 AI 어시스턴트와 대화할 수 있는 전용 채팅방으로 이동합니다. ③ 다크 모드 / 라이트 모드: 현재 테마를 전환합니다. 다크 모드일 때는 "라이트 모드"로, 라이트 모드일 때는 "다크 모드"로 표시됩니다.',
     webImg: { src: '/image/notice/chat/member/chat_member_web03.png', alt: '더보기 메뉴 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/member/chat_member_mobile03.png', alt: '더보기 메뉴 — 모바일' },
@@ -409,7 +406,7 @@ const chatAiGuideSteps: FragranceGuideStep[] = [
   {
     step: '02',
     title: 'AI 채팅방 초기 화면',
-    desc: 'AI 채팅방에 처음 입장하면 임시 대화방이 생성됩니다. 이곳에서 향수 AI 어시스턴트에게 향수 추천, 향 계열, 취향별 조합 등 향수와 관련된 질문을 자유롭게 입력해 보세요. 향수와 무관한 주제는 답변이 제한될 수 있으니, 향수 관련 질문으로 대화를 이어가 주세요.',
+    desc: 'AI 채팅방에 처음 입장하면 임시 대화방이 생성됩니다. 이곳에서 향수 AI 어시스턴트에게 향수 추천, 향 계열, 취향별 조합 등 향수와 관련된 질문을 자유롭게 입력할 수 있습니다. 향수와 무관한 주제는 답변이 제한될 수 있으니, 향수 관련된 질문으로 대화를 시작해주세요.',
     webImg: { src: '/image/notice/chat/conversation_ai/chat_ai_web02.png', alt: 'AI 채팅방 초기 화면 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/conversation_ai/chat_ai_mobile02.png', alt: 'AI 채팅방 초기 화면 — 모바일' },
   },

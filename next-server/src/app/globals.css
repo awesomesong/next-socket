@@ -2004,4 +2004,13 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
   .notice-preview-img {
     @apply max-w-full w-auto h-auto md:w-full;
   }
+
+  /* 모바일 미리보기: md 미만에서 테두리가 이미지 너비에 맞춰지고 왼쪽 정렬 */
+  .notice-preview-frame--fit-sm {
+    @apply max-md:w-fit max-md:max-w-full max-md:justify-start;
+  }
+
+  .notice-preview-frame--fit-sm .notice-preview-btn {
+    @apply max-md:w-fit max-md:max-w-full;
+  }
 }

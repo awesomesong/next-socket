@@ -8,8 +8,9 @@ import clsx from 'clsx';
 
 const ON_THIS_PAGE = [
   { href: '#overview', label: 'Scent Memories란?' },
-  { href: '#preview', label: '반응형 레이아웃' },
   { href: '#features', label: '주요 기능' },
+  { href: '#preview', label: '반응형 레이아웃' },
+  { href: '#howto', label: '로그인 · 데모 계정 안내' },
   { href: '#main-gallery', label: '메인 화면 & 시그니처 향수 갤러리' },
   { href: '#fragrance-guide', label: '향수 등록 가이드' },
   { href: '#fragrance-detail', label: '향수 상세 페이지 & 리뷰' },
@@ -21,7 +22,6 @@ const ON_THIS_PAGE = [
   { href: '#chat-conversation-detail-guide', label: '대화방 상세 메뉴 & 읽음 표시' },
   { href: '#chat-ai-guide', label: '향수 AI 어시스턴트 채팅 가이드' },
   { href: '#ui-theme', label: 'UI 테마 (다크 / 라이트 모드)' },
-  { href: '#howto', label: '이용 방법' },
 ] as const;
 
 const guideCardSurfaceClass =
@@ -59,23 +59,63 @@ const DESKTOP_PREVIEW_DEFAULTS = {
 } as const;
 
 const MOBILE_PREVIEW_DEFAULTS = {
-  width: 300,
-  height: 600,
-  sizes: '(min-width: 768px) 128px, 100vw',
+  width: 320,
+  height: 640,
+  sizes: '(max-width: 767px) min(100vw, 300px), 360px',
 } as const;
+
+const previewMobileColumnClass =
+  'max-md:w-fit max-md:max-w-[min(100vw,300px)] max-md:self-start w-full md:flex-1 md:min-w-0 md:max-w-[min(100%,360px)]';
+
+const previewMobileFrameClass = 'notice-preview-frame notice-preview-frame--fit-sm';
 
 const ResponsivePreview = memo(function ResponsivePreview({
   desktop,
   mobile,
   openZoom,
+  layout = 'responsive',
 }: {
   desktop: PreviewImage;
   mobile: PreviewImage;
   openZoom: (src: string, alt: string) => () => void;
+  layout?: 'responsive' | 'twin-mobile';
 }) {
+  if (layout === 'twin-mobile') {
+    const slots = [
+      { img: desktop, label: 'Mobile 1' },
+      { img: mobile, label: 'Mobile 2' },
+    ] as const;
+    return (
+      <div className="flex flex-col items-start gap-4 max-md:w-full md:flex-row md:gap-3">
+        {slots.map(({ img, label }, i) => (
+          <div key={i} className={previewMobileColumnClass}>
+            <p className="notice-preview__label">{label}</p>
+            <div className={previewMobileFrameClass}>
+              <button
+                type="button"
+                onClick={openZoom(img.src, img.zoomAlt ?? img.alt)}
+                className="notice-preview-btn"
+                aria-label={`${img.zoomAlt ?? img.alt} 확대 보기`}
+              >
+                <Image
+                  src={img.src}
+                  alt={img.alt}
+                  width={img.width}
+                  height={img.height}
+                  sizes={img.sizes}
+                  className="notice-preview-img"
+                />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-start gap-4 max-md:w-full md:flex-row md:gap-3">
-      <div className="w-full max-md:max-w-full md:flex-1 md:min-w-0">
+      <div className="w-full max-md:max-w-full md:flex-[2_1_0%] md:min-w-0">
         <p className="notice-preview__label">Desktop</p>
         <div className="notice-preview-frame">
           <button
@@ -96,9 +136,9 @@ const ResponsivePreview = memo(function ResponsivePreview({
         </div>
       </div>
 
-      <div className="w-full max-md:max-w-full md:w-[220px] md:basis-[128px] md:flex-none">
+      <div className={previewMobileColumnClass}>
         <p className="notice-preview__label">Mobile</p>
-        <div className="notice-preview-frame">
+        <div className={previewMobileFrameClass}>
           <button
             type="button"
             onClick={openZoom(mobile.src, mobile.zoomAlt ?? mobile.alt)}
@@ -126,6 +166,7 @@ export type FragranceGuideStep = {
   desc: string;
   webImg: { src: string; alt: string };
   mobileImg: { src: string; alt: string };
+  twinMobilePreview?: boolean;
 };
 
 function StepGuideSection({
@@ -148,50 +189,53 @@ function StepGuideSection({
       <SectionLabel index={index} title={title} />
       <div className="guide-section-intro">{intro}</div>
       <div className="space-y-12">
-        {steps.map(({ step, title: stepTitle, desc, webImg, mobileImg }) => (
-          <div key={step}>
-            <div className="flex gap-3">
-              <div className="shrink-0 pt-[2px]">
-                <span
-                  className={clsx(
-                    'w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold',
-                    'text-[var(--color-ivory)] [background:var(--bg-gradient-scent)]',
-                    'dark:text-[var(--color-lavender-light)] dark:[background:var(--color-lavender-pale)] dark:border dark:border-[var(--color-lavender-border)]',
-                  )}
-                >
-                  {step}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-left mb-2 text-[var(--color-text-primary)]">
-                  {stepTitle}
-                </p>
-                <p className="text-xs leading-relaxed mb-4 text-left text-[var(--color-text-secondary)]">
-                  {desc}
-                </p>
-                <ResponsivePreview
-                  openZoom={openZoom}
-                  desktop={{
-                    ...DESKTOP_PREVIEW_DEFAULTS,
-                    src: webImg.src,
-                    alt: webImg.alt,
-                  }}
-                  mobile={{
-                    ...MOBILE_PREVIEW_DEFAULTS,
-                    src: mobileImg.src,
-                    alt: mobileImg.alt,
-                  }}
-                />
+        {steps.map(
+          ({ step, title: stepTitle, desc, webImg, mobileImg, twinMobilePreview }) => (
+            <div key={step}>
+              <div className="flex gap-3">
+                <div className="shrink-0 pt-[2px]">
+                  <span
+                    className={clsx(
+                      'w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold',
+                      'text-[var(--color-ivory)] [background:var(--bg-gradient-scent)]',
+                      'dark:text-[var(--color-lavender-light)] dark:[background:var(--color-lavender-pale)] dark:border dark:border-[var(--color-lavender-border)]',
+                    )}
+                  >
+                    {step}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-left mb-2 text-[var(--color-text-primary)]">
+                    {stepTitle}
+                  </p>
+                  <p className="text-xs leading-relaxed mb-4 text-left text-[var(--color-text-secondary)]">
+                    {desc}
+                  </p>
+                  <ResponsivePreview
+                    openZoom={openZoom}
+                    layout={twinMobilePreview ? 'twin-mobile' : 'responsive'}
+                    desktop={{
+                      ...(twinMobilePreview ? MOBILE_PREVIEW_DEFAULTS : DESKTOP_PREVIEW_DEFAULTS),
+                      src: webImg.src,
+                      alt: webImg.alt,
+                    }}
+                    mobile={{
+                      ...MOBILE_PREVIEW_DEFAULTS,
+                      src: mobileImg.src,
+                      alt: mobileImg.alt,
+                    }}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ),
+        )}
       </div>
     </section>
   );
 }
 
-export type IntroStep = {
+export type loginStep = {
   step: string;
   title: string;
   desc: string;
@@ -207,7 +251,7 @@ export type MainGalleryGuide = {
 
 type GuideContentProps = {
   features: { icon: string; title: string; desc: string }[];
-  steps: IntroStep[];
+  steps: loginStep[];
   techStack: { category: string; items: string[] }[];
   fragranceGuideSteps: FragranceGuideStep[];
   fragranceDetailSteps: FragranceGuideStep[];
@@ -409,9 +453,9 @@ export default function GuideContent({
       </section>
 
       {/* Tech Stack */}
-      <div className={clsx('rounded-2xl p-6 mb-8', guideCardSurfaceClass)}>
+      <div className={clsx('rounded-2xl p-6 mb-12', guideCardSurfaceClass)}>
         <p
-          className="text-[11px] font-semibold tracking-[0.16em] uppercase mb-2 text-[var(--color-lavender)]"
+          className="text-sm font-semibold tracking-[0.16em] uppercase mb-4 text-[var(--color-lavender)]"
         >
           Tech Stack
         </p>
@@ -459,40 +503,14 @@ export default function GuideContent({
                   자유롭게 소통하는 커뮤니티입니다. 향수 정보를 일일이 찾아 기록하는 번거로움을 줄이기 위해
                   AI 이미지 분석 기술을 도입했습니다.<br/>
                   향수 사진을 업로드하면 제품 정보가 등록 폼에 자동 입력되며, 사용자는 AI가 추출한 정보를 확인하고 필요한 부분만 수정하여 빠르게 기록을 마칠 수 있습니다.<br/>
-                  이 가이드에서는 주요 기능과 로그인부터 채팅(사용자/AI 어시스턴트)의 이용 순서를 정리해 두었습니다. <br/>
+                  아래 가이드에서는 주요 기능과 로그인부터 채팅(사용자/AI 어시스턴트)의 이용 순서를 정리해 두었습니다. <br/>
                   자세한 내용을 아래의 각 섹션에서 확인할 수 있습니다.
                 </p>
               </div>
             </section>
 
-            <section id="preview" className="scroll-mt-24">
-              <SectionLabel index="02" title="반응형 레이아웃" />
-              <p className="guide-section-intro mb-8">
-                데스크탑과 모바일 환경 모두에 최적화된 반응형 레이아웃을 제공합니다.
-              </p>
-              <ResponsivePreview
-                openZoom={openZoom}
-                desktop={{
-                  src: '/image/notice/main/main_web.png',
-                  alt: '데스크탑 화면 — 향수 컬렉션',
-                  zoomAlt: '데스크탑 화면 — 향수 컬렉션',
-                  width: 900,
-                  height: 700,
-                  sizes: '(min-width: 768px) 900px, 100vw',
-                }}
-                mobile={{
-                  src: '/image/notice/main/main_mobile.png',
-                  alt: '모바일 화면 — 향수 컬렉션',
-                  zoomAlt: '모바일 화면 — 향수 컬렉션',
-                  width: 300,
-                  height: 600,
-                  sizes: '(min-width: 768px) 128px, 100vw',
-                }}
-              />
-            </section>
-
             <section id="features" className="scroll-mt-24">
-              <SectionLabel index="03" title="주요 기능" />
+              <SectionLabel index="02" title="주요 기능" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {features.map(({ icon, title, desc }) => (
                   <div
@@ -522,8 +540,88 @@ export default function GuideContent({
               </div>
             </section>
 
+            <section id="preview" className="scroll-mt-24">
+              <SectionLabel index="03" title="반응형 레이아웃" />
+              <p className="guide-section-intro mb-8">
+                데스크탑과 모바일 환경 모두에 최적화된 반응형 레이아웃을 제공합니다.
+              </p>
+              <ResponsivePreview
+                openZoom={openZoom}
+                desktop={{
+                  src: '/image/notice/main/main_web.png',
+                  alt: '데스크탑 화면 — 향수 컬렉션',
+                  zoomAlt: '데스크탑 화면 — 향수 컬렉션',
+                  width: 900,
+                  height: 700,
+                  sizes: '(min-width: 768px) 900px, 100vw',
+                }}
+                mobile={{
+                  ...MOBILE_PREVIEW_DEFAULTS,
+                  src: '/image/notice/main/main_mobile.png',
+                  alt: '모바일 화면 — 향수 컬렉션',
+                  zoomAlt: '모바일 화면 — 향수 컬렉션',
+                }}
+              />
+            </section>
+
+            <section id="howto" className="scroll-mt-24">
+              <SectionLabel index="04" title="로그인 · 데모 계정 안내" />
+              <p className="guide-section-intro">
+                회원가입 없이도 향수 목록과 공지사항을 자유롭게 열람할 수 있으며, 향수 등록 및 채팅 기능을 이용하려면 로그인이 필요합니다.
+                <br/>
+                별도 회원가입 없이 바로 체험 가능한 데모 계정을 제공합니다.
+              </p>
+              <ol className="relative space-y-0">
+                {steps.map(({ step, title, desc, image }, i) => (
+                  <li key={step} className="flex gap-5 group">
+                    <div className="flex flex-col items-center shrink-0">
+                      <span
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white z-10 shrink-0 [background:var(--bg-gradient-scent)]"
+                      >
+                        {step}
+                      </span>
+                      {i < steps.length - 1 && (
+                        <div
+                          className="w-px flex-1 my-1 [background:linear-gradient(180deg,var(--color-lavender-border)_0%,transparent_100%)] min-h-[32px]"
+                        />
+                      )}
+                    </div>
+                    <div className={`pb-8 ${i === steps.length - 1 ? 'pb-0' : ''}`}>
+                      <p className="text-sm font-semibold mb-1.5 mt-1 text-[var(--color-text-primary)]">
+                        {title}
+                      </p>
+                      <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                        {desc}
+                      </p>
+                      {image && (
+                        <div className="mt-4 w-[180px] sm:w-[220px]">
+                          <div className="notice-preview-frame">
+                            <button
+                              type="button"
+                              onClick={openZoom(image.src, image.alt)}
+                              className="notice-preview-btn"
+                              aria-label={`${image.alt} 확대 보기`}
+                            >
+                              <Image
+                                src={image.src}
+                                alt={image.alt}
+                                width={300}
+                                height={580}
+                                sizes="(min-width: 640px) 220px, 180px"
+                                className="notice-preview-img"
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+
             <section id="main-gallery" className="scroll-mt-24">
-              <SectionLabel index="04" title="메인 화면 & 시그니처 향수 갤러리" />
+              <SectionLabel index="05" title="메인 화면 & 시그니처 향수 갤러리" />
               <div className="space-y-4 mb-8 text-sm leading-[1.8] text-[var(--color-text-secondary)] break-keep">
                 {mainGalleryGuide.desc.map((paragraph, idx) => (
                   <p key={idx}>{paragraph}</p>
@@ -540,27 +638,26 @@ export default function GuideContent({
                   sizes: '(min-width: 768px) 900px, 100vw',
                 }}
                 mobile={{
+                  ...MOBILE_PREVIEW_DEFAULTS,
+                  height: 650,
                   src: mainGalleryGuide.mobileImg.src,
                   alt: mainGalleryGuide.mobileImg.alt,
-                  width: 300,
-                  height: 650,
-                  sizes: '(min-width: 768px) 128px, 100vw',
                 }}
               />
             </section>
 
             <StepGuideSection
               id="fragrance-guide"
-              index="05"
+              index="06"
               title="향수 등록 가이드"
-              intro="관리자 계정은 향수를 직접 등록할 수 있습니다. 이미지를 업로드하면 AI가 향수 정보를 자동으로 분석하여 브랜드, 설명, 노트 필드를 채워줍니다."
+              intro="로그인 후에 향수를 직접 등록할 수 있습니다. 이미지를 업로드하면 AI가 향수 정보를 자동으로 분석하여 브랜드, 이름, 설명, 노트 필드를 채워줍니다."
               steps={fragranceGuideSteps}
               openZoom={openZoom}
             />
 
             <StepGuideSection
               id="fragrance-detail"
-              index="06"
+              index="07"
               title="향수 상세 페이지 & 리뷰"
               intro="향수 상세 페이지에서는 향수의 정보(이미지·브랜드·이름·설명·노트)와 함께 다른 사용자가 남긴 리뷰를 확인할 수 있습니다. 로그인한 사용자는 직접 리뷰를 남기거나 수정·삭제할 수 있습니다."
               steps={fragranceDetailSteps}
@@ -569,7 +666,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="notice-guide"
-              index="07"
+              index="08"
               title="공지사항 열람 & 댓글 가이드"
               intro='상단 "Notice" 메뉴에서 공지사항 목록을 확인할 수 있습니다. 누구나 열람할 수 있으며, 로그인한 사용자는 댓글 작성이 가능합니다.'
               steps={noticeGuideSteps}
@@ -578,7 +675,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="notice-write-guide"
-              index="08"
+              index="09"
               title="공지사항 글쓰기 가이드"
               intro="로그인한 사용자는 우측 상단의 글쓰기 버튼을 활성화하여 직접 새로운 공지사항을 작성하고 서식을 꾸밀 수 있습니다."
               steps={noticeWriteGuideSteps}
@@ -587,16 +684,16 @@ export default function GuideContent({
 
             <StepGuideSection
               id="chat-move-guide"
-              index="09"
+              index="10"
               title="채팅 화면으로 이동하기"
-              intro="Scent Memories에서 다른 멤버들과 채팅할 수 있습니다. 채팅 멤버 목록이나 대화방 목록으로 바로 이동하는 두 가지 방법을 안내합니다."
+              intro="Scent Memories에서 다른 사용자들과 채팅할 수 있습니다. 채팅 멤버 목록이나 대화방 목록으로 이동하는 두 가지 방법을 안내합니다."
               steps={chatMoveGuideSteps}
               openZoom={openZoom}
             />
 
             <StepGuideSection
               id="chat-member-guide"
-              index="10"
+              index="11"
               title="채팅 멤버 기능 가이드"
               intro="채팅의 멤버 탭에서 다양한 대화 기능을 이용할 수 있습니다. 멤버를 클릭해 1:1 대화를 시작하거나, 우측 상단 메뉴(⋮)를 통해 단체 채팅방 만들기, AI 채팅, 다크/라이트 모드 변경이 가능합니다."
               steps={chatMemberGuideSteps}
@@ -605,7 +702,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="chat-conversation-guide"
-              index="11"
+              index="12"
               title="채팅 대화방 기능 가이드"
               intro="채팅의 대화방 탭에서 진행되는 모든 대화 기능을 안내합니다. 단체 채팅방 생성부터 실시간 메시지 전송, 대화방 목록 관리까지 순서대로 확인하세요."
               steps={chatConversationGuideSteps}
@@ -614,7 +711,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="chat-conversation-detail-guide"
-              index="12"
+              index="13"
               title="대화방 상세 메뉴 & 읽음 표시"
               intro={<>대화방 채팅창 내에서 이용할 수 있는 <strong>상세 메뉴(⋮)</strong>와 <strong>읽음 표시</strong> 기능을 안내합니다.</>}
               steps={chatDetailSteps}
@@ -623,7 +720,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="chat-ai-guide"
-              index="13"
+              index="14"
               title="향수 AI 어시스턴트 채팅 가이드"
               intro="향수 AI 어시스턴트와 대화할 수 있는 AI 채팅 기능을 안내합니다."
               steps={chatAiGuideSteps}
@@ -631,7 +728,7 @@ export default function GuideContent({
             />
 
             <section id="ui-theme" className="scroll-mt-24">
-              <SectionLabel index="14" title="UI 테마 (다크 / 라이트 모드)" />
+              <SectionLabel index="15" title="UI 테마 (다크 / 라이트 모드)" />
               <div className="space-y-3 text-sm leading-[1.8] text-[var(--color-text-secondary)] mb-8 break-keep">
                 <p>
                   Scent Memories는 <strong className="text-[var(--color-text-primary)]">시스템 설정을 자동으로 감지</strong>하여 첫 접속 시 테마를 적용합니다.
@@ -700,61 +797,6 @@ export default function GuideContent({
                   </p>
                 </div>
               </div>
-            </section>
-
-            <section id="howto" className="scroll-mt-24">
-              <SectionLabel index="15" title="이용 방법" />
-              <p className="guide-section-intro">
-                회원가입 없이도 향수 목록과 공지사항을 자유롭게 열람할 수
-                있습니다. 아래 기능을 이용하려면 소셜 로그인이 필요합니다.
-              </p>
-              <ol className="relative space-y-0">
-                {steps.map(({ step, title, desc, image }, i) => (
-                  <li key={step} className="flex gap-5 group">
-                    <div className="flex flex-col items-center shrink-0">
-                      <span
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white z-10 shrink-0 [background:var(--bg-gradient-scent)]"
-                      >
-                        {step}
-                      </span>
-                      {i < steps.length - 1 && (
-                        <div
-                          className="w-px flex-1 my-1 [background:linear-gradient(180deg,var(--color-lavender-border)_0%,transparent_100%)] min-h-[32px]"
-                        />
-                      )}
-                    </div>
-                    <div className={`pb-8 ${i === steps.length - 1 ? 'pb-0' : ''}`}>
-                      <p className="text-sm font-semibold mb-1.5 mt-1 text-[var(--color-text-primary)]">
-                        {title}
-                      </p>
-                      <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                        {desc}
-                      </p>
-                      {image && (
-                        <div className="mt-4 w-[180px] sm:w-[220px]">
-                          <div className="notice-preview-frame">
-                            <button
-                              type="button"
-                              onClick={openZoom(image.src, image.alt)}
-                              className="notice-preview-btn"
-                              aria-label={`${image.alt} 확대 보기`}
-                            >
-                              <Image
-                                src={image.src}
-                                alt={image.alt}
-                                width={300}
-                                height={580}
-                                sizes="(min-width: 640px) 220px, 180px"
-                                className="notice-preview-img"
-                              />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ol>
             </section>
 
           </div>
