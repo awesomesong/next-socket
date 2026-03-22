@@ -25,6 +25,9 @@ const ON_THIS_PAGE = [
   { href: '#howto', label: '이용 방법' },
 ] as const;
 
+const guideCardSurfaceClass =
+  'bg-[var(--guide-card-surface-bg)] border border-[var(--guide-card-surface-border)]';
+
 const SectionLabel = memo(function SectionLabel({ index, title }: { index: string; title: string }) {
   return (
     <div className="mb-8">
@@ -405,7 +408,7 @@ export default function GuideContent({
       </section>
 
       {/* Tech Stack */}
-      <div className="rounded-2xl p-6 bg-[var(--color-card-bg)] border border-[var(--color-card-border)] dark:bg-[var(--color-ivory-soft)] dark:border-[var(--color-lavender-border)] mb-8">
+      <div className={clsx('rounded-2xl p-6 mb-8', guideCardSurfaceClass)}>
         <p
           className="text-[11px] font-semibold tracking-[0.16em] uppercase mb-2 text-[var(--color-lavender)]"
         >
@@ -515,7 +518,10 @@ export default function GuideContent({
                 {features.map(({ icon, title, desc }) => (
                   <div
                     key={title}
-                    className="group rounded-2xl p-5 transition-all duration-300 bg-[var(--color-card-bg)] border border-[var(--color-card-border)]"
+                    className={clsx(
+                      'group rounded-2xl p-5 transition-all duration-300',
+                      guideCardSurfaceClass,
+                    )}
                   >
                     <div className="flex items-start gap-3">
                       <span

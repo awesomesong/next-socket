@@ -59,6 +59,9 @@ blockquote{
   --color-text-secondary: #5a5270;
   --color-card-bg: #fffcfa;
   --color-card-border: #ede8f5;
+  /* 가이드 등 텍스트 카드: 라이트·다크 각각 한 블록에서만 매핑 */
+  --guide-card-surface-bg: var(--color-card-bg);
+  --guide-card-surface-border: var(--color-card-border);
   --color-accent-line: #b094e0;
   --color-shadow-soft: rgba(0, 0, 0, 0.06);
   --color-shadow-hover: rgba(180, 150, 240, 0.18);
@@ -113,6 +116,8 @@ blockquote{
   --color-text-secondary: #b8aad0;
   --color-card-bg: #f1ecfe;
   --color-card-border: rgba(200, 180, 255, 0.4);
+  --guide-card-surface-bg: var(--color-ivory-soft);
+  --guide-card-surface-border: var(--color-lavender-border);
   --color-accent-line: #c8b4ff;
   --color-shadow-soft: rgba(0, 0, 0, 0.2);
   --color-shadow-hover: rgba(200, 180, 255, 0.25);
