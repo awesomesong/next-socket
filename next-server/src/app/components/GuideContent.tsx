@@ -153,7 +153,11 @@ function StepGuideSection({
             <div className="flex gap-3">
               <div className="shrink-0 pt-[2px]">
                 <span
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white [background:var(--bg-gradient-scent)]"
+                  className={clsx(
+                    'w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold',
+                    'text-[var(--color-ivory)] [background:var(--bg-gradient-scent)]',
+                    'dark:text-[var(--color-lavender-light)] dark:[background:var(--color-lavender-pale)] dark:border dark:border-[var(--color-lavender-border)]',
+                  )}
                 >
                   {step}
                 </span>
