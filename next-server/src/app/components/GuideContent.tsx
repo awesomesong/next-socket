@@ -842,23 +842,6 @@ export default function GuideContent({
           </aside>
         </div>
       </div>
-
-      <div
-        className="mt-20 pt-8 flex items-center justify-between border-t border-[var(--color-lavender-border)]"
-      >
-        <Link
-          href="/notice"
-          className="inline-flex items-center gap-1.5 text-xs tracking-wide transition-opacity hover:opacity-60 text-[var(--color-text-secondary)]"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M9 11L5 7L9 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          목록으로 돌아가기
-        </Link>
-        <p className="text-[11px] text-[var(--color-text-secondary)]">
-          Scent Memories · Frontend Portfolio
-        </p>
-      </div>
     </div>
   );
 }
