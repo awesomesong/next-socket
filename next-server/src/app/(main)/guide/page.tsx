@@ -71,13 +71,26 @@ const steps: IntroStep[] = [
 const techStack = [
   { category: 'Framework', items: ['Next.js 15 (App Router)', 'React 19'] },
   { category: 'Language', items: ['TypeScript'] },
-  { category: 'Styling', items: ['Tailwind CSS v4', 'HeroUI'] },
-  { category: 'Backend', items: ['Prisma ORM', 'PostgreSQL'] },
+  { category: 'Styling', items: ['Tailwind CSS v3', 'HeroUI', 'next-themes'] },
+  { category: 'Backend', items: ['Prisma ORM', 'PostgreSQL', 'Express (custom server)'] },
   { category: 'Data Fetching', items: ['TanStack Query (React Query)'] },
+  { category: 'State · Forms', items: ['Zustand', 'React Hook Form'] },
   { category: 'Real-time', items: ['Socket.io'] },
-  { category: 'Auth', items: ['NextAuth.js (Google · Kakao)'] },
+  {
+    category: 'Auth',
+    items: [
+      'NextAuth.js (Google · Kakao · Credentials)',
+      'Prisma Adapter (@auth/prisma-adapter)',
+      'bcryptjs',
+    ],
+  },
   { category: 'Media', items: ['Cloudinary'] },
-  { category: '3D · Animation', items: ['Three.js'] },
+  { category: '3D · Animation', items: ['Three.js', 'Framer Motion'] },
+  {
+    category: 'Editor · UI',
+    items: ['React Quill', 'react-select', 'DOMPurify', 'react-hot-toast'],
+  },
+  { category: 'Utilities', items: ['Day.js', 'react-intersection-observer'] },
   { category: 'AI', items: ['OpenAI GPT-4', 'OpenAI Vision (이미지 분석)'] },
 ];
 
