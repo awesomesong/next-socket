@@ -821,14 +821,35 @@ export default function GuideContent({
                         <a
                           href={href}
                           className={clsx(
-                            "max-lg:touch-manipulation text-[0.72rem] leading-none tracking-[0.04em] transition-all hover:opacity-70 inline-flex items-center gap-1 py-[0.3rem] px-2.5 rounded-full whitespace-nowrap lg:text-xs lg:leading-normal lg:tracking-normal lg:gap-2 lg:rounded-none lg:py-0 lg:px-0 lg:whitespace-normal",
+                            // 공통
+                            "transition-all inline-flex items-center hover:opacity-70",
+                            // 모바일 전용 (max-lg) — 테두리 없이 배경으로만 구분
+                            "max-lg:touch-manipulation max-lg:text-[0.72rem] max-lg:leading-none max-lg:tracking-[0.04em] max-lg:gap-1 max-lg:py-[0.3rem] max-lg:px-2.5 max-lg:rounded-full max-lg:whitespace-nowrap",
+                            // 데스크톱 전용 (lg)
+                            "lg:text-xs lg:leading-normal lg:gap-2 lg:py-0 lg:px-0 lg:whitespace-normal",
+                            // 활성 상태
                             isActive
-                              ? "bg-[var(--color-lavender)] text-white font-medium border-transparent lg:bg-transparent lg:text-[var(--color-lavender)] lg:font-bold lg:dark:bg-transparent lg:border-0"
-                              : "bg-[var(--color-lavender-pale)]/60 dark:bg-[var(--color-lavender-pale)]/30 text-[var(--color-text-secondary)] border border-[var(--color-lavender-border)]/50 lg:bg-transparent lg:dark:bg-transparent lg:border-0"
+                              ? [
+                                  // 모바일: 사이드바 상태 배경(디자인 시스템) + 기본 텍스트
+                                  "max-lg:bg-[var(--color-sidebar-state-bg)] max-lg:text-[var(--color-text-primary)] max-lg:font-medium",
+                                  // 데스크톱: lavender 텍스트 + 세미볼드
+                                  "lg:text-[var(--color-lavender)] lg:font-semibold",
+                                ]
+                              : [
+                                  // 모바일: 매우 연한 배경 + 보조 텍스트
+                                  "max-lg:bg-[var(--color-sidebar-state-bg)]/40 max-lg:text-[var(--color-text-secondary)]",
+                                  // 데스크톱: 보조 텍스트
+                                  "lg:text-[var(--color-text-secondary)]",
+                                ]
                           )}
                         >
-                          <span className={clsx("w-1 h-1 rounded-full shrink-0 lg:inline", isActive ? "bg-white lg:bg-[var(--color-lavender)]" : "bg-[var(--color-lavender)] opacity-50 lg:opacity-100")} />
-                          {label}
+                          <span className={clsx(
+                            "w-1 h-1 rounded-full shrink-0 lg:inline",
+                            isActive
+                              ? "bg-[var(--color-lavender)]"
+                              : "bg-[var(--color-text-secondary)] opacity-40 lg:opacity-70"
+                          )} />
+                          <span className="max-lg:translate-y-px">{label}</span>
                         </a>
                       </li>
                     );
