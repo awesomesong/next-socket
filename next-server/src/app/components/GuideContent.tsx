@@ -146,9 +146,7 @@ function StepGuideSection({
   return (
     <section id={id} className="scroll-mt-24">
       <SectionLabel index={index} title={title} />
-      <div className="text-xs mb-8 leading-relaxed text-[var(--color-text-secondary)]">
-        {intro}
-      </div>
+      <div className="guide-section-intro">{intro}</div>
       <div className="space-y-12">
         {steps.map(({ step, title: stepTitle, desc, webImg, mobileImg }) => (
           <div key={step}>
@@ -369,7 +367,7 @@ export default function GuideContent({
       />
 
       {/* ── 히어로 ── */}
-      <section className="mb-16 md:mb-24">
+      <section className="mb-12">
         <h1 className="font-josefin text-3xl font-light tracking-tight leading-[1.15] mb-2">
           <span className="text-gradient-scent italic">Scent</span>
           <br />
@@ -724,7 +722,7 @@ export default function GuideContent({
 
             <section id="howto" className="scroll-mt-24">
               <SectionLabel index="14" title="이용 방법" />
-              <p className="text-xs mb-8 leading-relaxed text-[var(--color-text-secondary)]">
+              <p className="guide-section-intro">
                 회원가입 없이도 향수 목록과 공지사항을 자유롭게 열람할 수
                 있습니다. 아래 기능을 이용하려면 소셜 로그인이 필요합니다.
               </p>

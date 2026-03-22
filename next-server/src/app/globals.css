@@ -266,6 +266,12 @@ h6 {
   }
 }
 
+/* Guide: 섹션 인트로(StepGuideSection, 이용 방법 등) */
+.guide-section-intro {
+  @apply mb-8 text-sm leading-relaxed;
+  color: var(--color-text-secondary);
+}
+
 .text-default {
   @apply text-neutral-950 dark:text-neutral-200;
 }
