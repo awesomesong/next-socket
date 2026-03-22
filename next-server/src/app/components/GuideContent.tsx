@@ -8,7 +8,7 @@ import clsx from 'clsx';
 
 const ON_THIS_PAGE = [
   { href: '#overview', label: 'Scent Memories란?' },
-  { href: '#preview', label: '화면 미리보기' },
+  { href: '#preview', label: '반응형 레이아웃' },
   { href: '#features', label: '주요 기능' },
   { href: '#main-gallery', label: '메인 화면 & 시그니처 향수 갤러리' },
   { href: '#fragrance-guide', label: '향수 등록 가이드' },
@@ -466,18 +466,10 @@ export default function GuideContent({
             </section>
 
             <section id="preview" className="scroll-mt-24">
-              <div className="mb-5">
-                <p
-                  className="text-xs font-semibold tracking-[0.18em] uppercase mb-2 text-[var(--color-lavender)]"
-                >
-                  Responsive Design
-                </p>
-                <p
-                  className="text-xs text-[var(--color-text-secondary)]"
-                >
-                  데스크탑과 모바일 환경 모두에 최적화된 반응형 레이아웃을 제공합니다.
-                </p>
-              </div>
+              <SectionLabel index="02" title="반응형 레이아웃" />
+              <p className="guide-section-intro mb-8">
+                데스크탑과 모바일 환경 모두에 최적화된 반응형 레이아웃을 제공합니다.
+              </p>
               <ResponsivePreview
                 openZoom={openZoom}
                 desktop={{
@@ -500,7 +492,7 @@ export default function GuideContent({
             </section>
 
             <section id="features" className="scroll-mt-24">
-              <SectionLabel index="02" title="주요 기능" />
+              <SectionLabel index="03" title="주요 기능" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {features.map(({ icon, title, desc }) => (
                   <div
@@ -531,7 +523,7 @@ export default function GuideContent({
             </section>
 
             <section id="main-gallery" className="scroll-mt-24">
-              <SectionLabel index="03" title="메인 화면 & 시그니처 향수 갤러리" />
+              <SectionLabel index="04" title="메인 화면 & 시그니처 향수 갤러리" />
               <div className="space-y-4 mb-8 text-sm leading-[1.8] text-[var(--color-text-secondary)] break-keep">
                 {mainGalleryGuide.desc.map((paragraph, idx) => (
                   <p key={idx}>{paragraph}</p>
@@ -559,7 +551,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="fragrance-guide"
-              index="04"
+              index="05"
               title="향수 등록 가이드"
               intro="관리자 계정은 향수를 직접 등록할 수 있습니다. 이미지를 업로드하면 AI가 향수 정보를 자동으로 분석하여 브랜드, 설명, 노트 필드를 채워줍니다."
               steps={fragranceGuideSteps}
@@ -568,7 +560,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="fragrance-detail"
-              index="05"
+              index="06"
               title="향수 상세 페이지 & 리뷰"
               intro="향수 상세 페이지에서는 향수의 정보(이미지·브랜드·이름·설명·노트)와 함께 다른 사용자가 남긴 리뷰를 확인할 수 있습니다. 로그인한 사용자는 직접 리뷰를 남기거나 수정·삭제할 수 있습니다."
               steps={fragranceDetailSteps}
@@ -577,7 +569,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="notice-guide"
-              index="06"
+              index="07"
               title="공지사항 열람 & 댓글 가이드"
               intro='상단 "Notice" 메뉴에서 공지사항 목록을 확인할 수 있습니다. 누구나 열람할 수 있으며, 로그인한 사용자는 댓글 작성이 가능합니다.'
               steps={noticeGuideSteps}
@@ -586,7 +578,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="notice-write-guide"
-              index="07"
+              index="08"
               title="공지사항 글쓰기 가이드"
               intro="로그인한 사용자는 우측 상단의 글쓰기 버튼을 활성화하여 직접 새로운 공지사항을 작성하고 서식을 꾸밀 수 있습니다."
               steps={noticeWriteGuideSteps}
@@ -595,7 +587,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="chat-move-guide"
-              index="08"
+              index="09"
               title="채팅 화면으로 이동하기"
               intro="Scent Memories에서 다른 멤버들과 채팅할 수 있습니다. 채팅 멤버 목록이나 대화방 목록으로 바로 이동하는 두 가지 방법을 안내합니다."
               steps={chatMoveGuideSteps}
@@ -604,7 +596,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="chat-member-guide"
-              index="09"
+              index="10"
               title="채팅 멤버 기능 가이드"
               intro="채팅의 멤버 탭에서 다양한 대화 기능을 이용할 수 있습니다. 멤버를 클릭해 1:1 대화를 시작하거나, 우측 상단 메뉴(⋮)를 통해 단체 채팅방 만들기, AI 채팅, 다크/라이트 모드 변경이 가능합니다."
               steps={chatMemberGuideSteps}
@@ -613,7 +605,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="chat-conversation-guide"
-              index="10"
+              index="11"
               title="채팅 대화방 기능 가이드"
               intro="채팅의 대화방 탭에서 진행되는 모든 대화 기능을 안내합니다. 단체 채팅방 생성부터 실시간 메시지 전송, 대화방 목록 관리까지 순서대로 확인하세요."
               steps={chatConversationGuideSteps}
@@ -622,7 +614,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="chat-conversation-detail-guide"
-              index="11"
+              index="12"
               title="대화방 상세 메뉴 & 읽음 표시"
               intro={<>대화방 채팅창 내에서 이용할 수 있는 <strong>상세 메뉴(⋮)</strong>와 <strong>읽음 표시</strong> 기능을 안내합니다.</>}
               steps={chatDetailSteps}
@@ -631,7 +623,7 @@ export default function GuideContent({
 
             <StepGuideSection
               id="chat-ai-guide"
-              index="12"
+              index="13"
               title="향수 AI 어시스턴트 채팅 가이드"
               intro="향수 AI 어시스턴트와 대화할 수 있는 AI 채팅 기능을 안내합니다."
               steps={chatAiGuideSteps}
@@ -639,7 +631,7 @@ export default function GuideContent({
             />
 
             <section id="ui-theme" className="scroll-mt-24">
-              <SectionLabel index="13" title="UI 테마 (다크 / 라이트 모드)" />
+              <SectionLabel index="14" title="UI 테마 (다크 / 라이트 모드)" />
               <div className="space-y-3 text-sm leading-[1.8] text-[var(--color-text-secondary)] mb-8 break-keep">
                 <p>
                   Scent Memories는 <strong className="text-[var(--color-text-primary)]">시스템 설정을 자동으로 감지</strong>하여 첫 접속 시 테마를 적용합니다.
@@ -711,7 +703,7 @@ export default function GuideContent({
             </section>
 
             <section id="howto" className="scroll-mt-24">
-              <SectionLabel index="14" title="이용 방법" />
+              <SectionLabel index="15" title="이용 방법" />
               <p className="guide-section-intro">
                 회원가입 없이도 향수 목록과 공지사항을 자유롭게 열람할 수
                 있습니다. 아래 기능을 이용하려면 소셜 로그인이 필요합니다.
