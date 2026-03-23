@@ -464,7 +464,17 @@ export default function GuideContent({
           const pinnedId = pinnedSectionIdRef.current;
           if (pinnedId) {
             const pinnedEl = document.getElementById(pinnedId);
-            if (pinnedEl) alignGuideSectionToOffset(pinnedEl);
+            if (pinnedEl) {
+              // 불필요한 scrollIntoView 재호출은 플리커를 유발할 수 있어,
+              // anchor가 이미 오프셋 근처면 재정렬을 스킵합니다.
+              const marginPx = scrollOffsetRef.current?.offsetHeight ?? 80;
+              const anchorEl = getGuideSectionHead(pinnedEl);
+              const anchorTop = anchorEl.getBoundingClientRect().top;
+              const tolerancePx = Math.max(2, Math.round(window.innerHeight * 0.0025));
+              if (Math.abs(anchorTop - marginPx) > tolerancePx) {
+                alignGuideSectionToOffset(pinnedEl);
+              }
+            }
           }
           pickActiveRef.current();
         });
