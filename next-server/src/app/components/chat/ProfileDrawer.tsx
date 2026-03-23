@@ -43,7 +43,9 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
       <ConfirmModal
         isOpen={confirmOpen}
         onCloseModal={() => setConfirmOpen(false)}
-        name={data.name || otherUser.name}
+        name={
+          data.isAIChat ? "향수 AI" : data.name || otherUser.name
+        }
       ></ConfirmModal>
       {!isOpen ? null : (
         <div
