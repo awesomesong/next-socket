@@ -602,6 +602,8 @@ const SocketState = () => {
             if (exitedByMeRef.current.has(id)) return;
             exitedByMeRef.current.add(id);
             try { await queryClient.cancelQueries({ queryKey: conversationKey(id), exact: true }); } catch { }
+            // ✅ 다른 브라우저/탭에서 나간 경우에도 conversation list에서 즉시 제거
+            removeConversationById(queryClient, id);
             return;
           }
 
