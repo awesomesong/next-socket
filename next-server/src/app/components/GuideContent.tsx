@@ -589,7 +589,7 @@ export default function GuideContent({
           {techStack.map(({ category, items }) => (
             <div key={category} className="flex gap-3 items-start">
               <span
-                className="text-[10px] font-semibold uppercase tracking-wider w-24 shrink-0 mt-0.5 leading-snug text-[var(--color-lavender-muted)] dark:text-[var(--color-lavender-light)]"
+                className="inline-flex items-center min-h-[1.625rem] text-[10px] font-semibold uppercase tracking-wider w-24 shrink-0 leading-none text-[var(--color-lavender-muted)] dark:text-[var(--color-lavender-light)]"
               >
                 {category}
               </span>
@@ -597,7 +597,7 @@ export default function GuideContent({
                 {items.map((item) => (
                   <span
                     key={item}
-                    className="text-[11px] px-2.5 py-1 rounded-full bg-[var(--color-lavender-pale)] text-[var(--color-text-primary)] border border-transparent dark:border-[var(--color-lavender-border)] dark:border-opacity-60"
+                    className="inline-flex items-center justify-center min-h-[1.625rem] text-[11px] leading-none px-2.5 py-1 rounded-full bg-[var(--color-lavender-pale)] text-[var(--color-text-primary)] border border-transparent dark:border-[var(--color-lavender-border)] dark:border-opacity-60"
                   >
                     {item}
                   </span>
