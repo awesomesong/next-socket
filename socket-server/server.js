@@ -514,10 +514,9 @@ io.on("connection", (socket) => {
 
     // ✅ 대화방 참여자들에게 실시간 메시지 전송 (유저 룸 기반 + 큐잉)
     const participantUserIds = newMessage?.conversation?.userIds || [];
-    let hasOnlineRecipient = false;
 
     participantUserIds.forEach((userId) => {
-      // 보낸 본인 제외
+      // 보낸 본인 제외 (다른 브라우저는 아래에서 별도 처리)
       if (userId === socket.data.userId) return;
 
       // ✅ 온라인 사용자 확인 (O(1))
@@ -526,15 +525,17 @@ io.on("connection", (socket) => {
       if (isOnline) {
         // ✅ receive:conversation - 모든 대화방 리스트 업데이트용 (항상 전송, 개인 룸)
         io.to(userRoom(userId)).emit("receive:conversation", newMessage);
-        hasOnlineRecipient = true;
       } else {
         // 오프라인: 큐에 저장
         addToQueue(userId, newMessage, roomId);
       }
     });
 
-    // ✅ receive:message - 룸 브로드캐스트는 1회만 (온라인 수신자가 있을 때)
-    if (hasOnlineRecipient && newMessage?.type !== "system") {
+    // ✅ 발신자의 다른 브라우저/탭에도 conversation list 업데이트 (현재 소켓 제외)
+    io.to(userRoom(socket.data.userId)).except(socket.id).emit("receive:conversation", newMessage);
+
+    // ✅ receive:message - 같은 방에 join된 모든 다른 소켓에 전송 (다른 브라우저 포함)
+    if (newMessage?.type !== "system") {
       socket.to(roomId).emit("receive:message", newMessage);
     }
 
