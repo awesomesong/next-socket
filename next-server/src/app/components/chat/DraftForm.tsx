@@ -114,7 +114,8 @@ const DraftForm: React.FC<DraftFormProps> = ({
                             userMessage: messageText,
                             userMessageId: messageId,
                         }));
-                    } else if (socket) {
+                    }
+                    if (socket) {
                         if (!conv.existingConversation) {
                             socket.emit(SOCKET_EVENTS.CONVERSATION_NEW, { ...conv, firstMessage: newMessage });
                         }

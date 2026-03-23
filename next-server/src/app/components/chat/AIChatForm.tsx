@@ -25,6 +25,7 @@ import { useConversationLoading } from "@/src/app/hooks/useConversationLoading";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import { useFailedMessages } from "@/src/app/hooks/useFailedMessages";
 import { useAIStream } from "@/src/app/hooks/useAIStream";
+import { useSocket } from "@/src/app/context/socketContext";
 import ChatSubmitButton from "./ChatSubmitButton";
 
 // Form 타입 정의
@@ -60,11 +61,21 @@ const AIChatForm = ({
     });
   }, []);
 
+  const socket = useSocket();
+
+  // ✅ AI 응답 완료 시 다른 브라우저/탭에 전달
+  const handleAIComplete = useCallback((finalMessage: FullMessageType) => {
+    if (socket) {
+      socket.emit("send:message", { newMessage: finalMessage });
+    }
+  }, [socket]);
+
   // AI 스트림 요청 훅
   const { requestAI, abort: abortAI } = useAIStream({
     conversationId,
     aiAgentType,
     onNewContent: notifyNewContent,
+    onComplete: handleAIComplete,
   });
 
   // ✅ 언마운트 시 cleanup
@@ -223,6 +234,11 @@ const AIChatForm = ({
         });
       }
 
+      // ✅ 다른 브라우저/탭의 conversationList 동기화
+      if (socket) {
+        socket.emit("send:message", { newMessage: result.newMessage });
+      }
+
       await requestAI({
         userMessage: message,
         userMessageId, // 서버가 이 ID로 조회하여 시간 계산
@@ -242,7 +258,7 @@ const AIChatForm = ({
       setIsDisabled(false);
       setFocus("message");
     }
-  }, [conversationId, queryClient, requestAI, removeFailedMessage, addFailedMessage, isConversationLoading, setFocus, setValue, session, isSessionLoading, isDisabled, notifyNewContent]);
+  }, [conversationId, queryClient, requestAI, removeFailedMessage, addFailedMessage, isConversationLoading, setFocus, setValue, session, isSessionLoading, isDisabled, notifyNewContent, socket]);
 
   // ✅ 제출 경로 통일 (사파리 모바일 호환: 명시적 preventDefault)
   // handleSubmit은 이벤트 객체가 없어도 작동하지만, 폼 제출 시에는 명시적으로 전달

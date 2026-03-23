@@ -18,6 +18,7 @@ interface UseAIStreamOptions {
   conversationId: string;
   aiAgentType?: "assistant";
   onNewContent?: () => void;
+  onComplete?: (finalMessage: FullMessageType) => void;
 }
 
 interface RequestAIOptions {
@@ -38,7 +39,7 @@ interface RequestAIOptions {
   };
 }
 
-export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewContent }: UseAIStreamOptions) => {
+export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewContent, onComplete }: UseAIStreamOptions) => {
   const queryClient = useQueryClient();
   const abortControllerRef = useRef<AbortController | null>(null);
   const { addFailedMessage, removeFailedMessage } = useFailedMessages(conversationId);
@@ -171,9 +172,12 @@ export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewCo
                 
                 // 기존 메시지 제거 후 정렬 삽입 (createdAt 변경 반영)
                 replaceOptimisticMessage(queryClient, conversationId, aiWaitingMessageId, updatedMessage);
-                
+
                 // 성공 시 localStorage에서 제거
                 removeFailedMessage(conversationId, aiWaitingMessageId);
+
+                // ✅ 다른 브라우저/탭에 AI 응답 전달
+                onComplete?.(updatedMessage);
             } else if (currentMsg && fullResponse.trim()) {
                 // ✅ 메타데이터가 없음: 서버 저장 여부 불확실
                 // 서버에 메시지 저장을 직접 요청하여 보장
@@ -205,6 +209,8 @@ export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewCo
                             };
                             replaceOptimisticMessage(queryClient, conversationId, aiWaitingMessageId, updatedMessage);
                             removeFailedMessage(conversationId, aiWaitingMessageId);
+                            // ✅ 다른 브라우저/탭에 AI 응답 전달
+                            onComplete?.(updatedMessage);
                         }
                     } else {
                         // ✅ 저장 실패: 클라이언트 캐시에만 표시하고 실패 상태로 마킹
@@ -288,7 +294,7 @@ export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewCo
                 abortControllerRef.current = null;
             }
         }
-    },[queryClient, conversationId, aiAgentType, onNewContent, addFailedMessage, removeFailedMessage]);
+    },[queryClient, conversationId, aiAgentType, onNewContent, onComplete, addFailedMessage, removeFailedMessage]);
 
     const abort = useCallback(() => {
         abortControllerRef.current?.abort();
