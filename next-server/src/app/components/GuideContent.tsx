@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import type { ReactNode, WheelEvent } from 'react';
+import type { ReactNode } from 'react';
 import Image from 'next/image';
 import ImageModal from '@/src/app/components/ImageModal';
 import clsx from 'clsx';
@@ -34,13 +34,16 @@ function alignGuideSectionToOffset(
   scrollOffsetMeasuringEl: HTMLDivElement | null,
 ) {
   const marginPx = scrollOffsetMeasuringEl?.offsetHeight ?? 80;
+
+  // 이미지 로딩/레이아웃 변화 중에는 동일 요소가 계속 재정렬될 수 있는데,
+  // 이때 불필요한 `scrollIntoView` 호출이 스크롤 “왔다갔다”를 유발할 수 있어요.
+  // 현재 위치가 목표 오프셋 근처면 스크롤을 생략합니다.
+  const tolerancePx = 10;
+  const beforeTop = el.getBoundingClientRect().top;
+  if (Math.abs(beforeTop - marginPx) <= tolerancePx) return;
+
+  // `scroll-margin-top`을 사용해 수동 보정 없이 브라우저에 오프셋 적용을 맡깁니다.
   el.scrollIntoView({ block: 'start' });
-  const afterTop = el.getBoundingClientRect().top;
-  if (afterTop < marginPx - 2) {
-    const correction = marginPx - afterTop;
-    document.body.scrollTop -= correction;
-    document.documentElement.scrollTop -= correction;
-  }
 }
 
 const guideCardSurfaceClass =
@@ -48,7 +51,11 @@ const guideCardSurfaceClass =
 
 const SectionLabel = memo(function SectionLabel({ index, title }: { index: string; title: string }) {
   return (
-    <div data-guide-section-head className="mb-8">
+    <div
+      data-guide-section-head
+      className="mb-8"
+      style={{ scrollMarginTop: 'var(--guide-scroll-offset)' }}
+    >
       <p
         className="text-xs font-semibold tracking-[0.18em] uppercase mb-3 text-[var(--color-lavender)]"
       >
@@ -122,6 +129,7 @@ const ResponsivePreview = memo(function ResponsivePreview({
                   width={img.width}
                   height={img.height}
                   sizes={img.sizes}
+                  unoptimized
                   className="notice-preview-img"
                 />
               </button>
@@ -149,6 +157,7 @@ const ResponsivePreview = memo(function ResponsivePreview({
               width={desktop.width}
               height={desktop.height}
               sizes={desktop.sizes}
+              unoptimized
               className="notice-preview-img"
             />
           </button>
@@ -170,6 +179,7 @@ const ResponsivePreview = memo(function ResponsivePreview({
               width={mobile.width}
               height={mobile.height}
               sizes={mobile.sizes}
+              unoptimized
               className="notice-preview-img"
             />
           </button>
@@ -308,9 +318,8 @@ export default function GuideContent({
   const guideMainColumnRef = useRef<HTMLDivElement>(null);
   /** --guide-scroll-offset CSS 변수를 실제 px 값으로 읽기 위한 측정용 요소 */
   const scrollOffsetRef = useRef<HTMLDivElement>(null);
-  /** 목차 클릭 직후 레이아웃(이미지 로드 등) 변화 시 동일 섹션으로 재스크롤 */
-  const pendingScrollSectionIdRef = useRef<string | null>(null);
-  const pendingScrollClearTimeoutRef = useRef<number | null>(null);
+  /** 목차 클릭으로 인한 “재정렬”이 이미지 로딩까지 이어질 때, 최신 클릭만 유효하게 */
+  const alignRequestTokenRef = useRef(0);
 
   const closeZoom = useCallback(() => setZoomedImage(null), []);
   const openZoom = useCallback(
@@ -318,31 +327,47 @@ export default function GuideContent({
     []);
 
   const handleOnThisPageClick = useCallback((sectionId: string) => {
-    const el = document.getElementById(sectionId);
-    if (!el) return;
+    const sectionEl = document.getElementById(sectionId);
+    if (!sectionEl) return;
+    const headEl = getGuideSectionHead(sectionEl);
     window.history.replaceState(null, '', `#${sectionId}`);
-    alignGuideSectionToOffset(el, scrollOffsetRef.current);
+    alignGuideSectionToOffset(headEl, scrollOffsetRef.current);
 
-    pendingScrollSectionIdRef.current = sectionId;
-    if (pendingScrollClearTimeoutRef.current !== null) {
-      window.clearTimeout(pendingScrollClearTimeoutRef.current);
+    const token = ++alignRequestTokenRef.current;
+
+    // 이미지 로딩이 끝난 “정확한 높이/레이아웃” 기준으로 한 번 더 맞춥니다.
+    // setTimeout 없이, 섹션 내부 <img>의 load/error 완료 시점에 재정렬합니다.
+    const imgs = Array.from(sectionEl.querySelectorAll<HTMLImageElement>('img'));
+    if (imgs.length === 0) {
+      requestAnimationFrame(() => {
+        if (alignRequestTokenRef.current !== token) return;
+        alignGuideSectionToOffset(headEl, scrollOffsetRef.current);
+        pickActiveRef.current();
+      });
+      return;
     }
-    pendingScrollClearTimeoutRef.current = window.setTimeout(() => {
-      pendingScrollSectionIdRef.current = null;
-      pendingScrollClearTimeoutRef.current = null;
-    }, 3500);
 
-    const reapplyIfStillPending = () => {
-      if (pendingScrollSectionIdRef.current !== sectionId) return;
-      const t = document.getElementById(sectionId);
-      if (t) alignGuideSectionToOffset(t, scrollOffsetRef.current);
+    let pending = imgs.length;
+    const onDone = () => {
+      pending -= 1;
+      if (pending > 0) return;
+      requestAnimationFrame(() => {
+        if (alignRequestTokenRef.current !== token) return;
+        alignGuideSectionToOffset(headEl, scrollOffsetRef.current);
+        pickActiveRef.current();
+      });
     };
-    requestAnimationFrame(() => {
-      reapplyIfStillPending();
-      requestAnimationFrame(reapplyIfStillPending);
-    });
 
-    requestAnimationFrame(() => pickActiveRef.current());
+    imgs.forEach((img) => {
+      if (img.complete) {
+        // decode는 브라우저가 이미지를 디코딩했는지 확인합니다.
+        img.decode().then(onDone).catch(onDone);
+        return;
+      }
+
+      img.addEventListener('load', onDone, { once: true });
+      img.addEventListener('error', onDone, { once: true });
+    });
   }, []);
 
   useEffect(() => {
@@ -417,22 +442,18 @@ export default function GuideContent({
       });
     };
 
-    let roDebounce = 0;
+    let roRaf = 0;
     const mainCol = guideMainColumnRef.current;
     const ro =
       mainCol &&
       new ResizeObserver(() => {
-        window.clearTimeout(roDebounce);
-        roDebounce = window.setTimeout(() => {
-          const pendingId = pendingScrollSectionIdRef.current;
-          if (pendingId) {
-            const target = document.getElementById(pendingId);
-            if (target) {
-              alignGuideSectionToOffset(target, scrollOffsetRef.current);
-            }
-          }
+        if (roRaf) return;
+        roRaf = window.requestAnimationFrame(() => {
+          roRaf = 0;
+          // 레이아웃 변화는 `activeId` 계산에만 반영하고,
+          // 재정렬은 “이미지 로드 완료 후” 로직에서만 수행합니다.
           pickActiveRef.current();
-        }, 120);
+        });
       });
     if (mainCol && ro) ro.observe(mainCol);
 
@@ -455,9 +476,7 @@ export default function GuideContent({
       const h = window.location.hash.slice(1);
       if (!h) return;
       const el = document.getElementById(h);
-      if (el) {
-        alignGuideSectionToOffset(el, scrollOffsetRef.current);
-      }
+      if (el) alignGuideSectionToOffset(getGuideSectionHead(el), scrollOffsetRef.current);
       pickActive();
     };
     requestAnimationFrame(syncHashAfterLayout);
@@ -492,11 +511,6 @@ export default function GuideContent({
       window.removeEventListener('resize', schedulePick);
       window.removeEventListener('hashchange', schedulePick);
       window.removeEventListener('load', onWindowLoad);
-      window.clearTimeout(roDebounce);
-      if (pendingScrollClearTimeoutRef.current !== null) {
-        window.clearTimeout(pendingScrollClearTimeoutRef.current);
-        pendingScrollClearTimeoutRef.current = null;
-      }
       if (ro) ro.disconnect();
     };
   }, []);
@@ -515,7 +529,7 @@ export default function GuideContent({
 
   const isNarrowScreen = useCallback(() => window.matchMedia('(max-width: 1023px)').matches, []);
 
-  const handleNavWheel = useCallback((event: WheelEvent<HTMLElement>) => {
+  const handleNavWheel = useCallback((event: globalThis.WheelEvent) => {
     const nav = navRef.current;
     if (!nav || !isNarrowScreen() || nav.scrollWidth <= nav.clientWidth) return;
     const horizontalDelta = event.deltaX + event.deltaY;
@@ -524,6 +538,18 @@ export default function GuideContent({
     event.preventDefault();
     event.stopPropagation();
   }, [isNarrowScreen]);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const onWheel = (event: globalThis.WheelEvent) => {
+      handleNavWheel(event);
+    };
+    nav.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      nav.removeEventListener('wheel', onWheel);
+    };
+  }, [handleNavWheel]);
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 py-8 md:px-8 md:py-12">
@@ -737,6 +763,7 @@ export default function GuideContent({
                                 width={300}
                                 height={580}
                                 sizes="(min-width: 640px) 220px, 180px"
+                                unoptimized
                                 className="notice-preview-img"
                               />
                             </button>
@@ -894,6 +921,7 @@ export default function GuideContent({
                         width={900}
                         height={600}
                         sizes="(min-width: 640px) 50vw, 100vw"
+                        unoptimized
                         className="notice-preview-img"
                       />
                     </button>
@@ -917,6 +945,7 @@ export default function GuideContent({
                         width={900}
                         height={600}
                         sizes="(min-width: 640px) 50vw, 100vw"
+                        unoptimized
                         className="notice-preview-img"
                       />
                     </button>
@@ -959,7 +988,6 @@ export default function GuideContent({
               </p>
               <nav
                 ref={navRef}
-                onWheel={handleNavWheel}
                 className="guide-on-this-page-nav overflow-x-auto overflow-y-hidden max-lg:touch-pan-x max-lg:overscroll-x-contain max-lg:overscroll-y-none lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pb-0 max-lg:pb-0 max-lg:select-none"
               >
                 <ol className="flex gap-1 min-w-max lg:flex-col lg:min-w-0 lg:gap-2.5">
