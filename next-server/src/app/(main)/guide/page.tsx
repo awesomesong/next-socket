@@ -309,7 +309,7 @@ const chatConversationGuideSteps: FragranceGuideStep[] = [
   {
     step: '01',
     title: '대화방 탭 진입',
-    desc: '채팅 메뉴에서 대화방 탭을 선택하면 내가 참여한 대화 목록이 표시됩니다. 더보기(⋮) 버튼은 데스크탑과 모바일 모두 화면 상단의 "대화방" 제목 오른쪽에 있습니다. 참여 중인 대화방이 없으면 "대화방이 없습니다." 안내가 표시되며, 메인 화면 중앙의 "향수 AI 어시스턴트와 채팅" 버튼을 클릭하면 AI 채팅방에 바로 이동할 수 있습니다.',
+    desc: '채팅 메뉴에서 대화방 탭을 선택하면 참여 중인 대화 목록이 표시됩니다. 더보기(⋮) 버튼은 데스크탑과 모바일 모두 화면 상단의 "대화방" 제목 오른쪽에 있습니다. 참여 중인 대화방이 없으면 "대화방이 없습니다." 안내가 표시되며, 메인 화면 중앙의 "향수 AI 어시스턴트와 채팅" 버튼을 클릭하면 AI 채팅방에 바로 이동할 수 있습니다.',
     webImg: { src: '/image/notice/chat/conversation/chat_conversation_web01.png', alt: '대화방 탭 진입 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/conversation/chat_conversation_mobile01.png', alt: '대화방 탭 진입 — 모바일' },
   },
