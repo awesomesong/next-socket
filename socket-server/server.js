@@ -567,6 +567,9 @@ io.on("connection", (socket) => {
       socket.to(conversationId).emit("read:state", readStateData);
       console.log(`[fallback] read:state broadcast to room=${conversationId} lastMessageId=${lastMessageId} readerId=${readerId || socket.data.userId} seenUsers=${seenUsers?.length || 0}`);
     }
+
+    // ✅ 읽은 사람의 다른 브라우저/탭에도 읽음 상태 전파 (unread count 동기화)
+    io.to(userRoom(socket.data.userId)).except(socket.id).emit("read:state", readStateData);
   });
 
   // 공지사항 신규 생성 브로드캐스트 (보낸 본인 제외 전체에 전송)

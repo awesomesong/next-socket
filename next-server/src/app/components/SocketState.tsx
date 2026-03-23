@@ -944,6 +944,14 @@ const SocketState = () => {
     }
   }, [queryClient]);
 
+  // ✅ 다른 브라우저/탭에서 읽음 처리 시 이 브라우저의 unread count도 초기화
+  const handleReadStateSelf = useCallback((payload: { conversationId: string; readerId: string }) => {
+    const myUserId = userIdRef.current;
+    if (!myUserId || !payload?.conversationId) return;
+    if (String(payload.readerId) !== String(myUserId)) return;
+    applyLocalRead(queryClient, payload.conversationId);
+  }, [queryClient]);
+
   useEffect(() => {
     if (status === "authenticated" && session?.user?.id && session.user.email) {
       userIdRef.current = String(session.user.id);
@@ -975,6 +983,7 @@ const SocketState = () => {
     handleFragranceReviewNew,
     handleFragranceReviewUpdated,
     handleFragranceReviewDeleted,
+    handleReadStateSelf,
   });
 
   // ✅ 핸들러 ref를 최신으로 유지
@@ -994,6 +1003,7 @@ const SocketState = () => {
       handleFragranceReviewNew,
       handleFragranceReviewUpdated,
       handleFragranceReviewDeleted,
+      handleReadStateSelf,
     };
   }, [
     handleSocketConnect,
@@ -1010,6 +1020,7 @@ const SocketState = () => {
     handleFragranceReviewNew,
     handleFragranceReviewUpdated,
     handleFragranceReviewDeleted,
+    handleReadStateSelf,
   ]);
 
   // 소켓 이벤트 처리
@@ -1049,6 +1060,7 @@ const SocketState = () => {
       [SOCKET_EVENTS.FRAGRANCE_REVIEW_NEW, handlers.handleFragranceReviewNew as (payload: unknown) => void],
       [SOCKET_EVENTS.FRAGRANCE_REVIEW_UPDATED, handlers.handleFragranceReviewUpdated as (payload: unknown) => void],
       [SOCKET_EVENTS.FRAGRANCE_REVIEW_DELETED, handlers.handleFragranceReviewDeleted as (payload: unknown) => void],
+      [SOCKET_EVENTS.READ_STATE, handlers.handleReadStateSelf as (payload: unknown) => void],
     ];
 
     // ✅ cleanup에서 사용할 handlers 참조 저장
