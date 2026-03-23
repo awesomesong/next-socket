@@ -161,10 +161,12 @@ export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewCo
             if (streamResult?.createdAt && currentMsg) {
                 // ✅ 서버에서 메시지가 저장되었고 메타데이터가 있음
                 // 서버 createdAt으로 메시지 재생성하여 정렬 보장
+                const serverCreatedAtMs = new Date(streamResult.createdAt).getTime();
                 const updatedMessage: FullMessageType = {
                     ...currentMsg,
                     body: fullResponse,
                     createdAt: new Date(streamResult.createdAt),
+                    serverCreatedAtMs, // ✅ 서버 실제 타임스탬프 반영 (버퍼 필터링 정확도 보장)
                     isTyping: false,
                     isWaiting: false,
                     isError: false,
@@ -199,10 +201,12 @@ export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewCo
                         const savedMessage = await saveResponse.json();
                         // ✅ 서버에서 저장된 메시지로 업데이트
                         if (savedMessage?.id) {
+                            const savedCreatedAtMs = new Date(savedMessage.createdAt).getTime();
                             const updatedMessage: FullMessageType = {
                                 ...currentMsg,
                                 body: fullResponse,
                                 createdAt: new Date(savedMessage.createdAt),
+                                serverCreatedAtMs: savedCreatedAtMs, // ✅ 서버 실제 타임스탬프 반영
                                 isTyping: false,
                                 isWaiting: false,
                                 isError: false,
