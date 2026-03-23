@@ -835,7 +835,7 @@ export default function GuideContent({
                 onMouseMove={handleNavMouseMove}
                 onMouseUp={endNavMouseDrag}
                 onMouseLeave={endNavMouseDrag}
-                className="guide-on-this-page-nav overflow-x-auto overflow-y-hidden max-lg:touch-pan-x max-lg:overscroll-x-contain max-lg:overscroll-y-none lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pb-0 max-lg:pb-0 lg:scrollbar-thin lg:scrollbar-track-transparent lg:scrollbar-thumb-[var(--color-lavender-border)] max-lg:select-none"
+                className="guide-on-this-page-nav overflow-x-auto overflow-y-hidden max-lg:touch-pan-x max-lg:overscroll-x-contain max-lg:overscroll-y-none lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pb-0 max-lg:pb-0 max-lg:select-none"
               >
                 <ol className="flex gap-1 min-w-max lg:flex-col lg:min-w-0 lg:gap-2.5">
                   {ON_THIS_PAGE.map(({ href, label }) => {
