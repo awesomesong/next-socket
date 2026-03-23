@@ -31,7 +31,6 @@ function getGuideSectionHead(sectionEl: HTMLElement): HTMLElement {
 /** 목차/해시 이동 시 sticky 헤더(--guide-scroll-offset)에 맞춤. 이미지 로드 후에도 RO·rAF에서 재호출 가능 */
 function alignGuideSectionToOffset(
   el: HTMLElement,
-  _scrollOffsetMeasuringEl: HTMLDivElement | null,
 ) {
   // 계산식 기반 scrollTo는 브라우저/해상도마다 오차가 생겨,
   // 섹션 타이틀 anchor를 직접 scrollIntoView 하는 방식으로 정렬합니다.
@@ -377,7 +376,7 @@ export default function GuideContent({
     window.history.replaceState(null, '', `#${sectionId}`);
     // iOS에서 div(data-guide-section-head) 기반 scrollMarginTop 적용이 흔들릴 수 있어,
     // 섹션 컨테이너(section)에 적용된 scroll-mt(--guide-scroll-offset) 기준으로 이동합니다.
-    alignGuideSectionToOffset(sectionEl, scrollOffsetRef.current);
+    alignGuideSectionToOffset(sectionEl);
     pickActiveRef.current();
   }, []);
 
@@ -465,7 +464,7 @@ export default function GuideContent({
           const pinnedId = pinnedSectionIdRef.current;
           if (pinnedId) {
             const pinnedEl = document.getElementById(pinnedId);
-            if (pinnedEl) alignGuideSectionToOffset(pinnedEl, scrollOffsetRef.current);
+            if (pinnedEl) alignGuideSectionToOffset(pinnedEl);
           }
           pickActiveRef.current();
         });
@@ -492,7 +491,7 @@ export default function GuideContent({
       const h = window.location.hash.slice(1);
       if (!h) return;
       const el = document.getElementById(h);
-      if (el) alignGuideSectionToOffset(el, scrollOffsetRef.current);
+      if (el) alignGuideSectionToOffset(el);
       pickActive();
     };
     requestAnimationFrame(syncHashAfterLayout);
