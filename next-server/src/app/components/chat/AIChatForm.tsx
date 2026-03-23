@@ -240,6 +240,7 @@ const AIChatForm = ({
       toast.error(formatErrorMessage(err, "사용자 메시지 저장에 실패했습니다."));
     } finally {
       setIsDisabled(false);
+      setFocus("message");
     }
   }, [conversationId, queryClient, requestAI, removeFailedMessage, addFailedMessage, isConversationLoading, setFocus, setValue, session, isSessionLoading, isDisabled, notifyNewContent]);
 
