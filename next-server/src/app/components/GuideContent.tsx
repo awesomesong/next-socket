@@ -303,8 +303,17 @@ export default function GuideContent({
     const el = document.getElementById(sectionId);
     if (!el) return;
     window.history.replaceState(null, '', `#${sectionId}`);
-    // scroll-margin-top CSS 속성을 자동으로 적용해 헤더 아래에 정확히 위치 (instant)
-    el.scrollIntoView({ behavior: 'auto', block: 'start' });
+    const marginPx = scrollOffsetRef.current?.offsetHeight ?? 80;
+    // scrollIntoView는 모든 플랫폼(iOS Safari/Chrome 포함)에서 가장 안정적
+    el.scrollIntoView({ block: 'start' });
+    // Windows Chrome은 scroll-margin-top을 무시하는 경우가 있어 후처리로 보정
+    // scrollIntoView가 동기적으로 완료되므로 즉시 실제 위치 확인 가능
+    const afterTop = el.getBoundingClientRect().top;
+    if (afterTop < marginPx - 2) {
+      const correction = marginPx - afterTop;
+      document.body.scrollTop -= correction;
+      document.documentElement.scrollTop -= correction;
+    }
     requestAnimationFrame(() => pickActiveRef.current());
   }, []);
 
@@ -409,8 +418,16 @@ export default function GuideContent({
       const h = window.location.hash.slice(1);
       if (!h) return;
       const el = document.getElementById(h);
-      // scroll-margin-top CSS 속성을 자동으로 적용하는 scrollIntoView 사용 (instant)
-      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      if (el) {
+        const marginPx = scrollOffsetRef.current?.offsetHeight ?? 80;
+        el.scrollIntoView({ block: 'start' });
+        const afterTop = el.getBoundingClientRect().top;
+        if (afterTop < marginPx - 2) {
+          const correction = marginPx - afterTop;
+          document.body.scrollTop -= correction;
+          document.documentElement.scrollTop -= correction;
+        }
+      }
       pickActive();
     };
     requestAnimationFrame(syncHashAfterLayout);
