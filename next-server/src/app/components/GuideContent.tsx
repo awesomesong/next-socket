@@ -28,6 +28,21 @@ function getGuideSectionHead(sectionEl: HTMLElement): HTMLElement {
   return sectionEl.querySelector<HTMLElement>('[data-guide-section-head]') ?? sectionEl;
 }
 
+/** 목차/해시 이동 시 sticky 헤더(--guide-scroll-offset)에 맞춤. 이미지 로드 후에도 RO·rAF에서 재호출 가능 */
+function alignGuideSectionToOffset(
+  el: HTMLElement,
+  scrollOffsetMeasuringEl: HTMLDivElement | null,
+) {
+  const marginPx = scrollOffsetMeasuringEl?.offsetHeight ?? 80;
+  el.scrollIntoView({ block: 'start' });
+  const afterTop = el.getBoundingClientRect().top;
+  if (afterTop < marginPx - 2) {
+    const correction = marginPx - afterTop;
+    document.body.scrollTop -= correction;
+    document.documentElement.scrollTop -= correction;
+  }
+}
+
 const guideCardSurfaceClass =
   'bg-[var(--guide-card-surface-bg)] border border-[var(--guide-card-surface-border)]';
 
@@ -293,6 +308,9 @@ export default function GuideContent({
   const guideMainColumnRef = useRef<HTMLDivElement>(null);
   /** --guide-scroll-offset CSS 변수를 실제 px 값으로 읽기 위한 측정용 요소 */
   const scrollOffsetRef = useRef<HTMLDivElement>(null);
+  /** 목차 클릭 직후 레이아웃(이미지 로드 등) 변화 시 동일 섹션으로 재스크롤 */
+  const pendingScrollSectionIdRef = useRef<string | null>(null);
+  const pendingScrollClearTimeoutRef = useRef<number | null>(null);
 
   const closeZoom = useCallback(() => setZoomedImage(null), []);
   const openZoom = useCallback(
@@ -303,17 +321,27 @@ export default function GuideContent({
     const el = document.getElementById(sectionId);
     if (!el) return;
     window.history.replaceState(null, '', `#${sectionId}`);
-    const marginPx = scrollOffsetRef.current?.offsetHeight ?? 80;
-    // scrollIntoView는 모든 플랫폼(iOS Safari/Chrome 포함)에서 가장 안정적
-    el.scrollIntoView({ block: 'start' });
-    // Windows Chrome은 scroll-margin-top을 무시하는 경우가 있어 후처리로 보정
-    // scrollIntoView가 동기적으로 완료되므로 즉시 실제 위치 확인 가능
-    const afterTop = el.getBoundingClientRect().top;
-    if (afterTop < marginPx - 2) {
-      const correction = marginPx - afterTop;
-      document.body.scrollTop -= correction;
-      document.documentElement.scrollTop -= correction;
+    alignGuideSectionToOffset(el, scrollOffsetRef.current);
+
+    pendingScrollSectionIdRef.current = sectionId;
+    if (pendingScrollClearTimeoutRef.current !== null) {
+      window.clearTimeout(pendingScrollClearTimeoutRef.current);
     }
+    pendingScrollClearTimeoutRef.current = window.setTimeout(() => {
+      pendingScrollSectionIdRef.current = null;
+      pendingScrollClearTimeoutRef.current = null;
+    }, 3500);
+
+    const reapplyIfStillPending = () => {
+      if (pendingScrollSectionIdRef.current !== sectionId) return;
+      const t = document.getElementById(sectionId);
+      if (t) alignGuideSectionToOffset(t, scrollOffsetRef.current);
+    };
+    requestAnimationFrame(() => {
+      reapplyIfStillPending();
+      requestAnimationFrame(reapplyIfStillPending);
+    });
+
     requestAnimationFrame(() => pickActiveRef.current());
   }, []);
 
@@ -395,7 +423,16 @@ export default function GuideContent({
       mainCol &&
       new ResizeObserver(() => {
         window.clearTimeout(roDebounce);
-        roDebounce = window.setTimeout(() => pickActiveRef.current(), 120);
+        roDebounce = window.setTimeout(() => {
+          const pendingId = pendingScrollSectionIdRef.current;
+          if (pendingId) {
+            const target = document.getElementById(pendingId);
+            if (target) {
+              alignGuideSectionToOffset(target, scrollOffsetRef.current);
+            }
+          }
+          pickActiveRef.current();
+        }, 120);
       });
     if (mainCol && ro) ro.observe(mainCol);
 
@@ -419,14 +456,7 @@ export default function GuideContent({
       if (!h) return;
       const el = document.getElementById(h);
       if (el) {
-        const marginPx = scrollOffsetRef.current?.offsetHeight ?? 80;
-        el.scrollIntoView({ block: 'start' });
-        const afterTop = el.getBoundingClientRect().top;
-        if (afterTop < marginPx - 2) {
-          const correction = marginPx - afterTop;
-          document.body.scrollTop -= correction;
-          document.documentElement.scrollTop -= correction;
-        }
+        alignGuideSectionToOffset(el, scrollOffsetRef.current);
       }
       pickActive();
     };
@@ -463,6 +493,10 @@ export default function GuideContent({
       window.removeEventListener('hashchange', schedulePick);
       window.removeEventListener('load', onWindowLoad);
       window.clearTimeout(roDebounce);
+      if (pendingScrollClearTimeoutRef.current !== null) {
+        window.clearTimeout(pendingScrollClearTimeoutRef.current);
+        pendingScrollClearTimeoutRef.current = null;
+      }
       if (ro) ro.disconnect();
     };
   }, []);
