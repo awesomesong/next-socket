@@ -403,6 +403,14 @@ async function handleStreamingResponse(
           });
         }
 
+        // ✅ AI 메시지 저장 후 conversation.lastMessageAt 업데이트 (대화방 목록 반영용)
+        // 재생성 시: aiCreatedAt이 기존과 동일(U+1ms)할 수 있으므로 lte 사용
+        const isRegenerate = Boolean(existingAIMessageId);
+        await prisma.conversation.updateMany({
+          where: { id: conversationId, lastMessageAt: isRegenerate ? { lte: aiCreatedAt } : { lt: aiCreatedAt } },
+          data: { lastMessageAt: aiCreatedAt, lastMessageId: savedMessageId },
+        });
+
         // ✅ 스트림 마지막에 메타데이터 전송 (클라이언트가 createdAt 업데이트하도록)
         // ✅ 모바일 사파리: 메타데이터 전송 보장 (DONE 전에 전송)
         const metadata = JSON.stringify({
