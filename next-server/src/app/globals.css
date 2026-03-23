@@ -40,6 +40,8 @@ blockquote{
   --bg-page-reverse: #1a1625;
   /* 히어로 영역 = 100dvh - 이 값 (헤더 높이 변경 시 여기만 수정) */
   --header-height: 56px;
+  /* 가이드 페이지 앵커: 헤더(+모바일 sticky On this page) 아래로 제목이 오도록 */
+  --guide-scroll-offset: calc(var(--header-height) + 1.5rem);
   --header-bg: rgba(255, 252, 250, 0.88);
   --header-border: rgba(45, 32, 64, 0.08);
   --scent-gradient-start: #a67d5c;
@@ -94,6 +96,13 @@ blockquote{
   --points-ball-3: #8a7a9e;
   --points-ball-4: #a898b8;
   --points-ball-5: #d4c8e4;
+}
+
+/* 가이드: lg 미만에서 sticky On this page 바(헤더 아래) 높이만큼 추가 여백 */
+@media (max-width: 1023px) {
+  :root {
+    --guide-scroll-offset: calc(var(--header-height) + 4.75rem);
+  }
 }
 
 .dark {

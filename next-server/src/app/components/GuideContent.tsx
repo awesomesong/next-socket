@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import type { MouseEvent, ReactNode, WheelEvent } from 'react';
+import type { ReactNode, WheelEvent } from 'react';
 import Image from 'next/image';
 import ImageModal from '@/src/app/components/ImageModal';
 import clsx from 'clsx';
@@ -24,12 +24,16 @@ const ON_THIS_PAGE = [
   { href: '#ui-theme', label: 'UI 테마 (다크 / 라이트 모드)' },
 ] as const;
 
+function getGuideSectionHead(sectionEl: HTMLElement): HTMLElement {
+  return sectionEl.querySelector<HTMLElement>('[data-guide-section-head]') ?? sectionEl;
+}
+
 const guideCardSurfaceClass =
   'bg-[var(--guide-card-surface-bg)] border border-[var(--guide-card-surface-border)]';
 
 const SectionLabel = memo(function SectionLabel({ index, title }: { index: string; title: string }) {
   return (
-    <div className="mb-8">
+    <div data-guide-section-head className="mb-8">
       <p
         className="text-xs font-semibold tracking-[0.18em] uppercase mb-3 text-[var(--color-lavender)]"
       >
@@ -185,7 +189,7 @@ function StepGuideSection({
   openZoom: (src: string, alt: string) => () => void;
 }) {
   return (
-    <section id={id} className="scroll-mt-24">
+    <section id={id} className="scroll-mt-[var(--guide-scroll-offset)]">
       <SectionLabel index={index} title={title} />
       <div className="guide-section-intro">{intro}</div>
       <div className="space-y-12">
@@ -285,14 +289,24 @@ export default function GuideContent({
   const [activeId, setActiveId] = useState<string>('');
   const onThisPageSentinelRef = useRef<HTMLDivElement | null>(null);
   const navRef = useRef<HTMLElement | null>(null);
-  const isDraggingNavRef = useRef(false);
-  const navDragStartXRef = useRef(0);
-  const navDragStartScrollLeftRef = useRef(0);
+  const pickActiveRef = useRef<() => void>(() => {});
+  const guideMainColumnRef = useRef<HTMLDivElement>(null);
+  /** --guide-scroll-offset CSS 변수를 실제 px 값으로 읽기 위한 측정용 요소 */
+  const scrollOffsetRef = useRef<HTMLDivElement>(null);
 
   const closeZoom = useCallback(() => setZoomedImage(null), []);
   const openZoom = useCallback(
     (src: string, alt: string) => () => setZoomedImage({ src, alt }),
     []);
+
+  const handleOnThisPageClick = useCallback((sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+    window.history.replaceState(null, '', `#${sectionId}`);
+    // scroll-margin-top CSS 속성을 자동으로 적용해 헤더 아래에 정확히 위치 (instant)
+    el.scrollIntoView({ behavior: 'auto', block: 'start' });
+    requestAnimationFrame(() => pickActiveRef.current());
+  }, []);
 
   useEffect(() => {
     const sentinel = onThisPageSentinelRef.current;
@@ -339,32 +353,109 @@ export default function GuideContent({
 
   useEffect(() => {
     const sectionIds = ON_THIS_PAGE.map((item) => item.href.replace('#', ''));
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id);
-          }
-        });
-      },
-      { rootMargin: '-10% 0px -50% 0px' }
-    );
 
-    sectionIds.forEach((id) => {
-      const element = document.getElementById(id);
-      if (element) {
-        observer.observe(element);
+    /** 기준선은 섹션 제목(head) 기준 — 긴 섹션에서도 목차 하이라이트가 제목 전환에 맞춤 */
+    const pickActive = () => {
+      // measurement div의 offsetHeight로 --guide-scroll-offset CSS 변수를 정확한 px 값으로 읽음
+      const marginPx = scrollOffsetRef.current?.offsetHeight ?? 80;
+      let next = '';
+      for (const id of sectionIds) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const top = getGuideSectionHead(el).getBoundingClientRect().top;
+        if (top > marginPx + 2) break;
+        next = id;
       }
-    });
+      setActiveId(next);
+    };
 
-    return () => observer.disconnect();
+    pickActiveRef.current = pickActive;
+
+    let raf = 0;
+    const schedulePick = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        pickActive();
+      });
+    };
+
+    let roDebounce = 0;
+    const mainCol = guideMainColumnRef.current;
+    const ro =
+      mainCol &&
+      new ResizeObserver(() => {
+        window.clearTimeout(roDebounce);
+        roDebounce = window.setTimeout(() => pickActiveRef.current(), 120);
+      });
+    if (mainCol && ro) ro.observe(mainCol);
+
+    const sectionObservers: IntersectionObserver[] = [];
+    for (const id of sectionIds) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      const io = new IntersectionObserver(schedulePick, {
+        root: null,
+        rootMargin: '0px',
+        threshold: [0, 0.05, 0.15, 0.35, 0.55, 0.75, 1],
+      });
+      io.observe(el);
+      sectionObservers.push(io);
+    }
+
+    pickActive();
+
+    const syncHashAfterLayout = () => {
+      const h = window.location.hash.slice(1);
+      if (!h) return;
+      const el = document.getElementById(h);
+      // scroll-margin-top CSS 속성을 자동으로 적용하는 scrollIntoView 사용 (instant)
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      pickActive();
+    };
+    requestAnimationFrame(syncHashAfterLayout);
+
+    const onWindowLoad = () => {
+      syncHashAfterLayout();
+    };
+    if (document.readyState !== 'complete') {
+      window.addEventListener('load', onWindowLoad, { once: true });
+    }
+
+    const scrollEl = document.scrollingElement;
+    window.addEventListener('scroll', schedulePick, { passive: true });
+    if (scrollEl) {
+      scrollEl.addEventListener('scroll', schedulePick, { passive: true });
+    }
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener('scroll', schedulePick, { passive: true });
+      vv.addEventListener('resize', schedulePick);
+    }
+    window.addEventListener('resize', schedulePick);
+    window.addEventListener('hashchange', schedulePick);
+    return () => {
+      sectionObservers.forEach((o) => o.disconnect());
+      window.removeEventListener('scroll', schedulePick);
+      if (scrollEl) scrollEl.removeEventListener('scroll', schedulePick);
+      if (vv) {
+        vv.removeEventListener('scroll', schedulePick);
+        vv.removeEventListener('resize', schedulePick);
+      }
+      window.removeEventListener('resize', schedulePick);
+      window.removeEventListener('hashchange', schedulePick);
+      window.removeEventListener('load', onWindowLoad);
+      window.clearTimeout(roDebounce);
+      if (ro) ro.disconnect();
+    };
   }, []);
 
   useEffect(() => {
     if (!activeId || !navRef.current) return;
     const nav = navRef.current;
-    // li > a
-    const activeItem = nav.querySelector<HTMLAnchorElement>(`a[href="#${activeId}"]`);
+    const activeItem = nav.querySelector<HTMLButtonElement>(
+      `button[data-guide-section-id="${activeId}"]`,
+    );
     if (activeItem) {
       const scrollLeft = activeItem.offsetLeft - nav.offsetWidth / 2 + activeItem.offsetWidth / 2;
       nav.scrollTo({ left: scrollLeft, behavior: 'smooth' });
@@ -383,28 +474,6 @@ export default function GuideContent({
     event.stopPropagation();
   }, [isNarrowScreen]);
 
-  const handleNavMouseDown = useCallback((event: MouseEvent<HTMLElement>) => {
-    const nav = navRef.current;
-    if (!nav || !isNarrowScreen() || nav.scrollWidth <= nav.clientWidth) return;
-    if (event.button !== 0) return;
-    isDraggingNavRef.current = true;
-    navDragStartXRef.current = event.clientX;
-    navDragStartScrollLeftRef.current = nav.scrollLeft;
-    event.preventDefault();
-  }, [isNarrowScreen]);
-
-  const handleNavMouseMove = useCallback((event: MouseEvent<HTMLElement>) => {
-    const nav = navRef.current;
-    if (!nav || !isDraggingNavRef.current || !isNarrowScreen()) return;
-    const deltaX = event.clientX - navDragStartXRef.current;
-    nav.scrollLeft = navDragStartScrollLeftRef.current - deltaX;
-    event.preventDefault();
-  }, [isNarrowScreen]);
-
-  const endNavMouseDrag = useCallback(() => {
-    isDraggingNavRef.current = false;
-  }, []);
-
   return (
     <div className="max-w-[1440px] mx-auto px-4 py-8 md:px-8 md:py-12">
       <ImageModal
@@ -412,6 +481,12 @@ export default function GuideContent({
         isOpen={!!zoomedImage}
         onClose={closeZoom}
         alt={zoomedImage?.alt ?? '이미지'}
+      />
+      {/* --guide-scroll-offset CSS 변수를 실제 px로 측정하기 위한 숨김 요소 */}
+      <div
+        ref={scrollOffsetRef}
+        aria-hidden="true"
+        className="fixed top-0 left-0 w-0 overflow-hidden invisible pointer-events-none h-[var(--guide-scroll-offset)]"
       />
 
       {/* ── 히어로 ── */}
@@ -491,9 +566,12 @@ export default function GuideContent({
           aria-hidden
         />
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 items-start">
-          <div className="space-y-20 order-2 lg:order-1">
+          <div
+            ref={guideMainColumnRef}
+            className="space-y-20 order-2 lg:order-1 pb-[min(45vh,22rem)]"
+          >
 
-            <section id="overview" className="scroll-mt-24">
+            <section id="overview" className="scroll-mt-[var(--guide-scroll-offset)]">
               <SectionLabel index="01" title="Scent Memories란?" />
               <div
                 className="space-y-4 text-sm leading-[1.9] text-[var(--color-text-primary)]"
@@ -509,7 +587,7 @@ export default function GuideContent({
               </div>
             </section>
 
-            <section id="features" className="scroll-mt-24">
+            <section id="features" className="scroll-mt-[var(--guide-scroll-offset)]">
               <SectionLabel index="02" title="주요 기능" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {features.map(({ icon, title, desc }) => (
@@ -540,7 +618,7 @@ export default function GuideContent({
               </div>
             </section>
 
-            <section id="preview" className="scroll-mt-24">
+            <section id="preview" className="scroll-mt-[var(--guide-scroll-offset)]">
               <SectionLabel index="03" title="반응형 레이아웃" />
               <p className="guide-section-intro mb-8">
                 데스크탑과 모바일 환경 모두에 최적화된 반응형 레이아웃을 제공합니다.
@@ -564,7 +642,7 @@ export default function GuideContent({
               />
             </section>
 
-            <section id="howto" className="scroll-mt-24">
+            <section id="howto" className="scroll-mt-[var(--guide-scroll-offset)]">
               <SectionLabel index="04" title="로그인 · 데모 계정 안내" />
               <p className="guide-section-intro">
                 회원가입 없이도 향수 목록과 공지사항을 자유롭게 열람할 수 있으며, 향수 등록 및 채팅 기능을 이용하려면 로그인이 필요합니다.
@@ -620,7 +698,7 @@ export default function GuideContent({
               </ol>
             </section>
 
-            <section id="main-gallery" className="scroll-mt-24">
+            <section id="main-gallery" className="scroll-mt-[var(--guide-scroll-offset)]">
               <SectionLabel index="05" title="메인 화면 & 시그니처 향수 갤러리" />
               <div className="space-y-4 mb-8 text-sm leading-[1.8] text-[var(--color-text-secondary)] break-keep">
                 {mainGalleryGuide.desc.map((paragraph, idx) => (
@@ -727,7 +805,7 @@ export default function GuideContent({
               openZoom={openZoom}
             />
 
-            <section id="ui-theme" className="scroll-mt-24">
+            <section id="ui-theme" className="scroll-mt-[var(--guide-scroll-offset)]">
               <SectionLabel index="15" title="UI 테마 (다크 / 라이트 모드)" />
               <div className="space-y-3 text-sm leading-[1.8] text-[var(--color-text-secondary)] mb-8 break-keep">
                 <p>
@@ -831,21 +909,22 @@ export default function GuideContent({
               <nav
                 ref={navRef}
                 onWheel={handleNavWheel}
-                onMouseDown={handleNavMouseDown}
-                onMouseMove={handleNavMouseMove}
-                onMouseUp={endNavMouseDrag}
-                onMouseLeave={endNavMouseDrag}
                 className="guide-on-this-page-nav overflow-x-auto overflow-y-hidden max-lg:touch-pan-x max-lg:overscroll-x-contain max-lg:overscroll-y-none lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:pb-0 max-lg:pb-0 max-lg:select-none"
               >
                 <ol className="flex gap-1 min-w-max lg:flex-col lg:min-w-0 lg:gap-2.5">
                   {ON_THIS_PAGE.map(({ href, label }) => {
-                    const isActive = activeId === href.replace('#', '');
+                    const sectionId = href.replace('#', '');
+                    const isActive = activeId === sectionId;
                     return (
                       <li key={href} className="shrink-0 lg:shrink">
-                        <a
-                          href={href}
+                        <button
+                          type="button"
+                          data-guide-section-id={sectionId}
+                          aria-current={isActive ? 'location' : undefined}
+                          onClick={() => handleOnThisPageClick(sectionId)}
                           className={clsx(
-                            // 공통
+                            // 공통 — 버튼 리셋 + <a>와 동일 시각
+                            "border-0 bg-transparent p-0 cursor-pointer text-inherit font-inherit text-left w-full",
                             "transition-all inline-flex items-center hover:opacity-70",
                             // 모바일 전용 (max-lg) — 테두리 없이 배경으로만 구분
                             "max-lg:touch-manipulation max-lg:text-[0.72rem] max-lg:leading-none max-lg:tracking-[0.04em] max-lg:gap-1 max-lg:py-[0.3rem] max-lg:px-2.5 max-lg:rounded-full max-lg:whitespace-nowrap",
@@ -874,7 +953,7 @@ export default function GuideContent({
                               : "bg-[var(--color-text-secondary)] opacity-40 lg:opacity-70"
                           )} />
                           <span className="max-lg:translate-y-px">{label}</span>
-                        </a>
+                        </button>
                       </li>
                     );
                   })}
