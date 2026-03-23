@@ -140,7 +140,7 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                           <div>
                             <Avatar user={otherUser} isAIChat={true} />
                           </div>
-                          <div>하이트톡톡 AI 어시스턴트</div>
+                          <div>향수 AI 어시스턴트</div>
                         </div>
                       ) : (
                         // 일반 채팅방인 경우 기존 사용자 목록 표시
