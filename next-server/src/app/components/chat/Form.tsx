@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-query";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";
-import { useCallback, useLayoutEffect, useRef, memo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, memo, useState } from "react";
 import { useFocusInput } from "@/src/app/hooks/useFocusInput";
 import ImageUploadButton from "@/src/app/components/ImageUploadButton";
 import { CloudinaryUploadWidgetResults } from "next-cloudinary";
@@ -310,22 +310,42 @@ const Form = () => {
   const { focusInput, focusAndHold, cancelFocus } = useFocusInput("message", messageInputRef);
 
   // ImageUploadButton(CldUploadButton) 초기화 중 포커스 탈취 방지용 inert 상태
+  // - false(inert): Cloudinary 스크립트 로드 전까지 버튼 비활성화
+  // - true: Cloudinary 로드 완료 후 버튼 활성화
   const [uploadButtonActive, setUploadButtonActive] = useState(false);
 
-  // 마운트 시 포커스 유지:
-  // - inert(0~1000ms): CldUploadButton 스크립트 초기화로 인한 포커스 탈취 원천 차단
-  // - focusAndHold(0~2000ms): 그 외 리렌더링/로딩 완료 시 포커스 이탈 복구
+  // Cloudinary 스크립트 로드 완료 시점 감지 → inert 해제
+  // - inert 중에는 ImageUploadButton이 포커스를 받을 수 없으므로,
+  //   window.cloudinary 감지 = 스크립트 초기화 완료 = 탈취 시도 끝난 시점
+  // - 이후 발생하는 포커스 탈취는 focusAndHold(3000ms) 폴링이 처리
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if ("cloudinary" in window) {
+      setUploadButtonActive(true);
+      return;
+    }
+
+    const checkId = window.setInterval(() => {
+      if (!("cloudinary" in window)) return;
+      window.clearInterval(checkId);
+      setUploadButtonActive(true);
+    }, 50);
+
+    return () => window.clearInterval(checkId);
+  }, []); // 세션 내 최초 1회만 실행 (Cloudinary는 한 번 로드 후 유지)
+
+  // 마운트/대화 전환 시 포커스 유지 폴링 시작
   useLayoutEffect(() => {
     if (typeof window === "undefined") return;
     const fromDraft = sessionStorage.getItem("scent:focusMessage");
     if (fromDraft) sessionStorage.removeItem("scent:focusMessage");
-    setUploadButtonActive(false);
-    focusAndHold(2000);
-    const activateId = window.setTimeout(() => setUploadButtonActive(true), 1000);
-    return () => {
-      cancelFocus();
-      window.clearTimeout(activateId);
-    };
+    // Cloudinary 미로드 상태면 inert 초기화 (대화 전환 시 재보호)
+    if (!("cloudinary" in window)) {
+      setUploadButtonActive(false);
+    }
+    focusAndHold(3000);
+    return () => cancelFocus();
   }, [focusAndHold, cancelFocus, conversationId]);
 
   // 2) 실제 제출 로직: RHF 데이터 받음

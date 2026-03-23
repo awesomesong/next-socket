@@ -3,9 +3,12 @@ import { useCallback, useRef } from "react";
 
 /**
  * 입력 필드 포커스 공통 훅
- * - ref 전달 시 ref.current 우선, 미전달 시 document.getElementById(fieldId) 폴백
- * - focusInputThenAgain(delayMs): 즉시 포커스 후 delayMs 뒤 한 번 더 (전송 후 리렌더 대비)
- * - focusAndHold(gracePeriodMs): 즉시 포커스 후 gracePeriodMs 동안 focusout 감지 → 빼앗기면 즉시 복구
+ * - focusInput: 단순 포커스
+ * - focusAndHold(gracePeriodMs): 즉시 포커스 후 gracePeriodMs 동안 50ms 폴링으로
+ *   포커스 탈취를 감지해 즉시 복구한다.
+ *   사용자가 직접 pointerdown(클릭)하면 폴링 중단 → 의도적 포커스 이동 허용.
+ *   keydown은 중단 조건에서 제외 → 타이핑 중에도 포커스 보호 유지.
+ * - cancelFocus: 폴링 즉시 중단 (메시지 전송 시 호출)
  */
 export function useFocusInput(
   fieldId: string,
@@ -28,14 +31,12 @@ export function useFocusInput(
   const focusInput = doFocus;
 
   /**
-   * 과거의 시간 기반 재포커스(focusInputThenAgain)는 제거하고,
-   * 실제 API 완료/렌더링 이후에 호출할 수 있도록 doFocus만 노출한다.
-   */
-
-  /**
-   * 마운트 초기 포커스용: 즉시 포커스 후 gracePeriodMs 동안 focusout 이벤트를 감지하여
-   * 외부 요인(예: Cloudinary 위젯 초기화)에 의해 포커스가 빼앗기면 즉시 복구한다.
-   * 같은 폼 내부 요소(버튼 등)로 이동 시에는 복구하지 않는다.
+   * 마운트 초기 포커스 유지:
+   * - 즉시 포커스
+   * - 이후 50ms 간격으로 document.activeElement를 확인하여 포커스가 빠져나가면 복구
+   * - 사용자가 pointerdown(클릭)하면 폴링 중단 (의도적 포커스 이동 허용)
+   * - keydown은 중단하지 않음 → 타이핑 중에도 포커스 탈취 즉시 복구
+   * - gracePeriodMs 경과 시 자동 종료
    */
   const focusAndHold = useCallback((gracePeriodMs = 1500) => {
       const el =
@@ -44,29 +45,37 @@ export function useFocusInput(
       if (!el) return;
 
       el.focus();
-
-      // 이전 listener 정리
       holdCleanupRef.current?.();
 
       const form = el.closest("form");
+      let stopped = false;
 
-      const handleFocusOut = (e: FocusEvent) => {
-        // 같은 폼 내부(버튼 등)로 이동 → refocus 안 함
-        if (e.relatedTarget && form?.contains(e.relatedTarget as Node)) return;
-        requestAnimationFrame(() => el.focus());
-      };
+      // 사용자 클릭 감지 → 폴링 중단 (타이핑은 중단 안 함)
+      const stopOnPointer = () => { stopped = true; };
+      document.addEventListener("pointerdown", stopOnPointer, { once: true, capture: true });
 
-      el.addEventListener("focusout", handleFocusOut);
+      const intervalId = window.setInterval(() => {
+        if (stopped) {
+          window.clearInterval(intervalId);
+          return;
+        }
+        if (document.activeElement === el) return;
+        const target = document.activeElement;
+        // 같은 폼 내부(버튼 등)로 이동 → 복구 안 함
+        if (target && form?.contains(target)) return;
+        el.focus();
+      }, 50);
 
-      // gracePeriodMs 후 listener 자동 제거
       const timeoutId = window.setTimeout(() => {
-        el.removeEventListener("focusout", handleFocusOut);
+        window.clearInterval(intervalId);
+        document.removeEventListener("pointerdown", stopOnPointer, { capture: true });
         holdCleanupRef.current = null;
       }, gracePeriodMs);
 
       holdCleanupRef.current = () => {
+        window.clearInterval(intervalId);
         window.clearTimeout(timeoutId);
-        el.removeEventListener("focusout", handleFocusOut);
+        document.removeEventListener("pointerdown", stopOnPointer, { capture: true });
       };
     },
     [fieldId, inputRef]
