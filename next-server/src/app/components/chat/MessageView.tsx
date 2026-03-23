@@ -273,11 +273,19 @@ const MessageView: React.FC<MessageBoxProps> = ({
     window.dispatchEvent(new CustomEvent("chat:new-content"));
   }, []);
 
+  // ✅ AI 응답 완료 시 다른 브라우저/탭에 전달
+  const handleAIComplete = useCallback((finalMessage: FullMessageType) => {
+    if (socket) {
+      socket.emit("send:message", { newMessage: finalMessage });
+    }
+  }, [socket]);
+
   // AI 스트림 요청 훅
   const { requestAI } = useAIStream({
     conversationId,
     aiAgentType: "assistant",
     onNewContent: notifyNewContent,
+    onComplete: handleAIComplete,
   });
 
   const { mutateAsync: resendMessage } = useMutation({
