@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-query";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";
-import { useCallback, useLayoutEffect, useRef, memo } from "react";
+import { useCallback, useLayoutEffect, useRef, memo, useState } from "react";
 import { useFocusInput } from "@/src/app/hooks/useFocusInput";
 import ImageUploadButton from "@/src/app/components/ImageUploadButton";
 import { CloudinaryUploadWidgetResults } from "next-cloudinary";
@@ -309,13 +309,23 @@ const Form = () => {
   const { ref: registerRef, ...registerRest } = register("message", { required: true });
   const { focusInput, focusAndHold, cancelFocus } = useFocusInput("message", messageInputRef);
 
-  // 마운트 시 포커스 유지: 즉시 포커스 후 1.5s 내 focusout 발생 시 즉시 복구 (CldUploadButton 초기화 대응)
+  // ImageUploadButton(CldUploadButton) 초기화 중 포커스 탈취 방지용 inert 상태
+  const [uploadButtonActive, setUploadButtonActive] = useState(false);
+
+  // 마운트 시 포커스 유지:
+  // - inert(0~1000ms): CldUploadButton 스크립트 초기화로 인한 포커스 탈취 원천 차단
+  // - focusAndHold(0~2000ms): 그 외 리렌더링/로딩 완료 시 포커스 이탈 복구
   useLayoutEffect(() => {
     if (typeof window === "undefined") return;
     const fromDraft = sessionStorage.getItem("scent:focusMessage");
     if (fromDraft) sessionStorage.removeItem("scent:focusMessage");
-    focusAndHold(1500);
-    return cancelFocus;
+    setUploadButtonActive(false);
+    focusAndHold(2000);
+    const activateId = window.setTimeout(() => setUploadButtonActive(true), 1000);
+    return () => {
+      cancelFocus();
+      window.clearTimeout(activateId);
+    };
   }, [focusAndHold, cancelFocus, conversationId]);
 
   // 2) 실제 제출 로직: RHF 데이터 받음
@@ -380,7 +390,9 @@ const Form = () => {
         py-2
         border-t-default
     ">
-      <ImageUploadButton onUploadSuccess={handleUpload} variant="compact" />
+      <div inert={!uploadButtonActive || undefined}>
+        <ImageUploadButton onUploadSuccess={handleUpload} variant="compact" />
+      </div>
       <form
         onSubmit={submit}
         className="flex items-center gap-2 w-full"
