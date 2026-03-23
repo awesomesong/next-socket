@@ -2008,7 +2008,7 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
   }
 
   .notice-preview-frame {
-    @apply flex justify-center rounded-xl overflow-hidden border border-[var(--color-card-border)] md:border-0;
+    @apply flex justify-center items-start rounded-xl overflow-hidden border border-[var(--color-card-border)] md:border-0;
   }
 
   /* 로그인/회원가입 등 단독 미리보기: md 이상에서도 테두리 유지 (.notice-preview-frame의 md:border-0 무효화) */
@@ -2021,20 +2021,20 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
   }
 
   .notice-preview-btn {
-    @apply inline-flex cursor-zoom-in max-w-full w-auto md:w-full;
+    @apply inline-flex cursor-zoom-in max-w-full w-full items-start;
   }
 
   .notice-preview-img {
-    @apply max-w-full w-auto h-auto md:w-full;
+    @apply block max-w-full w-full h-auto;
   }
 
   /* 모바일 미리보기: md 미만에서 테두리가 이미지 너비에 맞춰지고 왼쪽 정렬 */
   .notice-preview-frame--fit-sm {
-    @apply max-md:w-fit max-md:max-w-full max-md:justify-start;
+    @apply max-md:w-full max-md:max-w-full max-md:justify-start;
   }
 
   .notice-preview-frame--fit-sm .notice-preview-btn {
-    @apply max-md:w-fit max-md:max-w-full;
+    @apply max-md:w-full max-md:max-w-full;
   }
 }
 

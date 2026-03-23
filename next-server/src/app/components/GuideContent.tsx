@@ -31,19 +31,12 @@ function getGuideSectionHead(sectionEl: HTMLElement): HTMLElement {
 /** 목차/해시 이동 시 sticky 헤더(--guide-scroll-offset)에 맞춤. 이미지 로드 후에도 RO·rAF에서 재호출 가능 */
 function alignGuideSectionToOffset(
   el: HTMLElement,
-  scrollOffsetMeasuringEl: HTMLDivElement | null,
+  _scrollOffsetMeasuringEl: HTMLDivElement | null,
 ) {
-  const marginPx = scrollOffsetMeasuringEl?.offsetHeight ?? 80;
-
-  // 이미지 로딩/레이아웃 변화 중에는 동일 요소가 계속 재정렬될 수 있는데,
-  // 이때 불필요한 `scrollIntoView` 호출이 스크롤 “왔다갔다”를 유발할 수 있어요.
-  // 현재 위치가 목표 오프셋 근처면 스크롤을 생략합니다.
-  const tolerancePx = 10;
-  const beforeTop = el.getBoundingClientRect().top;
-  if (Math.abs(beforeTop - marginPx) <= tolerancePx) return;
-
-  // `scroll-margin-top`을 사용해 수동 보정 없이 브라우저에 오프셋 적용을 맡깁니다.
-  el.scrollIntoView({ block: 'start' });
+  // 계산식 기반 scrollTo는 브라우저/해상도마다 오차가 생겨,
+  // 섹션 타이틀 anchor를 직접 scrollIntoView 하는 방식으로 정렬합니다.
+  const anchorEl = getGuideSectionHead(el);
+  anchorEl.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'auto' });
 }
 
 const guideCardSurfaceClass =
@@ -91,7 +84,7 @@ const MOBILE_PREVIEW_DEFAULTS = {
 } as const;
 
 const previewMobileColumnClass =
-  'max-md:w-fit max-md:max-w-[min(100vw,300px)] max-md:self-start w-full md:flex-1 md:min-w-0 md:max-w-[min(100%,360px)]';
+  'max-md:w-full max-md:max-w-[min(100vw,300px)] max-md:self-start w-full md:flex-1 md:min-w-0 md:max-w-[min(100%,360px)]';
 
 const previewMobileFrameClass = 'notice-preview-frame notice-preview-frame--fit-sm';
 
@@ -104,8 +97,59 @@ const ResponsivePreview = memo(function ResponsivePreview({
   desktop: PreviewImage;
   mobile: PreviewImage;
   openZoom: (src: string, alt: string) => () => void;
-  layout?: 'responsive' | 'twin-mobile';
+  layout?: 'responsive' | 'twin-mobile' | 'stacked';
 }) {
+  if (layout === 'stacked') {
+    return (
+      <div className="flex flex-col items-start gap-6 max-md:w-full">
+        <div className="w-full">
+          <p className="notice-preview__label">Desktop</p>
+          <div className="notice-preview-frame">
+            <button
+              type="button"
+              onClick={openZoom(desktop.src, desktop.zoomAlt ?? desktop.alt)}
+              className="notice-preview-btn w-full"
+              aria-label={`${desktop.zoomAlt ?? desktop.alt} 확대 보기`}
+            >
+              <Image
+                src={desktop.src}
+                alt={desktop.alt}
+                width={desktop.width}
+                height={desktop.height}
+                sizes={desktop.sizes}
+                className="notice-preview-img"
+                // full-width로 키우되, 종횡비는 img의 intrinsic ratio를 그대로 사용
+                style={{ width: '100%', height: 'auto' }}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="w-full">
+          <p className="notice-preview__label">Mobile</p>
+          <div className="notice-preview-frame">
+            <button
+              type="button"
+              onClick={openZoom(mobile.src, mobile.zoomAlt ?? mobile.alt)}
+              className="notice-preview-btn w-full"
+              aria-label={`${mobile.zoomAlt ?? mobile.alt} 확대 보기`}
+            >
+              <Image
+                src={mobile.src}
+                alt={mobile.alt}
+                width={mobile.width}
+                height={mobile.height}
+                sizes={mobile.sizes}
+                className="notice-preview-img"
+                style={{ width: '100%', height: 'auto' }}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (layout === 'twin-mobile') {
     const slots = [
       { img: desktop, label: 'Mobile 1' },
@@ -129,7 +173,6 @@ const ResponsivePreview = memo(function ResponsivePreview({
                   width={img.width}
                   height={img.height}
                   sizes={img.sizes}
-                  unoptimized
                   className="notice-preview-img"
                 />
               </button>
@@ -157,7 +200,6 @@ const ResponsivePreview = memo(function ResponsivePreview({
               width={desktop.width}
               height={desktop.height}
               sizes={desktop.sizes}
-              unoptimized
               className="notice-preview-img"
             />
           </button>
@@ -179,7 +221,6 @@ const ResponsivePreview = memo(function ResponsivePreview({
               width={mobile.width}
               height={mobile.height}
               sizes={mobile.sizes}
-              unoptimized
               className="notice-preview-img"
             />
           </button>
@@ -318,8 +359,10 @@ export default function GuideContent({
   const guideMainColumnRef = useRef<HTMLDivElement>(null);
   /** --guide-scroll-offset CSS 변수를 실제 px 값으로 읽기 위한 측정용 요소 */
   const scrollOffsetRef = useRef<HTMLDivElement>(null);
-  /** 목차 클릭으로 인한 “재정렬”이 이미지 로딩까지 이어질 때, 최신 클릭만 유효하게 */
-  const alignRequestTokenRef = useRef(0);
+  /** 사용자 클릭 이후에는 초기 해시 동기화 재정렬을 막아 점프를 방지 */
+  const hasUserNavigatedRef = useRef(false);
+  /** 클릭으로 이동한 섹션 타이틀을 레이아웃 변화 중에 계속 고정 */
+  const pinnedSectionIdRef = useRef<string | null>(null);
 
   const closeZoom = useCallback(() => setZoomedImage(null), []);
   const openZoom = useCallback(
@@ -327,47 +370,15 @@ export default function GuideContent({
     []);
 
   const handleOnThisPageClick = useCallback((sectionId: string) => {
+    hasUserNavigatedRef.current = true;
+    pinnedSectionIdRef.current = sectionId;
     const sectionEl = document.getElementById(sectionId);
     if (!sectionEl) return;
-    const headEl = getGuideSectionHead(sectionEl);
     window.history.replaceState(null, '', `#${sectionId}`);
-    alignGuideSectionToOffset(headEl, scrollOffsetRef.current);
-
-    const token = ++alignRequestTokenRef.current;
-
-    // 이미지 로딩이 끝난 “정확한 높이/레이아웃” 기준으로 한 번 더 맞춥니다.
-    // setTimeout 없이, 섹션 내부 <img>의 load/error 완료 시점에 재정렬합니다.
-    const imgs = Array.from(sectionEl.querySelectorAll<HTMLImageElement>('img'));
-    if (imgs.length === 0) {
-      requestAnimationFrame(() => {
-        if (alignRequestTokenRef.current !== token) return;
-        alignGuideSectionToOffset(headEl, scrollOffsetRef.current);
-        pickActiveRef.current();
-      });
-      return;
-    }
-
-    let pending = imgs.length;
-    const onDone = () => {
-      pending -= 1;
-      if (pending > 0) return;
-      requestAnimationFrame(() => {
-        if (alignRequestTokenRef.current !== token) return;
-        alignGuideSectionToOffset(headEl, scrollOffsetRef.current);
-        pickActiveRef.current();
-      });
-    };
-
-    imgs.forEach((img) => {
-      if (img.complete) {
-        // decode는 브라우저가 이미지를 디코딩했는지 확인합니다.
-        img.decode().then(onDone).catch(onDone);
-        return;
-      }
-
-      img.addEventListener('load', onDone, { once: true });
-      img.addEventListener('error', onDone, { once: true });
-    });
+    // iOS에서 div(data-guide-section-head) 기반 scrollMarginTop 적용이 흔들릴 수 있어,
+    // 섹션 컨테이너(section)에 적용된 scroll-mt(--guide-scroll-offset) 기준으로 이동합니다.
+    alignGuideSectionToOffset(sectionEl, scrollOffsetRef.current);
+    pickActiveRef.current();
   }, []);
 
   useEffect(() => {
@@ -450,8 +461,12 @@ export default function GuideContent({
         if (roRaf) return;
         roRaf = window.requestAnimationFrame(() => {
           roRaf = 0;
-          // 레이아웃 변화는 `activeId` 계산에만 반영하고,
-          // 재정렬은 “이미지 로드 완료 후” 로직에서만 수행합니다.
+          // 이미지 로드 등으로 레이아웃이 흔들릴 때도 클릭한 섹션 타이틀을 고정 유지
+          const pinnedId = pinnedSectionIdRef.current;
+          if (pinnedId) {
+            const pinnedEl = document.getElementById(pinnedId);
+            if (pinnedEl) alignGuideSectionToOffset(pinnedEl, scrollOffsetRef.current);
+          }
           pickActiveRef.current();
         });
       });
@@ -473,26 +488,26 @@ export default function GuideContent({
     pickActive();
 
     const syncHashAfterLayout = () => {
+      if (hasUserNavigatedRef.current) return;
       const h = window.location.hash.slice(1);
       if (!h) return;
       const el = document.getElementById(h);
-      if (el) alignGuideSectionToOffset(getGuideSectionHead(el), scrollOffsetRef.current);
+      if (el) alignGuideSectionToOffset(el, scrollOffsetRef.current);
       pickActive();
     };
     requestAnimationFrame(syncHashAfterLayout);
 
-    const onWindowLoad = () => {
-      syncHashAfterLayout();
-    };
-    if (document.readyState !== 'complete') {
-      window.addEventListener('load', onWindowLoad, { once: true });
-    }
-
     const scrollEl = document.scrollingElement;
+    const clearPinnedSection = () => {
+      pinnedSectionIdRef.current = null;
+    };
     window.addEventListener('scroll', schedulePick, { passive: true });
     if (scrollEl) {
       scrollEl.addEventListener('scroll', schedulePick, { passive: true });
     }
+    // 사용자가 직접 스크롤을 시작하면 고정 상태를 해제합니다.
+    window.addEventListener('wheel', clearPinnedSection, { passive: true });
+    window.addEventListener('touchstart', clearPinnedSection, { passive: true });
     const vv = window.visualViewport;
     if (vv) {
       vv.addEventListener('scroll', schedulePick, { passive: true });
@@ -504,13 +519,14 @@ export default function GuideContent({
       sectionObservers.forEach((o) => o.disconnect());
       window.removeEventListener('scroll', schedulePick);
       if (scrollEl) scrollEl.removeEventListener('scroll', schedulePick);
+      window.removeEventListener('wheel', clearPinnedSection);
+      window.removeEventListener('touchstart', clearPinnedSection);
       if (vv) {
         vv.removeEventListener('scroll', schedulePick);
         vv.removeEventListener('resize', schedulePick);
       }
       window.removeEventListener('resize', schedulePick);
       window.removeEventListener('hashchange', schedulePick);
-      window.removeEventListener('load', onWindowLoad);
       if (ro) ro.disconnect();
     };
   }, []);
@@ -702,6 +718,7 @@ export default function GuideContent({
               </p>
               <ResponsivePreview
                 openZoom={openZoom}
+                layout="stacked"
                 desktop={{
                   src: '/image/notice/main/main_web.png',
                   alt: '데스크탑 화면 — 향수 컬렉션',
@@ -763,7 +780,6 @@ export default function GuideContent({
                                 width={300}
                                 height={580}
                                 sizes="(min-width: 640px) 220px, 180px"
-                                unoptimized
                                 className="notice-preview-img"
                               />
                             </button>
@@ -786,6 +802,7 @@ export default function GuideContent({
 
               <ResponsivePreview
                 openZoom={openZoom}
+                layout="stacked"
                 desktop={{
                   src: mainGalleryGuide.webImg.src,
                   alt: mainGalleryGuide.webImg.alt,
@@ -921,7 +938,6 @@ export default function GuideContent({
                         width={900}
                         height={600}
                         sizes="(min-width: 640px) 50vw, 100vw"
-                        unoptimized
                         className="notice-preview-img"
                       />
                     </button>
@@ -945,7 +961,6 @@ export default function GuideContent({
                         width={900}
                         height={600}
                         sizes="(min-width: 640px) 50vw, 100vw"
-                        unoptimized
                         className="notice-preview-img"
                       />
                     </button>
