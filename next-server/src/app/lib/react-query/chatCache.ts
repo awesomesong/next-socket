@@ -675,6 +675,7 @@ export function bumpConversationOnNewMessage(
           ...c,
           lastMessageAt: nextLastAt, // Date 객체
           lastMessageAtMs: incMs,   // subscribe 루프 방지 (ms 단위)
+          lastMessageId: isSystem ? c.lastMessageId : (message.id ?? c.lastMessageId), // ✅ 중복 체크 정확도 보장
           messages: nextMessages,   // ✅ 미리보기 갱신(시스템 제외)
           unReadCount: prevUnread,  // 🔒 절대 보존: 기존 값 그대로 유지
         };
