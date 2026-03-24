@@ -9,6 +9,14 @@ export const metadata: Metadata = {
     description: "Scent Memories의 최신 소식과 공지사항을 확인해 보세요.",
     url: "https://www.devsonghee.com/notice",
     type: "website",
+    images: [
+      {
+        url: '/image/metadata/notice.png',
+        width: 1200,
+        height: 700,
+        alt: 'Scent Memories 공지사항',
+      },
+    ],
   },
   keywords: [
     "Scent Memories",
