@@ -15,7 +15,7 @@ const NoticeCard = ({ notice }: { notice: Notice }) => {
   return (
     <Link
       href={`/notice/${notice.id}`}
-      className="notice-card block h-full"
+      className="notice-card"
     >
       {noticeImage?.length > 0 ? (
         <div className="notice-card__image-wrap card-image-slider-box">

@@ -6,9 +6,11 @@
  * Uses skeleton-bg / skeleton-bg-muted from FragranceSkeleton style.
  */
 const NoticeCardSkeletonItem = () => (
-  <div className="notice-card block h-full skeleton-pulse" aria-hidden>
-    <div className="notice-card__image-wrap flex items-center justify-center">
-      <div className="w-full h-full min-h-[160px] rounded-none skeleton-bg" />
+  <div className="notice-card skeleton-pulse" aria-hidden>
+    <div className="notice-card__image-wrap card-image-slider-box flex items-center justify-center">
+      <div className="card-image-slider w-full h-full">
+        <div className="w-full h-full rounded-none skeleton-bg" />
+      </div>
     </div>
     <div className="notice-card__body">
       <h2 className="notice-card__title">
