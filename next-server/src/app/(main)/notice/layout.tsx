@@ -13,7 +13,7 @@ export const metadata: Metadata = {
       {
         url: '/image/metadata/notice.png',
         width: 1200,
-        height: 700,
+        height: 656,
         alt: 'Scent Memories 공지사항',
       },
     ],
