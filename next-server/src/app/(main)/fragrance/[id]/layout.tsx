@@ -19,6 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const { fragrance } = await getFragranceBySlugServer(id);
     const raw = fragrance?.description ?? '';
     const description = raw.replace(/<[^>]*>/g, '').slice(0, 150);
+    const imageUrl = fragrance?.images?.[0] || '/image/metadata/main_web.png';
     return {
       metadataBase: new URL(base),
       title: `${fragrance.brand} · ${fragrance.name}`,
@@ -28,6 +29,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         description,
         url: `${base}/fragrance/${id}`,
         type: 'article',
+        images: [{ url: imageUrl, width: 1200, height: 630 }],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: `${fragrance.brand} · ${fragrance.name}`,
+        description,
+        images: [imageUrl],
       },
       keywords: ['향수', '퍼퓸', 'Fragrance', 'Perfume', fragrance.brand],
     };
@@ -41,6 +49,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         description: '향수 상세',
         url: `${base}/fragrance/${id}`,
         type: 'article',
+        images: [{ url: '/image/metadata/main_web.png', width: 1200, height: 630 }],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: 'Fragrance',
+        description: '향수 상세',
+        images: ['/image/metadata/main_web.png'],
       },
       keywords: ['향수', '퍼퓸', 'Fragrance', 'Perfume'],
     };
