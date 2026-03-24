@@ -22,15 +22,15 @@ export const metadata: Metadata = {
   ],
 };
 
-export default async function BlogLayout({
-    children,
+export default async function NoticeLayout({
+  children,
 }: Readonly<{
-    children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
-  
-    return (
-        <>
-          {children}
-        </>
-    )
+
+  return (
+    <>
+      {children}
+    </>
+  )
 }
