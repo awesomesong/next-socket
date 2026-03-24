@@ -52,7 +52,7 @@ function computeGuideScrollMarginPx(
 function scrollMainDocumentBy(deltaY: number, behavior: ScrollBehavior = 'auto') {
   if (deltaY === 0) return;
 
-  const doScroll = (target: any) => {
+  const doScroll = (target: Element | Window | null) => {
     if (!target || typeof target.scrollBy !== 'function') return;
     try { target.scrollBy({ top: deltaY, left: 0, behavior }); }
     catch { target.scrollBy(0, deltaY); }
