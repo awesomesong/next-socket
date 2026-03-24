@@ -708,7 +708,6 @@ export default function GuideContent({
               </p>
               <ResponsivePreview
                 openZoom={openZoom}
-                layout="stacked"
                 desktop={{
                   src: '/image/notice/main/main_web.png',
                   alt: '데스크탑 화면 — 향수 컬렉션',
@@ -792,7 +791,6 @@ export default function GuideContent({
 
               <ResponsivePreview
                 openZoom={openZoom}
-                layout="stacked"
                 desktop={{
                   src: mainGalleryGuide.webImg.src,
                   alt: mainGalleryGuide.webImg.alt,
