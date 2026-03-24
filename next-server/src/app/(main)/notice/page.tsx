@@ -8,7 +8,7 @@ const NoticePage = async () => {
 
     return (
         <>
-            <div className="content-wrap flex-col gap-4">
+            <div className="content-wrap flex-col gap-4 max-w-[1440px] mx-auto w-full">
                 <div className="product-fragrance-header-layout">
                     <div className="flex flex-row justify-between items-center">
                         <h2 className="text-gradient-scent page-title-gradient">Notice</h2>
