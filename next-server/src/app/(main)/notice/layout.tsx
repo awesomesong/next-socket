@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.devsonghee.com"),
   title: "공지사항 | Scent Memories",
   description: "Scent Memories의 최신 소식과 공지사항을 확인해 보세요.",
   openGraph: {

@@ -21,7 +21,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const description = raw.replace(/<[^>]*>/g, '').slice(0, 150);
     const imageUrl = fragrance?.images?.[0] || '/image/metadata/main_web.png';
     return {
-      metadataBase: new URL(base),
       title: `${fragrance.brand} · ${fragrance.name}`,
       description,
       openGraph: {
@@ -41,7 +40,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     };
   } catch {
     return {
-      metadataBase: new URL(base),
       title: 'Fragrance',
       description: '향수 상세',
       openGraph: {
