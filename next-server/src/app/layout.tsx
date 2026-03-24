@@ -33,18 +33,21 @@ const josefinSans = Josefin_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.devsonghee.com"),
-  title: "강송희 포트폴리오 | 프론트엔드 개발자",
-  description: `프론트엔드 개발자 강송희의 포트폴리오입니다. 
-    Next.js 15, React 19, Prisma, socket.io, react-query, Next-Auth 등을 활용하여 
-    블로그, 채팅, 인증 기능을 구현하였습니다.`,
+  title: {
+    default: "Scent Memories | 강송희 프론트엔드 포트폴리오",
+    template: "%s | Scent Memories",
+  },
+  description:
+    "Scent Memories는 향수를 수집하고 기록하는 프론트엔드 포트폴리오 사이트입니다. Next.js 15, React 19, Socket.io, OpenAI Vision, Three.js 등을 활용하여 향수 갤러리, AI 이미지 분석, 실시간 채팅, 3D 인터랙션 기능을 구현하였습니다.",
   keywords: [
+    "Scent Memories",
     "강송희",
     "프론트엔드 포트폴리오",
-    "React",
     "Next.js",
-    "Next-Auth",
-    "react-query",
-    "socket.io",
+    "React",
+    "Socket.io",
+    "OpenAI Vision",
+    "Three.js",
     "Prisma",
     "웹 개발자 포트폴리오",
     "프론트엔드 개발자",
@@ -53,17 +56,17 @@ export const metadata: Metadata = {
     icon: "/image/scent_memories.png",
   },
   openGraph: {
-    title: "강송희 포트폴리오 | 프론트엔드 개발자",
+    title: "Scent Memories | 강송희 프론트엔드 포트폴리오",
     description:
-      "Next.js 15, React, react-query,socket.io, Prisma 등을 사용하여 구현한 웹 개발 포트폴리오입니다.",
+      "Scent Memories는 향수를 수집하고 기록하는 공간입니다. Next.js와 다양한 기술을 사용하여 갤러리, 채팅, 3D 기능 등을 구현한 포트폴리오입니다.",
     url: "https://www.devsonghee.com",
-    siteName: "강송희 포트폴리오",
+    siteName: "Scent Memories",
     images: [
       {
-        url: "/image/scent_memories.png", // og:image 경로
-        width: 992,
-        height: 1056,
-        alt: "강송희 포트폴리오 로고",
+        url: "/image/metadata/main_web.png", // og:image 경로
+        width: 1200,
+        height: 627,
+        alt: "Scent Memories 포트폴리오 썸네일",
       },
     ],
     type: "website",
