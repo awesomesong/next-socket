@@ -112,6 +112,12 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                 setFormData((p) => ({ ...p, notes: result.notes }));
             }
             toast.success("AI가 향수 정보를 자동으로 입력했습니다.", { icon: "✨" });
+        } catch (error: unknown) {
+            if (error instanceof Error && (error as Error & { code?: string }).code === 'invalid_image_format') {
+                toast.error(error.message);
+            } else {
+                toast.error("AI 분석 중 오류가 발생했습니다.");
+            }
         } finally {
             setIsAnalyzing(false);
         }
@@ -189,52 +195,52 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
             }
 
             setIsValidating(true);
-        try {
-            const isFragrance = await validateFragranceContent(data.description, data.notes);
-            if (!isFragrance) {
-                toast.error("향수와 관련된 내용이 아닙니다. 향수 설명과 노트 정보를 올바르게 입력해주세요.");
-                return;
+            try {
+                const isFragrance = await validateFragranceContent(data.description, data.notes);
+                if (!isFragrance) {
+                    toast.error("향수와 관련된 내용이 아닙니다. 향수 설명과 노트 정보를 올바르게 입력해주세요.");
+                    return;
+                }
+            } finally {
+                setIsValidating(false);
             }
-        } finally {
-            setIsValidating(false);
-        }
 
-        const payload = { ...data, images: formData.images };
-        setIsLoading(true);
+            const payload = { ...data, images: formData.images };
+            setIsLoading(true);
 
-        try {
-            if (isEdit && id) {
-                setLoadingMessage('향수 정보를 수정하고 있습니다.');
-                const result = await updateFragrance(id, payload);
-                if (result.success && result.updatedFragrance) {
-                    upsertFragranceCardById(queryClient, result.updatedFragrance);
-                    // detail 캐시를 즉시 채워서 refetch를 최소화한다.
-                    // (주의) brand 변경 등으로 slug가 바뀌면 queryKey가 달라질 수 있으므로 둘 다 반영.
-                    queryClient.setQueryData<{ fragrance: FragranceType }>(
-                        fragranceDetailKey(id),
-                        { fragrance: result.updatedFragrance }
-                    );
-                    if (result.updatedFragrance.slug && result.updatedFragrance.slug !== id) {
+            try {
+                if (isEdit && id) {
+                    setLoadingMessage('향수 정보를 수정하고 있습니다.');
+                    const result = await updateFragrance(id, payload);
+                    if (result.success && result.updatedFragrance) {
+                        upsertFragranceCardById(queryClient, result.updatedFragrance);
+                        // detail 캐시를 즉시 채워서 refetch를 최소화한다.
+                        // (주의) brand 변경 등으로 slug가 바뀌면 queryKey가 달라질 수 있으므로 둘 다 반영.
                         queryClient.setQueryData<{ fragrance: FragranceType }>(
-                            fragranceDetailKey(result.updatedFragrance.slug),
+                            fragranceDetailKey(id),
                             { fragrance: result.updatedFragrance }
                         );
+                        if (result.updatedFragrance.slug && result.updatedFragrance.slug !== id) {
+                            queryClient.setQueryData<{ fragrance: FragranceType }>(
+                                fragranceDetailKey(result.updatedFragrance.slug),
+                                { fragrance: result.updatedFragrance }
+                            );
+                        }
+                        router.push(withToastParams(`/fragrance/${result.updatedFragrance.slug}`, "success", "향수 정보가 수정되었습니다."));
                     }
-                    router.push(withToastParams(`/fragrance/${result.updatedFragrance.slug}`, "success", "향수 정보가 수정되었습니다."));
+                } else {
+                    setLoadingMessage('새 향수를 등록하고 있습니다.');
+                    const result = await createFragrance(payload);
+                    if (result.success && result.newFragrance) {
+                        prependFragranceCard(queryClient, result.newFragrance);
+                        router.push(withToastParams(`/fragrance/${result.newFragrance.slug}`, "success", "향수가 등록되었습니다."));
+                    }
                 }
-            } else {
-                setLoadingMessage('새 향수를 등록하고 있습니다.');
-                const result = await createFragrance(payload);
-                if (result.success && result.newFragrance) {
-                    prependFragranceCard(queryClient, result.newFragrance);
-                    router.push(withToastParams(`/fragrance/${result.newFragrance.slug}`, "success", "향수가 등록되었습니다."));
-                }
+            } catch (error: unknown) {
+                toast.error(error instanceof Error ? error.message : "작업 중 오류가 발생했습니다.");
+            } finally {
+                setIsLoading(false);
             }
-        } catch (error: unknown) {
-            toast.error(error instanceof Error ? error.message : "작업 중 오류가 발생했습니다.");
-        } finally {
-            setIsLoading(false);
-        }
         },
         [formData.images, isEdit, id, queryClient, router]
     );
@@ -322,59 +328,59 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                     {/* 640px~1023px: 업로드 오른쪽에 배치, 1024px+ 에서는 아래로 */}
                     <div className="flex flex-col gap-6 sm:flex-grow w-full sm:w-auto lg:w-full shrink-0 min-w-0">
                         <div className="flex justify-between items-end border-b border-[#ede8f5] dark:border-[#c8b4ff30] pb-2">
-                        <p className="text-[0.7rem] uppercase tracking-[0.2em] text-[#b094e0] font-bold">등록된 이미지</p>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept={ACCEPT_IMAGE}
-                            multiple
-                            className="hidden"
-                            onChange={handleFileInputChange}
-                            disabled={isDisabled}
-                        />
-                        <button
-                            type="button"
-                            disabled={isDisabled}
-                            onClick={() => {
-                                setImageError(null);
-                                fileInputRef.current?.click();
-                            }}
-                            className="text-[10px] uppercase tracking-widest text-[#5c4a7a] dark:text-[#c8b4ff] hover:text-[#b094e0] transition-colors font-medium"
-                        >
-                            {isUploading ? "이미지 업로드 중" : "+ 이미지 추가"}
-                        </button>
-                    </div>
-
-                    <ul className="grid grid-cols-4 gap-3">
-                        {previewImages.map((img, i) => (
-                            <li
-                                key={img.src}
-                                className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${i === sliderIndex
-                                    ? "border-[#c8b4ff] shadow-md scale-[1.08] z-10"
-                                    : "border-transparent opacity-50 hover:opacity-100 hover:scale-[1.03]"
-                                    }`}
-                                onClick={() => selectImage(i)}
+                            <p className="text-[0.7rem] uppercase tracking-[0.2em] text-[#b094e0] font-bold">등록된 이미지</p>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept={ACCEPT_IMAGE}
+                                multiple
+                                className="hidden"
+                                onChange={handleFileInputChange}
+                                disabled={isDisabled}
+                            />
+                            <button
+                                type="button"
+                                disabled={isDisabled}
+                                onClick={() => {
+                                    setImageError(null);
+                                    fileInputRef.current?.click();
+                                }}
+                                className="text-[10px] uppercase tracking-widest text-[#5c4a7a] dark:text-[#c8b4ff] hover:text-[#b094e0] transition-colors font-medium"
                             >
-                                <Image
-                                    src={img.src}
-                                    alt={img.name}
-                                    fill
-                                    className="object-cover"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteImage(i);
-                                    }}
-                                    className="absolute top-1 right-1 p-1.5 rounded-md bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
-                                    aria-label="Delete"
+                                {isUploading ? "이미지 업로드 중" : "+ 이미지 추가"}
+                            </button>
+                        </div>
+
+                        <ul className="grid grid-cols-4 gap-3">
+                            {previewImages.map((img, i) => (
+                                <li
+                                    key={img.src}
+                                    className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${i === sliderIndex
+                                        ? "border-[#c8b4ff] shadow-md scale-[1.08] z-10"
+                                        : "border-transparent opacity-50 hover:opacity-100 hover:scale-[1.03]"
+                                        }`}
+                                    onClick={() => selectImage(i)}
                                 >
-                                    <FaTrashAlt className="w-2.5 h-2.5" />
-                                </button>
-                            </li>
+                                    <Image
+                                        src={img.src}
+                                        alt={img.name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteImage(i);
+                                        }}
+                                        className="absolute top-1 right-1 p-1.5 rounded-md bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                                        aria-label="Delete"
+                                    >
+                                        <FaTrashAlt className="w-2.5 h-2.5" />
+                                    </button>
+                                </li>
                             ))}
-                    </ul>
+                        </ul>
                     </div>
                 </div>
 

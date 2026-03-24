@@ -62,6 +62,14 @@ Do NOT include any text or markdown outside the JSON object.`,
         if (!response.ok) {
             const error = await response.json();
             console.error('[OpenAI Analyze Error]', error);
+
+            if (error?.error?.code === 'invalid_image_format') {
+                return NextResponse.json(
+                    { message: '지원하지 않는 이미지 형식입니다. png, jpeg, gif, webp 형식의 이미지를 업로드해주세요.', code: 'invalid_image_format' },
+                    { status: 400 }
+                );
+            }
+
             return NextResponse.json({ message: 'AI 분석에 실패했습니다.' }, { status: 500 });
         }
 
