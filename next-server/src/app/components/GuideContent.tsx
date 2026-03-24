@@ -28,12 +28,9 @@ function getGuideSectionHead(sectionEl: HTMLElement): HTMLElement {
   return sectionEl.querySelector<HTMLElement>('[data-guide-section-head]') ?? sectionEl;
 }
 
-/** 목차/해시 이동 시 sticky 헤더(--guide-scroll-offset)에 맞춤. 이미지 로드 후에도 RO·rAF에서 재호출 가능 */
-function alignGuideSectionToOffset(
-  el: HTMLElement,
-) {
-  // 계산식 기반 scrollTo는 브라우저/해상도마다 오차가 생겨,
-  // 섹션 타이틀 anchor를 직접 scrollIntoView 하는 방식으로 정렬합니다.
+/** scroll-margin-top(--guide-scroll-offset) 기준으로 섹션 제목을 정렬.
+ *  scrollIntoView는 실제 스크롤 컨테이너를 자동 탐지하므로 iOS/커스텀 컨테이너에서도 동작 */
+function alignGuideSectionToOffset(el: HTMLElement) {
   const anchorEl = getGuideSectionHead(el);
   anchorEl.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'auto' });
 }
@@ -362,6 +359,8 @@ export default function GuideContent({
   const hasUserNavigatedRef = useRef(false);
   /** 클릭으로 이동한 섹션 타이틀을 레이아웃 변화 중에 계속 고정 */
   const pinnedSectionIdRef = useRef<string | null>(null);
+  /** 모바일 sticky TOC aside — 높이 변화 시 scroll 보정용 */
+  const asideRef = useRef<HTMLElement | null>(null);
 
   const closeZoom = useCallback(() => setZoomedImage(null), []);
   const openZoom = useCallback(
@@ -374,8 +373,6 @@ export default function GuideContent({
     const sectionEl = document.getElementById(sectionId);
     if (!sectionEl) return;
     window.history.replaceState(null, '', `#${sectionId}`);
-    // iOS에서 div(data-guide-section-head) 기반 scrollMarginTop 적용이 흔들릴 수 있어,
-    // 섹션 컨테이너(section)에 적용된 scroll-mt(--guide-scroll-offset) 기준으로 이동합니다.
     alignGuideSectionToOffset(sectionEl);
     pickActiveRef.current();
   }, []);
@@ -428,7 +425,6 @@ export default function GuideContent({
 
     /** 기준선은 섹션 제목(head) 기준 — 긴 섹션에서도 목차 하이라이트가 제목 전환에 맞춤 */
     const pickActive = () => {
-      // measurement div의 offsetHeight로 --guide-scroll-offset CSS 변수를 정확한 px 값으로 읽음
       const marginPx = scrollOffsetRef.current?.offsetHeight ?? 80;
       let next = '';
       for (const id of sectionIds) {
@@ -453,46 +449,34 @@ export default function GuideContent({
     };
 
     let roRaf = 0;
-    const mainCol = guideMainColumnRef.current;
-    const ro =
-      mainCol &&
-      new ResizeObserver(() => {
-        if (roRaf) return;
-        roRaf = window.requestAnimationFrame(() => {
-          roRaf = 0;
-          // 이미지 로드 등으로 레이아웃이 흔들릴 때도 클릭한 섹션 타이틀을 고정 유지
-          const pinnedId = pinnedSectionIdRef.current;
-          if (pinnedId) {
-            const pinnedEl = document.getElementById(pinnedId);
-            if (pinnedEl) {
-              // 불필요한 scrollIntoView 재호출은 플리커를 유발할 수 있어,
-              // anchor가 이미 오프셋 근처면 재정렬을 스킵합니다.
-              const marginPx = scrollOffsetRef.current?.offsetHeight ?? 80;
-              const anchorEl = getGuideSectionHead(pinnedEl);
-              const anchorTop = anchorEl.getBoundingClientRect().top;
-              const tolerancePx = Math.max(2, Math.round(window.innerHeight * 0.0025));
-              if (Math.abs(anchorTop - marginPx) > tolerancePx) {
-                alignGuideSectionToOffset(pinnedEl);
-              }
+    const onResize = () => {
+      if (roRaf) cancelAnimationFrame(roRaf);
+      roRaf = window.requestAnimationFrame(() => {
+        roRaf = 0;
+        // 이미지 로드 또는 aside 높이 변화(sticky 전환)로 레이아웃이 흔들릴 때 pinned 섹션 보정
+        const pinnedId = pinnedSectionIdRef.current;
+        if (pinnedId) {
+          const pinnedEl = document.getElementById(pinnedId);
+          if (pinnedEl) {
+            const marginPx = scrollOffsetRef.current?.offsetHeight ?? 80;
+            const anchorTop = getGuideSectionHead(pinnedEl).getBoundingClientRect().top;
+            const tolerancePx = Math.max(4, Math.round(window.innerHeight * 0.005));
+            if (Math.abs(anchorTop - marginPx) > tolerancePx) {
+              // scrollIntoView 대신 delta 보정 사용: 전체 재스크롤로 인한 깜박임 방지
+              // html,body { height:100%; overflow-y:auto } 환경에서 body가 스크롤 컨테이너
+              document.body.scrollBy(0, anchorTop - marginPx);
             }
           }
-          pickActiveRef.current();
-        });
+        }
+        pickActiveRef.current();
       });
-    if (mainCol && ro) ro.observe(mainCol);
-
-    const sectionObservers: IntersectionObserver[] = [];
-    for (const id of sectionIds) {
-      const el = document.getElementById(id);
-      if (!el) continue;
-      const io = new IntersectionObserver(schedulePick, {
-        root: null,
-        rootMargin: '0px',
-        threshold: [0, 0.05, 0.15, 0.35, 0.55, 0.75, 1],
-      });
-      io.observe(el);
-      sectionObservers.push(io);
-    }
+    };
+    const ro = new ResizeObserver(onResize);
+    const mainCol = guideMainColumnRef.current;
+    if (mainCol) ro.observe(mainCol);
+    // aside 높이 변화도 감시: isOnThisPageSticky 전환 시 aside가 줄어들며 메인 컬럼 위치가 밀림
+    const asideEl = asideRef.current;
+    if (asideEl) ro.observe(asideEl);
 
     pickActive();
 
@@ -511,12 +495,15 @@ export default function GuideContent({
       pinnedSectionIdRef.current = null;
     };
     window.addEventListener('scroll', schedulePick, { passive: true });
-    if (scrollEl) {
+    // html,body { height:100%; overflow-y:auto } 환경에서 body가 스크롤 컨테이너이므로 직접 등록
+    document.body.addEventListener('scroll', schedulePick, { passive: true });
+    if (scrollEl && scrollEl !== document.body) {
       scrollEl.addEventListener('scroll', schedulePick, { passive: true });
     }
     // 사용자가 직접 스크롤을 시작하면 고정 상태를 해제합니다.
     window.addEventListener('wheel', clearPinnedSection, { passive: true });
-    window.addEventListener('touchstart', clearPinnedSection, { passive: true });
+    // touchmove: 탭(tap)이 아닌 실제 스크롤 제스처에만 해제 (touchstart 시 pinnedSection이 click보다 먼저 지워지는 버그 방지)
+    window.addEventListener('touchmove', clearPinnedSection, { passive: true });
     const vv = window.visualViewport;
     if (vv) {
       vv.addEventListener('scroll', schedulePick, { passive: true });
@@ -525,11 +512,11 @@ export default function GuideContent({
     window.addEventListener('resize', schedulePick);
     window.addEventListener('hashchange', schedulePick);
     return () => {
-      sectionObservers.forEach((o) => o.disconnect());
       window.removeEventListener('scroll', schedulePick);
-      if (scrollEl) scrollEl.removeEventListener('scroll', schedulePick);
+      document.body.removeEventListener('scroll', schedulePick);
+      if (scrollEl && scrollEl !== document.body) scrollEl.removeEventListener('scroll', schedulePick);
       window.removeEventListener('wheel', clearPinnedSection);
-      window.removeEventListener('touchstart', clearPinnedSection);
+      window.removeEventListener('touchmove', clearPinnedSection);
       if (vv) {
         vv.removeEventListener('scroll', schedulePick);
         vv.removeEventListener('resize', schedulePick);
@@ -537,6 +524,8 @@ export default function GuideContent({
       window.removeEventListener('resize', schedulePick);
       window.removeEventListener('hashchange', schedulePick);
       if (ro) ro.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+      if (roRaf) cancelAnimationFrame(roRaf);
     };
   }, []);
 
@@ -548,33 +537,25 @@ export default function GuideContent({
     );
     if (activeItem) {
       const scrollLeft = activeItem.offsetLeft - nav.offsetWidth / 2 + activeItem.offsetWidth / 2;
-      nav.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+      nav.scrollLeft = scrollLeft;
     }
   }, [activeId]);
-
-  const isNarrowScreen = useCallback(() => window.matchMedia('(max-width: 1023px)').matches, []);
-
-  const handleNavWheel = useCallback((event: globalThis.WheelEvent) => {
-    const nav = navRef.current;
-    if (!nav || !isNarrowScreen() || nav.scrollWidth <= nav.clientWidth) return;
-    const horizontalDelta = event.deltaX + event.deltaY;
-    if (horizontalDelta === 0) return;
-    nav.scrollLeft += horizontalDelta;
-    event.preventDefault();
-    event.stopPropagation();
-  }, [isNarrowScreen]);
 
   useEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
-    const onWheel = (event: globalThis.WheelEvent) => {
-      handleNavWheel(event);
+    const onWheel = (e: WheelEvent) => {
+      if (!window.matchMedia('(max-width: 1023px)').matches) return;
+      if (nav.scrollWidth <= nav.clientWidth) return;
+      const delta = e.deltaX + e.deltaY;
+      if (delta === 0) return;
+      nav.scrollLeft += delta;
+      e.preventDefault();
+      e.stopPropagation();
     };
     nav.addEventListener('wheel', onWheel, { passive: false });
-    return () => {
-      nav.removeEventListener('wheel', onWheel);
-    };
-  }, [handleNavWheel]);
+    return () => nav.removeEventListener('wheel', onWheel);
+  }, []);
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 py-8 md:px-8 md:py-12">
@@ -984,6 +965,7 @@ export default function GuideContent({
           </div>
 
           <aside
+            ref={asideRef}
             className={clsx(
               'transition-all duration-300 ease-in-out',
               'order-1 lg:order-2 sticky z-30 top-[var(--header-height)] lg:top-[calc(var(--header-height)+1.25rem)]',
