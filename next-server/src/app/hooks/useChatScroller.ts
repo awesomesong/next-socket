@@ -351,6 +351,31 @@ export function useChatScroller(getEl: () => HTMLElement | null) {
     };
   }, [scrollToBottom, refreshFlags]);
 
+  // ✅ 입력 필드 포커스(키보드 올라옴) 시 하단 고정 유지 (iOS 레이아웃 시프트 방어)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (isTypingField(target)) {
+        // 이미 하단에 있었다면, 키보드가 올라오는 애니메이션 동안 계속 강제 스크롤
+        if (wasAtBottomRef.current) {
+          const start = Date.now();
+          const tick = () => {
+            if (Date.now() - start < 600) { // 약 600ms 지속
+              scrollToBottom({ force: true });
+              requestAnimationFrame(tick);
+            }
+          };
+          requestAnimationFrame(tick);
+        }
+      }
+    };
+
+    window.addEventListener("focusin", handleFocusIn);
+    return () => window.removeEventListener("focusin", handleFocusIn);
+  }, [isTypingField, scrollToBottom, wasAtBottomRef]);
+
   return {
     showArrow,
     wasAtBottomRef,
