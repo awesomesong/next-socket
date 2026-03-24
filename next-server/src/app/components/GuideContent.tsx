@@ -48,16 +48,7 @@ function computeGuideScrollMarginPx(
   return measureEl?.offsetHeight ?? 88;
 }
 
-/** html/body 둘 다 overflow-y 인 환경 등에서 중복 스크롤(깜박임) 방지를 위해 하나의 타겟만 스크롤 지정 */
-function scrollMainDocumentBy(deltaY: number, behavior: ScrollBehavior = 'auto') {
-  if (deltaY === 0) return;
-
-  const doScroll = (target: Element | Window | null) => {
-    if (!target || typeof target.scrollBy !== 'function') return;
-    try { target.scrollBy({ top: deltaY, left: 0, behavior }); }
-    catch { target.scrollBy(0, deltaY); }
-  };
-
+function getScrollTarget(): Element | Window {
   const isScrollable = (el: HTMLElement | null) => {
     if (!el) return false;
     const style = window.getComputedStyle(el);
@@ -65,27 +56,41 @@ function scrollMainDocumentBy(deltaY: number, behavior: ScrollBehavior = 'auto')
            (style.overflowY === 'auto' || style.overflowY === 'scroll');
   };
 
-  // iOS Safari에서 여러 타겟에 scrollBy 중복 호출 시 이동값이 누적(2배 이상 이동)되어 
-  // 요동치거나 무한 깜박이는(Oscillation) 버그 발생을 방지합니다. 
-  // 실제 스크롤 주체를 가장 먼저 찾아 한 번만 동작시킵니다.
-  if (isScrollable(document.body)) {
-    doScroll(document.body);
-    return;
-  }
-
-  if (isScrollable(document.documentElement)) {
-    doScroll(document.documentElement);
-    return;
-  }
-
-  doScroll(window);
+  if (isScrollable(document.body)) return document.body;
+  if (isScrollable(document.documentElement)) return document.documentElement;
+  return window;
 }
 
-/** 뷰포트 상단에서 marginPx 아래에 섹션 제목이 오도록 window 스크롤 (scrollIntoView/scroll-margin 의존 제거) */
+/** 뷰포트 상단에서 marginPx 아래에 섹션 제목이 오도록 절대 위치로 스크롤 (scrollIntoView/scroll-margin 의존 제거) */
 function alignGuideSectionToOffset(el: HTMLElement, marginPx: number, behavior: ScrollBehavior = 'auto') {
   const anchorEl = getGuideSectionHead(el);
-  const top = anchorEl.getBoundingClientRect().top;
-  scrollMainDocumentBy(top - marginPx, behavior);
+  const target = getScrollTarget();
+  
+  let currentScroll = 0;
+  if (target === window) {
+    currentScroll = window.scrollY || document.documentElement.scrollTop;
+  } else {
+    currentScroll = (target as Element).scrollTop;
+  }
+  
+  const viewportTop = anchorEl.getBoundingClientRect().top;
+  const destination = currentScroll + viewportTop - marginPx;
+
+  // iOS Safari 등에서 requestAnimationFrame 도중 relative(scrollBy)가 연속 호출되면 
+  // 이동값이 중복 누적되어 발작하듯 깜빡이는 현상(Oscillation)이 발생하므로 절대 위치(scrollTo)를 사용합니다.
+  try {
+    if (target === window) {
+      window.scrollTo({ top: destination, left: 0, behavior });
+    } else {
+      (target as Element).scrollTo({ top: destination, left: 0, behavior });
+    }
+  } catch {
+    if (target === window) {
+      window.scrollTo(0, destination);
+    } else {
+      (target as Element).scrollTo(0, destination);
+    }
+  }
 }
 
 const guideCardSurfaceClass =
@@ -550,7 +555,7 @@ export default function GuideContent({
             if (Math.abs(anchorTop - marginPx) > tolerancePx) {
               // 이미지 로딩 등으로 높이가 확 변할 때 smooth는 화면을 통통 튀게 넘겨버리므로(iOS Safari 버그),
               // 리페인트 이전에 즉시(auto) 보정하여 사용자가 레이아웃 변화를 전혀 인지하지 못한 채 정확히 고정되어 보이게 합니다.
-              scrollMainDocumentBy(anchorTop - marginPx, 'auto');
+              alignGuideSectionToOffset(pinnedEl, marginPx, 'auto');
             }
           }
         }
