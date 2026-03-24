@@ -55,22 +55,22 @@ export const metadata: Metadata = {
   icons: {
     icon: "/image/scent_memories.png",
   },
-  openGraph: {
-    title: "Scent Memories | 강송희 프론트엔드 포트폴리오",
-    description:
-      "Scent Memories는 향수를 수집하고 기록하는 공간입니다. Next.js와 다양한 기술을 사용하여 갤러리, 채팅, 3D 기능 등을 구현한 포트폴리오입니다.",
-    siteName: "Scent Memories",
-    images: [
-      {
-        url: "/image/metadata/main_web.png", // og:image 경로
-        width: 1200,
-        height: 627,
-        alt: "Scent Memories 포트폴리오 썸네일",
-      },
-    ],
-    type: "website",
-    locale: "ko_KR",
-  },
+  // openGraph: {
+  //   title: "Scent Memories | 강송희 프론트엔드 포트폴리오",
+  //   description:
+  //     "Scent Memories는 향수를 수집하고 기록하는 공간입니다. Next.js와 다양한 기술을 사용하여 갤러리, 채팅, 3D 기능 등을 구현한 포트폴리오입니다.",
+  //   siteName: "Scent Memories",
+  //   images: [
+  //     {
+  //       url: "/image/metadata/main_web.png", // og:image 경로
+  //       width: 1200,
+  //       height: 627,
+  //       alt: "Scent Memories 포트폴리오 썸네일",
+  //     },
+  //   ],
+  //   type: "website",
+  //   locale: "ko_KR",
+  // },
 };
 
 
