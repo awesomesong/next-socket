@@ -1,4 +1,4 @@
-export const uploadImage = async (file: File, folderName = "blogs") => {
+export const uploadImage = async (file: File, folderName = "notices") => {
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
   const preset = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET!;
 

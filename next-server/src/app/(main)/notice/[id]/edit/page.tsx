@@ -14,7 +14,7 @@ type ParamsProps = {
   params: Promise<IdProps>;
 };
 
-const BlogEditpage = ({ params }: ParamsProps) => {
+const NoticeEditpage = ({ params }: ParamsProps) => {
   const { id } = use(params);
 
   const { data: session } = useSession();
@@ -35,10 +35,10 @@ const BlogEditpage = ({ params }: ParamsProps) => {
               isEdit={true}
             />
           ) : 
-          <div className="flex justify-center items-center min-h-screen">블로그를 찾을 수 없습니다.</div>
+          <div className="flex justify-center items-center min-h-screen">공지사항을 찾을 수 없습니다.</div>
         }
     </>
   );
 };
 
-export default BlogEditpage;
+export default NoticeEditpage;

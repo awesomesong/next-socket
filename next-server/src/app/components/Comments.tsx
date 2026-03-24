@@ -157,7 +157,7 @@ const Comments = ({ noticeId, user }: CommentsProps) => {
       const prev = queryClient.getQueryData(noticesCommentsKey(bid));
       // 낙관적 제거 + 카운트 -1
       removeCommentById(queryClient, bid, commentId);
-      // 블로그 상세 페이지 댓글 수 업데이트
+      // 공지사항 상세 페이지 댓글 수 업데이트
       incrementNoticeDetailCommentsCount(queryClient, noticeId, -1);
       return { prev };
     },

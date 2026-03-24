@@ -809,7 +809,7 @@ const SocketState = () => {
   }, [queryClient, remapIfViewing]);
 
 
-  const handleBlogCommentNew = useCallback((payload: NoticeCommentNewPayload) => {
+  const handleNoticeCommentNew = useCallback((payload: NoticeCommentNewPayload) => {
     try {
       if (!payload?.noticeId || !payload?.comment) return;
       incrementNoticeDetailCommentsCount(
@@ -827,7 +827,7 @@ const SocketState = () => {
     }
   }, [queryClient]);
 
-  const handleBlogCommentUpdated = useCallback((payload: NoticeCommentUpdatedPayload) => {
+  const handleNoticeCommentUpdated = useCallback((payload: NoticeCommentUpdatedPayload) => {
     try {
       if (!payload?.noticeId || !payload?.comment?.id) return;
       replaceCommentById(
@@ -841,7 +841,7 @@ const SocketState = () => {
     }
   }, [queryClient]);
 
-  const handleBlogCommentDeleted = useCallback((payload: NoticeCommentDeletedPayload) => {
+  const handleNoticeCommentDeleted = useCallback((payload: NoticeCommentDeletedPayload) => {
     try {
       if (!payload?.noticeId || !payload?.commentId) return;
       removeCommentById(
@@ -859,7 +859,7 @@ const SocketState = () => {
     }
   }, [queryClient]);
 
-  const handleBlogNew = useCallback((payload: NoticeNewPayload) => {
+  const handleNoticeNew = useCallback((payload: NoticeNewPayload) => {
     try {
       const notice = payload?.notice;
       if (!notice?.id) return;
@@ -870,7 +870,7 @@ const SocketState = () => {
     }
   }, [queryClient]);
 
-  const handleBlogUpdated = useCallback((payload: NoticeUpdatedPayload) => {
+  const handleNoticeUpdated = useCallback((payload: NoticeUpdatedPayload) => {
     try {
       const notice = payload?.notice as NoticeData;
       if (!notice?.id) return;
@@ -897,7 +897,7 @@ const SocketState = () => {
     }
   }, [queryClient]);
 
-  const handleBlogDeleted = useCallback((payload: NoticeDeletedPayload) => {
+  const handleNoticeDeleted = useCallback((payload: NoticeDeletedPayload) => {
     try {
       if (!payload?.noticeId) return;
       const id = String(payload.noticeId);
@@ -974,12 +974,12 @@ const SocketState = () => {
     handleReceiveConversation,
     handleConversationNew,
     handleRoomEvent,
-    handleBlogCommentNew,
-    handleBlogCommentUpdated,
-    handleBlogCommentDeleted,
-    handleBlogNew,
-    handleBlogUpdated,
-    handleBlogDeleted,
+    handleNoticeCommentNew,
+    handleNoticeCommentUpdated,
+    handleNoticeCommentDeleted,
+    handleNoticeNew,
+    handleNoticeUpdated,
+    handleNoticeDeleted,
     handleFragranceReviewNew,
     handleFragranceReviewUpdated,
     handleFragranceReviewDeleted,
@@ -994,12 +994,12 @@ const SocketState = () => {
       handleReceiveConversation,
       handleConversationNew,
       handleRoomEvent,
-      handleBlogCommentNew,
-      handleBlogCommentUpdated,
-      handleBlogCommentDeleted,
-      handleBlogNew,
-      handleBlogUpdated,
-      handleBlogDeleted,
+      handleNoticeCommentNew,
+      handleNoticeCommentUpdated,
+      handleNoticeCommentDeleted,
+      handleNoticeNew,
+      handleNoticeUpdated,
+      handleNoticeDeleted,
       handleFragranceReviewNew,
       handleFragranceReviewUpdated,
       handleFragranceReviewDeleted,
@@ -1011,12 +1011,12 @@ const SocketState = () => {
     handleReceiveConversation,
     handleConversationNew,
     handleRoomEvent,
-    handleBlogCommentNew,
-    handleBlogCommentUpdated,
-    handleBlogCommentDeleted,
-    handleBlogNew,
-    handleBlogUpdated,
-    handleBlogDeleted,
+    handleNoticeCommentNew,
+    handleNoticeCommentUpdated,
+    handleNoticeCommentDeleted,
+    handleNoticeNew,
+    handleNoticeUpdated,
+    handleNoticeDeleted,
     handleFragranceReviewNew,
     handleFragranceReviewUpdated,
     handleFragranceReviewDeleted,
@@ -1051,12 +1051,12 @@ const SocketState = () => {
       [SOCKET_EVENTS.RECEIVE_CONVERSATION, handlers.handleReceiveConversation as (payload: unknown) => void],
       [SOCKET_EVENTS.CONVERSATION_NEW, handlers.handleConversationNew as (payload: unknown) => void],
       [SOCKET_EVENTS.ROOM_EVENT, handlers.handleRoomEvent as (payload: unknown) => void],
-      [SOCKET_EVENTS.NOTICE_COMMENT_NEW, handlers.handleBlogCommentNew as (payload: unknown) => void],
-      [SOCKET_EVENTS.NOTICE_COMMENT_UPDATED, handlers.handleBlogCommentUpdated as (payload: unknown) => void],
-      [SOCKET_EVENTS.NOTICE_COMMENT_DELETED, handlers.handleBlogCommentDeleted as (payload: unknown) => void],
-      [SOCKET_EVENTS.NOTICE_NEW, handlers.handleBlogNew as (payload: unknown) => void],
-      [SOCKET_EVENTS.NOTICE_UPDATED, handlers.handleBlogUpdated as (payload: unknown) => void],
-      [SOCKET_EVENTS.NOTICE_DELETED, handlers.handleBlogDeleted as (payload: unknown) => void],
+      [SOCKET_EVENTS.NOTICE_COMMENT_NEW, handlers.handleNoticeCommentNew as (payload: unknown) => void],
+      [SOCKET_EVENTS.NOTICE_COMMENT_UPDATED, handlers.handleNoticeCommentUpdated as (payload: unknown) => void],
+      [SOCKET_EVENTS.NOTICE_COMMENT_DELETED, handlers.handleNoticeCommentDeleted as (payload: unknown) => void],
+      [SOCKET_EVENTS.NOTICE_NEW, handlers.handleNoticeNew as (payload: unknown) => void],
+      [SOCKET_EVENTS.NOTICE_UPDATED, handlers.handleNoticeUpdated as (payload: unknown) => void],
+      [SOCKET_EVENTS.NOTICE_DELETED, handlers.handleNoticeDeleted as (payload: unknown) => void],
       [SOCKET_EVENTS.FRAGRANCE_REVIEW_NEW, handlers.handleFragranceReviewNew as (payload: unknown) => void],
       [SOCKET_EVENTS.FRAGRANCE_REVIEW_UPDATED, handlers.handleFragranceReviewUpdated as (payload: unknown) => void],
       [SOCKET_EVENTS.FRAGRANCE_REVIEW_DELETED, handlers.handleFragranceReviewDeleted as (payload: unknown) => void],

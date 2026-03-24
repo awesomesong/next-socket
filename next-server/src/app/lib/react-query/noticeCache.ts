@@ -172,7 +172,7 @@ export function restoreNoticeDetail(
   queryClient.setQueryData(noticeDetailKey(noticeId), prevDetail);
 }
 
-// ===== blogDetail helpers =====
+// ===== noticeDetail helpers =====
 export function upsertNoticeDetailPartial(
   queryClient: QueryClient,
   noticeId: string,
