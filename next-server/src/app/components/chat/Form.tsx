@@ -309,6 +309,11 @@ const Form = () => {
   const { ref: registerRef, ...registerRest } = register("message", { required: true });
   const { focusInput, focusAndHold, cancelFocus } = useFocusInput("message", messageInputRef);
 
+  const setTextareaRef = useCallback((el: HTMLTextAreaElement | null) => {
+    registerRef(el);
+    messageInputRef.current = el;
+  }, [registerRef]);
+
   // ImageUploadButton(CldUploadButton) 초기화 중 포커스 탈취 방지용 inert 상태
   // - false(inert): Cloudinary 스크립트 로드 전까지 버튼 비활성화
   // - true: Cloudinary 로드 완료 후 버튼 활성화
@@ -330,6 +335,30 @@ const Form = () => {
       if (!("cloudinary" in window)) return;
       window.clearInterval(checkId);
       setUploadButtonActive(true);
+      
+      // ✅ 고정된 시간(300ms)의 한계를 극복하기 위해 확실한 이벤트 리스너 방식 사용
+      // Cloudinary 렌더링 시작 후 최대 3초 이내에 발생하는 "비정상적인 포커스 탈취(body로 이동)"를 정확히 1회 잡아냅니다.
+      const el = document.getElementById("message") as HTMLTextAreaElement | null;
+      if (!el) return;
+
+      let hasRecovered = false;
+      const onBlur = () => {
+        if (hasRecovered) return;
+        // 터치나 클릭이 아닌, 스크립트 렌더링에 의해 포커스가 body로 튕긴 경우
+        setTimeout(() => {
+          if (document.activeElement === document.body) {
+            el.focus();
+            hasRecovered = true; // 1회만 복구
+          }
+        }, 10);
+      };
+
+      el.addEventListener("blur", onBlur);
+      // 최대 3초 동안만 감시하고 해제 (안드로이드 시스템 뒤로가기 버튼 등 정상적인 blur 방해 방지)
+      setTimeout(() => {
+        el.removeEventListener("blur", onBlur);
+      }, 3000);
+
     }, 50);
 
     return () => window.clearInterval(checkId);
@@ -344,7 +373,7 @@ const Form = () => {
     if (!("cloudinary" in window)) {
       setUploadButtonActive(false);
     }
-    focusAndHold(3000);
+    focusAndHold();
     return () => cancelFocus();
   }, [focusAndHold, cancelFocus, conversationId]);
 
@@ -419,10 +448,7 @@ const Form = () => {
       >
         <TextareaAutosize
           id="message"
-          ref={(el) => {
-            registerRef(el);
-            messageInputRef.current = el;
-          }}
+          ref={setTextareaRef}
           minRows={2}
           maxRows={4}
           {...registerRest}
