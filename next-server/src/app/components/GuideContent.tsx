@@ -48,7 +48,7 @@ function computeGuideScrollMarginPx(
   return measureEl?.offsetHeight ?? 88;
 }
 
-/** html/body 둘 다 overflow-y 인 환경에서 scrollTop은 보통 document.scrollingElement 쪽에 있음 */
+/** html/body 둘 다 overflow-y 인 환경 등에서 중복 스크롤(깜박임) 방지를 위해 하나의 타겟만 스크롤 지정 */
 function scrollMainDocumentBy(deltaY: number, behavior: ScrollBehavior = 'auto') {
   if (deltaY === 0) return;
 
@@ -58,13 +58,26 @@ function scrollMainDocumentBy(deltaY: number, behavior: ScrollBehavior = 'auto')
     catch { target.scrollBy(0, deltaY); }
   };
 
-  // Next.js (Tailwind) 레이아웃에서는 스크롤 주체(overflow-y)가 html(scrollingElement)이 아닌 body일 수 있습니다.
-  // 실제 스크롤바가 없는 요소는 scrollBy를 무시하므로, 가능성 있는 모든 루트에 적용하는 것이 가장 직관적이고 안전합니다.
-  doScroll(document.body);
-  
-  if (document.scrollingElement && document.scrollingElement !== document.body) {
-    doScroll(document.scrollingElement);
+  const isScrollable = (el: HTMLElement | null) => {
+    if (!el) return false;
+    const style = window.getComputedStyle(el);
+    return el.scrollHeight > el.clientHeight && 
+           (style.overflowY === 'auto' || style.overflowY === 'scroll');
+  };
+
+  // iOS Safari에서 여러 타겟에 scrollBy 중복 호출 시 이동값이 누적(2배 이상 이동)되어 
+  // 요동치거나 무한 깜박이는(Oscillation) 버그 발생을 방지합니다. 
+  // 실제 스크롤 주체를 가장 먼저 찾아 한 번만 동작시킵니다.
+  if (isScrollable(document.body)) {
+    doScroll(document.body);
+    return;
   }
+
+  if (isScrollable(document.documentElement)) {
+    doScroll(document.documentElement);
+    return;
+  }
+
   doScroll(window);
 }
 
