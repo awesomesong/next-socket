@@ -6,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   memo,
 } from "react";
 import MessageView from "./MessageView";
@@ -57,17 +58,18 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   const { conversationId } = useConversation();
   const { setUnreadCount } = useUnreadStore();
   const getEl = useCallback(() => scrollRef.current, [scrollRef]);
-  const isScrollingInitialRef = useRef(true); // 초기값 true
+  const isScrollingInitialRef = useRef(true); // 초기값 true (로직용 ref)
+  const [initialScrollDone, setInitialScrollDone] = useState(false); // 렌더링용 state
   const pendingJoinReadRef = useRef(false);
 
   // ✅ 스크롤 관리 훅 (여기서 모든 판정/버튼 노출/자동 스크롤 처리)
+  // resize 핸들링은 useChatScroller 내부에서 처리 (iOS 키보드 race condition 대응)
   const {
     showArrow,
     wasAtBottomRef,
     onUserScroll,
     onNewContent,
     scrollToBottom,
-    refreshFlags,
   } = useChatScroller(getEl);
 
   // ✅ 대화방 변경 시 초기 스크롤 플래그 리셋
@@ -352,6 +354,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
   // ✅ 대화방 변경 시 초기 스크롤 플래그 리셋
   useEffect(() => {
     isScrollingInitialRef.current = true;
+    setInitialScrollDone(false); // 렌더링용 state도 리셋
     hasProcessedReadRef.current.clear(); // 읽음 처리 Set 초기화
     pendingJoinReadRef.current = false;
     processedConversationRef.current = null;
@@ -474,24 +477,14 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     return () => window.removeEventListener("chat:new-content", handleNewContent);
   }, [onNewContent]);
 
-  // ✅ 리사이즈 이벤트 처리
-  useEffect(() => {
-    const onResize = () => refreshFlags();
-
-    window.visualViewport?.addEventListener("resize", onResize);
-    window.addEventListener("resize", onResize);
-
-    return () => {
-      window.visualViewport?.removeEventListener("resize", onResize);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [refreshFlags]);
-
+  // ✅ shouldShowArrow: state 기반으로 구현 (initialScrollDone이 true일 때만 화살표 노출)
+  // - initialScrollDone: 초기 스크롤 완료 후 true (re-render 보장)
+  // - isScrollingInitialRef는 로직 제어용, shouldShowArrow 판단은 state 사용
   const shouldShowArrow =
-    !isScrollingInitialRef.current &&
+    initialScrollDone &&
     status === "success" &&
     !isFetchingNextPage &&
-    showArrow; // ✅ 자동 스크롤 중일 때 화살표 숨김  
+    showArrow;
 
   // 안정적인 getLastMessageId 함수 (dependency 변경 없음)
   const getLastMessageId = useCallback(() => {
@@ -502,6 +495,11 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     return status === "success" && !!data?.pages?.length;
   }, [status, data?.pages?.length]);
 
+  // ✅ 초기 스크롤 완료 콜백 - re-render 트리거용
+  const handleInitialScrollComplete = useCallback(() => {
+    setInitialScrollDone(true);
+  }, []);
+
   // ✅ 초기 진입 시 마지막 메시지 렌더링 완료 후 스크롤
   useInitialScroll({
     scrollRef,
@@ -510,6 +508,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
     triggerScroll: scrollTrigger,
     wasAtBottomRef,
     isScrollingInitialRef,
+    onComplete: handleInitialScrollComplete,
   });
 
   // ✅ 메시지 리스트 렌더링 - useMemo로 최적화 (의존성 변경 시에만 재계산)

@@ -327,6 +327,30 @@ export function useChatScroller(getEl: () => HTMLElement | null) {
     }
   }, [scrollToBottom, refreshFlags]);
 
+  // ✅ iOS 키보드 show/hide 및 window resize 대응
+  // visualViewport.resize 는 ResizeObserver 보다 먼저 발화되므로,
+  // 이 시점에 refreshFlags()를 호출하면 clientHeight 축소로 atBottom=false 오판 발생.
+  // → 하단이었으면 scrollToBottom으로 위치 복원, 아니면 refreshFlags로 상태만 동기화.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onResize = () => {
+      if (wasAtBottomRef.current) {
+        requestAnimationFrame(() => scrollToBottom({ force: true }));
+      } else {
+        refreshFlags();
+      }
+    };
+
+    window.visualViewport?.addEventListener("resize", onResize);
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [scrollToBottom, refreshFlags]);
+
   return {
     showArrow,
     wasAtBottomRef,
