@@ -15,6 +15,11 @@ const ChatSubmitButton = ({
   <button
     type={type}
     onClick={onClick}
+    onMouseDown={(e) => e.preventDefault()}
+    onTouchStart={(e) => {
+      e.preventDefault();
+      if (onClick) onClick();
+    }}
     disabled={disabled}
     className="
       rounded-full

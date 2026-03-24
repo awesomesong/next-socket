@@ -252,14 +252,6 @@ const Form = () => {
         ),
       );
     },
-    onSettled: () => {
-      // 에러 케이스에서도 사용자가 바로 다시 입력할 수 있도록 포커스 복구
-      if (typeof window !== "undefined") {
-        requestAnimationFrame(() => {
-          focusInput();
-        });
-      }
-    },
   });
 
   // ✅ 전송 직렬화를 위한 큐

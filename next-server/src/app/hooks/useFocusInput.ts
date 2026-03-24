@@ -49,22 +49,31 @@ export function useFocusInput(
       // 캡처 단계에서 너무 민감하게 반응하지 않도록 passive 처리
       document.addEventListener("pointerdown", stopOnPointer, { once: true, passive: true });
 
-      // 폴링 대신 지정된 gracePeriod(예: Cloudinary 로드 예상 시간) 후 1회 복구 확인
-      const timeoutId = window.setTimeout(() => {
-        if (!stopped && document.activeElement !== el) {
-          const form = el.closest("form");
-          const target = document.activeElement;
-          // 같은 폼 내부(버튼 등)로 이동한 게 아니면 (body 등으로 뺏기면) 복구
-          if (!target || !form?.contains(target)) {
-            el.focus();
+      // 마운트 및 페이지 전환 직후 발생할 수 있는 일시적 포커스 유실을 방어하기 위해
+      // 무한 폴링 대신, 초기 몇 차례(100ms, 300ms, 500ms)만 점진적으로 확인 및 복구 시도
+      const checks = [100, 300, 500, Math.min(gracePeriodMs, 800)];
+      const timeouts = checks.map(ms => 
+        window.setTimeout(() => {
+          if (!stopped && document.activeElement !== el) {
+            const form = el.closest("form");
+            const target = document.activeElement;
+            // 같은 폼 내부(버튼 등)로 이동한 게 아니면 (body 등으로 뺏기면) 복구
+            if (!target || !form?.contains(target)) {
+              el.focus();
+            }
           }
-        }
+        }, ms)
+      );
+
+      // 마지막 타이머가 끝날 즈음 이벤트 리스너 정리
+      const cleanupTimeout = window.setTimeout(() => {
         document.removeEventListener("pointerdown", stopOnPointer);
         holdCleanupRef.current = null;
-      }, Math.min(gracePeriodMs, 800)); // 모바일 키보드 UX를 위해 너무 길지 않게 800ms로 제한
+      }, Math.min(gracePeriodMs, 800) + 10);
 
       holdCleanupRef.current = () => {
-        window.clearTimeout(timeoutId);
+        timeouts.forEach(clearTimeout);
+        clearTimeout(cleanupTimeout);
         document.removeEventListener("pointerdown", stopOnPointer);
       };
     },
