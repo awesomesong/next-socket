@@ -54,8 +54,8 @@ const createMetadata = async (id: string) => {
   const contentText = notice.content?.replace(/<[^>]*>/g, '') || '';
   const description = contentText.slice(0, 150) + (contentText.length > 150 ? '...' : '');
   
-  // 이미지 URL 추출 (저장된 첫 번째 이미지 사용)
-  const imageUrl = notice.image?.[0] || '';
+  // 이미지 URL 추출 (저장된 첫 번째 이미지 사용, 없으면 기본 OG 이미지 사용)
+  const imageUrl = notice.image?.[0] || '/image/metadata/notice.png';
   
   const metadata = {
     metadataBase: new URL(base),
@@ -75,7 +75,7 @@ const createMetadata = async (id: string) => {
       description,
       url: `${base}/notice/${id}`,
       type: 'article',
-      ...(imageUrl && { images: [{ url: imageUrl, width: 1200, height: 630 }] }),
+      images: [{ url: imageUrl, width: 1200, height: 700 }],
       ...(notice.author?.name && { authors: [notice.author.name] }),
       publishedTime: notice.createdAt,
       modifiedTime: notice.updatedAt,
@@ -84,7 +84,7 @@ const createMetadata = async (id: string) => {
       card: 'summary_large_image',
       title: notice.title || `Notice ${id}`,
       description,
-      ...(imageUrl && { images: [imageUrl] }),
+      images: [imageUrl],
     },
   };
   
