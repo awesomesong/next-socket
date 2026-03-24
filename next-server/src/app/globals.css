@@ -98,10 +98,10 @@ blockquote{
   --points-ball-5: #d4c8e4;
 }
 
-/* 가이드: lg 미만에서 sticky On this page 바(헤더 아래) 높이만큼 추가 여백 */
+/* 가이드: lg 미만에서 sticky 헤더 + On this page 바 높이 (JS 미적용·폰트 로드 전 폴백 — GuideContent에서 실측으로 덮어씀) */
 @media (max-width: 1023px) {
   :root {
-    --guide-scroll-offset: calc(var(--header-height) + 4.75rem);
+    --guide-scroll-offset: calc(var(--header-height) + 5.5rem);
   }
 }
 

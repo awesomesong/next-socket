@@ -24,15 +24,55 @@ const ON_THIS_PAGE = [
   { href: '#ui-theme', label: 'UI 테마 (다크 / 라이트 모드)' },
 ] as const;
 
+const GUIDE_NARROW_MAX_CSS_PX = 1023;
+
 function getGuideSectionHead(sectionEl: HTMLElement): HTMLElement {
   return sectionEl.querySelector<HTMLElement>('[data-guide-section-head]') ?? sectionEl;
 }
 
-/** scroll-margin-top(--guide-scroll-offset) 기준으로 섹션 제목을 정렬.
- *  scrollIntoView는 실제 스크롤 컨테이너를 자동 탐지하므로 iOS/커스텀 컨테이너에서도 동작 */
-function alignGuideSectionToOffset(el: HTMLElement) {
+/** 좁은 뷰포트: sticky 헤더 + 목차 aside 실측. 그 외: globals --guide-scroll-offset를 재현한 측정 div 높이 */
+function computeGuideScrollMarginPx(
+  measureEl: HTMLDivElement | null,
+  asideEl: HTMLElement | null,
+): number {
+  if (typeof window === 'undefined') return 88;
+  const narrow = window.matchMedia(`(max-width: ${GUIDE_NARROW_MAX_CSS_PX}px)`).matches;
+  const header = document.querySelector('header');
+  if (narrow && header && asideEl) {
+    const hh = header.getBoundingClientRect().height;
+    const ah = asideEl.getBoundingClientRect().height;
+    if (hh >= 1 && ah >= 1) {
+      return Math.ceil(hh + ah + 8);
+    }
+  }
+  return measureEl?.offsetHeight ?? 88;
+}
+
+/** html/body 둘 다 overflow-y 인 환경에서 scrollTop은 보통 document.scrollingElement 쪽에 있음 */
+function scrollMainDocumentBy(deltaY: number, behavior: ScrollBehavior = 'auto') {
+  if (deltaY === 0) return;
+
+  const doScroll = (target: any) => {
+    if (!target || typeof target.scrollBy !== 'function') return;
+    try { target.scrollBy({ top: deltaY, left: 0, behavior }); }
+    catch { target.scrollBy(0, deltaY); }
+  };
+
+  // Next.js (Tailwind) 레이아웃에서는 스크롤 주체(overflow-y)가 html(scrollingElement)이 아닌 body일 수 있습니다.
+  // 실제 스크롤바가 없는 요소는 scrollBy를 무시하므로, 가능성 있는 모든 루트에 적용하는 것이 가장 직관적이고 안전합니다.
+  doScroll(document.body);
+  
+  if (document.scrollingElement && document.scrollingElement !== document.body) {
+    doScroll(document.scrollingElement);
+  }
+  doScroll(window);
+}
+
+/** 뷰포트 상단에서 marginPx 아래에 섹션 제목이 오도록 window 스크롤 (scrollIntoView/scroll-margin 의존 제거) */
+function alignGuideSectionToOffset(el: HTMLElement, marginPx: number, behavior: ScrollBehavior = 'auto') {
   const anchorEl = getGuideSectionHead(el);
-  anchorEl.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'auto' });
+  const top = anchorEl.getBoundingClientRect().top;
+  scrollMainDocumentBy(top - marginPx, behavior);
 }
 
 const guideCardSurfaceClass =
@@ -367,14 +407,47 @@ export default function GuideContent({
     (src: string, alt: string) => () => setZoomedImage({ src, alt }),
     []);
 
-  const handleOnThisPageClick = useCallback((sectionId: string) => {
+  const handleOnThisPageClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    e.preventDefault();
+    window.history.pushState(null, '', `#${sectionId}`);
+
     hasUserNavigatedRef.current = true;
     pinnedSectionIdRef.current = sectionId;
-    const sectionEl = document.getElementById(sectionId);
-    if (!sectionEl) return;
-    window.history.replaceState(null, '', `#${sectionId}`);
-    alignGuideSectionToOffset(sectionEl);
-    pickActiveRef.current();
+
+    const el = document.getElementById(sectionId);
+    if (el) {
+      if (asideRef.current) {
+        // 비동기 요동을 막기 위해 횡단 이동 시 트랜지션을 강제로 없애 즉시 축소되도록 유도
+        asideRef.current.style.transition = 'none';
+      }
+
+      const marginPx = computeGuideScrollMarginPx(scrollOffsetRef.current, asideRef.current);
+      alignGuideSectionToOffset(el, marginPx, 'auto');
+
+      // IntersectionObserver 상태 업데이트나 이미지 초기 레이아웃 변경이 늦게 반영되는 환경(iOS 등)에서
+      // 순간적인 오차가 생기더라도 사용자가 인지하지 못하게 곧바로 단단히 잠그는(lock) 폴링 기법
+      let attempts = 0;
+      const verifyLayoutAndLock = () => {
+        attempts++;
+        if (asideRef.current) {
+          const currentMargin = computeGuideScrollMarginPx(scrollOffsetRef.current, asideRef.current);
+          const anchorTop = getGuideSectionHead(el).getBoundingClientRect().top;
+          if (Math.abs(anchorTop - currentMargin) > 2) {
+            alignGuideSectionToOffset(el, currentMargin, 'auto');
+          }
+        }
+        
+        // 10프레임(~160ms) 동안 레이아웃을 완전히 추적. 그 후 트랜지션 복구
+        if (attempts < 10) {
+          requestAnimationFrame(verifyLayoutAndLock);
+        } else if (asideRef.current) {
+          asideRef.current.style.transition = '';
+        }
+      };
+      requestAnimationFrame(verifyLayoutAndLock);
+    }
+
+    requestAnimationFrame(() => pickActiveRef.current());
   }, []);
 
   useEffect(() => {
@@ -425,7 +498,7 @@ export default function GuideContent({
 
     /** 기준선은 섹션 제목(head) 기준 — 긴 섹션에서도 목차 하이라이트가 제목 전환에 맞춤 */
     const pickActive = () => {
-      const marginPx = scrollOffsetRef.current?.offsetHeight ?? 80;
+      const marginPx = computeGuideScrollMarginPx(scrollOffsetRef.current, asideRef.current);
       let next = '';
       for (const id of sectionIds) {
         const el = document.getElementById(id);
@@ -458,13 +531,13 @@ export default function GuideContent({
         if (pinnedId) {
           const pinnedEl = document.getElementById(pinnedId);
           if (pinnedEl) {
-            const marginPx = scrollOffsetRef.current?.offsetHeight ?? 80;
+            const marginPx = computeGuideScrollMarginPx(scrollOffsetRef.current, asideRef.current);
             const anchorTop = getGuideSectionHead(pinnedEl).getBoundingClientRect().top;
             const tolerancePx = Math.max(4, Math.round(window.innerHeight * 0.005));
             if (Math.abs(anchorTop - marginPx) > tolerancePx) {
-              // scrollIntoView 대신 delta 보정 사용: 전체 재스크롤로 인한 깜박임 방지
-              // html,body { height:100%; overflow-y:auto } 환경에서 body가 스크롤 컨테이너
-              document.body.scrollBy(0, anchorTop - marginPx);
+              // 이미지 로딩 등으로 높이가 확 변할 때 smooth는 화면을 통통 튀게 넘겨버리므로(iOS Safari 버그),
+              // 리페인트 이전에 즉시(auto) 보정하여 사용자가 레이아웃 변화를 전혀 인지하지 못한 채 정확히 고정되어 보이게 합니다.
+              scrollMainDocumentBy(anchorTop - marginPx, 'auto');
             }
           }
         }
@@ -485,7 +558,14 @@ export default function GuideContent({
       const h = window.location.hash.slice(1);
       if (!h) return;
       const el = document.getElementById(h);
-      if (el) alignGuideSectionToOffset(el);
+      if (el) {
+        const run = () => {
+          const m = computeGuideScrollMarginPx(scrollOffsetRef.current, asideRef.current);
+          alignGuideSectionToOffset(el, m);
+        };
+        run();
+        requestAnimationFrame(() => requestAnimationFrame(run));
+      }
       pickActive();
     };
     requestAnimationFrame(syncHashAfterLayout);
@@ -532,8 +612,8 @@ export default function GuideContent({
   useEffect(() => {
     if (!activeId || !navRef.current) return;
     const nav = navRef.current;
-    const activeItem = nav.querySelector<HTMLButtonElement>(
-      `button[data-guide-section-id="${activeId}"]`,
+    const activeItem = nav.querySelector<HTMLElement>(
+      `[data-guide-section-id="${activeId}"]`,
     );
     if (activeItem) {
       const scrollLeft = activeItem.offsetLeft - nav.offsetWidth / 2 + activeItem.offsetWidth / 2;
@@ -1000,14 +1080,14 @@ export default function GuideContent({
                     const isActive = activeId === sectionId;
                     return (
                       <li key={href} className="shrink-0 lg:shrink">
-                        <button
-                          type="button"
+                        <a
+                          href={href}
                           data-guide-section-id={sectionId}
                           aria-current={isActive ? 'location' : undefined}
-                          onClick={() => handleOnThisPageClick(sectionId)}
+                          onClick={(e) => handleOnThisPageClick(e, sectionId)}
                           className={clsx(
-                            // 공통 — 버튼 리셋 + <a>와 동일 시각
-                            "border-0 bg-transparent p-0 cursor-pointer text-inherit font-inherit text-left w-full",
+                            // 공통
+                            "text-left w-full no-underline",
                             "transition-all inline-flex items-center hover:opacity-70",
                             // 모바일 전용 (max-lg) — 테두리 없이 배경으로만 구분
                             "max-lg:touch-manipulation max-lg:text-[0.72rem] max-lg:leading-none max-lg:tracking-[0.04em] max-lg:gap-1 max-lg:py-[0.3rem] max-lg:px-2.5 max-lg:rounded-full max-lg:whitespace-nowrap",
@@ -1036,7 +1116,7 @@ export default function GuideContent({
                               : "bg-[var(--color-text-secondary)] opacity-40 lg:opacity-70"
                           )} />
                           <span className="max-lg:translate-y-px">{label}</span>
-                        </button>
+                        </a>
                       </li>
                     );
                   })}
