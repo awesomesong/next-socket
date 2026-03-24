@@ -29,19 +29,19 @@ export function computeScrollFlags(
   const maxTop = Math.max(0, scrollHeight - clientHeight);
   scrollTop = Math.max(0, Math.min(scrollTop, maxTop));
 
-  // 기본 여유
-  let baseEPS = 64;
+  // 기본 여유: 기존 64에서 24로 감소 (마지막 메시지 1개 높이만큼만 스크롤을 올려도 바로 버튼이 보이도록)
+  let baseEPS = 24;
 
-  // 모바일 키보드 대응 (과대보정 방지: 32~160 사이로 클램프)
+  // 모바일 키보드 대응 (과대보정 방지: 15~60 사이로 클램프)
   if (keyboardAware && window.visualViewport) {
     const shrink = Math.max(0, window.innerHeight - window.visualViewport.height);
-    baseEPS = Math.max(baseEPS, Math.ceil(shrink / 2));
+    baseEPS = Math.max(baseEPS, Math.ceil(shrink / 8));
   }
-  const EPS = Math.max(32, Math.min(baseEPS, 160));
+  const EPS = Math.max(15, Math.min(baseEPS, 60));
 
   // 히스테리시스 임계(선택): prevAtBottom이 true면 조금 더 관대하게 유지
-  const BOTTOM_IN_EPS = EPS + 0.5;          // 하단 '진입'/유지 임계
-  const BOTTOM_OUT_EPS = Math.max(16, EPS / 2); // 하단 '이탈' 임계(더 타이트)
+  const BOTTOM_IN_EPS = EPS + 0.5;          // 하단 '유지' 임계 (이 값을 초과해 올리면 화살표 표시)
+  const BOTTOM_OUT_EPS = Math.max(5, EPS / 2); // 하단 '진입' 임계 (다시 바닥으로 인정받으려면 이 값 이내로 들어와야 함)
 
   const gap = scrollHeight - (scrollTop + clientHeight);
 
