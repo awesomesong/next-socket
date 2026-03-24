@@ -10,7 +10,7 @@ const getParams = cache(async (params: Promise<{ id: string }>) => {
   return await params;
 });
 
-// 블로그 데이터를 가져오는 함수 (캐시 적용)
+// 공지사항 데이터를 가져오는 함수 (캐시 적용)
 const getNoticData = cache(async (id: string) => {
   try {
     const base = 'https://www.devsonghee.com';
@@ -33,11 +33,11 @@ const getNoticData = cache(async (id: string) => {
 const createMetadata = async (id: string) => {
   const base = 'https://www.devsonghee.com';
   
-  // 블로그 데이터 가져오기
+  // 공지사항 데이터 가져오기
   const notice = await getNoticData(id);
   
   if (!notice) {
-    // 블로그를 찾을 수 없는 경우 기본 메타데이터
+    // 공지사항를 찾을 수 없는 경우 기본 메타데이터
     return {
       title: `Notice ${id}`,
       description: `Notice post with ID: ${id}`,
@@ -54,26 +54,18 @@ const createMetadata = async (id: string) => {
   const contentText = notice.content?.replace(/<[^>]*>/g, '') || '';
   const description = contentText.slice(0, 150) + (contentText.length > 150 ? '...' : '');
   
-  // 이미지 URL 추출 (JSON 파싱)
-  let imageUrl = '';
-  try {
-    if (notice.image) {
-      const imageData = JSON.parse(notice.image);
-      if (imageData && imageData.length > 0) {
-        imageUrl = imageData[0].url;
-      }
-    }
-  } catch {}
+  // 이미지 URL 추출 (저장된 첫 번째 이미지 사용)
+  const imageUrl = notice.image?.[0] || '';
   
   const metadata = {
     metadataBase: new URL(base),
     title: notice.title || `Notice ${id}`,
     description,
     keywords: [
-      '블로그',
-      '개발',
-      '프로그래밍',
-      '기술',
+      '공지사항',
+      'Scent Memories 공지사항',
+      '사용안내',
+      '서비스 소개',
       notice.title,
       ...(notice.author?.name ? [notice.author.name] : [])
     ],
