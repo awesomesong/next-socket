@@ -526,6 +526,15 @@ export default function GuideContent({
         next = id;
       }
       setActiveId(next);
+      // 스크롤 위치에 따라 URL hash를 replaceState로 동기화
+      // (pushState X — 히스토리 스택 추가 없이 현재 항목만 교체)
+      const currentHash = window.location.hash.slice(1);
+      if (currentHash !== next) {
+        const newUrl = next
+          ? `${location.pathname}${location.search}#${next}`
+          : location.pathname + location.search;
+        try { window.history.replaceState(null, '', newUrl); } catch { /* ignore */ }
+      }
     };
 
     pickActiveRef.current = pickActive;
