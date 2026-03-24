@@ -58,7 +58,6 @@ const createMetadata = async (id: string) => {
   const imageUrl = notice.image?.[0] || '/image/metadata/notice.png';
   
   const metadata = {
-    metadataBase: new URL(base),
     title: notice.title || `Notice ${id}`,
     description,
     keywords: [
