@@ -8,11 +8,13 @@ import {
   useCallback,
   useRef,
   memo,
+  useLayoutEffect
 } from "react";
 import useComposition from "@/src/app/hooks/useComposition";
 import TextareaAutosize from "react-textarea-autosize";
 import { useSession } from "next-auth/react";
 import { formatErrorMessage } from "@/src/app/lib/react-query/utils";
+import { useFocusInput } from "@/src/app/hooks/useFocusInput";
 import { validatePrompt as validateAIPrompt } from "@/src/app/utils/aiPolicy";
 import { FullMessageType, normalizePreviewType } from "@/src/app/types/conversation";
 import {
@@ -89,21 +91,26 @@ const AIChatForm = ({
     };
   }, [abortAI]);
 
-  const { register, handleSubmit, setValue, getValues, setFocus } =
+  const { register, handleSubmit, setValue, getValues } =
     useForm<Form>({
       defaultValues: { message: "" },
     });
 
-  useEffect(() => {
-    setFocus("message");
-  }, [setFocus]);
+  const { ref: registerRef, ...registerRest } = register("message", { required: true });
+  const { focusAndHold, cancelFocus, focusInput, setTextareaRef } = useFocusInput("message", registerRef);
 
-  // 세션 로드 완료 시 포커스 재적용 (세션 로딩 중 리렌더링으로 포커스 유실 방지)
+  // 마운트 시 부드러운 순차적 초기 포커스 적용 (페이지 전환 방어)
+  useLayoutEffect(() => {
+    focusAndHold();
+    return () => cancelFocus();
+  }, [focusAndHold, cancelFocus]);
+
+  // 세션 로드 완료 시 포커스 재적용 (세션 캐시 미스 시 지연 방어)
   useEffect(() => {
     if (sessionStatus === "authenticated") {
-      setFocus("message");
+      focusInput();
     }
-  }, [sessionStatus, setFocus]);
+  }, [sessionStatus, focusInput]);
 
   // 드래프트 페이지에서 첫 메시지 전송 후 이동해온 경우: pending AI 스트림 자동 시작
   const hasPendingTriggeredRef = useRef(false);
@@ -178,7 +185,6 @@ const AIChatForm = ({
 
     // ✅ 입력 필드 초기화
     setValue("message", "", { shouldValidate: true });
-    setFocus("message");
 
     const userMessageId = crypto.randomUUID();
     const now = new Date();
@@ -256,9 +262,8 @@ const AIChatForm = ({
       toast.error(formatErrorMessage(err, "사용자 메시지 저장에 실패했습니다."));
     } finally {
       setIsDisabled(false);
-      setFocus("message");
     }
-  }, [conversationId, queryClient, requestAI, removeFailedMessage, addFailedMessage, isConversationLoading, setFocus, setValue, session, isSessionLoading, isDisabled, notifyNewContent, socket]);
+  }, [conversationId, queryClient, requestAI, removeFailedMessage, addFailedMessage, isConversationLoading, setValue, session, isSessionLoading, isDisabled, notifyNewContent, socket]);
 
   // ✅ 제출 경로 통일 (사파리 모바일 호환: 명시적 preventDefault)
   // handleSubmit은 이벤트 객체가 없어도 작동하지만, 폼 제출 시에는 명시적으로 전달
@@ -303,7 +308,8 @@ const AIChatForm = ({
           id="message"
           minRows={2}
           maxRows={4}
-          {...register("message", { required: true })}
+          ref={setTextareaRef}
+          {...registerRest}
           placeholder={
             isDisabled
               ? "AI 응답이 완료될 때까지 기다려주세요."
@@ -312,7 +318,7 @@ const AIChatForm = ({
           onKeyDown={handleKeyPress}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
-          disabled={isDisabled}
+          readOnly={isDisabled}
           className="
             w-full 
             bg-default

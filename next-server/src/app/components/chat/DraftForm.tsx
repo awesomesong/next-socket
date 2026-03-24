@@ -48,7 +48,8 @@ const DraftForm: React.FC<DraftFormProps> = ({
         defaultValues: { message: '' },
     });
 
-    const { focusAndHold, cancelFocus } = useFocusInput('message');
+    const { ref: registerRef, ...registerRest } = register('message', { required: true });
+    const { focusAndHold, cancelFocus, setTextareaRef } = useFocusInput('message', registerRef);
 
     useLayoutEffect(() => {
         focusAndHold(1500);
@@ -171,7 +172,8 @@ const DraftForm: React.FC<DraftFormProps> = ({
                     id="message"
                     minRows={2}
                     maxRows={4}
-                    {...register('message', { required: true })}
+                    ref={setTextareaRef}
+                    {...registerRest}
                     placeholder={isAI
                         ? '향수 AI 어시스턴트에게 궁금한 점을 물어보세요.'
                         : '메시지를 작성해주세요.'

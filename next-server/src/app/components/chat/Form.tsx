@@ -297,14 +297,8 @@ const Form = () => {
       },
     });
 
-  const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
   const { ref: registerRef, ...registerRest } = register("message", { required: true });
-  const { focusInput, focusAndHold, cancelFocus } = useFocusInput("message", messageInputRef);
-
-  const setTextareaRef = useCallback((el: HTMLTextAreaElement | null) => {
-    registerRef(el);
-    messageInputRef.current = el;
-  }, [registerRef]);
+  const { focusAndHold, cancelFocus, setTextareaRef } = useFocusInput("message", registerRef);
 
   // ImageUploadButton(CldUploadButton) 초기화 중 포커스 탈취 방지용 inert 상태
   // - false(inert): Cloudinary 스크립트 로드 전까지 버튼 비활성화
@@ -327,7 +321,7 @@ const Form = () => {
       if (!("cloudinary" in window)) return;
       window.clearInterval(checkId);
       setUploadButtonActive(true);
-      
+
       // ✅ 고정된 시간(300ms)의 한계를 극복하기 위해 확실한 이벤트 리스너 방식 사용
       // Cloudinary 렌더링 시작 후 최대 3초 이내에 발생하는 "비정상적인 포커스 탈취(body로 이동)"를 정확히 1회 잡아냅니다.
       const el = document.getElementById("message") as HTMLTextAreaElement | null;
