@@ -32,6 +32,7 @@ const josefinSans = Josefin_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.devsonghee.com"),
   title: {
     default: "Scent Memories | 강송희 프론트엔드 포트폴리오",
     template: "%s | Scent Memories",
