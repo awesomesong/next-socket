@@ -26,6 +26,7 @@
 | **실시간 채팅** | Socket.IO 룸 기반 1:1·그룹 채팅, 오프라인 메시지 큐잉(24h TTL, 재연결 시 일괄 전달), 읽음 상태 실시간 동기화 |
 | **AI 어시스턴트** | GPT-4 SSE 스트리밍(토큰 단위 실시간 렌더링), 슬라이딩 윈도우 레이트 리미팅(분당 10회/유저), 최근 8개 메시지 컨텍스트 유지 |
 | **공지사항** | CRUD + 댓글 + 조회수, WYSIWYG 에디터(React Quill), Cloudinary 이미지 업로드, DOMPurify XSS 방지 |
+| **이용 안내(가이드)** | 서비스·기능 소개, 로그인·갤러리·채팅 등 단계별 스크린샷 이용 안내 |
 | **인증** | NextAuth v4 JWT 전략(24h), Google·Kakao OAuth + 이메일/비밀번호 Credentials, bcryptjs 해싱, 미들웨어 보호 라우팅 |
 | **3D 히어로 섹션** | Three.js WebGL 커스텀 셰이더 기반 은하수 배경, 다크/라이트 테마 대응 |
 | **테마·반응형** | 라벤더·아이보리 커스텀 테마, Tailwind 반응형 브레이크포인트, Framer Motion 페이지 전환 애니메이션 |
@@ -334,32 +335,38 @@ Scent-Memories/
 │   ├── prisma/
 │   │   ├── schema.prisma
 │   │   └── migrations/
-│   └── src/app/
-│       ├── (main)/                  # 메인 레이아웃 Route Group
-│       │   ├── (home)/              # 홈 (Three.js 히어로 + 향수 목록)
-│       │   ├── fragrance/           # [id], create, edit
-│       │   ├── notice/              # 목록·상세·작성·수정
-│       │   └── profile/
-│       ├── (chat)/                  # 채팅 전용 레이아웃
-│       │   └── conversations/
-│       ├── api/
-│       │   ├── ai/stream/           # GPT-4 SSE 스트리밍
-│       │   ├── fragrance/           # 향수·리뷰·브랜드·이미지 분석
-│       │   ├── auth/[...nextauth]/  # NextAuth 핸들러
-│       │   ├── messages/            # 채팅 메시지 (트랜잭션)
-│       │   └── conversations/       # 채팅 룸 관리
-│       ├── components/
-│       │   ├── main/                # ProductFragrance, ScentMemoriesHero
-│       │   ├── fragrance/           # FragranceDetail, FormFragrance 등
-│       │   └── chat/
-│       ├── lib/
-│       │   ├── auth.ts              # NextAuth 설정
-│       │   ├── session.ts           # getCurrentUser 등 세션 유틸
-│       │   ├── socket.ts            # Socket.IO 싱글턴
-│       │   └── react-query/         # fragranceCache, chatCache, reviewsCache, noticeCache
-│       ├── hooks/                   # useAIStream, useChatScroller, useMediaQuery 등
-│       ├── types/                   # fragrance, conversation, socket, reviews 타입
-│       └── utils/                   # aiPolicy, formatDate, scrollMath 등
+│   └── src/
+│       ├── middleware.ts            # JWT·보호 라우트 (App Router 바깥)
+│       └── app/                     # App Router — 라우트·컴포넌트·유틸 전부 이 하위
+│           ├── layout.tsx, globals.css
+│           ├── (main)/              # 메인 레이아웃 Route Group
+│           │   ├── (home)/          # 홈 (Three.js 히어로 + 향수 목록)
+│           │   ├── fragrance/       # [id](slug 조회), create, edit
+│           │   ├── notice/          # 목록·상세·작성·수정
+│           │   ├── guide/           # 소개·이용 안내
+│           │   └── profile/
+│           ├── (chat)/              # 채팅 전용 레이아웃
+│           │   └── conversations/
+│           ├── auth/                # signin, register 페이지
+│           ├── api/
+│           │   ├── ai/stream/       # GPT-4 SSE 스트리밍
+│           │   ├── fragrance/       # 향수·리뷰·브랜드·이미지 분석
+│           │   ├── auth/[...nextauth]/  # NextAuth 핸들러
+│           │   ├── messages/        # 채팅 메시지 (트랜잭션)
+│           │   └── conversations/   # 채팅 룸 관리
+│           ├── components/
+│           │   ├── main/            # ProductFragrance, ScentMemoriesHero
+│           │   ├── fragrance/       # FragranceDetail, FormFragrance 등
+│           │   └── chat/
+│           ├── context/             # NextAuthProvider, RQProvider, SocketProvider, ThemeProvider 등
+│           ├── lib/
+│           │   ├── auth.ts          # NextAuth 설정
+│           │   ├── session.ts       # getCurrentUser 등 세션 유틸
+│           │   ├── socket.ts        # Socket.IO 싱글턴
+│           │   └── react-query/     # fragranceCache, chatCache, reviewsCache, noticeCache
+│           ├── hooks/               # useAIStream, useChatScroller, useMediaQuery 등
+│           ├── types/               # fragrance, conversation, socket, reviews 타입
+│           └── utils/               # aiPolicy, formatDate, scrollMath 등
 │
 └── socket-server/
     ├── server.js                    # Express + Socket.IO (오프라인 큐, 온라인 관리)
