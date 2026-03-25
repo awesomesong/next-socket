@@ -85,6 +85,9 @@ export default async function RootLayout({
       lang="ko"
       suppressHydrationWarning
     >
+      <head>
+        <meta name="google-site-verification" content="ALyIJvkt9qHniyOTPkbNb3MNaUU1U44WV-nnHnwQofY" />
+      </head>
       <body className={`
         flex
         flex-col
