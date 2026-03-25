@@ -23,7 +23,7 @@ export default function Footer() {
                 <div className="footer-dev">
                     <p className="footer-nav-title">Developer</p>
                     <a
-                        href="https://github.com/awesomesong"
+                        href="https://github.com/awesomesong/next-socket"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="footer-github"
