@@ -6,7 +6,6 @@ import GuideContent, {
 } from '@/src/app/components/GuideContent';
 
 export const metadata: Metadata = {
-  alternates: { canonical: '/guide' },
   title: 'Scent Memories 소개 및 이용 안내',
   description:
     'Scent Memories는 향수를 수집하고 기록하는 프론트엔드 포트폴리오 사이트입니다. 서비스 소개와 이용 방법을 안내합니다.',
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
     title: 'Scent Memories 소개 및 이용 안내',
     description:
       'Scent Memories는 향수를 수집하고 기록하는 프론트엔드 포트폴리오 사이트입니다. 서비스 소개와 이용 방법을 안내합니다.',
-    url: new URL("https://www.devsonghee.com/guide"),
+    url: "/guide",
     images: [
       {
         url: '/image/metadata/guide.png',
