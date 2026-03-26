@@ -9,6 +9,7 @@
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-4.8.1-010101?logo=socket.io)
 ![TanStack Query](https://img.shields.io/badge/TanStack_Query-5.59-FF4154)
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4_SSE-412991?logo=openai)
+![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o_Vision-412991?logo=openai)
 ![Vercel](https://img.shields.io/badge/Vercel-배포-000000?logo=vercel)
 ![Fly.io](https://img.shields.io/badge/Fly.io-Docker-7B3FE4)
 
@@ -21,7 +22,7 @@
 | 기능 | 설명 |
 |------|------|
 | **향수 카탈로그** | 브랜드·이름·노트·이미지 기반 CRUD, slug 기반 SEO URL, 커서 기반 Infinite Query, 성공 시 캐시 반영 |
-| **AI 이미지 분석 입력** | 향수 병·라벨 이미지를 업로드하면 AI가 브랜드·향수명·노트를 분석해 향수 정보를 추가하는 폼을 자동으로 채워줍니다. |
+| **AI 이미지 분석 입력** | 향수 병 이미지를 업로드하면 GPT-4o Vision이 브랜드·향수명·노트를 분석해 향수 정보를 추가하는 폼을 자동으로 채워줍니다. |
 | **리뷰 시스템** | 향수별 리뷰 작성·수정·삭제, 커서 기반 무한 스크롤, React Query 도메인별 캐시 선택적 무효화 |
 | **실시간 채팅** | Socket.IO 룸 기반 1:1·그룹 채팅, 오프라인 메시지 큐잉(24h TTL, 재연결 시 일괄 전달), 읽음 상태 실시간 동기화 |
 | **AI 어시스턴트** | GPT-4 SSE 스트리밍(토큰 단위 실시간 렌더링), 슬라이딩 윈도우 레이트 리미팅(분당 10회/유저), 최근 8개 메시지 컨텍스트 유지 |
@@ -42,7 +43,7 @@
 | **서버 상태** | TanStack Query 5 (커서 Infinite Query, Optimistic Update, 도메인별 캐시 분리) |
 | **클라이언트 상태** | Zustand (UI 전역 상태) + React Context (auth·socket·theme) |
 | **실시간** | Socket.IO 4 (분리 서버, O(1) 유저 조회, 오프라인 메시지 큐, WebSocket-only) |
-| **AI 스트리밍** | OpenAI GPT-4 SSE, 슬라이딩 윈도우 레이트 리미팅, 컨텍스트 관리 |
+| **AI 스트리밍** | OpenAI GPT-4 SSE (채팅 어시스턴트), GPT-4o Vision (이미지 분석), 슬라이딩 윈도우 레이트 리미팅, 컨텍스트 관리 |
 | **인증** | NextAuth v4 JWT (OAuth + Credentials), Prisma 어댑터 |
 | **DB 설계** | PostgreSQL + Prisma, 복합 인덱스 전략, 커서 페이지네이션 |
 | **보안** | bcryptjs, DOMPurify, 웹훅 Secret, CORS 화이트리스트 |
@@ -281,6 +282,7 @@ POST /api/ai/stream
 | | HeroUI | 2.7.5 | 공통 컴포넌트(버튼·모달·폼) |
 | | Framer Motion | 12.5.0 | 페이지 전환·요소 인터랙션 애니메이션 |
 | **폼** | react-hook-form | 7.51.4 | 비제어 컴포넌트, 리렌더 최소화, 유효성 검사 |
+| | react-select | 5.8.0 | 커스텀 Select 컴포넌트 (채팅 멤버 다중 선택) |
 | **실시간** | Socket.IO Client | 4.8.1 | 싱글턴 패턴, 지수 백오프 재연결, 이벤트 타입 안전성 |
 | **인증** | NextAuth | 4.24.7 | JWT(OAuth + Credentials) |
 | **보안** | bcryptjs | 3.x | 비밀번호 해싱 |
@@ -288,7 +290,8 @@ POST /api/ai/stream
 | **미디어** | next-cloudinary | 6.6.2 | 이미지 업로드·CDN·WebP 자동 변환 |
 | **에디터** | react-quill-new | 3.4.6 | WYSIWYG 에디터(공지·게시글) |
 | **3D** | Three.js | 0.183.0 | 히어로 섹션 은하수 배경(WebGL·커스텀 셰이더, 다크/라이트 테마 대응) |
-| **기타** | dayjs | 1.x | 날짜 포맷 |
+| **기타** | react-icons | 5.0.1 | 아이콘 라이브러리 |
+| | dayjs | 1.11.13 | 날짜 포맷 |
 | | react-intersection-observer | 9.x | 뷰포트 감지, Infinite Query 트리거 |
 | | react-hot-toast | 2.x | 토스트 알림 |
 
@@ -300,7 +303,8 @@ POST /api/ai/stream
 | **DB** | PostgreSQL | Prisma 복합 인덱스, cascade delete, 유니크 제약 |
 | **ORM** | Prisma 5.22.0 | 타입 안전 쿼리, 마이그레이션 관리, 생성 타입 재사용 |
 | **실시간** | Socket.IO 4.8.1 | Express 서버 분리, 룸 기반 브로드캐스트, 오프라인 큐 |
-| **AI** | OpenAI GPT-4 | SSE 스트리밍, 대화 컨텍스트(최근 8개 메시지) 유지 |
+| **AI** | OpenAI GPT-4 | SSE 스트리밍 (채팅 어시스턴트), 대화 컨텍스트(최근 8개 메시지) 유지 |
+| | OpenAI GPT-4o | Vision API (향수 이미지 분석·폼 자동 완성), JSON 응답 모드 |
 
 ### 인프라·배포
 
