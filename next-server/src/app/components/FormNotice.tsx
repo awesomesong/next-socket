@@ -27,7 +27,7 @@ import { createNotice } from "@/src/app/lib/createNotice";
 import { updateNotice } from "@/src/app/lib/updateNotice";
 import { withToastParams } from "@/src/app/lib/withToastParams";
 import MyQuillEditor from "./QuillEditor";
-import ReactQuillOriginal from "react-quill-new";
+import type ReactQuillOriginal from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 
 type FormNoticeProps = {
