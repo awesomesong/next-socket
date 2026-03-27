@@ -1752,7 +1752,7 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
   min-height: 0;
 }
 
-/* 향수 병 래퍼 — 가운데, 높이에 맞춰 줄어듦 */
+/* 향수병 래퍼 — 가운데, 높이에 맞춰 줄어듦 */
 .scent-bottle-wrap {
   position: relative;
   display: flex;
