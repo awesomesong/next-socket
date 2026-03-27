@@ -1,6 +1,6 @@
 # Scent Memories
 
-> **향수를 수집하고 기록하는 공간** — 향수를 사랑하는 사람들을 위한 향수 정보 공유 아카이브입니다. 향수(Fragrance) 정보를 등록·공유하고, 실시간 채팅과 GPT-4 AI 어시스턴트를 활용할 수 있는 풀스택 커뮤니티 플랫폼입니다.
+> **향수를 수집하고 기록하는 공간** — 향수를 사랑하는 사람들을 위한 향수 정보 공유 아카이브입니다. 향수(Fragrance) 정보를 등록·공유하고, 실시간 채팅과 GPT-4 AI 어시스턴트를 활용할 수 있는 풀스택 커뮤니티 웹 애플리케이션입니다.
 
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.8-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19.1.2-61DAFB?logo=react)
