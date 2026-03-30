@@ -558,7 +558,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
           isOwn && "justify-end",
         )}
       >
-        <div className={clsx("shrink-0", isOwn && "order-2")}>
+        <div className={clsx(isOwn && "order-2")}>
           <Avatar
             user={isConversationUser ? data.sender : noUserType}
             isOwn={isOwn}
@@ -567,7 +567,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
         </div>
         <div
           className={clsx(
-            "flex flex-col flex-1",
+            "flex flex-col flex-1 min-w-0",
             isOwn && "items-end",
             data.type === "image" && "max-[360px]:w-full",
           )}
