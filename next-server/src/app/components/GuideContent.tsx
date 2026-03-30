@@ -420,6 +420,20 @@ export default function GuideContent({
   /** 모바일 sticky TOC aside — 높이 변화 시 scroll 보정용 */
   const asideRef = useRef<HTMLElement | null>(null);
 
+  /** sentinel 위치 기반으로 sticky 상태를 동기적으로 판단·갱신 */
+  const updateStickyFromLayout = useCallback(() => {
+    const sentinel = onThisPageSentinelRef.current;
+    if (!sentinel) return;
+    const isNarrow = window.matchMedia(`(max-width: ${GUIDE_NARROW_MAX_CSS_PX}px)`).matches;
+    if (!isNarrow) {
+      setIsOnThisPageSticky(false);
+      return;
+    }
+    const rect = sentinel.getBoundingClientRect();
+    const isIntersecting = rect.top >= 0 && rect.top <= window.innerHeight;
+    setIsOnThisPageSticky(!isIntersecting);
+  }, []);
+
   const closeZoom = useCallback(() => setZoomedImage(null), []);
   const openZoom = useCallback(
     (src: string, alt: string) => () => setZoomedImage({ src, alt }),
@@ -475,15 +489,6 @@ export default function GuideContent({
     const update = (entry: IntersectionObserverEntry | null, isNarrow: boolean) => {
       setIsOnThisPageSticky(isNarrow && entry !== null && !entry.isIntersecting);
     };
-    const updateFromLayout = (isNarrow: boolean) => {
-      if (!isNarrow) {
-        setIsOnThisPageSticky(false);
-        return;
-      }
-      const rect = sentinel.getBoundingClientRect();
-      const isIntersecting = rect.top >= 0 && rect.top <= window.innerHeight;
-      setIsOnThisPageSticky(!isIntersecting);
-    };
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
@@ -498,11 +503,11 @@ export default function GuideContent({
         return;
       }
       observer.observe(sentinel);
-      updateFromLayout(true);
+      updateStickyFromLayout();
     };
     if (media.matches) {
       observer.observe(sentinel);
-      updateFromLayout(true);
+      updateStickyFromLayout();
     }
     media.addEventListener('change', onResize);
     return () => {
@@ -517,12 +522,14 @@ export default function GuideContent({
     /** 기준선은 섹션 제목(head) 기준 — 긴 섹션에서도 목차 하이라이트가 제목 전환에 맞춤 */
     const pickActive = () => {
       const marginPx = computeGuideScrollMarginPx(scrollOffsetRef.current, asideRef.current);
+      // 섹션 제목이 뷰포트 상단 30% 이내에 들어오면 미리 활성화
+      const activationThreshold = marginPx + window.innerHeight * 0.1;
       let next = '';
       for (const id of sectionIds) {
         const el = document.getElementById(id);
         if (!el) continue;
         const top = getGuideSectionHead(el).getBoundingClientRect().top;
-        if (top > marginPx + 2) break;
+        if (top > activationThreshold) break;
         next = id;
       }
       setActiveId(next);
@@ -580,6 +587,25 @@ export default function GuideContent({
 
     pickActive();
 
+    // 해시 URL 직접 접근: rAF 이전에 sticky 상태와 activeId를 미리 설정하여
+    // React가 커밋한 뒤 첫 스크롤부터 올바른 aside 높이(오프셋)를 사용하도록 함
+    const hashOnMount = window.location.hash.slice(1);
+    if (hashOnMount && !hasUserNavigatedRef.current) {
+      const hashEl = document.getElementById(hashOnMount);
+      const sentinel = onThisPageSentinelRef.current;
+      if (hashEl && sentinel) {
+        const isNarrow = window.matchMedia(`(max-width: ${GUIDE_NARROW_MAX_CSS_PX}px)`).matches;
+        if (isNarrow) {
+          const hashDocTop = hashEl.getBoundingClientRect().top + window.scrollY;
+          const sentinelDocTop = sentinel.getBoundingClientRect().top + window.scrollY;
+          if (hashDocTop > sentinelDocTop) {
+            setIsOnThisPageSticky(true);
+            setActiveId(hashOnMount);
+          }
+        }
+      }
+    }
+
     const syncHashAfterLayout = () => {
       if (hasUserNavigatedRef.current) return;
       const h = window.location.hash.slice(1);
@@ -591,7 +617,11 @@ export default function GuideContent({
           alignGuideSectionToOffset(el, m);
         };
         run();
-        requestAnimationFrame(() => requestAnimationFrame(run));
+        updateStickyFromLayout();
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          run();
+          updateStickyFromLayout();
+        }));
       }
       pickActive();
     };
@@ -646,7 +676,7 @@ export default function GuideContent({
       const scrollLeft = activeItem.offsetLeft - nav.offsetWidth / 2 + activeItem.offsetWidth / 2;
       nav.scrollLeft = scrollLeft;
     }
-  }, [activeId]);
+  }, [activeId, isOnThisPageSticky]);
 
   useEffect(() => {
     const nav = navRef.current;
