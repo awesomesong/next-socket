@@ -65,6 +65,13 @@ const Form = () => {
       // 이미지 메시지는 body를 null로 설정 (ConversationBox에서 type으로 판단)
       const previewBody = image ? null : (body || "");
 
+      // ✅ 초기 로딩 중 메시지 전송 시 fetch가 낙관적 업데이트를 덮어쓰는 것 방지
+      const fetchState = queryClient.getQueryState(messagesKey(conversationId));
+      const wasFetching = fetchState?.fetchStatus === 'fetching';
+      if (wasFetching) {
+        await queryClient.cancelQueries({ queryKey: messagesKey(conversationId) });
+      }
+
       const previousData = queryClient.getQueryData<
         InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }>
       >(messagesKey(conversationId));
@@ -157,6 +164,7 @@ const Form = () => {
         previewBody,
         image,
         prevPreview, // ✅ 실패 시 복원용
+        wasFetching, // ✅ 초기 로딩 취소 여부
       };
     },
     onSuccess: (data, variables, context) => {
@@ -207,6 +215,15 @@ const Form = () => {
           newMessage: socketMessage,
         });
       }
+
+      // ✅ 초기 로딩을 취소한 경우: 서버 메시지를 캐시에 보장하고 이전 대화 리패치
+      if (context?.wasFetching && data.newMessage) {
+        upsertMessageSortedInCache(queryClient, conversationId, {
+          ...data.newMessage,
+          clientMessageId: context.messageId,
+        });
+        queryClient.invalidateQueries({ queryKey: messagesKey(conversationId) });
+      }
     },
     onError: (error, _variables, context) => {
       // 실패한 메시지를 목록에서 제거하지 말고 오류 상태로 표시하여 재전송 가능하게 유지
@@ -251,6 +268,23 @@ const Form = () => {
           "메시지 전송에 실패했습니다. 다시 시도해주세요.",
         ),
       );
+
+      // ✅ 초기 로딩을 취소한 경우: 이전 대화 리패치 후 실패 메시지 재삽입
+      if (context?.wasFetching && context?.messageId) {
+        const failedMsgInCache = queryClient.getQueryData<
+          InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }>
+        >(messagesKey(_variables.conversationId))
+          ?.pages?.[0]?.messages?.find(m => String(m.id) === String(context.messageId));
+
+        queryClient.invalidateQueries({ queryKey: messagesKey(_variables.conversationId) }).then(() => {
+          if (failedMsgInCache) {
+            upsertMessageSortedInCache(queryClient, _variables.conversationId, {
+              ...failedMsgInCache,
+              isError: true,
+            });
+          }
+        });
+      }
     },
   });
 
