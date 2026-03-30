@@ -65,12 +65,9 @@ const Form = () => {
       // 이미지 메시지는 body를 null로 설정 (ConversationBox에서 type으로 판단)
       const previewBody = image ? null : (body || "");
 
-      // ✅ 초기 로딩 중 메시지 전송 시 fetch가 낙관적 업데이트를 덮어쓰는 것 방지
+      // ✅ 초기 로딩 중 메시지 전송 시 fetch 완료 후 재삽입을 위한 플래그
       const fetchState = queryClient.getQueryState(messagesKey(conversationId));
       const wasFetching = fetchState?.fetchStatus === 'fetching';
-      if (wasFetching) {
-        await queryClient.cancelQueries({ queryKey: messagesKey(conversationId) });
-      }
 
       const previousData = queryClient.getQueryData<
         InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }>
@@ -269,22 +266,6 @@ const Form = () => {
         ),
       );
 
-      // ✅ 초기 로딩을 취소한 경우: 이전 대화 리패치 후 실패 메시지 재삽입
-      if (context?.wasFetching && context?.messageId) {
-        const failedMsgInCache = queryClient.getQueryData<
-          InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }>
-        >(messagesKey(_variables.conversationId))
-          ?.pages?.[0]?.messages?.find(m => String(m.id) === String(context.messageId));
-
-        queryClient.invalidateQueries({ queryKey: messagesKey(_variables.conversationId) }).then(() => {
-          if (failedMsgInCache) {
-            upsertMessageSortedInCache(queryClient, _variables.conversationId, {
-              ...failedMsgInCache,
-              isError: true,
-            });
-          }
-        });
-      }
     },
   });
 
