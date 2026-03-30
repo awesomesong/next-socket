@@ -325,57 +325,63 @@ const Form = () => {
   // - true: Cloudinary 로드 완료 후 버튼 활성화
   const [uploadButtonActive, setUploadButtonActive] = useState(false);
 
-  // Cloudinary 스크립트 로드 완료 시점 감지 → inert 해제 + 포커스 복구
+  // Cloudinary inert 해제 + widget.cloudinary.com/info/ API 응답 시 포커스 복구
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    // ── 1. Cloudinary inert 해제 ──
     if ("cloudinary" in window) {
       setUploadButtonActive(true);
-      return;
     }
-
-    const checkId = window.setInterval(() => {
+    const checkId = ("cloudinary" in window) ? null : window.setInterval(() => {
       if (!("cloudinary" in window)) return;
-      window.clearInterval(checkId);
+      window.clearInterval(checkId!);
       setUploadButtonActive(true);
-
-      const el = document.getElementById("message") as HTMLTextAreaElement | null;
-      if (!el) return;
-      const form = el.closest("form");
-
-      // 포커스가 form 밖으로 빼앗겼는지 판정 (body, null, Cloudinary 요소 등)
-      const isFocusStolen = () => {
-        const active = document.activeElement;
-        return active !== el && (!active || active === document.body || (form && !form.contains(active)));
-      };
-
-      // ① 스크립트 로드 시점에 이미 빼앗긴 경우 즉시 복구
-      if (isFocusStolen()) el.focus();
-
-      // ② inert 해제 후 React 재렌더 → 위젯 재초기화 대비
-      requestAnimationFrame(() => {
-        if (isFocusStolen()) el.focus();
-      });
-
-      // ③ 이후 발생하는 비정상 blur 1회 복구 (3초 감시)
-      let recovered = false;
-      const onBlur = () => {
-        if (recovered) return;
-        setTimeout(() => {
-          if (isFocusStolen()) {
-            el.focus();
-            recovered = true;
-          }
-        }, 10);
-      };
-
-      el.addEventListener("blur", onBlur);
-      setTimeout(() => {
-        el.removeEventListener("blur", onBlur);
-      }, 3000);
     }, 50);
 
-    return () => window.clearInterval(checkId);
+    // ── 2. widget.cloudinary.com/info/ API 응답 감지 → 1회성 포커스 복구 ──
+    // createUploadWidget() 후 /info/ API 응답이 돌아오면 위젯이 DOM을 조작하며 포커스 탈취.
+    // PerformanceObserver로 정확한 시점을 감지하고, 독립적으로 복구만 수행.
+    // focusAndHold를 호출하지 않으므로 useLayoutEffect의 기존 가드를 취소하지 않음.
+    let perfObserver: PerformanceObserver | null = null;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    try {
+      perfObserver = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (entry.name.includes("widget.cloudinary.com/info/")) {
+            const el = document.getElementById("message") as HTMLTextAreaElement | null;
+            if (el) {
+              const form = el.closest("form");
+              const recover = () => {
+                const active = document.activeElement;
+                if (active !== el && (!active || active === document.body || (form && !form.contains(active)))) {
+                  el.focus();
+                }
+              };
+              // API 응답 직후 + 지연 DOM 조작 대비 복수 시점 체크
+              recover();
+              timers.push(
+                setTimeout(recover, 50),
+                setTimeout(recover, 150),
+                setTimeout(recover, 300),
+              );
+            }
+            perfObserver?.disconnect();
+            perfObserver = null;
+            return;
+          }
+        }
+      });
+      perfObserver.observe({ type: "resource" });
+    } catch {
+      // PerformanceObserver 미지원 시 useLayoutEffect의 focusAndHold(3000)에 의존
+    }
+
+    return () => {
+      if (checkId) window.clearInterval(checkId);
+      perfObserver?.disconnect();
+      timers.forEach(clearTimeout);
+    };
   }, []);
 
   // 마운트/대화 전환 시 포커스 유지 폴링 시작

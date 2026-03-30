@@ -3,8 +3,8 @@ import { useCallback, useRef } from "react";
 /**
  * 입력 필드 포커스 공통 훅
  * - focusInput: 단순 포커스
- * - focusAndHold(gracePeriodMs): 즉시 포커스 후 지정된 시간(gracePeriodMs) 뒤에
- *   포커스 탈취 여부를 1회 확인하여 복구한다.
+ * - focusAndHold(gracePeriodMs): 즉시 포커스 후 지정된 시간 동안 주기적으로
+ *   포커스 탈취 여부를 확인하여 복구한다.
  *   사용자가 클릭(pointerdown)으로 의도적 포커스 이동 시 복구 중단.
  * - cancelFocus: 복구 대기 예약 취소
  */
@@ -35,12 +35,13 @@ export function useFocusInput(
   const focusInput = doFocus;
 
   /**
-   * 마운트 초기 포커스:
+   * 마운트 초기 포커스 + setTimeout 기반 주기적 복구:
    * - 즉시 포커스
-   * - third-party 스크립트(Cloudinary 등)의 포커스 탈취를 방어하기 위해 콜백 1회성 확인
-   * - 모바일 환경에서 키보드 깜빡임(flickering)을 유발하는 50ms 폴링 제거
+   * - gracePeriodMs 내 여러 시점에서 포커스 탈취 여부 확인 → form 밖이면 복구
+   * - 사용자 pointerdown 시 복구 중단 (의도적 이동)
+   * - focusin 리스너 미사용 → 위젯과의 포커스 쟁탈전 및 입력 차단 없음
    */
-  const focusAndHold = useCallback((gracePeriodMs = 1500) => {
+  const focusAndHold = useCallback((gracePeriodMs = 3000) => {
     const el =
       internalRef.current ??
       (document.getElementById(fieldId) as HTMLTextAreaElement | null);
@@ -50,19 +51,18 @@ export function useFocusInput(
     holdCleanupRef.current?.();
 
     let stopped = false;
+    const form = el.closest("form");
+
     const stopOnPointer = () => { stopped = true; };
-    // 캡처 단계에서 너무 민감하게 반응하지 않도록 passive 처리
     document.addEventListener("pointerdown", stopOnPointer, { once: true, passive: true });
 
-    // 마운트 및 페이지 전환 직후 발생할 수 있는 일시적 포커스 유실을 방어하기 위해
-    // 무한 폴링 대신, 초기 몇 차례(100ms, 300ms, 500ms)만 점진적으로 확인 및 복구 시도
-    const checks = [100, 300, 500, Math.min(gracePeriodMs, 800)];
-    const timeouts = checks.map(ms =>
+    // gracePeriodMs 내 주기적 확인 (고정 간격이 아닌 점진적 체크)
+    const checkPoints = [100, 300, 500, 800, 1200, 2000, 3000].filter(ms => ms <= gracePeriodMs);
+    const timeouts = checkPoints.map(ms =>
       window.setTimeout(() => {
-        if (!stopped && document.activeElement !== el) {
-          const form = el.closest("form");
+        if (stopped) return;
+        if (document.activeElement !== el) {
           const target = document.activeElement;
-          // 같은 폼 내부(버튼 등)로 이동한 게 아니면 (body 등으로 뺏기면) 복구
           if (!target || !form?.contains(target)) {
             el.focus();
           }
@@ -70,11 +70,10 @@ export function useFocusInput(
       }, ms)
     );
 
-    // 마지막 타이머가 끝날 즈음 이벤트 리스너 정리
     const cleanupTimeout = window.setTimeout(() => {
       document.removeEventListener("pointerdown", stopOnPointer);
       holdCleanupRef.current = null;
-    }, Math.min(gracePeriodMs, 800) + 10);
+    }, gracePeriodMs + 10);
 
     holdCleanupRef.current = () => {
       timeouts.forEach(clearTimeout);
