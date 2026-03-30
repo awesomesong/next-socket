@@ -558,7 +558,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
           isOwn && "justify-end",
         )}
       >
-        <div className={clsx(isOwn && "order-2")}>
+        <div className={clsx("shrink-0", isOwn && "order-2")}>
           <Avatar
             user={isConversationUser ? data.sender : noUserType}
             isOwn={isOwn}
