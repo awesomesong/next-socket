@@ -12,7 +12,7 @@ type ScentUserAvatarProps = {
  */
 const ScentUserAvatar = ({ className }: ScentUserAvatarProps) => {
     return (
-        <span className="scent-avatar-root block size-full">
+        <span className="scent-avatar-root block w-full h-full">
             <svg width="0" height="0" className="absolute">
                 <linearGradient id="scent-user-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="var(--scent-gradient-start)" />
