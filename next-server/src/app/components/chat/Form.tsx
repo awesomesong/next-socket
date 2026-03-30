@@ -325,10 +325,7 @@ const Form = () => {
   // - true: Cloudinary 로드 완료 후 버튼 활성화
   const [uploadButtonActive, setUploadButtonActive] = useState(false);
 
-  // Cloudinary 스크립트 로드 완료 시점 감지 → inert 해제
-  // - inert 중에는 ImageUploadButton이 포커스를 받을 수 없으므로,
-  //   window.cloudinary 감지 = 스크립트 초기화 완료 = 탈취 시도 끝난 시점
-  // - 이후 발생하는 포커스 탈취는 focusAndHold(3000ms) 폴링이 처리
+  // Cloudinary 스크립트 로드 완료 시점 감지 → inert 해제 + 포커스 복구
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -342,33 +339,44 @@ const Form = () => {
       window.clearInterval(checkId);
       setUploadButtonActive(true);
 
-      // ✅ 고정된 시간(300ms)의 한계를 극복하기 위해 확실한 이벤트 리스너 방식 사용
-      // Cloudinary 렌더링 시작 후 최대 3초 이내에 발생하는 "비정상적인 포커스 탈취(body로 이동)"를 정확히 1회 잡아냅니다.
       const el = document.getElementById("message") as HTMLTextAreaElement | null;
       if (!el) return;
+      const form = el.closest("form");
 
-      let hasRecovered = false;
+      // 포커스가 form 밖으로 빼앗겼는지 판정 (body, null, Cloudinary 요소 등)
+      const isFocusStolen = () => {
+        const active = document.activeElement;
+        return active !== el && (!active || active === document.body || (form && !form.contains(active)));
+      };
+
+      // ① 스크립트 로드 시점에 이미 빼앗긴 경우 즉시 복구
+      if (isFocusStolen()) el.focus();
+
+      // ② inert 해제 후 React 재렌더 → 위젯 재초기화 대비
+      requestAnimationFrame(() => {
+        if (isFocusStolen()) el.focus();
+      });
+
+      // ③ 이후 발생하는 비정상 blur 1회 복구 (3초 감시)
+      let recovered = false;
       const onBlur = () => {
-        if (hasRecovered) return;
-        // 터치나 클릭이 아닌, 스크립트 렌더링에 의해 포커스가 body로 튕긴 경우
+        if (recovered) return;
         setTimeout(() => {
-          if (document.activeElement === document.body) {
+          if (isFocusStolen()) {
             el.focus();
-            hasRecovered = true; // 1회만 복구
+            recovered = true;
           }
         }, 10);
       };
 
       el.addEventListener("blur", onBlur);
-      // 최대 3초 동안만 감시하고 해제 (안드로이드 시스템 뒤로가기 버튼 등 정상적인 blur 방해 방지)
       setTimeout(() => {
         el.removeEventListener("blur", onBlur);
       }, 3000);
-
     }, 50);
 
     return () => window.clearInterval(checkId);
-  }, []); // 세션 내 최초 1회만 실행 (Cloudinary는 한 번 로드 후 유지)
+  }, []);
 
   // 마운트/대화 전환 시 포커스 유지 폴링 시작
   useLayoutEffect(() => {
