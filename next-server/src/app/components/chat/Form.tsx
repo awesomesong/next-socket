@@ -334,6 +334,11 @@ const Form = () => {
   const { ref: registerRef, ...registerRest } = register("message", { required: true });
   const { focusAndHold, cancelFocus, setTextareaRef } = useFocusInput("message", registerRef);
 
+  // ✅ handleUpload 안정화용 ref: conversationId 변경 시 ImageUploadButton 리렌더링 방지
+  // (CldUploadButton 재초기화에 의한 Windows 포커스 탈취 차단)
+  const conversationIdRef = useRef(conversationId);
+  conversationIdRef.current = conversationId;
+
   // ImageUploadButton(CldUploadButton) 초기화 중 포커스 탈취 방지용 inert 상태
   // - false(inert): Cloudinary 스크립트 로드 전까지 버튼 비활성화
   // - true: Cloudinary 로드 완료 후 버튼 활성화
@@ -422,12 +427,12 @@ const Form = () => {
         return;
       const messageId = crypto.randomUUID();
       enqueueSend({
-        conversationId,
+        conversationId: conversationIdRef.current,
         image: result.info.secure_url,
         messageId,
       });
     },
-    [conversationId, enqueueSend]
+    [enqueueSend]
   );
 
   // 3) RHF 핸들러를 메모이즈해서 모든 제출 경로에서 사용
