@@ -514,7 +514,7 @@ export default function GuideContent({
       observer.disconnect();
       media.removeEventListener('change', onResize);
     };
-  }, []);
+  }, [updateStickyFromLayout]);
 
   useEffect(() => {
     const sectionIds = ON_THIS_PAGE.map((item) => item.href.replace('#', ''));
@@ -612,6 +612,9 @@ export default function GuideContent({
       if (!h) return;
       const el = document.getElementById(h);
       if (el) {
+        // 이미지 로드에 의한 레이아웃 변화 시 ResizeObserver가 자동 보정하도록 고정
+        pinnedSectionIdRef.current = h;
+
         const run = () => {
           const m = computeGuideScrollMarginPx(scrollOffsetRef.current, asideRef.current);
           alignGuideSectionToOffset(el, m);
@@ -664,7 +667,7 @@ export default function GuideContent({
       if (raf) cancelAnimationFrame(raf);
       if (roRaf) cancelAnimationFrame(roRaf);
     };
-  }, []);
+  }, [updateStickyFromLayout]);
 
   useEffect(() => {
     if (!activeId || !navRef.current) return;
