@@ -313,7 +313,7 @@ const Form = () => {
     });
 
   const { ref: registerRef, ...registerRest } = register("message", { required: true });
-  const { focusAndHold, cancelFocus, setTextareaRef } = useFocusInput("message", registerRef);
+  const { focusAndHold, cancelFocus, focusInput, setTextareaRef } = useFocusInput("message", registerRef);
 
   // ✅ handleUpload 안정화용 ref: conversationId 변경 시 ImageUploadButton 리렌더링 방지
   // (CldUploadButton 재초기화에 의한 Windows 포커스 탈취 차단)
@@ -408,9 +408,10 @@ const Form = () => {
 
     const messageId = crypto.randomUUID();
     setValue("message", "", { shouldValidate: true });
-    cancelFocus(); // focusAndHold 리스너 해제 (onSettled에서 focusInput으로 복구)
+    cancelFocus();
     enqueueSend({ conversationId, data: { message }, messageId });
-  }, [conversationId, enqueueSend, setValue, cancelFocus]);
+    focusInput();
+  }, [conversationId, enqueueSend, setValue, cancelFocus, focusInput]);
 
   const handleUpload = useCallback(
     async (result: CloudinaryUploadWidgetResults) => {

@@ -15,10 +15,15 @@ export function useFocusInput(
   const holdCleanupRef = useRef<(() => void) | null>(null);
   const internalRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // registerRef를 ref로 안정화: register()가 매 렌더마다 새 함수를 반환해도
+  // setTextareaRef가 변경되지 않아 불필요한 필드 해제/재등록(값 초기화) 방지
+  const registerRefStable = useRef(registerRef);
+  registerRefStable.current = registerRef;
+
   const setTextareaRef = useCallback((el: HTMLTextAreaElement | null) => {
-    if (registerRef) registerRef(el);
+    registerRefStable.current?.(el);
     internalRef.current = el;
-  }, [registerRef]);
+  }, []);
 
   const doFocus = useCallback(() => {
     const el =
