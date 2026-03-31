@@ -154,7 +154,7 @@ const NoticeDetailPage = ({ params } : {
     }
     
     return (
-        <div className='max-w-[1440px] h-full mx-auto px-4 py-8 md:p-8'>
+        <div className='max-w-[1440px] w-full h-full mx-auto px-4 py-8 md:p-8'>
             {status === 'pending'
                 ? (
                     <>
