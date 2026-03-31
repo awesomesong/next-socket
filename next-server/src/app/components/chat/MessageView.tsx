@@ -574,7 +574,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
         >
           <div
             className={clsx(
-              "text-sm w-fit overflow-hidden mb-2",
+              "text-sm w-fit max-w-full mb-2",
               isError
                 ? "bg-red-100 border-l-4 border-red-400"
                 : isAIMessage
@@ -583,7 +583,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
                     ? "bg-[#b094e0] dark:bg-[#7c5eb0]"
                     : "bg-[var(--color-lavender-pale)] dark:bg-[#4d4272] dark:text-[var(--color-text-primary)]",
               data.type === "image"
-                ? "max-[360px]:w-full rounded-md p-0"
+                ? "max-[360px]:w-full rounded-md p-0 overflow-hidden"
                 : "py-2 px-3 rounded-2xl",
             )}
           >
@@ -622,7 +622,7 @@ const MessageView: React.FC<MessageBoxProps> = ({
                   </div>
                 )}
                 <pre
-                  className={clsx("whitespace-pre-wrap", isError ? "text-red-800" : "text-[var(--color-text-primary)]")}
+                  className={clsx("whitespace-pre-wrap break-all min-w-0", isError ? "text-red-800" : "text-[var(--color-text-primary)]")}
                   dangerouslySetInnerHTML={{
                     __html: sanitizedMessageBody,
                   }}
