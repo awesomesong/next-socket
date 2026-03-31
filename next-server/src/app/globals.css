@@ -526,19 +526,7 @@ h6 {
   @apply relative w-full mx-auto;
 }
 
-/* Form/상세 공통: 1024px 이상에서 왼쪽 이미지·오른쪽 폼/정보 2단 레이아웃 */
-.fragrance-form-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  align-items: flex-start;
-  width: 100%;
-}
-@media (min-width: 1024px) {
-  .fragrance-form-layout {
-    flex-direction: row;
-  }
-}
+/* Form/상세 공통 레이아웃 관련 스타일은 아래쪽에 통합되어 있습니다 */
 
 .fragrance-form-left {
   display: flex;
