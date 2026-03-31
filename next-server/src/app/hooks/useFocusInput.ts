@@ -45,7 +45,7 @@ export function useFocusInput(
    * - 매 프레임 document.activeElement를 확인하여 포커스 탈취 감지
    *   · blur/focusin 이벤트가 발생하지 않는 cross-origin iframe도 감지
    *   · ~16ms 이내 복구 → 모바일 키보드 hide 애니메이션 시작 전 복구
-   * - 사용자 의도 판정: form 바깥 pointerdown 후 100ms 이내 → 복구 건너뜀
+   * - form 밖 터치 → 복구 중단 / form 안 터치 → 복구 재개
    * - cancelFocus() 또는 컴포넌트 언마운트 시 폴링 중단
    */
   const focusAndHold = useCallback(() => {
@@ -59,23 +59,22 @@ export function useFocusInput(
 
     const form = el.closest("form");
 
-    // form 밖 터치 후 100ms 이내 → 사용자 의도적 포커스 이동으로 판정
-    let userTappedOutside = false;
-    let resetId: number;
+    // form 안 터치 → 복구 재개, form 밖 터치 → 복구 중단
+    let paused = false;
     const handlePointer = (e: Event) => {
-      if (document.activeElement !== el) return;
       const target = e.target as Node;
-      if (form?.contains(target)) return;
-      userTappedOutside = true;
-      clearTimeout(resetId);
-      resetId = window.setTimeout(() => { userTappedOutside = false; }, 100);
+      if (form?.contains(target)) {
+        paused = false;
+        return;
+      }
+      paused = true;
     };
     document.addEventListener("pointerdown", handlePointer, { passive: true });
 
     // rAF 폴링: 매 프레임 activeElement 확인 → 탈취 시 즉시 복구
     let rafId: number;
     const checkFocus = () => {
-      if (!userTappedOutside && document.activeElement !== el) {
+      if (!paused && document.activeElement !== el) {
         const target = document.activeElement;
         if (!target || !form?.contains(target)) {
           el.focus();
@@ -88,7 +87,7 @@ export function useFocusInput(
     holdCleanupRef.current = () => {
       cancelAnimationFrame(rafId);
       document.removeEventListener("pointerdown", handlePointer);
-      clearTimeout(resetId);
+      paused = true;
     };
   },
     [fieldId]
