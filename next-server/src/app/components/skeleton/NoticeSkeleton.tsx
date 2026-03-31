@@ -14,6 +14,7 @@ export const NoticeSkeleton = () => {
               flex-col
               flex-1
               min-h-0
+              w-full
               mx-auto
               h-full
               p-4
