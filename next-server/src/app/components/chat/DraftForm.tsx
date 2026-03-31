@@ -52,7 +52,7 @@ const DraftForm: React.FC<DraftFormProps> = ({
     const { focusAndHold, cancelFocus, setTextareaRef } = useFocusInput('message', registerRef);
 
     useLayoutEffect(() => {
-        focusAndHold(1500);
+        focusAndHold();
         return () => cancelFocus();
     }, [focusAndHold, cancelFocus]);
 

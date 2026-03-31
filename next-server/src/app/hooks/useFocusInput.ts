@@ -3,10 +3,11 @@ import { useCallback, useRef } from "react";
 /**
  * 입력 필드 포커스 공통 훅
  * - focusInput: 단순 포커스
- * - focusAndHold(gracePeriodMs): 즉시 포커스 후 지정된 시간 동안 주기적으로
- *   포커스 탈취 여부를 확인하여 복구한다.
- *   사용자가 클릭(pointerdown)으로 의도적 포커스 이동 시 복구 중단.
- * - cancelFocus: 복구 대기 예약 취소
+ * - focusAndHold: 즉시 포커스 + rAF 폴링으로 상시 복구
+ *   · cross-origin iframe 포커스 탈취도 감지 (이벤트 미발생 케이스 대응)
+ *   · 사용자 터치에 의한 포커스 이동(form 밖 터치 후 100ms 이내) → 허용
+ *   → 모바일 키보드 깜빡임 없이 포커스 유지
+ * - cancelFocus: 복구 폴링 해제
  */
 export function useFocusInput(
   fieldId: string,
@@ -40,13 +41,14 @@ export function useFocusInput(
   const focusInput = doFocus;
 
   /**
-   * 마운트 초기 포커스 + setTimeout 기반 주기적 복구:
-   * - 즉시 포커스
-   * - gracePeriodMs 내 여러 시점에서 포커스 탈취 여부 확인 → form 밖이면 복구
-   * - 사용자 pointerdown 시 복구 중단 (의도적 이동)
-   * - focusin 리스너 미사용 → 위젯과의 포커스 쟁탈전 및 입력 차단 없음
+   * 즉시 포커스 + requestAnimationFrame 폴링:
+   * - 매 프레임 document.activeElement를 확인하여 포커스 탈취 감지
+   *   · blur/focusin 이벤트가 발생하지 않는 cross-origin iframe도 감지
+   *   · ~16ms 이내 복구 → 모바일 키보드 hide 애니메이션 시작 전 복구
+   * - 사용자 의도 판정: form 바깥 pointerdown 후 100ms 이내 → 복구 건너뜀
+   * - cancelFocus() 또는 컴포넌트 언마운트 시 폴링 중단
    */
-  const focusAndHold = useCallback((gracePeriodMs = 3000) => {
+  const focusAndHold = useCallback(() => {
     const el =
       internalRef.current ??
       (document.getElementById(fieldId) as HTMLTextAreaElement | null);
@@ -55,35 +57,38 @@ export function useFocusInput(
     el.focus();
     holdCleanupRef.current?.();
 
-    let stopped = false;
     const form = el.closest("form");
 
-    const stopOnPointer = () => { stopped = true; };
-    document.addEventListener("pointerdown", stopOnPointer, { once: true, passive: true });
+    // form 밖 터치 후 100ms 이내 → 사용자 의도적 포커스 이동으로 판정
+    let userTappedOutside = false;
+    let resetId: number;
+    const handlePointer = (e: Event) => {
+      if (document.activeElement !== el) return;
+      const target = e.target as Node;
+      if (form?.contains(target)) return;
+      userTappedOutside = true;
+      clearTimeout(resetId);
+      resetId = window.setTimeout(() => { userTappedOutside = false; }, 100);
+    };
+    document.addEventListener("pointerdown", handlePointer, { passive: true });
 
-    // gracePeriodMs 내 주기적 확인 (고정 간격이 아닌 점진적 체크)
-    const checkPoints = [100, 300, 500, 800, 1200, 2000, 3000].filter(ms => ms <= gracePeriodMs);
-    const timeouts = checkPoints.map(ms =>
-      window.setTimeout(() => {
-        if (stopped) return;
-        if (document.activeElement !== el) {
-          const target = document.activeElement;
-          if (!target || !form?.contains(target)) {
-            el.focus();
-          }
+    // rAF 폴링: 매 프레임 activeElement 확인 → 탈취 시 즉시 복구
+    let rafId: number;
+    const checkFocus = () => {
+      if (!userTappedOutside && document.activeElement !== el) {
+        const target = document.activeElement;
+        if (!target || !form?.contains(target)) {
+          el.focus();
         }
-      }, ms)
-    );
-
-    const cleanupTimeout = window.setTimeout(() => {
-      document.removeEventListener("pointerdown", stopOnPointer);
-      holdCleanupRef.current = null;
-    }, gracePeriodMs + 10);
+      }
+      rafId = requestAnimationFrame(checkFocus);
+    };
+    rafId = requestAnimationFrame(checkFocus);
 
     holdCleanupRef.current = () => {
-      timeouts.forEach(clearTimeout);
-      clearTimeout(cleanupTimeout);
-      document.removeEventListener("pointerdown", stopOnPointer);
+      cancelAnimationFrame(rafId);
+      document.removeEventListener("pointerdown", handlePointer);
+      clearTimeout(resetId);
     };
   },
     [fieldId]

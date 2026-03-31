@@ -262,9 +262,9 @@ const AIChatForm = ({
       toast.error(formatErrorMessage(err, "사용자 메시지 저장에 실패했습니다."));
     } finally {
       setIsDisabled(false);
-      focusInput();
+      focusAndHold();
     }
-  }, [conversationId, queryClient, requestAI, removeFailedMessage, addFailedMessage, isConversationLoading, setValue, session, isSessionLoading, isDisabled, notifyNewContent, socket, focusInput]);
+  }, [conversationId, queryClient, requestAI, removeFailedMessage, addFailedMessage, isConversationLoading, setValue, session, isSessionLoading, isDisabled, notifyNewContent, socket, focusAndHold]);
 
   // ✅ 제출 경로 통일 (사파리 모바일 호환: 명시적 preventDefault)
   // handleSubmit은 이벤트 객체가 없어도 작동하지만, 폼 제출 시에는 명시적으로 전달
