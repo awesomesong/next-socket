@@ -70,6 +70,7 @@ model Conversation {
   isAIChat          Boolean?           @default(false)
   aiAgentType       String?
   lastMessageId     String?
+  memberKey         String?            @unique
   userIds           String[]           @default([])
   conversationReads ConversationRead[]
   messages          Message[]

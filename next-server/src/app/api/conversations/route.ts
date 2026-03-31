@@ -191,6 +191,45 @@ const toSortedIds = (ids: string[]) => [...new Set(ids)].sort();
 
 type MemberType = string | { value: string };
 
+const userSelectFields = { id: true, name: true, nickname: true, email: true, image: true } as const;
+
+/**
+ * memberKey를 이용해 대화방을 찾거나 생성 (트랜잭션 없이 P2002 catch로 중복 방지)
+ */
+async function findOrCreateConversation(
+  memberKey: string,
+  data: { isGroup: boolean; name?: string | null; userIdsSorted: string[] },
+) {
+  const existing = await prisma.conversation.findUnique({
+    where: { memberKey },
+    include: { users: { select: userSelectFields } },
+  });
+  if (existing) return { ...existing, existingConversation: true as const };
+
+  try {
+    const created = await prisma.conversation.create({
+      data: {
+        isGroup: data.isGroup,
+        name: data.name ?? null,
+        memberKey,
+        userIds: data.userIdsSorted,
+        users: { connect: data.userIdsSorted.map((id) => ({ id })) },
+      },
+      include: { users: { select: userSelectFields } },
+    });
+    return { ...created, existingConversation: false as const };
+  } catch (e: unknown) {
+    if ((e as { code?: string })?.code === "P2002") {
+      const conv = await prisma.conversation.findUnique({
+        where: { memberKey },
+        include: { users: { select: userSelectFields } },
+      });
+      if (conv) return { ...conv, existingConversation: true as const };
+    }
+    throw e;
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
@@ -206,119 +245,39 @@ export async function POST(req: Request) {
         ? members.map((m: MemberType) => (typeof m === "string" ? m : m?.value)).filter(Boolean)
         : [];
       const memberIdsSorted = toSortedIds([user.id, ...memberIds]);
-      
+
       if (memberIdsSorted.length < 2) {
         return new NextResponse("대화방에 참여한 멤버가 없습니다.", { status: 400 });
       }
 
-      // 기존 그룹 방 확인: 멤버셋만으로 판정 (name 조건 제거)
-      const foundGroup = await prisma.conversation.findFirst({
-        where: { isGroup: true, userIds: { equals: memberIdsSorted } },
-        include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
+      const memberKey = `grp:${memberIdsSorted.join(",")}`;
+      const result = await findOrCreateConversation(memberKey, {
+        isGroup: true,
+        name,
+        userIdsSorted: memberIdsSorted,
       });
-      
-      if (foundGroup) {
-        return NextResponse.json(
-          { ...foundGroup, existingConversation: true },
-          { status: 200 }
-        );
-      }
-
-      // 생성 동시성 경합 방지 (생성 구간만 직렬화)
-      const lockKey = `conv:group:${memberIdsSorted.join(",")}`;
-      const result = await prisma.$transaction(
-        async (tx) => {
-          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}));`;
-
-          // 락 안에서 한 번 더 확인 (동시 생성 재검증)
-          const again = await tx.conversation.findFirst({
-            where: { isGroup: true, userIds: { equals: memberIdsSorted } },
-            include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
-          });
-          if (again) return { ...again, existingConversation: true as const };
-
-          const created = await tx.conversation.create({
-            data: {
-              isGroup: true,
-              name: name ?? null,
-              userIds: memberIdsSorted,
-              users: { connect: memberIdsSorted.map((id) => ({ id })) },
-            },
-            include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
-          });
-          return { ...created, existingConversation: false as const };
-        },
-        { maxWait: 3000, timeout: 6000 }
-      );
-
       return NextResponse.json(result, { status: 200 });
     }
 
     // 1:1 대화방 생성
     if (!userId) {
-      return NextResponse.json(
-        { message: "상대 유저 ID가 필요합니다." },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "상대 유저 ID가 필요합니다." }, { status: 400 });
     }
     if (userId === user.id) {
-      return NextResponse.json(
-        { message: "본인과는 1:1 대화를 시작할 수 없습니다." },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "본인과는 1:1 대화를 시작할 수 없습니다." }, { status: 400 });
     }
 
-    // 상대 회원 존재 여부 검사
-    const targetUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    });
+    const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
     if (!targetUser) {
-      return NextResponse.json(
-        { message: "해당 회원을 찾을 수 없습니다." },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: "해당 회원을 찾을 수 없습니다." }, { status: 404 });
     }
 
     const userIdsSorted = toSortedIds([user.id, userId]);
-    
-    const found = await prisma.conversation.findFirst({
-      where: { isGroup: false, userIds: { equals: userIdsSorted } },
-      include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
+    const memberKey = `dm:${userIdsSorted.join(",")}`;
+    const result = await findOrCreateConversation(memberKey, {
+      isGroup: false,
+      userIdsSorted,
     });
-    
-    if (found) {
-      return NextResponse.json(
-        { ...found, existingConversation: true },
-        { status: 200 }
-      );
-    }
-
-    // 생성 동시성 경합 방지 (생성 구간만 직렬화)
-    const lockKey = `conv:1to1:${userIdsSorted.join(",")}`;
-    const result = await prisma.$transaction(
-      async (tx) => {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}));`;
-
-        const again = await tx.conversation.findFirst({
-          where: { isGroup: false, userIds: { equals: userIdsSorted } },
-          include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
-        });
-        if (again) return { ...again, existingConversation: true as const };
-
-        const created = await tx.conversation.create({
-          data: {
-            isGroup: false,
-            userIds: userIdsSorted,
-            users: { connect: userIdsSorted.map((id) => ({ id })) },
-          },
-          include: { users: { select: { id: true, name: true, nickname: true, email: true, image: true } } },
-        });
-        return { ...created, existingConversation: false as const };
-      },
-      { maxWait: 3000, timeout: 6000 }
-    );
-
     return NextResponse.json(result, { status: 200 });
   } catch {
     return new NextResponse("대화방을 불러오는 중 오류가 발생하였습니다.", {

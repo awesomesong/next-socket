@@ -49,6 +49,8 @@ const messageSelect = {
   sender: { select: { id: true, name: true, email: true, image: true } },
 } as const;
 
+const convInclude = { users: { select: userSelect } } as const;
+
 // 메시지 insert (멱등: 동일 messageId면 기존 메시지 반환)
 async function insertMessage(
   msgId: string,
@@ -99,14 +101,57 @@ function buildResponse(conv: ConvShape, msg: MsgShape, existingConversation: boo
 }
 
 /**
+ * memberKey를 이용해 대화방을 찾거나 생성 (트랜잭션 없이 P2002 catch로 중복 방지)
+ */
+async function findOrCreateConversation(
+  memberKey: string,
+  data: {
+    isGroup: boolean;
+    name?: string | null;
+    userIdsSorted: string[];
+  },
+): Promise<{ conv: ConvShape; existing: boolean }> {
+  // 1) memberKey로 빠르게 조회
+  const existing = await prisma.conversation.findUnique({
+    where: { memberKey },
+    include: convInclude,
+  });
+  if (existing) return { conv: existing, existing: true };
+
+  // 2) 없으면 생성 시도
+  try {
+    const conv = await prisma.conversation.create({
+      data: {
+        isGroup: data.isGroup,
+        name: data.name ?? null,
+        memberKey,
+        userIds: data.userIdsSorted,
+        users: { connect: data.userIdsSorted.map((id: string) => ({ id })) },
+      },
+      include: convInclude,
+    });
+    return { conv, existing: false };
+  } catch (e: unknown) {
+    // 3) 동시 요청으로 P2002(unique violation) → 기존 대화방 반환
+    if ((e as { code?: string })?.code === "P2002") {
+      const conv = await prisma.conversation.findUnique({
+        where: { memberKey },
+        include: convInclude,
+      });
+      if (conv) return { conv, existing: true };
+    }
+    throw e;
+  }
+}
+
+/**
  * 대화방 생성 + 첫 메시지 저장을 한 번의 요청으로 처리
  *
  * 최적화 전략:
- * - AI 채팅: 항상 새 대화방 → findFirst 없이 바로 create
- * - 1:1 / 단체: 기존 대화방 조회를 트랜잭션 밖에서 먼저 실행
- *   - 기존 대화방 존재 시 → message.create만 (트랜잭션 최소화)
- *   - 새 대화방 생성 시 → conversation.create + message.create
- * - 1:1: 상대방 확인 + 기존 대화방 조회를 Promise.all로 병렬 실행
+ * - interactive transaction 없음 → P2028 (트랜잭션 타임아웃) 제거
+ * - memberKey unique constraint로 중복 대화방 방지 (advisory lock 불필요)
+ * - AI 채팅: 항상 새 대화방 → 순차 create
+ * - 1:1 / 단체: findOrCreateConversation → insertMessage 순차 실행
  */
 export async function POST(req: Request) {
   try {
@@ -129,36 +174,18 @@ export async function POST(req: Request) {
     const msgId = messageId || randomUUID();
     const inferredType = image ? "image" : "text";
 
-    // ── AI 채팅: 항상 새 대화방 → findFirst 없이 바로 create ─────────────
+    // ── AI 채팅: 항상 새 대화방 → 순차 create (트랜잭션 불필요) ─────────────
     if (aiAgentType) {
-      const { msg, conv } = await prisma.$transaction(
-        async (tx) => {
-          const conv = await tx.conversation.create({
-            data: {
-              isAIChat: true,
-              aiAgentType,
-              userIds: [user.id],
-              users: { connect: [{ id: user.id }] },
-            },
-            include: { users: { select: userSelect } },
-          });
-          const msg = await tx.message.create({
-            data: {
-              id: msgId,
-              body: message,
-              image,
-              type: inferredType,
-              conversation: { connect: { id: conv.id } },
-              sender: { connect: { id: user.id } },
-              isAIResponse: false,
-              isError: false,
-            },
-            select: messageSelect,
-          });
-          return { msg, conv };
+      const conv = await prisma.conversation.create({
+        data: {
+          isAIChat: true,
+          aiAgentType,
+          userIds: [user.id],
+          users: { connect: [{ id: user.id }] },
         },
-        { maxWait: 3000, timeout: 6000 }
-      );
+        include: convInclude,
+      });
+      const msg = await insertMessage(msgId, message, image, inferredType, conv.id, user.id);
       fireUpdateLastMessage(conv.id, msg.createdAt, msg.id);
       return buildResponse(conv, msg, false);
     }
@@ -169,66 +196,19 @@ export async function POST(req: Request) {
       if (userId === user.id) return new NextResponse("본인과는 대화를 시작할 수 없습니다.", { status: 400 });
 
       const userIdsSorted = toSortedIds([user.id, userId]);
+      const memberKey = `dm:${userIdsSorted.join(",")}`;
 
-      // 상대방 확인 + 기존 대화방 조회 병렬 실행
-      const [targetUser, existingConv] = await Promise.all([
-        prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
-        prisma.conversation.findFirst({
-          where: { isGroup: false, userIds: { equals: userIdsSorted } },
-          include: { users: { select: userSelect } },
-        }),
-      ]);
-
+      // 상대방 존재 확인
+      const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
       if (!targetUser) return new NextResponse("해당 회원을 찾을 수 없습니다.", { status: 404 });
 
-      if (existingConv) {
-        // 기존 대화방 → message.create만 (트랜잭션 최소화)
-        const msg = await insertMessage(msgId, message, image, inferredType, existingConv.id, user.id);
-        fireUpdateLastMessage(existingConv.id, msg.createdAt, msg.id);
-        return buildResponse(existingConv, msg, true);
-      }
-
-      // 새 대화방 → conversation + message 함께 생성
-      const lockKey = `conv:1to1:${userIdsSorted.join(",")}`;
-      const { msg, conv } = await prisma.$transaction(
-        async (tx) => {
-          // 동시성 경합으로 인한 중복 대화방 생성을 막기 위해 생성 구간만 직렬화
-          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}));`;
-
-          const existing = await tx.conversation.findFirst({
-            where: { isGroup: false, userIds: { equals: userIdsSorted } },
-            include: { users: { select: userSelect } },
-          });
-
-          const conv: ConvShape =
-            existing ??
-            (await tx.conversation.create({
-              data: {
-                isGroup: false,
-                userIds: userIdsSorted,
-                users: { connect: userIdsSorted.map((id: string) => ({ id })) },
-              },
-              include: { users: { select: userSelect } },
-            }));
-          const msg = await tx.message.create({
-            data: {
-              id: msgId,
-              body: message,
-              image,
-              type: inferredType,
-              conversation: { connect: { id: conv.id } },
-              sender: { connect: { id: user.id } },
-              isAIResponse: false,
-              isError: false,
-            },
-            select: messageSelect,
-          });
-          return { msg, conv };
-        },
-        { maxWait: 3000, timeout: 6000 }
-      );
+      const { conv, existing } = await findOrCreateConversation(memberKey, {
+        isGroup: false,
+        userIdsSorted,
+      });
+      const msg = await insertMessage(msgId, message, image, inferredType, conv.id, user.id);
       fireUpdateLastMessage(conv.id, msg.createdAt, msg.id);
-      return buildResponse(conv, msg, false);
+      return buildResponse(conv, msg, existing);
     }
 
     // ── 단체 채팅 ──────────────────────────────────────────────────────────
@@ -240,62 +220,15 @@ export async function POST(req: Request) {
       return new NextResponse("대화방에 참여한 멤버가 없습니다.", { status: 400 });
     }
 
-    // 기존 단체 대화방 조회 (트랜잭션 밖)
-    const existingGroupConv = await prisma.conversation.findFirst({
-      where: { isGroup: true, userIds: { equals: memberIdsSorted } },
-      include: { users: { select: userSelect } },
+    const memberKey = `grp:${memberIdsSorted.join(",")}`;
+    const { conv, existing } = await findOrCreateConversation(memberKey, {
+      isGroup: true,
+      name,
+      userIdsSorted: memberIdsSorted,
     });
-
-    if (existingGroupConv) {
-      // 기존 대화방 → message.create만 (트랜잭션 최소화)
-      const msg = await insertMessage(msgId, message, image, inferredType, existingGroupConv.id, user.id);
-      fireUpdateLastMessage(existingGroupConv.id, msg.createdAt, msg.id);
-      return buildResponse(existingGroupConv, msg, true);
-    }
-
-    // 새 단체 대화방 → conversation + message 함께 생성
-    const lockKey = `conv:group:${memberIdsSorted.join(",")}`;
-    const { msg, conv } = await prisma.$transaction(
-      async (tx) => {
-        // 동시성 경합으로 인한 중복 대화방 생성을 막기 위해 생성 구간만 직렬화
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}));`;
-
-        const existing = await tx.conversation.findFirst({
-          where: { isGroup: true, userIds: { equals: memberIdsSorted } },
-          include: { users: { select: userSelect } },
-        });
-
-        const conv: ConvShape =
-          existing ??
-          (await tx.conversation.create({
-            data: {
-              isGroup: true,
-              name: name ?? null,
-              userIds: memberIdsSorted,
-              users: { connect: memberIdsSorted.map((id: string) => ({ id })) },
-            },
-            include: { users: { select: userSelect } },
-          }));
-
-        const msg = await tx.message.create({
-          data: {
-            id: msgId,
-            body: message,
-            image,
-            type: inferredType,
-            conversation: { connect: { id: conv.id } },
-            sender: { connect: { id: user.id } },
-            isAIResponse: false,
-            isError: false,
-          },
-          select: messageSelect,
-        });
-        return { msg, conv };
-      },
-      { maxWait: 3000, timeout: 6000 }
-    );
+    const msg = await insertMessage(msgId, message, image, inferredType, conv.id, user.id);
     fireUpdateLastMessage(conv.id, msg.createdAt, msg.id);
-    return buildResponse(conv, msg, false);
+    return buildResponse(conv, msg, existing);
   } catch (err) {
     console.error("[POST /api/conversations/first-message] error:", err);
     return new NextResponse("서버 오류", { status: 500 });
