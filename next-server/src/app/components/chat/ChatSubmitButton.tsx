@@ -15,7 +15,7 @@ const ChatSubmitButton = ({
   <button
     type={type}
     onClick={onClick}
-    onMouseDown={(e) => e.preventDefault()}
+    onPointerDown={(e) => e.preventDefault()}
     onTouchStart={(e) => {
       e.preventDefault();
       if (onClick) onClick();
