@@ -269,9 +269,10 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, isDisabled)}
                         className={clsx(
-                            "fragrance-img-size transition-all duration-300 group mx-auto",
+                            "fragrance-img-size transition-all duration-300 group mx-auto sm:self-start",
                             isDragging ? "bg-[#f1ecfe]/50 scale-[1.01]" : "bg-[#fffcfa] dark:bg-[#1a1425]",
-                            imageError && "ring-2 ring-red-400/60 dark:ring-red-400/50 rounded-[28px]"
+                            imageError && "ring-2 ring-red-400/60 dark:ring-red-400/50 rounded-[28px]",
+                            previewImages.length === 0 && "!overflow-visible"
                         )}
                     >
                         {isUploading && (

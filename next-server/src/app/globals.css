@@ -804,13 +804,14 @@ h6 {
 @media (min-width: 640px) {
   .fragrance-img-size {
     width: 240px;
-    height: auto;
-    aspect-ratio: 3 / 4;
+    height: 320px; /* 3:4 = 240 * 4/3 */
+    flex-shrink: 0;
   }
 }
 @media (min-width: 1024px) {
   .fragrance-img-size {
     width: 280px;
+    height: calc(280px * 4 / 3); /* ≈ 373px */
   }
 }
 /* 향수 등록/수정 폼 공통 레이아웃: FormFragrance & FragranceFormSkeleton 공유 */
