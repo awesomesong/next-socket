@@ -21,31 +21,26 @@ const FragranceEditPage = ({ params }: ParamsProps) => {
         enabled: !!id && !!session?.user?.email,
     });
 
-    if (status === "pending") {
-        return (
-            <div className="p-4 md:p-8 max-w-[1440px] mx-auto min-h-screen">
-                <h2 className="w-full text-center text-2xl font-light tracking-widest mb-8">
-                    <span className="text-gradient-scent">향수 정보 수정</span>
-                </h2>
-                <FragranceDetailSkeleton variant="form" />
-            </div>
-        );
-    }
+    let content;
 
-    if (status === "success" && data?.fragrance) {
+    if (status === "pending") {
+        content = <FragranceDetailSkeleton variant="form" />;
+    } else if (status === "success" && data?.fragrance) {
+        content = <FormFragrance id={id} initialData={data.fragrance} isEdit />;
+    } else {
         return (
-            <div className="p-4 md:p-8 max-w-[1440px] mx-auto min-h-screen">
-                <h2 className="w-full text-center text-2xl font-light tracking-widest mb-8">
-                    <span className="text-gradient-scent">향수 정보 수정</span>
-                </h2>
-                <FormFragrance id={id} initialData={data.fragrance} isEdit />
+            <div className="flex justify-center items-center min-h-screen text-stone-500 dark:text-stone-400">
+                향수를 찾을 수 없습니다.
             </div>
         );
     }
 
     return (
-        <div className="flex justify-center items-center min-h-screen text-stone-500 dark:text-stone-400">
-            향수를 찾을 수 없습니다.
+        <div className="p-4 md:p-8 max-w-[1440px] w-full mx-auto">
+            <h2 className="w-full text-center text-2xl font-light tracking-widest mb-8">
+                <span className="text-gradient-scent">향수 정보 수정</span>
+            </h2>
+            {content}
         </div>
     );
 };
