@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import { FieldErrors } from "react-hook-form";
 import Select, { SelectInstance, GroupBase, MultiValue } from "react-select";
 import { formInputLayout } from "@/src/app/components/formLayoutClasses";
@@ -26,6 +27,12 @@ const SelectBox: React.FC<SelctProps> = ({
     disabled,
     selectRef,
 }) => {
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+    useEffect(() => {
+        setIsTouchDevice(window.matchMedia("(pointer: coarse)").matches);
+    }, []);
+
     return (
         <div className="z-[100]">
             <label
@@ -60,6 +67,7 @@ const SelectBox: React.FC<SelctProps> = ({
                     value={value}
                     onChange={onChange}
                     isMulti
+                    isSearchable={!isTouchDevice}
                     placeholder="멤버를 선택해주세요."
                     options={options}
                     menuPortalTarget={typeof document !== "undefined" ? document.body : null}
@@ -128,6 +136,10 @@ const SelectBox: React.FC<SelctProps> = ({
                             opacity: 0.6,
                             fontSize: '0.95rem',
                             fontWeight: '300', // TextField's font-light (300) matching
+                        }),
+                        input: (base) => ({
+                            ...base,
+                            color: 'var(--color-text-primary)',
                         }),
                         valueContainer: (base) => ({
                             ...base,
