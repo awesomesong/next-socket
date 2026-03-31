@@ -195,6 +195,9 @@ const userSelectFields = { id: true, name: true, nickname: true, email: true, im
 
 /**
  * memberKey를 이용해 대화방을 찾거나 생성 (트랜잭션 없이 P2002 catch로 중복 방지)
+ *
+ * memberKey로 찾은 대화방의 userIds가 요청과 다르면 (멤버 탈퇴 등)
+ * stale memberKey를 해제하고 새 대화방을 생성한다.
  */
 async function findOrCreateConversation(
   memberKey: string,
@@ -204,7 +207,20 @@ async function findOrCreateConversation(
     where: { memberKey },
     include: { users: { select: userSelectFields } },
   });
-  if (existing) return { ...existing, existingConversation: true as const };
+
+  if (existing) {
+    const isMemberMatch =
+      JSON.stringify([...existing.userIds].sort()) ===
+      JSON.stringify([...data.userIdsSorted].sort());
+
+    if (isMemberMatch) return { ...existing, existingConversation: true as const };
+
+    // stale memberKey 해제 (탈퇴한 유저가 있는 옛 대화방)
+    await prisma.conversation.update({
+      where: { id: existing.id },
+      data: { memberKey: null },
+    });
+  }
 
   try {
     const created = await prisma.conversation.create({

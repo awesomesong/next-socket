@@ -102,6 +102,9 @@ function buildResponse(conv: ConvShape, msg: MsgShape, existingConversation: boo
 
 /**
  * memberKey를 이용해 대화방을 찾거나 생성 (트랜잭션 없이 P2002 catch로 중복 방지)
+ *
+ * memberKey로 찾은 대화방의 userIds가 요청과 다르면 (멤버 탈퇴 등)
+ * stale memberKey를 해제하고 새 대화방을 생성한다.
  */
 async function findOrCreateConversation(
   memberKey: string,
@@ -116,9 +119,23 @@ async function findOrCreateConversation(
     where: { memberKey },
     include: convInclude,
   });
-  if (existing) return { conv: existing, existing: true };
 
-  // 2) 없으면 생성 시도
+  if (existing) {
+    // memberKey는 매칭되지만 실제 멤버가 다르면 stale → memberKey 해제
+    const isMemberMatch =
+      JSON.stringify([...existing.userIds].sort()) ===
+      JSON.stringify([...data.userIdsSorted].sort());
+
+    if (isMemberMatch) return { conv: existing, existing: true };
+
+    // stale memberKey 해제 (탈퇴한 유저가 있는 옛 대화방)
+    await prisma.conversation.update({
+      where: { id: existing.id },
+      data: { memberKey: null },
+    });
+  }
+
+  // 2) 없거나 stale → 새로 생성
   try {
     const conv = await prisma.conversation.create({
       data: {
