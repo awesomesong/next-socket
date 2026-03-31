@@ -91,6 +91,7 @@ export default async function RootLayout({
       <body className={`
         flex
         flex-col
+        min-h-dvh
         text-default
         bg-default
         break-all

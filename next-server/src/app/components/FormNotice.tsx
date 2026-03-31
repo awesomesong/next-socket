@@ -609,6 +609,9 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
         className="
           flex
           flex-col
+          flex-1
+          min-h-0
+          w-full
           mx-auto
           h-full
           p-4
@@ -626,7 +629,7 @@ export const FormNotice = ({ id, initialData, isEdit }: FormNoticeProps) => {
           />
         </div>
 
-        <div id="editor" className="flex flex-1 mb-4">
+        <div id="editor" className="flex flex-1 min-h-0 w-full mb-4">
           <MyQuillEditor
             value={content}
             onChange={setContent}
