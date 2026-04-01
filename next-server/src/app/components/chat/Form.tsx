@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-query";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";
-import { useCallback, useEffect, useLayoutEffect, useRef, memo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, memo } from "react";
 import { useFocusInput } from "@/src/app/hooks/useFocusInput";
 import ImageUploadButton from "@/src/app/components/ImageUploadButton";
 import { CloudinaryUploadWidgetResults } from "next-cloudinary";
@@ -312,8 +312,13 @@ const Form = () => {
       },
     });
 
-  const { ref: registerRef, ...registerRest } = register("message", { required: true });
+  const { ref: registerRef, onChange: registerOnChange, ...registerRest } = register("message", { required: true });
   const { focusAndHold, cancelFocus, setTextareaRef } = useFocusInput("message", registerRef);
+
+  // ✅ Cloudinary SDK 등 외부 코드가 textarea.value를 비우는 것을 차단
+  const intentionalClearRef = useRef(false);
+  // ✅ 한글 IME 조합 중 value setter 인터셉터 우회용
+  const composingRef = useRef(false);
 
   // ✅ handleUpload 안정화용 ref: conversationId 변경 시 ImageUploadButton 리렌더링 방지
   // (CldUploadButton 재초기화에 의한 Windows 포커스 탈취 차단)
@@ -321,66 +326,72 @@ const Form = () => {
   conversationIdRef.current = conversationId;
 
   // ImageUploadButton(CldUploadButton) 초기화 중 포커스 탈취 방지용 inert 상태
-  // - false(inert): Cloudinary 스크립트 로드 전까지 버튼 비활성화
-  // - true: Cloudinary 로드 완료 후 버튼 활성화
-  const [uploadButtonActive, setUploadButtonActive] = useState(false);
+  // - useRef + 직접 DOM 조작: 상태 변경에 의한 리렌더링 방지 (입력 값 유실 방지)
+  const uploadDivRef = useRef<HTMLDivElement>(null);
 
-  // Cloudinary inert 해제 + widget.cloudinary.com/info/ API 응답 시 포커스 복구
+  // ── Cloudinary inert 해제 + textarea value 보호 ──
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // ── 1. Cloudinary inert 해제 ──
+    // 1. Cloudinary inert 해제
+    const activateUploadButton = () => {
+      uploadDivRef.current?.removeAttribute("inert");
+    };
     if ("cloudinary" in window) {
-      setUploadButtonActive(true);
+      activateUploadButton();
     }
     const checkId = ("cloudinary" in window) ? null : window.setInterval(() => {
       if (!("cloudinary" in window)) return;
       window.clearInterval(checkId!);
-      setUploadButtonActive(true);
+      activateUploadButton();
     }, 50);
 
-    // ── 2. widget.cloudinary.com/info/ API 응답 감지 → 1회성 포커스 복구 ──
-    // createUploadWidget() 후 /info/ API 응답이 돌아오면 위젯이 DOM을 조작하며 포커스 탈취.
-    // PerformanceObserver로 정확한 시점을 감지하고, 독립적으로 복구만 수행.
-    // focusAndHold를 호출하지 않으므로 useLayoutEffect의 기존 가드를 취소하지 않음.
-    let perfObserver: PerformanceObserver | null = null;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    try {
-      perfObserver = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (entry.name.includes("widget.cloudinary.com/info/")) {
-            const el = document.getElementById("message") as HTMLTextAreaElement | null;
-            if (el) {
-              const form = el.closest("form");
-              const recover = () => {
-                const active = document.activeElement;
-                if (active !== el && (!active || active === document.body || (form && !form.contains(active)))) {
-                  el.focus();
-                }
-              };
-              // API 응답 직후 + 지연 DOM 조작 대비 복수 시점 체크
-              recover();
-              timers.push(
-                setTimeout(recover, 50),
-                setTimeout(recover, 150),
-                setTimeout(recover, 300),
-              );
-            }
-            perfObserver?.disconnect();
-            perfObserver = null;
+    // 2. textarea.value setter 가로채기:
+    //    Cloudinary SDK 등 외부 코드가 값을 비우는 것을 원천 차단.
+    //    의도적 비움(onSubmit)은 intentionalClearRef 플래그로 허용.
+    //    한글 IME 조합 중에는 인터셉터를 우회하여 브라우저 네이티브 동작 보장.
+    const el = document.getElementById("message") as HTMLTextAreaElement | null;
+
+    const onCompStart = () => { composingRef.current = true; };
+    const onCompEnd = () => { composingRef.current = false; };
+    el?.addEventListener("compositionstart", onCompStart);
+    el?.addEventListener("compositionend", onCompEnd);
+
+    const desc = el ? Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value") : null;
+    if (el && desc?.set && desc?.get) {
+      Object.defineProperty(el, "value", {
+        get() { return desc.get!.call(this); },
+        set(v: string) {
+          // IME 조합 중에는 항상 네이티브 setter 사용 (한글 입력 보호)
+          if (composingRef.current) {
+            desc.set!.call(this, v);
             return;
           }
-        }
+          const cur = desc.get!.call(this);
+          if (v === "" && cur !== "" && !intentionalClearRef.current) {
+            return; // 외부 코드에 의한 비우기 차단
+          }
+          desc.set!.call(this, v);
+        },
+        configurable: true,
+        enumerable: true,
       });
-      perfObserver.observe({ type: "resource" });
-    } catch {
-      // PerformanceObserver 미지원 시 useLayoutEffect의 focusAndHold(3000)에 의존
     }
+
+    // 3. form.reset() 대비: reset 이벤트 차단
+    const form = el?.closest("form");
+    const handleReset = (e: Event) => {
+      if (!intentionalClearRef.current) e.preventDefault();
+    };
+    form?.addEventListener("reset", handleReset);
 
     return () => {
       if (checkId) window.clearInterval(checkId);
-      perfObserver?.disconnect();
-      timers.forEach(clearTimeout);
+      el?.removeEventListener("compositionstart", onCompStart);
+      el?.removeEventListener("compositionend", onCompEnd);
+      // value 인터셉터 해제: 인스턴스 프로퍼티 제거 → 프로토타입 기본 동작 복원
+      if (el) { try { delete (el as unknown as Record<string, unknown>).value; } catch { /* noop */ } }
+      form?.removeEventListener("reset", handleReset);
     };
   }, []);
 
@@ -391,7 +402,7 @@ const Form = () => {
     if (fromDraft) sessionStorage.removeItem("scent:focusMessage");
     // Cloudinary 미로드 상태면 inert 초기화 (대화 전환 시 재보호)
     if (!("cloudinary" in window)) {
-      setUploadButtonActive(false);
+      uploadDivRef.current?.setAttribute("inert", "");
     }
     focusAndHold();
     return () => cancelFocus();
@@ -407,7 +418,9 @@ const Form = () => {
     }
 
     const messageId = crypto.randomUUID();
+    intentionalClearRef.current = true;
     setValue("message", "", { shouldValidate: true });
+    intentionalClearRef.current = false;
     enqueueSend({ conversationId, data: { message }, messageId });
   }, [conversationId, enqueueSend, setValue]);
 
@@ -458,7 +471,7 @@ const Form = () => {
         py-2
         border-t-default
     ">
-      <div inert={!uploadButtonActive || undefined}>
+      <div ref={uploadDivRef} inert>
         <ImageUploadButton onUploadSuccess={handleUpload} variant="compact" />
       </div>
       <form
@@ -471,6 +484,7 @@ const Form = () => {
           minRows={2}
           maxRows={4}
           {...registerRest}
+          onChange={registerOnChange}
           placeholder="메시지를 작성해주세요."
           onKeyDown={handleKeyPress}
           onCompositionStart={handleCompositionStart}

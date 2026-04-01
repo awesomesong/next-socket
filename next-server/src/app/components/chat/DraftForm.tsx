@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import TextareaAutosize from 'react-textarea-autosize';
-import { useCallback, startTransition, useLayoutEffect } from 'react';
+import { useCallback, useEffect, useRef, startTransition, useLayoutEffect } from 'react';
 import { useSocket } from '@/src/app/context/socketContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { createConversationWithFirstMessage } from '@/src/app/lib/createConversationWithFirstMessage';
@@ -48,8 +48,72 @@ const DraftForm: React.FC<DraftFormProps> = ({
         defaultValues: { message: '' },
     });
 
-    const { ref: registerRef, ...registerRest } = register('message', { required: true });
+    const { ref: registerRef, onChange: registerOnChange, ...registerRest } = register('message', { required: true });
     const { focusAndHold, cancelFocus, setTextareaRef } = useFocusInput('message', registerRef);
+
+    // ✅ Cloudinary SDK 등 외부 코드가 textarea.value를 비우는 것을 차단
+    const intentionalClearRef = useRef(false);
+    // ✅ 한글 IME 조합 중 value setter 인터셉터 우회용
+    const composingRef = useRef(false);
+
+    // ✅ ImageUploadButton inert 관리 + textarea value 보호
+    const uploadDivRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (typeof window === "undefined" || isAI) return;
+        const activate = () => uploadDivRef.current?.removeAttribute("inert");
+        if ("cloudinary" in window) {
+            activate();
+        }
+        const checkId = ("cloudinary" in window) ? null : window.setInterval(() => {
+            if (!("cloudinary" in window)) return;
+            window.clearInterval(checkId!);
+            activate();
+        }, 50);
+
+        // textarea.value setter 가로채기: 외부 코드의 값 비우기 차단
+        // 한글 IME 조합 중에는 인터셉터를 우회하여 브라우저 네이티브 동작 보장.
+        const el = document.getElementById("message") as HTMLTextAreaElement | null;
+
+        const onCompStart = () => { composingRef.current = true; };
+        const onCompEnd = () => { composingRef.current = false; };
+        el?.addEventListener("compositionstart", onCompStart);
+        el?.addEventListener("compositionend", onCompEnd);
+
+        const desc = el ? Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value") : null;
+        if (el && desc?.set && desc?.get) {
+            Object.defineProperty(el, "value", {
+                get() { return desc.get!.call(this); },
+                set(v: string) {
+                    // IME 조합 중에는 항상 네이티브 setter 사용 (한글 입력 보호)
+                    if (composingRef.current) {
+                        desc.set!.call(this, v);
+                        return;
+                    }
+                    const cur = desc.get!.call(this);
+                    if (v === "" && cur !== "" && !intentionalClearRef.current) {
+                        return;
+                    }
+                    desc.set!.call(this, v);
+                },
+                configurable: true,
+                enumerable: true,
+            });
+        }
+
+        const form = el?.closest("form");
+        const handleReset = (e: Event) => {
+            if (!intentionalClearRef.current) e.preventDefault();
+        };
+        form?.addEventListener("reset", handleReset);
+
+        return () => {
+            if (checkId) window.clearInterval(checkId);
+            el?.removeEventListener("compositionstart", onCompStart);
+            el?.removeEventListener("compositionend", onCompEnd);
+            if (el) { try { delete (el as unknown as Record<string, unknown>).value; } catch { /* noop */ } }
+            form?.removeEventListener("reset", handleReset);
+        };
+    }, [isAI]);
 
     useLayoutEffect(() => {
         focusAndHold();
@@ -141,7 +205,9 @@ const DraftForm: React.FC<DraftFormProps> = ({
             toast.error(check.error || '입력값을 확인해주세요.');
             return;
         }
+        intentionalClearRef.current = true;
         setValue('message', '', { shouldValidate: true });
+        intentionalClearRef.current = false;
         await sendFirstMessage(message);
     }, [isAI, setValue, sendFirstMessage]);
 
@@ -166,7 +232,11 @@ const DraftForm: React.FC<DraftFormProps> = ({
     return (
         <div className="flex items-start gap-2 w-full px-4 py-2 border-t-default">
             {/* AI 채팅은 이미지 업로드 미지원 */}
-            {!isAI && <ImageUploadButton onUploadSuccess={handleUpload} variant="compact" />}
+            {!isAI && (
+                <div ref={uploadDivRef} inert>
+                    <ImageUploadButton onUploadSuccess={handleUpload} variant="compact" />
+                </div>
+            )}
             <form onSubmit={submit} className="flex items-center gap-2 w-full">
                 <TextareaAutosize
                     id="message"
@@ -174,6 +244,7 @@ const DraftForm: React.FC<DraftFormProps> = ({
                     maxRows={4}
                     ref={setTextareaRef}
                     {...registerRest}
+                    onChange={registerOnChange}
                     placeholder={isAI
                         ? '향수 AI 어시스턴트에게 궁금한 점을 물어보세요.'
                         : '메시지를 작성해주세요.'
