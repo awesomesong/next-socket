@@ -36,7 +36,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
   const lastMessageText = useMemo(() => {
     if (data.isAIChat) {
       const msg = lastMessage?.body;
-      if (msg) return msg.length > 30 ? `${msg.slice(0, 30)}...` : msg;
+      if (msg) return msg.length > 100 ? `${msg.slice(0, 100)}` : msg;
       return "향수 AI 어시스턴트와 대화해보세요. 술에 대한 질문이나 추천을 받을 수 있습니다.";
     }
     if (lastMessage?.type === "system") return undefined;
