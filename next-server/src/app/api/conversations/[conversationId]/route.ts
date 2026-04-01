@@ -152,18 +152,13 @@ export async function DELETE(req: Request, { params }: ParamsProp) {
       });
 
       // 5) 멤버 업데이트: userIds와 users 관계를 동기화 (나간 유저 제거)
-      //    memberKey도 새 멤버 구성으로 갱신 (stale 방지)
-      const sortedNext = [...nextUserIds].sort();
-      const newMemberKey =
-        nextUserIds.length >= 2
-          ? `${conv.isGroup ? "grp" : "dm"}:${sortedNext.join(",")}`
-          : null;
+      //    memberKey는 null로 초기화 (남은 멤버 조합이 기존 대화방과 충돌할 수 있으므로)
       await tx.conversation.update({
         where: { id: conversationId },
         data: {
           userIds: { set: nextUserIds },
           users: { set: nextUserIds.map((id) => ({ id })) },
-          memberKey: newMemberKey,
+          memberKey: null,
         },
       });
 
