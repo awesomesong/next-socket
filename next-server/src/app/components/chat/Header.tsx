@@ -94,7 +94,11 @@ const Header: React.FC<HeaderProps> = ({ conversation, currentUser }) => {
         </div>
         <button type="button"
           onClick={() => setIsDrawerOpen(true)}
-          onTouchEnd={(e) => { e.preventDefault(); setIsDrawerOpen(true); }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+            setIsDrawerOpen(true);
+          }}
           className="shrink-0 cursor-pointer hover:opacity-70 transition"
         >
           <HiEllipsisHorizontal
