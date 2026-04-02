@@ -9,6 +9,7 @@ import AvatarGroup from "./AvatarGroup";
 import { formatDate } from "@/src/app/utils/formatDate";
 import { formatMessageCount } from "@/src/app/utils/formatMessageCount";
 import { IUserList } from "@/src/app/types/common";
+import { captureIOSKeyboard } from "@/src/app/utils/iosKeyboardFocus";
 
 interface ConversationBoxProps {
   data: FullConversationType;
@@ -25,6 +26,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
   const router = useRouter();
 
   const handleClick = useCallback(() => {
+    captureIOSKeyboard();
     router.push(`/conversations/${data.id}`);
   }, [router, data.id]);
 

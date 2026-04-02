@@ -16,6 +16,7 @@ import ChatSubmitButton from './ChatSubmitButton';
 import { HiPhoto } from 'react-icons/hi2';
 import { useChatInput } from '@/src/app/hooks/useChatInput';
 import { useChatImageUpload } from '@/src/app/hooks/useChatImageUpload';
+import { captureIOSKeyboard } from '@/src/app/utils/iosKeyboardFocus';
 
 type Form = { message: string };
 
@@ -107,6 +108,9 @@ const DraftForm: React.FC<DraftFormProps> = ({
 
             // conversationList 캐시에 한 번만 반영 (리렌더 1회)
             upsertConversationWithFirstMessage(queryClient, convForCache as Partial<FullConversationType> & { id: string }, newMessage as unknown as ConversationMessagePreview);
+
+            // iOS: 키보드가 열린 상태에서 route 전환 시 키보드 유지
+            captureIOSKeyboard();
 
             // 먼저 화면 전환해 체감 속도 개선
             startTransition(() => {

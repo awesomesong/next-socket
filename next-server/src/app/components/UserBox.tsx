@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import Avatar from "./Avatar";
 import { IUserList } from "@/src/app/types/common";
 import { conversationListKey } from "@/src/app/lib/react-query/chatCache";
+import { captureIOSKeyboard } from "@/src/app/utils/iosKeyboardFocus";
 
 interface UserBoxProps {
   userInfo: IUserList;
@@ -18,6 +19,7 @@ const UserBox: React.FC<UserBoxProps> = ({ userInfo }) => {
     e.preventDefault();
     e.stopPropagation();
     if (!userInfo.id) return;
+    captureIOSKeyboard();
 
     const userId = userInfo.id;
     // 캐시에 기존 1:1 대화방이 있으면 바로 이동 (드래프트 페이지 건너뜀)

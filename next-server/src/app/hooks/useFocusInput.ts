@@ -1,4 +1,5 @@
 import { useCallback, useRef } from "react";
+import { releaseIOSKeyboard } from "@/src/app/utils/iosKeyboardFocus";
 
 /**
  * 입력 필드 포커스 공통 훅
@@ -45,6 +46,7 @@ export function useFocusInput(
     if (!el) return;
 
     el.focus();
+    releaseIOSKeyboard();
     holdCleanupRef.current?.();
 
     // composition 중에는 focus() 호출을 건너뛰어 한글 IME 보호

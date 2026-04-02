@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import Button from "./Button";
+import { captureIOSKeyboard } from "@/src/app/utils/iosKeyboardFocus";
 
 interface AIChatButtonProps {
   aiAgentType?: string;
@@ -13,6 +14,7 @@ const AIChatButton = ({
   const router = useRouter();
 
   const handleClick = () => {
+    captureIOSKeyboard();
     router.push(`/conversations/new?aiAgentType=${aiAgentType}`);
   };
 
