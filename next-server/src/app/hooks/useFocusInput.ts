@@ -52,16 +52,41 @@ export function useFocusInput(
     const onCompStart = () => { composing = true; };
     const onCompEnd = () => { composing = false; };
 
+    // Safari iOS: button 탭 시 relatedTarget이 null이므로
+    // pointerdown으로 외부 인터랙티브 요소 클릭을 별도 감지
+    let skipNextRestore = false;
+    const onPointerDown = (e: PointerEvent) => {
+      skipNextRestore = false;
+      const target = e.target as HTMLElement;
+      const container = el.closest("form")?.parentElement;
+      if (container && !container.contains(target)) {
+        const interactive = target.closest("button, a, [role='button'], [tabindex]");
+        if (interactive && !interactive.hasAttribute("data-keep-focus")) {
+          skipNextRestore = true;
+        }
+      }
+    };
+
     // focusout 이벤트 기반: 포커스를 잃었을 때만 복구 시도 (rAF 폴링 대비 배터리 절약)
     const onFocusOut = (e: FocusEvent) => {
       if (composing) return;
+
+      // 1) relatedTarget 체크 (Chrome/Android)
       const related = e.relatedTarget as HTMLElement | null;
       if (related) {
-        // 같은 채팅 폼 컨테이너 내부 요소(제출·업로드 버튼)면 포커스 복구
-        // 외부 요소(사이드바 메뉴 버튼 등)면 복구 안 함
-        const container = el.closest("form")?.parentElement;
-        if (!container?.contains(related)) return;
+        // data-keep-focus가 있으면 폼 내부처럼 취급 → 포커스 복구
+        if (!related.hasAttribute("data-keep-focus")) {
+          const container = el.closest("form")?.parentElement;
+          if (!container?.contains(related)) return;
+        }
       }
+
+      // 2) pointerdown 체크 (Safari iOS — relatedTarget이 null인 경우)
+      if (skipNextRestore) {
+        skipNextRestore = false;
+        return;
+      }
+
       requestAnimationFrame(() => {
         if (!composing && document.activeElement !== el) {
           el.focus();
@@ -72,11 +97,13 @@ export function useFocusInput(
     el.addEventListener("compositionstart", onCompStart);
     el.addEventListener("compositionend", onCompEnd);
     el.addEventListener("focusout", onFocusOut);
+    document.addEventListener("pointerdown", onPointerDown, true);
 
     holdCleanupRef.current = () => {
       el.removeEventListener("compositionstart", onCompStart);
       el.removeEventListener("compositionend", onCompEnd);
       el.removeEventListener("focusout", onFocusOut);
+      document.removeEventListener("pointerdown", onPointerDown, true);
     };
   }, [fieldId]);
 

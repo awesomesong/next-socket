@@ -558,6 +558,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
       {shouldShowArrow && (
         <button
           type="button"
+          data-keep-focus
           className="
             absolute
             md:bottom-24
