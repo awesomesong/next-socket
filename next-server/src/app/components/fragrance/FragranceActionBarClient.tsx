@@ -59,8 +59,8 @@ export default function FragranceActionBarClient({
       queryClient.removeQueries({ queryKey: fragranceDetailKey(slug), exact: true });
       queryClient.removeQueries({ queryKey: fragranceDetailKey(fragranceId), exact: true });
 
-      // 홈 목록은 refetchOnMount=false 이라, 삭제 후 빈 캐시가 남아있으면 재요청이 안 될 수 있음
-      queryClient.invalidateQueries({ queryKey: fragranceListKey });
+      // 캐시를 완전히 제거해야 refetchOnMount=false 여도 마운트 시 재요청됨
+      queryClient.removeQueries({ queryKey: fragranceListKey });
 
       router.push(withToastParams('/', 'success', '향수가 삭제되었습니다.'));
     } catch (err: unknown) {
