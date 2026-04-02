@@ -14,13 +14,12 @@ const ChatSubmitButton = ({
 }: ChatSubmitButtonProps) => (
   <button
     type={type}
-    onClick={onClick}
-    onPointerDown={(e) => e.preventDefault()}
-    onTouchStart={(e) => {
+    onPointerDown={(e) => {
       e.preventDefault();
-      if (onClick) onClick();
+      if (!disabled) onClick?.();
     }}
     disabled={disabled}
+    data-keep-focus
     className="
       rounded-full
       p-2
