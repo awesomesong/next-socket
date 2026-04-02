@@ -7,19 +7,26 @@ export const useLayoutHeight = (ref: React.RefObject<HTMLElement>) => {
     const el = ref.current;
 
     const update = () => {
-      if (window.innerWidth >= 768 || !window.visualViewport) {
-        el.style.height = ""; // desktop이거나 지원 안되면 초기화
-        el.scrollTop = 0; // 스크롤 초기화
+      // 터치 디바이스가 아니거나 visualViewport 미지원 시 데스크탑 처리
+      const isTouchDevice = navigator.maxTouchPoints > 0;
+      if (!isTouchDevice || !window.visualViewport) {
+        el.style.position = "";
+        el.style.top = "";
+        el.style.left = "";
+        el.style.width = "";
+        el.style.height = "";
+        el.scrollTop = 0;
         return;
       }
 
-      const { height } = window.visualViewport;
-      el.style.height = `${height}px`;
-
-
-      requestAnimationFrame(() => {
-        el.scrollIntoView({ block: 'end', behavior: 'instant' });
-      });
+      const vv = window.visualViewport;
+      // position: fixed로 iOS 인앱 브라우저의 주소창/키보드 툴바 대응
+      // offsetTop으로 키보드 열림 시 visual viewport 스크롤 보정
+      el.style.position = "fixed";
+      el.style.top = `${vv.offsetTop}px`;
+      el.style.left = "0";
+      el.style.width = "100%";
+      el.style.height = `${vv.height}px`;
     };
 
     // 초기 적용
