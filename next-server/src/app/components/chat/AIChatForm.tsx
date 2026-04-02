@@ -341,7 +341,8 @@ const AIChatForm = ({
           "
         />
         <ChatSubmitButton
-          type="submit"
+          type="button"
+          onClick={submit}
           disabled={isDisabled || isSessionLoading}
         />
       </form>

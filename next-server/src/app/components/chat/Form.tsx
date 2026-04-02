@@ -364,6 +364,13 @@ const Form = () => {
 
   const submit = useCallback(() => handleSubmit(onSubmit)(), [handleSubmit, onSubmit]);
 
+  // ✅ 제출 경로 통일 (사파리 모바일 호환: 명시적 preventDefault)
+  const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    submit();
+  }, [submit]);
+
   const handleKeyPress = (
     e: React.KeyboardEvent<HTMLTextAreaElement>,
   ) => {
@@ -398,7 +405,7 @@ const Form = () => {
         <HiPhoto size={30} fill="url(#scent-nav-gradient)" />
       </button>
       <form
-        onSubmit={submit}
+        onSubmit={handleFormSubmit}
         className="flex items-center gap-2 w-full"
       >
         <TextareaAutosize

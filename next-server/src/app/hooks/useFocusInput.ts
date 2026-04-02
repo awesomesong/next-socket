@@ -57,9 +57,18 @@ export function useFocusInput(
     // Safari iOS: button 탭 시 relatedTarget이 null이므로
     // pointerdown으로 외부 인터랙티브 요소 클릭을 별도 감지
     let skipNextRestore = false;
+    // data-keep-focus 요소 탭 추적 (iOS Safari relatedTarget null 대응)
+    let keepFocusTapped = false;
     const onPointerDown = (e: PointerEvent) => {
       skipNextRestore = false;
+      keepFocusTapped = false;
       const target = e.target as HTMLElement;
+
+      // data-keep-focus 요소(제출 버튼 등) 탭 감지
+      if (target.closest("[data-keep-focus]")) {
+        keepFocusTapped = true;
+      }
+
       const container = el.closest("form")?.parentElement;
       if (container && !container.contains(target)) {
         const interactive = target.closest("button, a, [role='button'], [tabindex]");
@@ -76,22 +85,31 @@ export function useFocusInput(
       // pointerdown 기반 사용자 인터랙션 여부 소비
       const userInitiated = skipNextRestore;
       if (skipNextRestore) skipNextRestore = false;
+      const wasKeepFocus = keepFocusTapped;
+      keepFocusTapped = false;
 
       // 1) relatedTarget 체크 (Chrome/Android)
       const related = e.relatedTarget as HTMLElement | null;
       if (related) {
-        // data-keep-focus가 있으면 폼 내부처럼 취급 → 포커스 복구
-        if (!related.hasAttribute("data-keep-focus")) {
-          const container = el.closest("form")?.parentElement;
-          if (!container?.contains(related)) {
-            // 사용자 클릭에 의한 외부 포커스 이동 → 복구 안 함
-            if (userInitiated) return;
-            // 프로그래밍 방식 포커스 이동 (예: 드롭다운 닫힘) → 복구
-          }
+        if (related.hasAttribute("data-keep-focus")) {
+          // data-keep-focus 요소로 포커스 이동 시 즉시 복구 (키보드 깜빡임 방지)
+          el.focus();
+          return;
+        }
+        const container = el.closest("form")?.parentElement;
+        if (!container?.contains(related)) {
+          // 사용자 클릭에 의한 외부 포커스 이동 → 복구 안 함
+          if (userInitiated) return;
+          // 프로그래밍 방식 포커스 이동 (예: 드롭다운 닫힘) → 복구
         }
       } else {
         // 2) Safari iOS: relatedTarget이 null인 경우
         if (userInitiated) return;
+        // data-keep-focus 탭 감지 시 즉시 복구 (키보드 깜빡임 방지)
+        if (wasKeepFocus) {
+          el.focus();
+          return;
+        }
       }
 
       requestAnimationFrame(() => {
