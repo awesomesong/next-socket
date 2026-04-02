@@ -49,9 +49,24 @@ export function useChatInput(fieldId: string) {
     [handleCompositionEnd, registerOnChange],
   );
 
+  // composition 중 제출 시 DOM 값을 RHF에 먼저 동기화하는 래퍼
+  // (한글 마지막 글자가 잘리는 문제 방지)
+  const handleSubmitWithFlush: typeof handleSubmit = useCallback(
+    (onValid, onInvalid?) => {
+      return (...args) => {
+        const el = document.getElementById(fieldId) as HTMLTextAreaElement | null;
+        if (el) {
+          setValue("message", el.value);
+        }
+        return handleSubmit(onValid, onInvalid)(...args);
+      };
+    },
+    [handleSubmit, fieldId, setValue],
+  );
+
   return {
     registerRest,
-    handleSubmit,
+    handleSubmit: handleSubmitWithFlush,
     setValue,
     getValues,
     setTextareaRef,
