@@ -572,13 +572,7 @@ const Body = ({ scrollRef, bottomRef, isAIChat }: Props) => {
             translate-x-[50%]
           "
           onClick={handleClickToBottom}
-          onMouseDown={(e) => {
-            e.preventDefault();
-          }}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            handleClickToBottom();
-          }}
+          onPointerDown={(e) => e.preventDefault()}
           title="맨 아래로 스크롤"
         >
           <PiArrowFatDownFill size="14" className="text-white dark:text-neutral-900" />
