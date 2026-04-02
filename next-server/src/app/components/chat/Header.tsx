@@ -92,18 +92,15 @@ const Header: React.FC<HeaderProps> = ({ conversation, currentUser }) => {
             </div>
           </div>
         </div>
-        <HiEllipsisHorizontal
-          size={32}
-          onClick={() => setIsDrawerOpen(true)}
-          fill="url(#scent-nav-gradient)"
-          className="
-            shrink-0
-            w-8
-            h-8
-            cursor-pointer
-            hover:opacity-70
-            transition
-        "/>
+        <button type="button" 
+          onClick={() => setIsDrawerOpen(true)} 
+          className="shrink-0 cursor-pointer hover:opacity-70 transition"
+        >
+          <HiEllipsisHorizontal
+            size={32}
+            fill="url(#scent-nav-gradient)"
+          />
+        </button>
       </div>
     </>
   );
