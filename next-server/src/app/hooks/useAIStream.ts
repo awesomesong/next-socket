@@ -19,6 +19,7 @@ interface UseAIStreamOptions {
   aiAgentType?: "assistant";
   onNewContent?: () => void;
   onComplete?: (finalMessage: FullMessageType) => void;
+  onStreamEnd?: () => void; // 스트림 완료 즉시 호출 (후처리 전)
 }
 
 interface RequestAIOptions {
@@ -39,7 +40,7 @@ interface RequestAIOptions {
   };
 }
 
-export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewContent, onComplete }: UseAIStreamOptions) => {
+export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewContent, onComplete, onStreamEnd }: UseAIStreamOptions) => {
   const queryClient = useQueryClient();
   const abortControllerRef = useRef<AbortController | null>(null);
   const { addFailedMessage, removeFailedMessage } = useFailedMessages(conversationId);
@@ -153,6 +154,9 @@ export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewCo
                 onNewContent?.();
             },
             });
+
+            // ✅ 스트림 완료 즉시 폼 활성화 (후처리 대기 불필요)
+            onStreamEnd?.();
 
             // ✅ 서버에서 받은 메타데이터로 메시지 업데이트
             const cache = queryClient.getQueryData(messagesKey(conversationId)) as InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }> | undefined;
@@ -298,7 +302,7 @@ export const useAIStream = ({ conversationId, aiAgentType = "assistant", onNewCo
                 abortControllerRef.current = null;
             }
         }
-    },[queryClient, conversationId, aiAgentType, onNewContent, onComplete, addFailedMessage, removeFailedMessage]);
+    },[queryClient, conversationId, aiAgentType, onNewContent, onComplete, onStreamEnd, addFailedMessage, removeFailedMessage]);
 
     const abort = useCallback(() => {
         abortControllerRef.current?.abort();

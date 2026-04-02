@@ -77,6 +77,7 @@ const AIChatForm = ({
     aiAgentType,
     onNewContent: notifyNewContent,
     onComplete: handleAIComplete,
+    onStreamEnd: () => setIsDisabled(false), // 스트림 완료 즉시 폼 활성화
   });
 
   // ✅ 언마운트 시 cleanup
@@ -110,6 +111,13 @@ const AIChatForm = ({
     focusAndHold();
     return () => cancelFocus();
   }, [focusAndHold, cancelFocus]);
+
+  // AI 응답 완료(isDisabled false) 시 자동 포커스 + 키보드 활성화
+  useEffect(() => {
+    if (!isDisabled) {
+      focusAndHold();
+    }
+  }, [isDisabled, focusAndHold]);
 
   // 세션 로드 완료 시 포커스 재적용 (세션 캐시 미스 시 지연 방어)
   useEffect(() => {
