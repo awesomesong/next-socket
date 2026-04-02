@@ -55,8 +55,13 @@ export function useFocusInput(
     // focusout 이벤트 기반: 포커스를 잃었을 때만 복구 시도 (rAF 폴링 대비 배터리 절약)
     const onFocusOut = (e: FocusEvent) => {
       if (composing) return;
-      // relatedTarget이 있으면 사용자가 버튼/링크 등을 의도적으로 클릭한 것 → 복구 안 함
-      if (e.relatedTarget) return;
+      const related = e.relatedTarget as HTMLElement | null;
+      if (related) {
+        // 같은 채팅 폼 컨테이너 내부 요소(제출·업로드 버튼)면 포커스 복구
+        // 외부 요소(사이드바 메뉴 버튼 등)면 복구 안 함
+        const container = el.closest("form")?.parentElement;
+        if (!container?.contains(related)) return;
+      }
       requestAnimationFrame(() => {
         if (!composing && document.activeElement !== el) {
           el.focus();
