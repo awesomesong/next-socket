@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { SubmitHandler } from 'react-hook-form';
 import TextareaAutosize from 'react-textarea-autosize';
-import { useCallback, useEffect, startTransition } from 'react';
+import { useCallback, useLayoutEffect, startTransition } from 'react';
 import { useSocket } from '@/src/app/context/socketContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { createConversationWithFirstMessage } from '@/src/app/lib/createConversationWithFirstMessage';
@@ -58,7 +58,7 @@ const DraftForm: React.FC<DraftFormProps> = ({
         handleCompositionEndSync,
     } = useChatInput('scent-draft-msg');
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         focusAndHold();
         return () => cancelFocus();
     }, [focusAndHold, cancelFocus]);

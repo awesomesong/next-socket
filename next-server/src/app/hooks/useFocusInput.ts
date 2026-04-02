@@ -71,20 +71,25 @@ export function useFocusInput(
     const onFocusOut = (e: FocusEvent) => {
       if (composing) return;
 
+      // pointerdown 기반 사용자 인터랙션 여부 소비
+      const userInitiated = skipNextRestore;
+      if (skipNextRestore) skipNextRestore = false;
+
       // 1) relatedTarget 체크 (Chrome/Android)
       const related = e.relatedTarget as HTMLElement | null;
       if (related) {
         // data-keep-focus가 있으면 폼 내부처럼 취급 → 포커스 복구
         if (!related.hasAttribute("data-keep-focus")) {
           const container = el.closest("form")?.parentElement;
-          if (!container?.contains(related)) return;
+          if (!container?.contains(related)) {
+            // 사용자 클릭에 의한 외부 포커스 이동 → 복구 안 함
+            if (userInitiated) return;
+            // 프로그래밍 방식 포커스 이동 (예: 드롭다운 닫힘) → 복구
+          }
         }
-      }
-
-      // 2) pointerdown 체크 (Safari iOS — relatedTarget이 null인 경우)
-      if (skipNextRestore) {
-        skipNextRestore = false;
-        return;
+      } else {
+        // 2) Safari iOS: relatedTarget이 null인 경우
+        if (userInitiated) return;
       }
 
       requestAnimationFrame(() => {
