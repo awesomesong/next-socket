@@ -3,11 +3,9 @@ import { useCallback, useRef } from "react";
 /**
  * 입력 필드 포커스 공통 훅
  * - focusInput: 단순 포커스
- * - focusAndHold: 즉시 포커스 + rAF 폴링으로 상시 복구
- *   · cross-origin iframe 포커스 탈취도 감지 (이벤트 미발생 케이스 대응)
- *   · 사용자 터치에 의한 포커스 이동(form 밖 터치 후 100ms 이내) → 허용
- *   → 모바일 키보드 깜빡임 없이 포커스 유지
- * - cancelFocus: 복구 폴링 해제
+ * - focusAndHold: 즉시 포커스 + focusout 이벤트 기반 자동 복구
+ *   · composition 중에는 복구 건너뛰기 (한글 IME 보호)
+ * - cancelFocus: 복구 해제
  */
 export function useFocusInput(
   fieldId: string,
@@ -40,14 +38,6 @@ export function useFocusInput(
 
   const focusInput = doFocus;
 
-  /**
-   * 즉시 포커스 + requestAnimationFrame 폴링:
-   * - 매 프레임 document.activeElement를 확인하여 포커스 탈취 감지
-   *   · blur/focusin 이벤트가 발생하지 않는 cross-origin iframe도 감지
-   *   · ~16ms 이내 복구 → 모바일 키보드 hide 애니메이션 시작 전 복구
-   * - form 밖 터치 → 복구 중단 / form 안 터치 → 복구 재개
-   * - cancelFocus() 또는 컴포넌트 언마운트 시 폴링 중단
-   */
   const focusAndHold = useCallback(() => {
     const el =
       internalRef.current ??
@@ -57,41 +47,33 @@ export function useFocusInput(
     el.focus();
     holdCleanupRef.current?.();
 
-    const form = el.closest("form");
+    // composition 중에는 focus() 호출을 건너뛰어 한글 IME 보호
+    let composing = false;
+    const onCompStart = () => { composing = true; };
+    const onCompEnd = () => { composing = false; };
 
-    // form 안 터치 → 복구 재개, form 밖 터치 → 복구 중단
-    let paused = false;
-    const handlePointer = (e: Event) => {
-      const target = e.target as Node;
-      if (form?.contains(target)) {
-        paused = false;
-        return;
-      }
-      paused = true;
-    };
-    document.addEventListener("pointerdown", handlePointer, { passive: true });
-
-    // rAF 폴링: 매 프레임 activeElement 확인 → 탈취 시 즉시 복구
-    let rafId: number;
-    const checkFocus = () => {
-      if (!paused && document.activeElement !== el) {
-        const target = document.activeElement;
-        if (!target || !form?.contains(target)) {
+    // focusout 이벤트 기반: 포커스를 잃었을 때만 복구 시도 (rAF 폴링 대비 배터리 절약)
+    const onFocusOut = (e: FocusEvent) => {
+      if (composing) return;
+      // relatedTarget이 있으면 사용자가 버튼/링크 등을 의도적으로 클릭한 것 → 복구 안 함
+      if (e.relatedTarget) return;
+      requestAnimationFrame(() => {
+        if (!composing && document.activeElement !== el) {
           el.focus();
         }
-      }
-      rafId = requestAnimationFrame(checkFocus);
+      });
     };
-    rafId = requestAnimationFrame(checkFocus);
+
+    el.addEventListener("compositionstart", onCompStart);
+    el.addEventListener("compositionend", onCompEnd);
+    el.addEventListener("focusout", onFocusOut);
 
     holdCleanupRef.current = () => {
-      cancelAnimationFrame(rafId);
-      document.removeEventListener("pointerdown", handlePointer);
-      paused = true;
+      el.removeEventListener("compositionstart", onCompStart);
+      el.removeEventListener("compositionend", onCompEnd);
+      el.removeEventListener("focusout", onFocusOut);
     };
-  },
-    [fieldId]
-  );
+  }, [fieldId]);
 
   return { focusInput, focusAndHold, cancelFocus, doFocus, setTextareaRef };
 }

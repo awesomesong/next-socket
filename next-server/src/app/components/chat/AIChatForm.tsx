@@ -1,5 +1,4 @@
 "use client";
-import { useForm, SubmitHandler } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import {
@@ -10,11 +9,9 @@ import {
   memo,
   useLayoutEffect
 } from "react";
-import useComposition from "@/src/app/hooks/useComposition";
 import TextareaAutosize from "react-textarea-autosize";
 import { useSession } from "next-auth/react";
 import { formatErrorMessage } from "@/src/app/lib/react-query/utils";
-import { useFocusInput } from "@/src/app/hooks/useFocusInput";
 import { validatePrompt as validateAIPrompt } from "@/src/app/utils/aiPolicy";
 import { FullMessageType, normalizePreviewType } from "@/src/app/types/conversation";
 import {
@@ -29,6 +26,8 @@ import { useFailedMessages } from "@/src/app/hooks/useFailedMessages";
 import { useAIStream } from "@/src/app/hooks/useAIStream";
 import { useSocket } from "@/src/app/context/socketContext";
 import ChatSubmitButton from "./ChatSubmitButton";
+import { useChatInput } from "@/src/app/hooks/useChatInput";
+import { SubmitHandler } from "react-hook-form";
 
 // Form 타입 정의
 type Form = { message: string };
@@ -91,15 +90,22 @@ const AIChatForm = ({
     };
   }, [abortAI]);
 
-  const { register, handleSubmit, setValue, getValues } =
-    useForm<Form>({
-      defaultValues: { message: "" },
-    });
+  // ✅ 공통 훅: form + IME + focus
+  const {
+    registerRest,
+    handleSubmit,
+    setValue,
+    getValues,
+    setTextareaRef,
+    focusAndHold,
+    cancelFocus,
+    focusInput,
+    isComposing,
+    handleChange,
+    handleCompositionStart,
+    handleCompositionEndSync,
+  } = useChatInput("scent-ai-msg");
 
-  const { ref: registerRef, ...registerRest } = register("message", { required: true });
-  const { focusAndHold, cancelFocus, focusInput, setTextareaRef } = useFocusInput("message", registerRef);
-
-  // 마운트 시 부드러운 순차적 초기 포커스 적용 (페이지 전환 방어)
   useLayoutEffect(() => {
     focusAndHold();
     return () => cancelFocus();
@@ -133,8 +139,6 @@ const AIChatForm = ({
     sessionStorage.removeItem("scent:pendingAI");
 
     const user = session.user;
-    // setTimeout(0): React Strict Mode의 effect→cleanup→effect 사이클 이후에 실행되도록 지연
-    // cleanup이 먼저 실행되면 'started = false'이므로 sessionStorage를 복원해 재시도 가능
     let started = false;
     const tid = setTimeout(() => {
       started = true;
@@ -155,7 +159,6 @@ const AIChatForm = ({
     return () => {
       clearTimeout(tid);
       if (!started) {
-        // Strict Mode cleanup: sessionStorage 복원 + 플래그 초기화 → 재실행 시 재시도 가능
         hasPendingTriggeredRef.current = false;
         sessionStorage.setItem("scent:pendingAI", JSON.stringify(pending));
       }
@@ -164,20 +167,19 @@ const AIChatForm = ({
 
   const onSubmit = useCallback<SubmitHandler<Form>>(async ({ message }) => {
     if (isDisabled) return;
-    if (isSessionLoading) return; // 세션 로딩 중 조용히 대기 (에러 toast 없음)
+    if (isSessionLoading) return;
 
     const check = validateAIPrompt(String(message || ""));
     if (!check.isValid) {
       toast.error(check.error || "입력값을 확인해주세요.");
       return;
     }
-    if (!session?.user?.id) { // 로그인 가드
+    if (!session?.user?.id) {
       toast.error("로그인 후 이용해주세요.");
       return;
     }
 
     setIsDisabled(true);
-    // 위의 가드로 인해 session.user는 존재함이 보장됨
     const user = session.user;
     const userId = user.id;
     const userName = user.name ?? "";
@@ -278,8 +280,6 @@ const AIChatForm = ({
     handleSubmit(onSubmit)();
   }, [handleSubmit, onSubmit]);
 
-  const { isComposing, handleCompositionStart, handleCompositionEnd } = useComposition();
-
   const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (isComposing()) return;
     if (e.key === "Enter" && !e.shiftKey) {
@@ -306,11 +306,12 @@ const AIChatForm = ({
         noValidate
       >
         <TextareaAutosize
-          id="message"
+          id="scent-ai-msg"
           minRows={2}
           maxRows={4}
           ref={setTextareaRef}
           {...registerRest}
+          onChange={handleChange}
           placeholder={
             isDisabled
               ? "AI 응답이 완료될 때까지 기다려주세요."
@@ -318,10 +319,10 @@ const AIChatForm = ({
           }
           onKeyDown={handleKeyPress}
           onCompositionStart={handleCompositionStart}
-          onCompositionEnd={handleCompositionEnd}
+          onCompositionEnd={handleCompositionEndSync}
           readOnly={isDisabled}
           className="
-            w-full 
+            w-full
             bg-default
             border-default
             rounded-lg

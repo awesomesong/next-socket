@@ -1,6 +1,6 @@
 "use client";
 import useConversation from "@/src/app/hooks/useConversation";
-import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
+import { FieldValues, SubmitHandler } from "react-hook-form";
 import TextareaAutosize from "react-textarea-autosize";
 import {
   InfiniteData,
@@ -9,12 +9,8 @@ import {
 } from "@tanstack/react-query";
 import { sendMessage } from "@/src/app/lib/sendMessage";
 import toast from "react-hot-toast";
-import { useCallback, useEffect, useLayoutEffect, useRef, memo } from "react";
-import { useFocusInput } from "@/src/app/hooks/useFocusInput";
-import ImageUploadButton from "@/src/app/components/ImageUploadButton";
-import { CloudinaryUploadWidgetResults } from "next-cloudinary";
+import { useCallback, useLayoutEffect, useRef, memo } from "react";
 import { useSocket } from "../../context/socketContext";
-import useComposition from "@/src/app/hooks/useComposition";
 import { FullMessageType, normalizePreviewType } from "../../types/conversation";
 import { useSession } from "next-auth/react";
 import {
@@ -35,6 +31,9 @@ import { useConversationLoading } from "@/src/app/hooks/useConversationLoading";
 import { useFailedMessages } from "@/src/app/hooks/useFailedMessages";
 import useConversationUserList from "../../hooks/useConversationUserList";
 import ChatSubmitButton from "./ChatSubmitButton";
+import { HiPhoto } from "react-icons/hi2";
+import { useChatInput } from "@/src/app/hooks/useChatInput";
+import { useChatImageUpload } from "@/src/app/hooks/useChatImageUpload";
 
 type Form = { message: string };
 
@@ -265,7 +264,6 @@ const Form = () => {
           "메시지 전송에 실패했습니다. 다시 시도해주세요.",
         ),
       );
-
     },
   });
 
@@ -291,7 +289,7 @@ const Form = () => {
           // 직렬 전송: 이전 요청 완료까지 대기
           await mutateAsync(vars);
         } catch {
-          // 에러는 상단 onError에서 처리됨. 다음 항목 진행
+          // 에러는 상단 onError에서 처리됨
         }
       }
     } finally {
@@ -305,108 +303,51 @@ const Form = () => {
     void processQueue();
   }, [processQueue]);
 
-  const { register, handleSubmit, setValue, getValues } =
-    useForm<Form>({
-      defaultValues: {
-        message: "",
-      },
-    });
+  // ✅ 공통 훅: form + IME + focus
+  const {
+    registerRest,
+    handleSubmit,
+    setValue,
+    getValues,
+    setTextareaRef,
+    focusAndHold,
+    cancelFocus,
+    isComposing,
+    handleChange,
+    handleCompositionStart,
+    handleCompositionEndSync,
+  } = useChatInput("scent-chat-msg");
 
-  const { ref: registerRef, onChange: registerOnChange, ...registerRest } = register("message", { required: true });
-  const { focusAndHold, cancelFocus, setTextareaRef } = useFocusInput("message", registerRef);
-
-  // ✅ Cloudinary SDK 등 외부 코드가 textarea.value를 비우는 것을 차단
-  const intentionalClearRef = useRef(false);
-  // ✅ 한글 IME 조합 중 value setter 인터셉터 우회용
-  const composingRef = useRef(false);
-
-  // ✅ handleUpload 안정화용 ref: conversationId 변경 시 ImageUploadButton 리렌더링 방지
-  // (CldUploadButton 재초기화에 의한 Windows 포커스 탈취 차단)
   const conversationIdRef = useRef(conversationId);
   conversationIdRef.current = conversationId;
 
-  // ImageUploadButton(CldUploadButton) 초기화 중 포커스 탈취 방지용 inert 상태
-  // - useRef + 직접 DOM 조작: 상태 변경에 의한 리렌더링 방지 (입력 값 유실 방지)
-  const uploadDivRef = useRef<HTMLDivElement>(null);
-
-  // ── Cloudinary inert 해제 + textarea value 보호 ──
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    // 1. Cloudinary inert 해제
-    const activateUploadButton = () => {
-      uploadDivRef.current?.removeAttribute("inert");
-    };
-    if ("cloudinary" in window) {
-      activateUploadButton();
-    }
-    const checkId = ("cloudinary" in window) ? null : window.setInterval(() => {
-      if (!("cloudinary" in window)) return;
-      window.clearInterval(checkId!);
-      activateUploadButton();
-    }, 50);
-
-    // 2. textarea.value setter 가로채기:
-    //    Cloudinary SDK 등 외부 코드가 값을 비우는 것을 원천 차단.
-    //    의도적 비움(onSubmit)은 intentionalClearRef 플래그로 허용.
-    //    한글 IME 조합 중에는 인터셉터를 우회하여 브라우저 네이티브 동작 보장.
-    const el = document.getElementById("message") as HTMLTextAreaElement | null;
-
-    const onCompStart = () => { composingRef.current = true; };
-    const onCompEnd = () => { composingRef.current = false; };
-    el?.addEventListener("compositionstart", onCompStart);
-    el?.addEventListener("compositionend", onCompEnd);
-
-    const desc = el ? Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value") : null;
-    if (el && desc?.set && desc?.get) {
-      Object.defineProperty(el, "value", {
-        get() { return desc.get!.call(this); },
-        set(v: string) {
-          // IME 조합 중에는 항상 네이티브 setter 사용 (한글 입력 보호)
-          if (composingRef.current) {
-            desc.set!.call(this, v);
-            return;
-          }
-          const cur = desc.get!.call(this);
-          if (v === "" && cur !== "" && !intentionalClearRef.current) {
-            return; // 외부 코드에 의한 비우기 차단
-          }
-          desc.set!.call(this, v);
-        },
-        configurable: true,
-        enumerable: true,
+  // ✅ 공통 훅: 이미지 업로드
+  const handleImageUpload = useCallback(
+    (url: string) => {
+      const messageId = crypto.randomUUID();
+      enqueueSend({
+        conversationId: conversationIdRef.current,
+        image: url,
+        messageId,
       });
-    }
+    },
+    [enqueueSend],
+  );
+  const { fileInputRef, handleUploadClick, handleFileChange } =
+    useChatImageUpload(handleImageUpload);
 
-    // 3. form.reset() 대비: reset 이벤트 차단
-    const form = el?.closest("form");
-    const handleReset = (e: Event) => {
-      if (!intentionalClearRef.current) e.preventDefault();
-    };
-    form?.addEventListener("reset", handleReset);
+  // 대화 전환 시에만 입력값 초기화 (ref guard)
+  const prevConvIdRef = useRef<string | null>(null);
 
-    return () => {
-      if (checkId) window.clearInterval(checkId);
-      el?.removeEventListener("compositionstart", onCompStart);
-      el?.removeEventListener("compositionend", onCompEnd);
-      // value 인터셉터 해제: 인스턴스 프로퍼티 제거 → 프로토타입 기본 동작 복원
-      if (el) { try { delete (el as unknown as Record<string, unknown>).value; } catch { /* noop */ } }
-      form?.removeEventListener("reset", handleReset);
-    };
-  }, []);
-
-  // 마운트/대화 전환 시 포커스 유지 폴링 시작
   useLayoutEffect(() => {
     if (typeof window === "undefined") return;
-    const fromDraft = sessionStorage.getItem("scent:focusMessage");
-    if (fromDraft) sessionStorage.removeItem("scent:focusMessage");
-    // Cloudinary 미로드 상태면 inert 초기화 (대화 전환 시 재보호)
-    if (!("cloudinary" in window)) {
-      uploadDivRef.current?.setAttribute("inert", "");
+    if (prevConvIdRef.current !== conversationId) {
+      prevConvIdRef.current = conversationId;
+      setValue("message", "");
     }
     focusAndHold();
     return () => cancelFocus();
-  }, [focusAndHold, cancelFocus, conversationId]);
+  }, [focusAndHold, cancelFocus, conversationId, setValue]);
 
   // 2) 실제 제출 로직: RHF 데이터 받음
   const onSubmit = useCallback<SubmitHandler<Form>>(async ({ message }) => {
@@ -416,38 +357,12 @@ const Form = () => {
       toast.error(check.error || "입력값을 확인해주세요.");
       return;
     }
-
     const messageId = crypto.randomUUID();
-    intentionalClearRef.current = true;
     setValue("message", "", { shouldValidate: true });
-    intentionalClearRef.current = false;
     enqueueSend({ conversationId, data: { message }, messageId });
   }, [conversationId, enqueueSend, setValue]);
 
-  const handleUpload = useCallback(
-    async (result: CloudinaryUploadWidgetResults) => {
-      if (
-        typeof result.info === "string" ||
-        !result.info ||
-        !("secure_url" in result.info)
-      )
-        return;
-      const messageId = crypto.randomUUID();
-      enqueueSend({
-        conversationId: conversationIdRef.current,
-        image: result.info.secure_url,
-        messageId,
-      });
-    },
-    [enqueueSend]
-  );
-
-  // 3) RHF 핸들러를 메모이즈해서 모든 제출 경로에서 사용
   const submit = useCallback(() => handleSubmit(onSubmit)(), [handleSubmit, onSubmit]);
-
-  // ✅ 조합 입력 훅 적용
-  const { isComposing, handleCompositionStart, handleCompositionEnd } =
-    useComposition();
 
   const handleKeyPress = (
     e: React.KeyboardEvent<HTMLTextAreaElement>,
@@ -471,26 +386,34 @@ const Form = () => {
         py-2
         border-t-default
     ">
-      <div ref={uploadDivRef} inert>
-        <ImageUploadButton onUploadSuccess={handleUpload} variant="compact" />
-      </div>
+      {/* 이미지 업로드: file input (Cloudinary SDK 미사용) */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/gif,image/webp"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      <button type="button" onClick={handleUploadClick} className="shrink-0 pt-2">
+        <HiPhoto size={30} fill="url(#scent-nav-gradient)" />
+      </button>
       <form
         onSubmit={submit}
         className="flex items-center gap-2 w-full"
       >
         <TextareaAutosize
-          id="message"
-          ref={setTextareaRef}
+          id="scent-chat-msg"
           minRows={2}
           maxRows={4}
+          ref={setTextareaRef}
           {...registerRest}
-          onChange={registerOnChange}
+          onChange={handleChange}
           placeholder="메시지를 작성해주세요."
           onKeyDown={handleKeyPress}
           onCompositionStart={handleCompositionStart}
-          onCompositionEnd={handleCompositionEnd}
+          onCompositionEnd={handleCompositionEndSync}
           className="
-            w-full 
+            w-full
             bg-default
             border-default
             rounded-lg
