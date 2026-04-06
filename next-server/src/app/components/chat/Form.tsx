@@ -37,6 +37,23 @@ import { useChatImageUpload } from "@/src/app/hooks/useChatImageUpload";
 
 type Form = { message: string };
 
+type SendVariables = {
+  conversationId: string;
+  data?: FieldValues;
+  image?: string;
+  messageId: string;
+};
+
+type MutationContext = {
+  messageId: string;
+  optimisticType: string;
+  body: string | null;
+  previewBody: string | null;
+  image: string | undefined;
+  prevPreview: ReturnType<typeof getPrevPreview>;
+  wasFetching: boolean;
+};
+
 const Form = () => {
   const socket = useSocket();
   const { conversationId } = useConversation();
@@ -50,117 +67,116 @@ const Form = () => {
   // 실패한 메시지 관리 훅
   const { addFailedMessage, removeFailedMessage } = useFailedMessages(conversationId);
 
+  // ✅ 전송 직렬화를 위한 큐 (applyOptimisticUpdate에서 참조하므로 useMutation보다 먼저 선언)
+  const queueRef = useRef<SendVariables[]>([]);
+  const sendingRef = useRef(false);
+
+  // ✅ enqueueSend에서 미리 계산한 컨텍스트를 onMutate에 전달하기 위한 저장소
+  const optimisticContextRef = useRef(new Map<string, MutationContext>());
+
+  // ✅ 낙관적 업데이트를 즉시 적용하는 함수 (큐 대기 없이 화면에 바로 반영)
+  const applyOptimisticUpdate = useCallback((vars: SendVariables): MutationContext | null => {
+    const user = session?.user;
+    if (!user?.id) return null;
+
+    const body = vars.data?.message?.trim() || null;
+    const image = vars.image || null;
+    const optimisticType = image ? "image" : "text";
+    const previewBody = image ? null : (body || "");
+    const tempId = vars.messageId;
+    const convId = vars.conversationId;
+
+    const fetchState = queryClient.getQueryState(messagesKey(convId));
+    const wasFetching = fetchState?.fetchStatus === 'fetching';
+    const prevPreview = getPrevPreview(queryClient, convId);
+
+    const userIds = conversationUsers.find((item) => item.conversationId === convId)
+      ?.userIds ?? [];
+    const isGroupChat = userIds.length > 2;
+
+    const optimisticMessage = normalizeMessage({
+      id: tempId,
+      clientMessageId: tempId,
+      conversationId: convId,
+      body,
+      image,
+      createdAt: new Date(),
+      type: image ? "image" : "text",
+      senderId: user.id,
+      sender: {
+        id: user.id,
+        name: user.name ?? null,
+        email: user.email ?? null,
+        image: user.image ?? null,
+      },
+      conversation: {
+        isGroup: isGroupChat,
+        userIds,
+      },
+      isAIResponse: false,
+      isWaiting: false,
+      isTyping: false,
+      isError: false,
+    });
+
+    const normalizedOptimistic = {
+      ...optimisticMessage,
+      id: tempId,
+      clientMessageId: tempId,
+      createdAt: new Date(),
+      serverCreatedAtMs: Date.now(),
+    };
+
+    // 메시지 목록에 즉시 삽입
+    upsertMessageSortedInCache(queryClient, convId, normalizedOptimistic);
+    resetSeenUsersForLastMessage(queryClient, convId, tempId);
+
+    // 스크롤: 큐에 ��기 중인 메시지가 있으면 즉시, 아니면 RAF
+    if (queueRef.current.length > 0) {
+      window.dispatchEvent(new CustomEvent("chat:new-content"));
+    } else {
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new CustomEvent("chat:new-content"));
+      });
+    }
+
+    // 대화방 목록 미리보기 업데이트
+    bumpConversationOnNewMessage(queryClient, convId, {
+      id: tempId,
+      clientMessageId: tempId,
+      body: previewBody,
+      type: normalizePreviewType(optimisticType),
+      image: image || undefined,
+      createdAt: normalizedOptimistic.createdAt,
+      isAIResponse: false,
+    });
+
+    return {
+      messageId: tempId,
+      optimisticType,
+      body,
+      previewBody,
+      image: image || undefined,
+      prevPreview,
+      wasFetching,
+    };
+  }, [session?.user, queryClient, conversationUsers]);
+
   const { mutateAsync } = useMutation({
     mutationFn: sendMessage,
+    // ✅ onMutate: 캐시 조작은 enqueueSend에서 이미 완료, 여기서는 컨텍스트만 반환
     onMutate: async (newMessage) => {
-      const conversationId = newMessage.conversationId;
-      const tempId = newMessage.messageId; // 클라에서 만든 임시 ID
-
-      const body = newMessage.data?.message?.trim() || null;
-      const image = newMessage.image || null;
-      const optimisticType = image ? "image" : "text";
-
-      // ✅ conversationList 미리보기용 body
-      // 이미지 메시지는 body를 null로 설정 (ConversationBox에서 type으로 판단)
-      const previewBody = image ? null : (body || "");
-
-      // ✅ 초기 로딩 중 메시지 전송 시 fetch 완료 후 재삽입을 위한 플래그
-      const fetchState = queryClient.getQueryState(messagesKey(conversationId));
-      const wasFetching = fetchState?.fetchStatus === 'fetching';
-
-      const previousData = queryClient.getQueryData<
-        InfiniteData<{ messages: FullMessageType[]; nextCursor: string | null }>
-      >(messagesKey(conversationId));
-
-      const user = session?.user;
-      // 로그인된 사용자가 없으면 낙관적 업데이트를 생성하지 않음
-      if (!user?.id) {
-        return { previousData: undefined };
-      }
-
-      const userIds = conversationUsers.find((item) => item.conversationId === conversationId)
-        ?.userIds ?? [];
-
-      const isGroupChat = userIds.length > 2;
-      // normalizeMessage를 사용하여 낙관적 메시지 생성
-      const optimisticMessage = normalizeMessage({
-        id: tempId,
-        clientMessageId: tempId, // 낙관/서버 매칭용
-        conversationId,
-        body,
-        image,
-        createdAt: new Date(),
-        type: image ? "image" : "text",
-        senderId: user.id,
-        sender: {
-          id: user.id,
-          name: user.name ?? null,
-          email: user.email ?? null,
-          image: user.image ?? null,
-        },
-        conversation: {
-          isGroup: isGroupChat,
-          userIds
-        },
-        isAIResponse: false,
-        isWaiting: false,
-        isTyping: false,
-        isError: false,
-      });
-
-      // ✅ 낙관 메시지 시간 정규화 (첫 노출이 항상 맨 아래로 안정적)
-      const normalizedOptimistic = {
-        ...optimisticMessage,
-        id: tempId, // 임시 id
-        clientMessageId: tempId, // ✅ 교체/중복 방지용 키
-        createdAt: new Date(), // ✅ 정렬 안정
-        serverCreatedAtMs: Date.now(), // ✅ 정렬 안정
-      };
-
-      // ✅ 메시지 목록에 낙관적 업데이트 (정렬 삽입 방식)
-      upsertMessageSortedInCache(
-        queryClient,
-        conversationId,
-        normalizedOptimistic,
-      );
-
-      // ✅ 새 메시지 전송 시 읽음 상태 리셋 (내가 보낸 메시지이므로 읽음 상태 초기화)
-      resetSeenUsersForLastMessage(queryClient, conversationId, tempId);
-
-      // ✅ 연속 메시지 전송 시 스크롤 지연 최소화
-      // 큐에 메시지가 쌓여있으면 즉시 스크롤, 아니면 RAF 사용
-      if (queueRef.current.length > 0) {
-        // 큐에 메시지가 있으면 즉시 스크롤 (연속 전송 중)
-        window.dispatchEvent(new CustomEvent("chat:new-content"));
-      } else {
-        // 단일 메시지면 RAF 사용
-        requestAnimationFrame(() => {
-          window.dispatchEvent(new CustomEvent("chat:new-content"));
-        });
-      }
-
-      // ✅ 낙관적 업데이트: conversationList 미리보기도 즉시 업데이트
-      const prevPreview = getPrevPreview(queryClient, conversationId);
-
-      bumpConversationOnNewMessage(queryClient, conversationId, {
-        id: tempId,
-        clientMessageId: tempId, // ✅ 낙관적 업데이트용 중복 체크
-        body: previewBody,
-        type: normalizePreviewType(optimisticType),
-        image: image || undefined,
-        createdAt: normalizedOptimistic.createdAt,
-        isAIResponse: false,
-      });
-
-      return {
-        previousData,
+      const tempId = newMessage.messageId;
+      const ctx = optimisticContextRef.current.get(tempId);
+      optimisticContextRef.current.delete(tempId);
+      return ctx ?? {
         messageId: tempId,
-        optimisticType,
-        body,
-        previewBody,
-        image,
-        prevPreview, // ✅ 실패 시 복원용
-        wasFetching, // ✅ 초기 로딩 취소 여부
+        optimisticType: newMessage.image ? "image" : "text",
+        body: newMessage.data?.message?.trim() || null,
+        previewBody: newMessage.image ? null : (newMessage.data?.message?.trim() || ""),
+        image: newMessage.image || undefined,
+        prevPreview: getPrevPreview(queryClient, newMessage.conversationId),
+        wasFetching: queryClient.getQueryState(messagesKey(newMessage.conversationId))?.fetchStatus === 'fetching',
       };
     },
     onSuccess: (data, variables, context) => {
@@ -267,26 +283,14 @@ const Form = () => {
     },
   });
 
-  // ✅ 전송 직렬화를 위한 큐
-  type SendVariables = {
-    conversationId: string;
-    data?: FieldValues;
-    image?: string;
-    messageId: string;
-  };
-  const queueRef = useRef<SendVariables[]>([]);
-  const sendingRef = useRef(false);
-
   const processQueue = useCallback(async () => {
     if (sendingRef.current) return;
     sendingRef.current = true;
     try {
       while (queueRef.current.length > 0) {
-        // 큐에서 먼저 꺼내 실패해도 다음 항목이 진행되도록 함
         const vars = queueRef.current.shift();
         if (!vars) continue;
         try {
-          // 직렬 전송: 이전 요청 완료까지 대기
           await mutateAsync(vars);
         } catch {
           // 에러는 상단 onError에서 처리됨
@@ -298,10 +302,14 @@ const Form = () => {
   }, [mutateAsync]);
 
   const enqueueSend = useCallback((vars: SendVariables) => {
+    // ✅ 큐에 넣기 전에 낙관적 업데이트를 즉시 실행 → 화면에 바로 표시
+    const ctx = applyOptimisticUpdate(vars);
+    if (ctx) {
+      optimisticContextRef.current.set(vars.messageId, ctx);
+    }
     queueRef.current.push(vars);
-    // 즉시 처리 시도 (진행 중이면 반환)
     void processQueue();
-  }, [processQueue]);
+  }, [processQueue, applyOptimisticUpdate]);
 
   // ✅ 공통 훅: form + IME + focus
   const {
