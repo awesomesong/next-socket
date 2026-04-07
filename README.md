@@ -286,7 +286,7 @@ POST /api/ai/stream
 | **인증** | NextAuth | 4.24.7 | JWT(OAuth + Credentials) |
 | **보안** | bcryptjs | 3.0.3 | 비밀번호 해싱 |
 | | DOMPurify | 3.3.3 | 사용자 입력 HTML 새니타이징, XSS 방지 |
-| **미디어** | next-cloudinary | 6.6.2 | 이미지 업로드·CDN·WebP 자동 변환 |
+| **미디어** | next-cloudinary | 6.6.2 | 이미지 업로드·CDN |
 | **에디터** | react-quill-new | 3.4.6 | WYSIWYG 에디터(공지·게시글) |
 | **3D** | Three.js | 0.183.0 | 히어로 섹션 은하수 배경(WebGL·커스텀 셰이더, 다크/라이트 테마 대응) |
 | **기타** | react-icons | 5.0.1 | 아이콘 라이브러리 |
@@ -311,7 +311,7 @@ POST /api/ai/stream
 |--------|------|------|
 | **Vercel** | next-server 배포 | GitHub 자동 배포, 환경 변수 관리 |
 | **Fly.io** | socket-server 배포 | Docker 컨테이너, fly.toml 설정 |
-| **Cloudinary** | 이미지 호스팅·변환 | CDN, 리사이즈, WebP 최적화 |
+| **Cloudinary** | 이미지 호스팅 | CDN, 리사이즈 |
 
 ---
 
@@ -388,7 +388,7 @@ Scent-Memories/
 | **대화 콘텐츠 정책** | 모든 채팅 환경(AI·1:1·단체)에 공통 금지어 필터를 적용하여, 클라이언트(컴포넌트)와 서버(API) 양쪽에서 부적절한 표현을 이중 사전 차단 |
 | **레이트 리미팅** | AI 스트리밍: 유저당 슬라이딩 윈도우 (분당 10req/user) |
 | **서비스 간 통신** | 웹훅 Secret 검증 (socket-server ↔ next-server) |
-| **이미지** | Next/Image + Cloudinary CDN, WebP 자동 변환 |
+| **이미지** | Next/Image + Cloudinary CDN |
 | **번들** | `next/dynamic` 동적 import, 라우트 단위 코드 스플리팅 |
 | **쿼리 최적화** | 복합 인덱스, 커서 기반 페이지네이션, 필요 필드만 select |
 
