@@ -129,9 +129,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<IParams
             return NextResponse.json({ message: '삭제 권한이 없습니다.' }, { status: 403 });
         }
 
-        const deletedFragrance = await prisma.fragrance.delete({
-            where: { id: existing.id },
-        });
+        const [, deletedFragrance] = await prisma.$transaction([
+            prisma.fragranceReview.deleteMany({ where: { fragranceSlug: existing.slug } }),
+            prisma.fragrance.delete({ where: { id: existing.id } }),
+        ]);
 
         return NextResponse.json({ deletedFragrance }, { status: 200 });
     } catch (error: unknown) {
