@@ -17,7 +17,7 @@
 
 ## 프로젝트 개요
 
-**Scent Memories**는 Next.js 15 App Router 기반의 풀스택 웹 애플리케이션입니다. 실무에서 중요하게 다뤄지는 **서버/클라이언트 컴포넌트 경계 설계**, **실시간 통신 아키텍처**, **AI 스트리밍**, **낙관적 업데이트** 등의 패턴을 실제로 구현했습니다.
+**Scent Memories**는 Next.js 15 App Router 기반의 풀스택 웹 애플리케이션입니다. **서버/클라이언트 컴포넌트 설계**, **실시간 통신 아키텍처**, **AI 스트리밍**, **낙관적 업데이트** 등의 패턴을 구현했습니다.
 
 | 기능 | 설명 |
 |------|------|
@@ -38,7 +38,7 @@
 
 | 영역 | 기술·패턴 |
 |------|-----------|
-| **풀스택** | Next.js 15 App Router, Route Groups, Server/Client Component 경계 설계 |
+| **풀스택** | Next.js 15 App Router, Route Groups, Server/Client Component 설계 |
 | **타입 안정성** | TypeScript strict mode, Prisma 생성 타입 전파 |
 | **서버 상태** | TanStack Query 5 (커서 Infinite Query, Optimistic Update, 도메인별 캐시 분리) |
 | **클라이언트 상태** | Zustand (UI 전역 상태) + React Context (auth·socket·theme) |
@@ -85,9 +85,9 @@
 
 기술을 나열하는 것보다 **왜 이 조합인지**가 더 중요합니다.
 
-| 기술 | 선택 이유 | 대안 대비 |
+| 기술 | 선택 이유 | 장점 |
 |------|----------|----------|
-| **Next.js 15 App Router** | 서버/클라이언트 컴포넌트 경계 설계로 초기 렌더링 최적화, 파일 기반 라우팅으로 구조 명확화 | Pages Router 대비 레이아웃 중첩·서버 컴포넌트 지원 우세 |
+| **Next.js 15 App Router** | 서버/클라이언트 컴포넌트 설계로 초기 렌더링 최적화, 파일 기반 라우팅으로 구조 명확화 | Pages Router 대비 레이아웃 중첩·서버 컴포넌트 지원 우세 |
 | **TanStack Query v5** | 서버 상태와 클라이언트 상태를 명확히 분리, Infinite Query·Optimistic Update 내장으로 UX 향상 | SWR 대비 Mutation 핸들링·캐시 제어 세분화 가능 |
 | **Zustand** | Context API 리렌더 문제 없이 경량 전역 상태 관리, 보일러플레이트 최소 | Redux 대비 설정 간소, Recoil 대비 번들 크기 작음 |
 | **Socket.IO + 별도 서버** | Vercel Serverless는 WebSocket 지속 연결 불가 → Express 서버를 Fly.io에 분리 배포, 독립 스케일링 가능 | 외부 매니지드 서비스 대비 오프라인 큐·이벤트 커스텀 자유도 높음 |
@@ -99,13 +99,12 @@
 
 ## 해결한 기술적 과제
 
-단순 기능 구현을 넘어 실무에서 마주치는 문제들을 직접 해결했습니다.
+기능 구현을 하면서, 마주치는 문제들을 직접 해결했습니다.
 
 | 과제 | 문제 | 해결 |
 |------|------|------|
 | **Vercel + WebSocket** | Serverless 환경에서 WebSocket 지속 연결 불가 | Socket.IO 서버를 Fly.io Docker로 분리, webhook으로 서비스 간 동기화 |
 | **오프라인 메시지 유실** | 수신자가 오프라인일 때 Socket 이벤트 소실 | 서버 메모리 큐(Map) + 24h TTL, 재연결 시 일괄 전달 |
-| **AI 스트림 중단** | 모바일 Safari에서 SSE 스트림 버퍼링으로 실시간성 저하 | `X-Accel-Buffering: no` 헤더, `flush()` 강제 적용 |
 | **캐시 일관성** | 향수 생성 직후 목록에 즉시 반영 안 되는 UX | Optimistic Update로 API 응답 전 캐시 선반영, 실패 시 rollback |
 | **채팅 중복 렌더** | 낙관적 업데이트 후 서버 응답 메시지와 중복 표시 | chatCache에서 tempId ↔ serverId diff 비교·정규화 |
 | **무한 스크롤 일관성** | offset 방식에서 새 항목 추가 시 페이지 경계 중복·누락 | 커서(createdAt + id) 기반 페이지네이션으로 교체 |
@@ -115,14 +114,14 @@
 
 ## 주요 구현 포인트
 
-### 1. Server/Client Components 경계 설계
+### 1. Server/Client Components 설계
 
 ```
 layout.tsx (Server Component)
 ├── NextAuthProvider     ← 'use client' (세션 컨텍스트)
 ├── RQProvider           ← 'use client' (React Query)
-├── SocketProvider       ← 'use client' (WebSocket 연결)
 ├── ThemeProvider        ← 'use client' (다크모드)
+├── SocketProvider       ← 'use client' (WebSocket 연결)
 └── page.tsx             ← Server Component (초기 데이터 fetch)
     └── ClientComponent  ← 'use client' (인터랙션 필요 시점)
 ```
@@ -271,33 +270,33 @@ POST /api/ai/stream
 
 ### 프론트엔드
 
-| 분류 | 기술 | 버전 | 실무 적용 포인트 |
+| 분류 | 기술 | 버전 | 적용 내용 |
 |------|------|------|----------------|
-| **프레임워크** | Next.js | 15.4.8 | App Router, Route Groups `(main)/(chat)`, 동적 메타데이터 |
-| | React | 19.1.2 | Server/Client Components 경계 설계, `use client` 최소화 전략 |
-| | TypeScript | 5.x | strict mode, Prisma 생성 타입 활용, 제네릭 기반 캐시 유틸 |
+| **프레임워크** | Next.js | 15.5.14 | App Router, Route Groups `(main)/(chat)`, 동적 메타데이터 |
+| | React | 19.1.2 | Server/Client Components 설계, `use client` 최소화 전략 |
+| | TypeScript | 5.9.3 | strict mode, Prisma 생성 타입 활용, 제네릭 기반 캐시 유틸 |
 | **서버 상태** | TanStack Query | 5.59.19 | 커서 기반 Infinite Query, Optimistic Update, 도메인별 캐시 |
-| **클라이언트 상태** | Zustand | 4.5.6 | UI 전역 상태·사용자 정보, Context와 역할 분리 |
+| **클라이언트 상태** | Zustand | 4.5.6 | UI 전역 상태 및 사용자 정보 관리, Context API와의 역할 분리 |
 | **스타일/UI** | Tailwind CSS | 3.4.17 | 커스텀 테마(lavender·ivory), 반응형 브레이크포인트 |
 | | HeroUI | 2.7.5 | 공통 컴포넌트(버튼·모달·폼) |
-| | Framer Motion | 12.5.0 | 페이지 전환·요소 인터랙션 애니메이션 |
+| | Framer Motion | 12.5.0 | 페이지 전환·컴포넌트 인터랙션 애니메이션 |
 | **폼** | react-hook-form | 7.51.4 | 비제어 컴포넌트, 리렌더 최소화, 유효성 검사 |
 | | react-select | 5.8.0 | 커스텀 Select 컴포넌트 (채팅 멤버 다중 선택) |
 | **실시간** | Socket.IO Client | 4.8.1 | 싱글턴 패턴, 지수 백오프 재연결, 이벤트 타입 안전성 |
 | **인증** | NextAuth | 4.24.7 | JWT(OAuth + Credentials) |
-| **보안** | bcryptjs | 3.x | 비밀번호 해싱 |
-| | DOMPurify | 3.2.4 | 사용자 입력 HTML 새니타이징, XSS 방지 |
+| **보안** | bcryptjs | 3.0.3 | 비밀번호 해싱 |
+| | DOMPurify | 3.3.3 | 사용자 입력 HTML 새니타이징, XSS 방지 |
 | **미디어** | next-cloudinary | 6.6.2 | 이미지 업로드·CDN·WebP 자동 변환 |
 | **에디터** | react-quill-new | 3.4.6 | WYSIWYG 에디터(공지·게시글) |
 | **3D** | Three.js | 0.183.0 | 히어로 섹션 은하수 배경(WebGL·커스텀 셰이더, 다크/라이트 테마 대응) |
 | **기타** | react-icons | 5.0.1 | 아이콘 라이브러리 |
 | | dayjs | 1.11.13 | 날짜 포맷 |
-| | react-intersection-observer | 9.x | 뷰포트 감지, Infinite Query 트리거 |
-| | react-hot-toast | 2.x | 토스트 알림 |
+| | react-intersection-observer | 9.16.0 | 뷰포트 감지, Infinite Query 트리거 |
+| | react-hot-toast | 2.6.0 | 토스트 알림 |
 
 ### 백엔드
 
-| 분류 | 기술 | 실무 적용 포인트 |
+| 분류 | 기술 | 적용 내용 |
 |------|------|----------------|
 | **런타임** | Node.js 18+ | Next.js API Routes |
 | **DB** | PostgreSQL | Prisma 복합 인덱스, cascade delete, 유니크 제약 |
@@ -386,7 +385,7 @@ Scent-Memories/
 |------|----------|
 | **인증** | JWT 세션(24h), NextAuth 미들웨어, 소켓 핸드셰이크 인증 |
 | **입력 검증** | 서버 라우트 단 검증, DOMPurify XSS 새니타이징 |
-| **대화 콘텐츠 정책** | AI 채팅과 1:1·단체 채팅 전체에서 공통 금지어 필터로 부적절한 단어·표현을 서버·클라이언트 양쪽에서 사전 차단 |
+| **대화 콘텐츠 정책** | 모든 채팅 환경(AI·1:1·단체)에 공통 금지어 필터를 적용하여, 클라이언트(컴포넌트)와 서버(API) 양쪽에서 부적절한 표현을 이중 사전 차단 |
 | **레이트 리미팅** | AI 스트리밍: 유저당 슬라이딩 윈도우 (분당 10req/user) |
 | **서비스 간 통신** | 웹훅 Secret 검증 (socket-server ↔ next-server) |
 | **이미지** | Next/Image + Cloudinary CDN, WebP 자동 변환 |
