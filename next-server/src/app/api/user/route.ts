@@ -31,7 +31,8 @@ export async function GET(){
         });
 
         return NextResponse.json({userInfo} , {status: 200});
-    } catch {
+    } catch (e) {
+        console.error('[GET /api/user] error:', e);
         return NextResponse.json({message: "사용자의 정보를 찾지 못했습니다."}, {status: 500});
     }
 }

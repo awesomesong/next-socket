@@ -179,7 +179,8 @@ export async function GET() {
       { conversations: conversationsWithDetails },
       { status: 200 }
     );
-  } catch {
+  } catch (e) {
+    console.error('[GET /api/conversations] error:', e);
     return new NextResponse("대화방을 불러오는 중 오류가 발생하였습니다.", {
       status: 500,
     });

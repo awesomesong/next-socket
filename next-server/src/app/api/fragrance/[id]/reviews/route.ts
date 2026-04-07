@@ -43,7 +43,8 @@ export async function GET(req: NextRequest, { params }: ParamsProp) {
     });
 
     return NextResponse.json({ reviews, reviewsCount }, { status: 200 });
-  } catch {
+  } catch (e) {
+    console.error('[GET /api/fragrance/[id]/reviews] error:', e);
     return NextResponse.json(
       { message: "리뷰를 불러오지 못했습니다." },
       { status: 500 }

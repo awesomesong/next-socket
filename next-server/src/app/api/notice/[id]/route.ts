@@ -41,7 +41,8 @@ export async function GET(req: Request, { params }: ParamsProp){
     
         return NextResponse.json({notice}, { status: 200 });
 
-    } catch {
+    } catch (e) {
+        console.error('[GET /api/notice/[id]] error:', e);
         return NextResponse.json({message: '해당 글을 불러오지 못했습니다.'}, { status: 500 });
     }
 }

@@ -44,7 +44,8 @@ export async function GET( req: NextRequest ){
 
         return NextResponse.json({noticePosts}, {status: 200});
 
-    } catch {
+    } catch (e) {
+        console.error('[GET /api/notice] error:', e);
         return NextResponse.json({message: '공지사항에 대한 내용을 찾지 못했습니다.'}, { status: 500 });
     }
 };

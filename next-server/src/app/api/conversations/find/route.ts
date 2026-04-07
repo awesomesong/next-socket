@@ -47,7 +47,8 @@ export async function GET(req: Request) {
     }
 
     return new NextResponse("파라미터가 필요합니다.", { status: 400 });
-  } catch {
-    return new NextResponse("서버 오류", { status: 500 });
+  } catch (e) {
+    console.error('[GET /api/conversations/find] error:', e);
+    return new NextResponse("서버 오류: " + ((e as Error)?.message ?? ''), { status: 500 });
   }
 }

@@ -56,7 +56,8 @@ export async function GET(req: NextRequest, { params }: ParamsProp) {
     }
 
     return NextResponse.json({ conversation }, { status: 200 });
-  } catch {
+  } catch (e) {
+    console.error('[GET /api/conversations/[conversationId]] error:', e);
     return NextResponse.json({
       conversation: null,
       message: "해당 대화방을 불러오지 못했습니다.",

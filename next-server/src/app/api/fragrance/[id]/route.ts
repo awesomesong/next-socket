@@ -28,8 +28,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<IParam
         }
 
         return NextResponse.json({ fragrance }, { status: 200 });
-    } catch {
-        return NextResponse.json({ message: 'Something went wrong!' }, { status: 500 });
+    } catch (e) {
+        console.error('[GET /api/fragrance/[id]] error:', e);
+        return NextResponse.json({ message: '예상치 못한 오류가 발생했습니다.'}, { status: 500 });
     }
 }
 

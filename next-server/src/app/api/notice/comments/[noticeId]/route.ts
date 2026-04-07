@@ -57,7 +57,8 @@ export async function GET(
             }
         });
         return NextResponse.json({comments, commentsCount}, { status: 200 });
-    } catch {
+    } catch (e) {
+        console.error('[notice comments GET] error:', e);
         return NextResponse.json({message: '댓글을 불러오지 못했습니다.'}, { status: 500 });
     }
 }
