@@ -52,9 +52,6 @@ export const metadata: Metadata = {
     "웹 개발자 포트폴리오",
     "프론트엔드 개발자",
   ],
-  icons: {
-    icon: "/image/scent_memories.png",
-  },
   openGraph: {
     title: "Scent Memories | 강송희 프론트엔드 포트폴리오",
     description:
