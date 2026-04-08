@@ -98,7 +98,7 @@ const ProductFragrance = () => {
   const pillsMeasureRef = useRef<HTMLDivElement>(null); // 자연 높이를 측정하기 위한 숨겨진 pill 영역 (1줄 초과 여부 계산, 모든 화면 크기 공통)
   const filterStickyBarRef = useRef<HTMLDivElement>(null); // 스크롤 시 상단에 고정되는 필터 바 컨테이너
   const filterStickySentinelRef = useRef<HTMLDivElement>(null); // 이 지점이 상단 임계점(STICKY_TOP)을 지나가는지로 스티키 여부 감지
-  const [filterExpand, setFilterExpand] = useState({ showToggle: false, expanded: false }); // showToggle: pill이 2줄 이상일 때 펼치기 버튼 노출 / expanded: 필터 펼침 여부 (스티키 + 2줄일 때 활성화)
+  const [filterExpand, setFilterExpand] = useState({ showToggle: false, expanded: false }); // showToggle: pill이 2줄 이상일 때 더보기 버튼 노출 / expanded: 필터 펼침 여부 (스티키 + 2줄일 때 활성화)
   const [isFilterSticky, setIsFilterSticky] = useState(false); // 현재 필터 바가 스티키 상태(상단에 고정)인지 여부
   const [stickyBarMounted, setStickyBarMounted] = useState(false); // 스티키 바 DOM이 실제로 마운트되었는지 (Observer/resize 세팅 타이밍 제어)
   const [stickyFilterVisible, setStickyFilterVisible] = useState(true); // 스크롤 방향에 따라 스티키 필터 바를 보여줄지/위로 숨길지 여부
@@ -192,7 +192,7 @@ const ProductFragrance = () => {
     window.setTimeout(apply, 60);
   }, []);
 
-  // 스티키로 전환된 직후 호출 — 높이만 보고 펼치기 노출. 유효하지 않으면 한 번 재시도(레이아웃 지연 대비).
+  // 스티키로 전환된 직후 호출 — 높이만 보고 더보기 노출. 유효하지 않으면 한 번 재시도(레이아웃 지연 대비).
   const measureForSticky = useCallback(() => {
     if (typeof window === 'undefined') return;
     const el = pillsMeasureRef.current;
@@ -208,7 +208,7 @@ const ProductFragrance = () => {
     }, 80);
   }, []);
 
-  // 측정 div가 DOM에 붙는 순간: 유효한 측정일 때 펼치기 노출 여부 갱신 (2줄이면 true, 스티키일 때만 버튼은 실제로 렌더됨).
+  // 측정 div가 DOM에 붙는 순간: 유효한 측정일 때 더보기 노출 여부 갱신 (2줄이면 true, 스티키일 때만 버튼은 실제로 렌더됨).
   const setPillsMeasureRef = useCallback((el: HTMLDivElement | null) => {
     (pillsMeasureRef as { current: HTMLDivElement | null }).current = el;
     if (!el || typeof window === 'undefined') return;
@@ -524,7 +524,7 @@ const ProductFragrance = () => {
             {/* 스티키 감지용: 이 요소가 뷰포트 상단(62px) 위로 나가면 필터 바가 스티키로 붙은 상태 */}
             <div ref={filterStickySentinelRef} className="h-px w-full shrink-0" aria-hidden />
 
-            {/* 필터: 스티키. 데스크톱=항상 전체 / 모바일=스티키일 때만 1줄+펼치기. 위로 스크롤 시 바가 위로 슬라이드되어 숨김, 아래로 스크롤 시 다시 나타남 */}
+            {/* 필터: 스티키. 데스크톱=항상 전체 / 모바일=스티키일 때만 1줄+더보기. 위로 스크롤 시 바가 위로 슬라이드되어 숨김, 아래로 스크롤 시 다시 나타남 */}
             <motion.div
               ref={(el) => {
                 (filterStickyBarRef as { current: HTMLDivElement | null }).current = el;
@@ -546,7 +546,7 @@ const ProductFragrance = () => {
             >
               <div className="product-fragrance-filter-wrap max-md:will-change-transform">
               <div className="product-fragrance-filter-inner">
-                {/* 측정용: 같은 폭·같은 필터로 자연 높이만 측정(보이지 않음). 1줄 높이(2rem) 초과 시 펼치기 버튼 노출 */}
+                {/* 측정용: 같은 폭·같은 필터로 자연 높이만 측정(보이지 않음). 1줄 높이(2rem) 초과 시 더보기 버튼 노출 */}
                 <div
                   ref={setPillsMeasureRef}
                   aria-hidden
@@ -596,7 +596,7 @@ const ProductFragrance = () => {
                   })}
                 </div>
 
-                {/* 펼치기·접기 — 스티키 + 필터가 2줄 이상일 때 노출. 화면 크기 무관 */}
+                {/* 더보기·접기 — 스티키 + 필터가 2줄 이상일 때 노출. 화면 크기 무관 */}
                 {isFilterSticky && filterExpand.showToggle && (
                 <div className="flex justify-center">
                   <button
@@ -621,7 +621,7 @@ const ProductFragrance = () => {
                     {filterExpand.expanded ? (
                       <><HiChevronUp className="shrink-0"/>접기</>
                     ) : (
-                      <><HiChevronDown className="shrink-0"/>펼치기</>
+                      <><HiChevronDown className="shrink-0"/>더보기</>
                     )}
                   </button>
                 </div>
