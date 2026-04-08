@@ -19,7 +19,7 @@ const MobileNav = () => {
             md:hidden
         ">
             <div 
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => setIsOpen(prev => !prev)}
                 className={clsx(`
                         hamburger-menu
                     `,
