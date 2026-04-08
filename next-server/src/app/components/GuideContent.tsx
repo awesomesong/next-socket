@@ -19,7 +19,7 @@ const ON_THIS_PAGE = [
   { href: '#chat-move-guide', label: '채팅 화면으로 이동하기' },
   { href: '#chat-member-guide', label: '채팅 멤버 기능 가이드' },
   { href: '#chat-conversation-guide', label: '채팅 대화방 기능 가이드' },
-  { href: '#chat-conversation-detail-guide', label: '대화방 상세 메뉴 & 읽음 표시' },
+  { href: '#chat-conversation-detail-guide', label: '대화방 채팅창 상세 메뉴 & 읽음 표시' },
   { href: '#chat-ai-guide', label: '향수 AI 어시스턴트 채팅 가이드' },
   { href: '#ui-theme', label: 'UI 테마 (다크 / 라이트 모드)' },
 ] as const;
@@ -870,7 +870,7 @@ export default function GuideContent({
               <p className="guide-section-intro">
                 회원가입 없이도 향수 목록과 공지사항을 자유롭게 열람할 수 있으며, 향수 등록 및 채팅 기능을 이용하려면 로그인이 필요합니다.
                 <br/>
-                별도 회원가입 없이 바로 체험 가능한 데모 계정을 제공합니다.
+                별도 회원가입 없이 바로 체험할 수 있는 데모 계정을 제공합니다.
               </p>
               <ol className="relative space-y-0">
                 {steps.map(({ step, title, desc, image }, i) => (
@@ -960,7 +960,7 @@ export default function GuideContent({
               id="fragrance-detail"
               index="07"
               title="향수 상세 페이지 & 리뷰"
-              intro="향수 상세 페이지에서는 향수의 정보(이미지·브랜드·이름·설명·노트)와 함께 다른 사용자가 남긴 리뷰를 확인할 수 있습니다. 로그인한 사용자는 직접 리뷰를 남기거나 수정·삭제할 수 있습니다."
+              intro="향수 상세 페이지에서는 향수의 정보(이미지·브랜드·이름·설명·노트)와 함께 다른 사용자의 리뷰를 확인할 수 있으며, 로그인한 사용자만 리뷰를 작성할 수 있습니다."
               steps={fragranceDetailSteps}
               openZoom={openZoom}
             />
@@ -969,7 +969,7 @@ export default function GuideContent({
               id="notice-guide"
               index="08"
               title="공지사항 열람 & 댓글 가이드"
-              intro='상단 "Notice" 메뉴에서 공지사항 목록을 확인할 수 있습니다. 누구나 열람할 수 있으며, 로그인한 사용자는 댓글 작성이 가능합니다.'
+              intro='공지사항은 누구나 열람할 수 있으며, 로그인한 사용자는 댓글 작성이 가능합니다. 데스크탑에서는 상단의 "Notice" 메뉴, 모바일에서는 왼쪽 상단 햄버거 메뉴 안의 "Notice" 메뉴를 통해 공지사항 목록을 확인할 수 있습니다.'
               steps={noticeGuideSteps}
               openZoom={openZoom}
             />
@@ -978,7 +978,7 @@ export default function GuideContent({
               id="notice-write-guide"
               index="09"
               title="공지사항 글쓰기 가이드"
-              intro="로그인한 사용자는 우측 상단의 글쓰기 버튼을 활성화하여 직접 새로운 공지사항을 작성하고 서식을 꾸밀 수 있습니다."
+              intro="로그인한 사용자는 우측 상단의 글쓰기 버튼이 활성화되어 직접 새로운 공지사항을 작성하고 서식을 꾸밀 수 있습니다."
               steps={noticeWriteGuideSteps}
               openZoom={openZoom}
             />
@@ -1005,7 +1005,7 @@ export default function GuideContent({
               id="chat-conversation-guide"
               index="12"
               title="채팅 대화방 기능 가이드"
-              intro="채팅의 대화방 탭에서 진행되는 모든 대화 기능을 안내합니다. 단체 채팅방 생성부터 실시간 메시지 전송, 대화방 목록 관리까지 순서대로 확인하세요."
+              intro="채팅의 대화방 탭에서 이용할 수 있는 대화 기능을 안내합니다. 단체 채팅방 생성부터 실시간 메시지 전송, 대화방 목록 관리까지 순서대로 확인할 수 있습니다."
               steps={chatConversationGuideSteps}
               openZoom={openZoom}
             />
@@ -1013,8 +1013,8 @@ export default function GuideContent({
             <StepGuideSection
               id="chat-conversation-detail-guide"
               index="13"
-              title="대화방 상세 메뉴 & 읽음 표시"
-              intro={<>대화방 채팅창 내에서 이용할 수 있는 <strong>상세 메뉴(⋮)</strong>와 <strong>읽음 표시</strong> 기능을 안내합니다.</>}
+              title="대화방 채팅창 상세 메뉴 & 읽음 표시"
+              intro={<>대화방 채팅창 내에서 이용할 수 있는 <strong>상세 메뉴(···)</strong>와 <strong>읽음 표시</strong> 기능을 안내합니다.</>}
               steps={chatDetailSteps}
               openZoom={openZoom}
             />
