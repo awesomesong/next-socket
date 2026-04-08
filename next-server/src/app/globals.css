@@ -486,7 +486,7 @@ h6 {
   width: 22px;
   height: 2px;
   border-radius: 1px;
-  transition: all 0.55s cubic-bezier(0.075, 0.82, 0.165, 1);
+  transition: all 0.2s cubic-bezier(0.075, 0.82, 0.165, 1);
   /* 라이트: 어두운 그라데이션, 다크: 밝은 그라데이션 (text-gradient-scent 계열) */
   background: var(--bg-gradient-scent);
 }
