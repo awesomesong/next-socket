@@ -6,14 +6,14 @@ export async function POST(req: Request){
     try{
         const { email, name, password } = await req.json();
 
-        if(!email) return NextResponse.json({message : "이메일을 입력해주세요."}, {status: 400});
-        if(!name) return NextResponse.json({message : "이름을 입력해주세요."}, {status: 400});
-        if(!password) return NextResponse.json({message : "비밀번호를 입력해주세요."}, {status: 400});
+        if (!email) return NextResponse.json({ message: "이메일을 입력해 주세요." }, { status: 400 });
+        if (!name) return NextResponse.json({ message: "이름을 입력해 주세요." }, { status: 400 });
+        if (!password) return NextResponse.json({ message: "비밀번호를 입력해 주세요." }, { status: 400 });
 
         // ✅ 이메일 형식 검증 (클라이언트와 동일한 정책)
         const emailRegex = /^[\w.-]+@(?:gmail\.com|naver\.com|daum\.net|hanmail\.net|nate\.com|outlook\.com|yahoo\.com)$/i;
         if (!emailRegex.test(email)) {
-            return NextResponse.json({message: "지원하는 이메일 서비스를 사용해주세요."}, {status: 400});
+            return NextResponse.json({message: "지원하는 이메일 서비스를 사용해 주세요."}, {status: 400});
         }
 
         // ✅ 비밀번호 검증 (클라이언트와 동일한 정책)

@@ -149,7 +149,7 @@ const FormReview = ({
   const submitReview = useCallback((text: string) => {
     if (text.trim() === "") {
       textareaRef.current?.focus();
-      return alert("리뷰를 입력해주세요.");
+      return alert("리뷰를 입력해 주세요.");
     }
 
     setReview(""); // 즉시 입력창 비우기
@@ -197,7 +197,7 @@ const FormReview = ({
         disabled={!user?.email}
         placeholder={
           user?.email
-            ? "리뷰를 입력해주세요."
+            ? "리뷰를 입력해 주세요."
             : "로그인 후에 리뷰를 작성할 수 있습니다."
         }
         value={review}

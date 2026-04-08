@@ -86,11 +86,11 @@ const RegisterForm = () => {
                     register={register}
                     setValue={setValue}
                     rules={{
-                        required: "이름을 입력해주세요.",
+                        required: "이름을 입력해 주세요.",
                         minLength: { value: 2, message: '2글자 이상 입력헤주세요.' },
                         pattern: {
                             value: /^[가-힣]{2,}$/,
-                            message: "이름은 공백 없이 한글만 2글자 이상 입력해주세요.",
+                            message: "이름은 공백 없이 한글만 2글자 이상 입력해 주세요.",
                         },
                     }}
                     errors={errors}
@@ -104,7 +104,7 @@ const RegisterForm = () => {
                     register={register}
                     setValue={setValue}
                     rules={{
-                        required: "이메일을 입력해주세요.",
+                        required: "이메일을 입력해 주세요.",
                         pattern: {
                             value: /^[\w.-]+@(?:gmail\.com|naver\.com|daum\.net|hanmail\.net|nate\.com|outlook\.com|yahoo\.com)$/i,
                             message: "이메일 형식이 아닙니다.",
@@ -120,10 +120,10 @@ const RegisterForm = () => {
                     type="password"
                     register={register}
                     rules={{
-                        required: "비밀번호를 입력해주세요.",
+                        required: "비밀번호를 입력해 주세요.",
                         minLength: {
                             value: 8,
-                            message: "비밀번호를 8자 이상 입력해주세요."
+                            message: "비밀번호를 8자 이상 입력해 주세요."
                         },
                         pattern: {
                             value: /^(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
@@ -140,10 +140,10 @@ const RegisterForm = () => {
                     type="password"
                     register={register}
                     rules={{
-                        required: "비밀번호를 확인을 입력해주세요.",
+                        required: "비밀번호를 확인을 입력해 주세요.",
                         minLength: {
                             value: 8,
-                            message: "비밀번호를 8자 이상 입력해주세요."
+                            message: "비밀번호를 8자 이상 입력해 주세요."
                         },
                         pattern: {
                             value: /^(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,

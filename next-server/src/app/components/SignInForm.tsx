@@ -70,7 +70,7 @@ const SignInForm = () => {
           register={register}
           setValue={setValue}
           rules={{
-            required: "이메일을 입력해주세요.",
+            required: "이메일을 입력해 주세요.",
             pattern: {
               value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/i,
               message: "이메일 형식이 아닙니다.",
@@ -86,10 +86,10 @@ const SignInForm = () => {
           type="password"
           register={register}
           rules={{
-            required: "비밀번호를 입력해주세요.",
+            required: "비밀번호를 입력해 주세요.",
             minLength: {
               value: 8,
-              message: "비밀번호를 8자 이상 입력해주세요."
+              message: "비밀번호를 8자 이상 입력해 주세요."
             },
           }}
           errors={errors}

@@ -198,7 +198,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
             try {
                 const isFragrance = await validateFragranceContent(data.description, data.notes);
                 if (!isFragrance) {
-                    toast.error("향수와 관련된 내용이 아닙니다. 향수 설명과 노트 정보를 올바르게 입력해주세요.");
+                    toast.error("향수와 관련된 내용이 아닙니다. 향수 설명과 노트 정보를 올바르게 입력해 주세요.");
                     return;
                 }
             } finally {
@@ -401,9 +401,9 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                                 name="brand"
                                 control={control}
                                 rules={{
-                                    required: "향수 브랜드를 입력해주세요.",
+                                    required: "향수 브랜드를 입력해 주세요.",
                                     validate: (v) =>
-                                        !/[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(v) || "브랜드는 영문으로만 입력해주세요.",
+                                        !/[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(v) || "브랜드는 영문으로만 입력해 주세요.",
                                 }}
                                 render={({ field }) => (
                                     <TextField
@@ -428,7 +428,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                             <Controller
                                 name="name"
                                 control={control}
-                                rules={{ required: "향수 이름을 입력해주세요." }}
+                                rules={{ required: "향수 이름을 입력해 주세요." }}
                                 render={({ field }) => (
                                     <TextField
                                         name="name"
@@ -452,7 +452,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                             <Controller
                                 name="description"
                                 control={control}
-                                rules={{ required: "향수 상세 설명을 입력해주세요." }}
+                                rules={{ required: "향수 상세 설명을 입력해 주세요." }}
                                 render={({ field }) => (
                                     <TextField
                                         name="description"

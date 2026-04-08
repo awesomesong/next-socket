@@ -78,8 +78,8 @@ export const authOptions: AuthOptions = {
                 }
             },
             authorize: async (credentials) => {
-                if (!credentials?.email) throw new Error('아이디를 입력해주세요.');
-                if (!credentials?.password) throw new Error('비밀번호를 입력해주세요.');
+                if (!credentials?.email) throw new Error('아이디를 입력해 주세요.');
+                if (!credentials?.password) throw new Error('비밀번호를 입력해 주세요.');
 
                 const user = await prisma.user.findUnique({
                     where: {

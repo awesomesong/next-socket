@@ -30,7 +30,7 @@ export function validatePrompt(message: string): {
   error?: string;
 } {
   if (!message || !message.trim())
-    return { isValid: false, error: "메시지를 입력해주세요." };
+    return { isValid: false, error: "메시지를 입력해 주세요." };
   if (containsProhibited(message))
     return { isValid: false, error: "부적절한 내용은 허용되지 않습니다." };
   return { isValid: true };
@@ -42,7 +42,7 @@ export function validateUserMessage(message: string): {
   error?: string;
 } {
   if (!message || !message.trim())
-    return { isValid: false, error: "메시지를 입력해주세요." };
+    return { isValid: false, error: "메시지를 입력해 주세요." };
   if (containsProhibited(message))
     return { isValid: false, error: "부적절한 내용은 허용되지 않습니다." };
   return { isValid: true };

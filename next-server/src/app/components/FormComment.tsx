@@ -154,7 +154,7 @@ const FormComment = ({
   const submitComment = useCallback((text: string) => {
       if (text.trim() === "") {
         textareaRef.current?.focus();
-        return toast.error("댓글을 입력해주세요.");
+        return toast.error("댓글을 입력해 주세요.");
       }
 
       setComment(""); // 즉시 입력창 비우기
@@ -205,7 +205,7 @@ const FormComment = ({
         disabled={!user?.email}
         placeholder={
           user?.email
-            ? "댓글을 입력해주세요."
+            ? "댓글을 입력해 주세요."
             : "로그인 후에 댓글을 작성할 수 있습니다."
         }
         value={comment}

@@ -61,8 +61,8 @@ export async function POST(req: Request){
         
         const { title, content, image } = await req.json();
 
-        if(title === '') return NextResponse.json({ message: '제목을 입력해주세요.'}, { status: 401 });
-        if(content === '') return NextResponse.json({ message: '글을 입력해주세요.'}, { status: 401 });
+        if (title === '') return NextResponse.json({ message: '제목을 입력해 주세요.' }, { status: 401 });
+        if (content === '') return NextResponse.json({ message: '글을 입력해 주세요.' }, { status: 401 });
 
         const imageArray: string[] = Array.isArray(image) ? image : [];
 
