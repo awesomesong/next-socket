@@ -54,6 +54,7 @@ const MobileNav = () => {
                             href={route.href}
                             label={route.label}
                             isActive={route.active}
+                            onClick={() => setIsOpen(false)}
                             showLineOnActive
                         />
                     </li>
