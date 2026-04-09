@@ -167,7 +167,7 @@ const fragranceDetailSteps: FragranceGuideStep[] = [
   {
     step: '04',
     title: '리뷰 작성 & 제출',
-    desc: '입력 칸에 감상을 작성하고 확인 버튼을 누르면 리뷰가 등록됩니다. 제출한 내용은 실시간으로 다른 사용자 화면에도 즉시 반영됩니다.',
+    desc: '입력 칸에 감상을 작성하고 확인 버튼을 누르면 리뷰가 등록됩니다. 제출한 내용은 실시간으로 다른 사용자 화면에 즉시 반영됩니다.',
     webImg: { src: '/image/notice/fragrance_detail/fragrance_detail_web04.png', alt: '리뷰 작성 — 데스크탑' },
     mobileImg: { src: '/image/notice/fragrance_detail/fragrance_detail_mobile04.png', alt: '리뷰 작성 — 모바일' },
   },
