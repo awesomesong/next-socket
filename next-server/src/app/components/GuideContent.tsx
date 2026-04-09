@@ -969,7 +969,7 @@ export default function GuideContent({
               id="notice-guide"
               index="08"
               title="공지사항 열람 & 댓글 안내"
-              intro='공지사항은 누구나 열람할 수 있으며, 로그인한 사용자는 댓글 작성이 가능합니다. 데스크탑에서는 상단의 "Notice" 메뉴, 모바일에서는 왼쪽 상단 햄버거 메뉴 안의 "Notice" 메뉴를 통해 공지사항 목록을 확인할 수 있습니다.'
+              intro='공지사항은 누구나 열람할 수 있으며, 로그인한 사용자는 공지사항과 댓글 작성이 가능합니다. 데스크탑에서는 상단의 "Notice" 메뉴, 모바일에서는 왼쪽 상단 햄버거 메뉴 안의 "Notice" 메뉴를 통해 공지사항 목록을 확인할 수 있습니다.'
               steps={noticeGuideSteps}
               openZoom={openZoom}
             />
