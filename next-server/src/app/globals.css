@@ -2008,16 +2008,7 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
   }
 
   .notice-preview-frame {
-    @apply flex justify-center items-start rounded-xl overflow-hidden border border-[var(--color-card-border)] md:border-0;
-  }
-
-  /* 로그인/회원가입 등 단독 미리보기: md 이상에서도 테두리 유지 (.notice-preview-frame의 md:border-0 무효화) */
-  @media (min-width: 420px) {
-    .notice-auth-preview-wrap .notice-preview-frame {
-      border-width: 1px;
-      border-style: solid;
-      border-color: var(--color-card-border);
-    }
+    @apply flex justify-center items-start rounded-xl overflow-hidden border border-[var(--color-card-border)];
   }
 
   .notice-preview-btn {
