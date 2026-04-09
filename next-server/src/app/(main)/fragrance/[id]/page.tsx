@@ -4,7 +4,7 @@ import FragranceDetail from '@/src/app/components/fragrance/FragranceDetail';
 import FragranceDetailSkeleton from '@/src/app/components/FragranceDetailSkeleton';
 
 // 향수 상세는 데이터 변경 빈도가 낮으므로 ISR로 캐싱
-export const revalidate = 60;
+export const revalidate = 3600;
 
 type Props = {
   params: Promise<{ id: string }>;
