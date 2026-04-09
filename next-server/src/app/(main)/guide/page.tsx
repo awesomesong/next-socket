@@ -261,7 +261,7 @@ const noticeGuideSteps: FragranceGuideStep[] = [
   {
     step: '04',
     title: '댓글 작성 및 등록',
-    desc: '입력창에 댓글을 작성한 뒤 "등록" 버튼을 클릭하면 댓글이 등록됩니다. 댓글 수가 실시간으로 증가하며 등록된 댓글이 목록에 표시됩니다. 본인이 작성한 댓글에는 "수정·삭제" 버튼이 함께 나타납니다.',
+    desc: '입력창에 댓글을 작성한 뒤 "확인" 버튼을 클릭하면 댓글이 등록됩니다. 댓글 수가 실시간으로 증가하며 등록된 댓글이 목록에 표시됩니다. 본인이 작성한 댓글에는 "수정·삭제" 버튼이 함께 나타납니다.',
     webImg: { src: '/image/notice/chat/notice_detail/notice_detail_web04.png', alt: '댓글 작성 및 등록 — 데스크탑' },
     mobileImg: { src: '/image/notice/chat/notice_detail/notice_detail_mobile04.png', alt: '댓글 작성 및 등록 — 모바일' },
   },
