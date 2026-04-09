@@ -52,6 +52,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
     const {
         control,
         setValue,
+        getValues,
         trigger,
         handleSubmit: rhfHandleSubmit,
         reset,
@@ -68,8 +69,6 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
 
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
-    const formDataRef = useRef(formData);
-    useEffect(() => { formDataRef.current = formData; }, [formData]);
 
     const triggerBrand = useCallback(() => trigger("brand"), [trigger]);
     const triggerName = useCallback(() => trigger("name"), [trigger]);
@@ -82,6 +81,17 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
 
     const handleAnalyzeImage = useCallback(async (src: string) => {
         if (!src) return;
+        if (isEdit) return;
+        const current = getValues();
+        const allFilled =
+            !!(current.brand ?? "").trim() &&
+            !!(current.name ?? "").trim() &&
+            !!(current.description ?? "").trim() &&
+            !!(current.notes ?? "").trim();
+        if (allFilled) {
+            toast("등록폼이 모두 입력되어 있어 AI 분석을 건너뜁니다.", { icon: "✨" });
+            return;
+        }
         setIsAnalyzing(true);
         try {
             const result = await analyzeFragranceImage(src);
@@ -93,21 +103,21 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                 toast.error("향수 이미지가 아닙니다. 향수 제품 사진을 업로드해주세요.");
                 return;
             }
-            const prev = formDataRef.current;
-            if (result.brand && !prev.brand) {
+            const prev = getValues();
+            if (result.brand && !(prev.brand ?? "").trim()) {
                 const brandVal = result.brand.toUpperCase();
                 setValue("brand", brandVal);
                 setFormData((p) => ({ ...p, brand: brandVal }));
             }
-            if (result.name && !prev.name) {
+            if (result.name && !(prev.name ?? "").trim()) {
                 setValue("name", result.name);
                 setFormData((p) => ({ ...p, name: result.name }));
             }
-            if (result.description && !prev.description) {
+            if (result.description && !(prev.description ?? "").trim()) {
                 setValue("description", result.description);
                 setFormData((p) => ({ ...p, description: result.description }));
             }
-            if (result.notes && !prev.notes) {
+            if (result.notes && !(prev.notes ?? "").trim()) {
                 setValue("notes", result.notes);
                 setFormData((p) => ({ ...p, notes: result.notes }));
             }
@@ -121,23 +131,23 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
         } finally {
             setIsAnalyzing(false);
         }
-    }, [setValue]);
+    }, [isEdit, getValues, setValue]);
 
-    /** 업로드 직후 자동 AI 분석: 신규 등록이고 모든 입력이 비어 있을 때만, 새로 올라온 이미지 중 첫 번째로 1회만 분석 */
+    /** 업로드 직후 자동 AI 분석: 신규 등록이고 입력되지 않은 항목이 하나라도 있을 때만, 새로 올라온 이미지 중 첫 번째로 1회만 분석 */
     const onUploadComplete = useCallback(
         (uploadedList: PreviewImage[]) => {
             if (uploadedList.length === 0) return;
             if (isEdit) return;
-            const fd = formDataRef.current;
-            const hasInput =
-                (fd.brand ?? "").trim() ||
-                (fd.name ?? "").trim() ||
-                (fd.description ?? "").trim() ||
-                (fd.notes ?? "").trim();
-            if (hasInput) return;
+            const fd = getValues();
+            const allFilled =
+                !!(fd.brand ?? "").trim() &&
+                !!(fd.name ?? "").trim() &&
+                !!(fd.description ?? "").trim() &&
+                !!(fd.notes ?? "").trim();
+            if (allFilled) return;
             handleAnalyzeImage(uploadedList[0].src);
         },
-        [isEdit, handleAnalyzeImage]
+        [isEdit, getValues, handleAnalyzeImage]
     );
 
     const {
@@ -291,8 +301,8 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                                 onSelectIndex={selectImage}
                                 alt={formData.name}
                                 onZoom={() => setIsLightboxOpen(true)}
-                                showAnalyzeButton
-                                onAnalyze={handleAnalyzeImage}
+                                showAnalyzeButton={!isEdit}
+                                onAnalyze={isEdit ? undefined : handleAnalyzeImage}
                                 analyzeDisabled={isDisabled}
                                 isAnalyzing={isAnalyzing}
                                 variant="default"
