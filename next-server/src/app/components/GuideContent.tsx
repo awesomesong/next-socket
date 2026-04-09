@@ -12,15 +12,15 @@ const ON_THIS_PAGE = [
   { href: '#preview', label: '반응형 레이아웃' },
   { href: '#howto', label: '로그인 · 데모 계정 안내' },
   { href: '#main-gallery', label: '메인 화면 & 시그니처 향수 갤러리' },
-  { href: '#fragrance-guide', label: '향수 등록 가이드' },
+  { href: '#fragrance-guide', label: '향수 등록 안내' },
   { href: '#fragrance-detail', label: '향수 상세 페이지 & 리뷰' },
-  { href: '#notice-guide', label: '공지사항 열람 & 댓글 가이드' },
-  { href: '#notice-write-guide', label: '공지사항 글쓰기 가이드' },
+  { href: '#notice-guide', label: '공지사항 열람 & 댓글 안내' },
+  { href: '#notice-write-guide', label: '공지사항 글쓰기 안내' },
   { href: '#chat-move-guide', label: '채팅 화면으로 이동하기' },
-  { href: '#chat-member-guide', label: '채팅 멤버 기능 가이드' },
-  { href: '#chat-conversation-guide', label: '채팅 대화방 기능 가이드' },
+  { href: '#chat-member-guide', label: '채팅 멤버 기능 안내' },
+  { href: '#chat-conversation-guide', label: '채팅 대화방 기능 안내' },
   { href: '#chat-conversation-detail-guide', label: '대화방 채팅창 상세 메뉴 & 읽음 표시' },
-  { href: '#chat-ai-guide', label: '향수 AI 어시스턴트 채팅 가이드' },
+  { href: '#chat-ai-guide', label: '향수 AI 어시스턴트 채팅 안내' },
   { href: '#ui-theme', label: 'UI 테마 (다크 / 라이트 모드)' },
 ] as const;
 
@@ -804,7 +804,7 @@ export default function GuideContent({
                   자유롭게 소통하는 커뮤니티입니다. 향수 정보를 일일이 찾아 기록하는 번거로움을 줄이기 위해
                   AI 이미지 분석 기술을 도입했습니다.<br/>
                   향수 사진을 업로드하면 제품 정보가 등록 폼에 자동 입력되며, 사용자는 AI가 추출한 정보를 확인하고 필요한 부분만 수정하여 빠르게 기록을 마칠 수 있습니다.<br/>
-                  아래 가이드에서는 주요 기능과 로그인부터 채팅(사용자/AI 어시스턴트)의 이용 순서를 정리해 두었습니다. <br/>
+                  아래 안내에는 주요 기능과 로그인부터 채팅(사용자/AI 어시스턴트)의 이용 순서를 정리해 두었습니다. <br/>
                   자세한 내용을 아래의 각 섹션에서 확인할 수 있습니다.
                 </p>
               </div>
@@ -950,7 +950,7 @@ export default function GuideContent({
             <StepGuideSection
               id="fragrance-guide"
               index="06"
-              title="향수 등록 가이드"
+              title="향수 등록 안내"
               intro="로그인 후에 향수를 직접 등록할 수 있습니다. 이미지를 업로드하면 AI가 향수 정보를 자동으로 분석하여 브랜드, 이름, 설명, 노트 필드를 채워줍니다."
               steps={fragranceGuideSteps}
               openZoom={openZoom}
@@ -968,7 +968,7 @@ export default function GuideContent({
             <StepGuideSection
               id="notice-guide"
               index="08"
-              title="공지사항 열람 & 댓글 가이드"
+              title="공지사항 열람 & 댓글 안내"
               intro='공지사항은 누구나 열람할 수 있으며, 로그인한 사용자는 댓글 작성이 가능합니다. 데스크탑에서는 상단의 "Notice" 메뉴, 모바일에서는 왼쪽 상단 햄버거 메뉴 안의 "Notice" 메뉴를 통해 공지사항 목록을 확인할 수 있습니다.'
               steps={noticeGuideSteps}
               openZoom={openZoom}
@@ -977,7 +977,7 @@ export default function GuideContent({
             <StepGuideSection
               id="notice-write-guide"
               index="09"
-              title="공지사항 글쓰기 가이드"
+              title="공지사항 글쓰기 안내"
               intro="로그인한 사용자는 우측 상단의 글쓰기 버튼이 활성화되어 직접 새로운 공지사항을 작성하고 서식을 꾸밀 수 있습니다."
               steps={noticeWriteGuideSteps}
               openZoom={openZoom}
@@ -995,7 +995,7 @@ export default function GuideContent({
             <StepGuideSection
               id="chat-member-guide"
               index="11"
-              title="채팅 멤버 기능 가이드"
+              title="채팅 멤버 기능 안내"
               intro="채팅의 멤버 탭에서 다양한 대화 기능을 이용할 수 있습니다. 멤버를 클릭해 1:1 대화를 시작하거나, 우측 상단 메뉴(⋮)를 통해 단체 채팅방 만들기, AI 채팅, 다크/라이트 모드 변경이 가능합니다."
               steps={chatMemberGuideSteps}
               openZoom={openZoom}
@@ -1004,7 +1004,7 @@ export default function GuideContent({
             <StepGuideSection
               id="chat-conversation-guide"
               index="12"
-              title="채팅 대화방 기능 가이드"
+              title="채팅 대화방 기능 안내"
               intro="채팅의 대화방 탭에서 이용할 수 있는 대화 기능을 안내합니다. 단체 채팅방 생성부터 실시간 메시지 전송, 대화방 목록 관리까지 순서대로 확인할 수 있습니다."
               steps={chatConversationGuideSteps}
               openZoom={openZoom}
@@ -1022,7 +1022,7 @@ export default function GuideContent({
             <StepGuideSection
               id="chat-ai-guide"
               index="14"
-              title="향수 AI 어시스턴트 채팅 가이드"
+              title="향수 AI 어시스턴트 채팅 안내"
               intro="향수 AI 어시스턴트와 대화할 수 있는 AI 채팅 기능을 안내합니다."
               steps={chatAiGuideSteps}
               openZoom={openZoom}
