@@ -1,14 +1,9 @@
 import AnimatedLogo from './AnimatedLogo';
-import { getCurrentUser } from '../lib/session'
-import ButtonLogout from './ButtonLogout';
+import HeaderUserMenu from './HeaderUserMenu';
 import ThemeSwitch from './ThemeSwitch';
 import Navigation from './navigation/Navigation';
-import ButtonLogin from './ButtonLogin';
-import ButtonProfile from './ButtonProfile';
 
-export const Header = async () => {
-    const user = await getCurrentUser();
-
+export const Header = () => {
     return (
         <header className='
             shrink-0
@@ -32,9 +27,9 @@ export const Header = async () => {
                 pointer-events-none
             '></div>
             <div className='
-                flex 
-                justify-between 
-                items-center 
+                flex
+                justify-between
+                items-center
                 max-w-[1440px]
                 mx-auto
                 h-full
@@ -54,26 +49,13 @@ export const Header = async () => {
                     <Navigation />
                 </div>
                 <ul className='
-                        flex 
-                        flex-row 
-                        items-center 
+                        flex
+                        flex-row
+                        items-center
                         justify-end
                         space-x-3
                     '>
-                    {user?.name ? (
-                        <>
-                            <li className='flex'>
-                                <ButtonProfile />
-                            </li>
-                            <li>
-                                <ButtonLogout />
-                            </li>
-                        </>
-                    ) : (
-                        <li>
-                            <ButtonLogin />
-                        </li>
-                    )}
+                    <HeaderUserMenu />
                     <li>
                         <ThemeSwitch />
                     </li>
