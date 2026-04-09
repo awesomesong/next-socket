@@ -733,11 +733,6 @@ export default function GuideContent({
         <div
           className="mt-6 flex items-center gap-3 text-xs text-[var(--color-text-secondary)]"
         >
-          <span
-            className="inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-[10px] font-bold shrink-0 [background:var(--bg-gradient-scent)]"
-          >
-            강
-          </span>
           <span>강송희</span>
           <span
             className="w-px h-3 bg-[var(--color-lavender-border)]"
@@ -877,7 +872,11 @@ export default function GuideContent({
                   <li key={step} className="flex gap-5 group">
                     <div className="flex flex-col items-center shrink-0">
                       <span
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white z-10 shrink-0 [background:var(--bg-gradient-scent)]"
+                        className={clsx(
+                          'w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold z-10 shrink-0',
+                          'text-[var(--color-ivory)] [background:var(--bg-gradient-scent)]',
+                          'dark:text-[var(--color-lavender-light)] dark:[background:var(--color-lavender-pale)] dark:border dark:border-[var(--color-lavender-border)]',
+                        )}
                       >
                         {step}
                       </span>
