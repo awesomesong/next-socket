@@ -79,7 +79,17 @@ export async function GET() {
       seenMsByConv.set(r.conversationId, Math.max(base, a, b));
     }
 
-    // 3) ✅ 미리보기 + 안읽음 수 + lastMessageAtMs를 하나의 시점에서 일관되게 조회
+    // 3) ✅ 미리보기 + 안읽음 수 + lastMessageAtMs를 두 개의 배치 raw 쿼리로 일괄 조회
+    type MsgRow = {
+      conversationId: string;
+      id: string;
+      body: string | null;
+      type: string | null;
+      createdAt: Date;
+      senderId: string | null;
+      isAIResponse: boolean | null;
+    };
+
     const lastMessageMap = new Map<string, {
       id: string; body: string | null; type: string | null; createdAt: Date;
       senderId?: string | null; isAIResponse?: boolean | null;
@@ -87,77 +97,106 @@ export async function GET() {
     const unreadMap = new Map<string, number>();
     const lastMessageAtMsMap = new Map<string, number>();
 
-    const BATCH_SIZE = 10;
-    for (let i = 0; i < conversations.length; i += BATCH_SIZE) {
-      const batch = conversations.slice(i, i + BATCH_SIZE);
+    // 3-1) 모든 방의 최신 비-시스템 메시지 1건씩 (DISTINCT ON)
+    const latestRows = await prisma.$queryRaw<MsgRow[]>`
+      SELECT DISTINCT ON ("conversationId")
+        "conversationId", "id", "body", "type", "createdAt", "senderId", "isAIResponse"
+      FROM "Message"
+      WHERE "conversationId" = ANY(${conversationIds}::text[])
+        AND "createdAt" <= ${now}
+        AND ("type" IS NULL OR "type" <> 'system')
+      ORDER BY "conversationId", "createdAt" DESC
+    `;
 
-      await Promise.all(
-        batch.map(async (conv) => {
-          // ✅ 1단계: 최신 비-시스템 메시지 조회 (미리보기용 + lastMessageAtMs용)
-          const latestMsg = await prisma.message.findFirst({
-            where: {
-              conversationId: conv.id,
-              createdAt: { lte: now },
-              OR: [{ type: null }, { type: { not: "system" } }],
-            },
-            orderBy: { createdAt: "desc" },
-            select: { id: true, body: true, type: true, createdAt: true, senderId: true, isAIResponse: true },
+    const latestByConv = new Map<string, MsgRow>();
+    for (const row of latestRows) {
+      latestByConv.set(row.conversationId, row);
+      lastMessageAtMsMap.set(row.conversationId, row.createdAt.getTime());
+    }
+
+    // 3-2) 비-AI 방의 안읽음 수 + 최신 안읽음 메시지 (워터마크 join)
+    const nonAiConvs = conversations.filter((c) => !c.isAIChat);
+    for (const c of conversations) {
+      if (c.isAIChat) unreadMap.set(c.id, 0);
+    }
+
+    if (nonAiConvs.length > 0) {
+      const nonAiIds = nonAiConvs.map((c) => c.id);
+      const watermarks = nonAiConvs.map((c) => new Date(seenMsByConv.get(c.id) ?? 0));
+
+      const unreadRows = await prisma.$queryRaw<Array<MsgRow & { cnt: bigint }>>`
+        WITH wm AS (
+          SELECT * FROM unnest(${nonAiIds}::text[], ${watermarks}::timestamptz[]) AS t(cid, ts)
+        ),
+        filtered AS (
+          SELECT m."conversationId", m."id", m."body", m."type", m."createdAt", m."senderId", m."isAIResponse"
+          FROM "Message" m
+          JOIN wm ON m."conversationId" = wm.cid
+          WHERE m."createdAt" > wm.ts
+            AND m."createdAt" <= ${now}
+            AND m."senderId" <> ${user.id}
+            AND (m."isAIResponse" IS NULL OR m."isAIResponse" = false)
+            AND (m."type" IS NULL OR m."type" <> 'system')
+        ),
+        counts AS (
+          SELECT "conversationId", COUNT(*)::bigint AS cnt FROM filtered GROUP BY "conversationId"
+        ),
+        latest AS (
+          SELECT DISTINCT ON ("conversationId")
+            "conversationId", "id", "body", "type", "createdAt", "senderId", "isAIResponse"
+          FROM filtered
+          ORDER BY "conversationId", "createdAt" DESC
+        )
+        SELECT c."conversationId", c.cnt, l."id", l."body", l."type", l."createdAt", l."senderId", l."isAIResponse"
+        FROM counts c
+        JOIN latest l ON c."conversationId" = l."conversationId"
+      `;
+
+      const latestUnreadByConv = new Map<string, MsgRow>();
+      for (const row of unreadRows) {
+        unreadMap.set(row.conversationId, Number(row.cnt));
+        latestUnreadByConv.set(row.conversationId, {
+          conversationId: row.conversationId,
+          id: row.id,
+          body: row.body,
+          type: row.type,
+          createdAt: row.createdAt,
+          senderId: row.senderId,
+          isAIResponse: row.isAIResponse,
+        });
+      }
+
+      // 비-AI 방 미리보기: 안읽음 최신 우선, 없으면 전체 최신
+      for (const c of nonAiConvs) {
+        if (!unreadMap.has(c.id)) unreadMap.set(c.id, 0);
+        const preview = latestUnreadByConv.get(c.id) ?? latestByConv.get(c.id);
+        if (preview) {
+          lastMessageMap.set(c.id, {
+            id: preview.id,
+            body: preview.body,
+            type: preview.type ?? null,
+            createdAt: preview.createdAt,
+            senderId: preview.senderId ?? null,
+            isAIResponse: preview.isAIResponse ?? null,
           });
+        }
+      }
+    }
 
-          if (latestMsg) {
-            // ✅ lastMessageAtMs 저장 (모든 방)
-            lastMessageAtMsMap.set(conv.id, latestMsg.createdAt.getTime());
-          }
-
-          // ✅ 2단계: AI 방은 미리보기만 설정하고 unread는 0
-          if (conv.isAIChat) {
-            if (latestMsg) {
-              lastMessageMap.set(conv.id, {
-                id: latestMsg.id,
-                body: latestMsg.body,
-                type: latestMsg.type ?? null,
-                createdAt: latestMsg.createdAt,
-                senderId: latestMsg.senderId ?? null,
-                isAIResponse: latestMsg.isAIResponse ?? null,
-              });
-            }
-            unreadMap.set(conv.id, 0);
-            return;
-          }
-
-          // ✅ 3단계: 비-AI 방 처리
-          const seenMs = seenMsByConv.get(conv.id) ?? 0;
-
-          // 3-1) 안읽음 메시지 조회 (상대방이 보낸 것만)
-          const unreadMessages = await prisma.message.findMany({
-            where: {
-              conversationId: conv.id,
-              createdAt: { gt: new Date(seenMs), lte: now },
-              senderId: { not: user.id },
-              isAIResponse: { not: true },
-              OR: [{ type: null }, { type: { not: "system" } }],
-            },
-            orderBy: { createdAt: "desc" },
-            select: { id: true, body: true, type: true, createdAt: true, senderId: true, isAIResponse: true },
-          });
-
-          // 3-2) 안읽음 수 저장
-          unreadMap.set(conv.id, unreadMessages.length);
-
-          // 3-3) 미리보기: 안읽음 중 최신 or 전체 최신
-          const preview = unreadMessages.length > 0 ? unreadMessages[0] : latestMsg;
-          if (preview) {
-            lastMessageMap.set(conv.id, {
-              id: preview.id,
-              body: preview.body,
-              type: preview.type ?? null,
-              createdAt: preview.createdAt,
-              senderId: preview.senderId ?? null,
-              isAIResponse: preview.isAIResponse ?? null,
-            });
-          }
-        })
-      );
+    // AI 방 미리보기: 전체 최신 메시지 사용
+    for (const c of conversations) {
+      if (!c.isAIChat) continue;
+      const latest = latestByConv.get(c.id);
+      if (latest) {
+        lastMessageMap.set(c.id, {
+          id: latest.id,
+          body: latest.body,
+          type: latest.type ?? null,
+          createdAt: latest.createdAt,
+          senderId: latest.senderId ?? null,
+          isAIResponse: latest.isAIResponse ?? null,
+        });
+      }
     }
 
     // 4) ✅ 응답 조립 - 동일 시점의 데이터로 일관성 보장
