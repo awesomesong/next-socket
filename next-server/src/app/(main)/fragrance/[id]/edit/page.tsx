@@ -19,6 +19,7 @@ const FragranceEditPage = ({ params }: ParamsProps) => {
         queryKey: fragranceDetailKey(id),
         queryFn: () => getFragrance(id),
         enabled: !!id && !!session?.user?.email,
+        staleTime: Infinity,
     });
 
     let content;
