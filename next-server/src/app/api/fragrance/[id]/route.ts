@@ -103,9 +103,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<IParams>
 
         // ISR 캐시 무효화: 수정된 향수 상세 페이지를 다음 요청 시 재생성되도록 표시.
         // slug가 변경된 경우 이전 slug 경로도 함께 무효화한다.
-        revalidatePath(`/fragrance/${updatedFragrance.slug}`);
+        const pathToRevalidate = `/fragrance/${updatedFragrance.slug}`;
+        console.log(`[revalidatePath] invalidating: ${pathToRevalidate}`);
+        revalidatePath(pathToRevalidate);
         if (existing.slug && existing.slug !== updatedFragrance.slug) {
-            revalidatePath(`/fragrance/${existing.slug}`);
+            const oldPath = `/fragrance/${existing.slug}`;
+            console.log(`[revalidatePath] invalidating old slug: ${oldPath}`);
+            revalidatePath(oldPath);
         }
 
         return NextResponse.json({ updatedFragrance }, { status: 200 });
