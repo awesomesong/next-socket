@@ -73,7 +73,7 @@ export default function FragranceDetail({ slug, fragrance: initialFragrance }: P
 
               {fragrance.description && (
                 <div
-                  className="fragrance-info text-bottom text-[12px] md:text-[13px] leading-[1.8] text-stone-600 dark:text-stone-300/90 font-light tracking-wide"
+                  className="fragrance-info text-bottom text-[13px] md:text-[14px] leading-[1.8] text-stone-600 dark:text-stone-300/90 font-light tracking-wide"
                   dangerouslySetInnerHTML={{ __html: fragrance.description }}
                 />
               )}
@@ -85,7 +85,7 @@ export default function FragranceDetail({ slug, fragrance: initialFragrance }: P
                       노트 상세 정보
                     </h3>
                     <div
-                      className="text-[12px] md:text-[13px] leading-[1.7] text-stone-600 dark:text-stone-300 font-light whitespace-pre-wrap"
+                      className="text-[13px] md:text-[14px] leading-[1.7] text-stone-600 dark:text-stone-300 font-light whitespace-pre-wrap"
                       dangerouslySetInnerHTML={{
                         __html: fragrance.notes.replaceAll('\\n', '\n'),
                       }}

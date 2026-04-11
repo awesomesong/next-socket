@@ -593,7 +593,7 @@ h6 {
   justify-content: center;
   gap: 6px;
   padding: 6px 12px;
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.025em;
   background: var(--gradient-add-btn);
   color: var(--color-text-primary);
@@ -1044,7 +1044,7 @@ h6 {
 }
 
 .text-bottom {
-  @apply text-[clamp(12px,1vw,13px)] font-light leading-relaxed;
+  @apply text-[clamp(13px,1vw,14px)] font-light leading-relaxed;
 }
 
 .text-top,
@@ -2000,7 +2000,7 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
 
   /* Notice intro: responsive preview images */
   .notice-preview__label {
-    @apply text-[12px] mb-2 text-[var(--color-text-secondary)];
+    @apply text-[13px] mb-2 text-[var(--color-text-secondary)];
   }
 
   .notice-auth-preview-wrap .notice-preview-img {
