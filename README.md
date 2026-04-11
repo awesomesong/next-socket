@@ -4,7 +4,7 @@
 
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.8-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19.1.2-61DAFB?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?logo=typescript)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma_5.22-4169E1?logo=postgresql)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-4.8.1-010101?logo=socket.io)
 ![TanStack Query](https://img.shields.io/badge/TanStack_Query-5.59-FF4154)
