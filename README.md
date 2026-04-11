@@ -1,6 +1,6 @@
 # Scent Memories
 
-> **향수를 수집하고 기록하는 공간** — 향수를 사랑하는 사람들을 위한 향수 정보 공유 아카이브입니다. 향수(Fragrance) 정보를 등록·공유하고, 실시간 채팅과 GPT-4 AI 어시스턴트를 활용할 수 있는 풀스택 커뮤니티 웹 애플리케이션입니다.
+> **Scent Memories**는 향수를 사랑하는 사람들이 모여 시향 기록을 남기고 자유롭게 소통하는 커뮤니티입니다. 향수 사진을 업로드하면 AI가 제품 정보를 분석해 등록 폼을 자동으로 채워 주며, 실시간 채팅으로 다른 사용자와 소통하고, AI 어시스턴트에게 향수 추천이나 궁금한 점을 물어볼 수 있는 풀스택 웹 애플리케이션입니다.
 
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.8-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19.1.2-61DAFB?logo=react)
@@ -17,26 +17,26 @@
 
 ## 프로젝트 개요
 
-**Scent Memories**는 Next.js 15 App Router 기반의 풀스택 웹 애플리케이션입니다. **서버/클라이언트 컴포넌트 설계**, **실시간 통신 아키텍처**, **AI 스트리밍**, **낙관적 업데이트** 등의 패턴을 구현했습니다.
+**Scent Memories**는 Next.js 15 App Router 기반의 풀스택 웹 애플리케이션입니다. 향수 탐색부터 등록, 리뷰 작성, 실시간 채팅, AI 어시스턴트까지 한 흐름으로 이용할 수 있습니다.
 
 | 기능 | 설명 |
 |------|------|
-| **향수 카탈로그** | 브랜드·이름·노트·이미지 기반 CRUD, slug 기반 SEO URL, 커서 기반 Infinite Query, 성공 시 캐시 반영 |
-| **AI 이미지 분석 자동 입력** | 향수 이미지를 업로드하면 GPT-4o Vision이 브랜드·향수명·노트를 분석해 향수 정보를 추가하는 폼을 자동으로 채워줍니다. |
-| **리뷰** | 향수별 리뷰 작성·수정·삭제, 커서 기반 무한 스크롤, React Query 도메인별 캐시 선택적 무효화 |
-| **실시간 채팅** | Socket.IO 룸 기반 1:1·그룹 채팅, 오프라인 메시지 큐잉(24h TTL, 재연결 시 일괄 전달), 읽음 상태 실시간 동기화 |
-| **AI 어시스턴트** | GPT-4 SSE 스트리밍(토큰 단위 실시간 렌더링), 슬라이딩 윈도우 레이트 리미팅(분당 10회/유저), 최근 8개 메시지 컨텍스트 유지 |
-| **공지사항** | CRUD + 댓글 + 조회수, WYSIWYG 에디터(React Quill), Cloudinary 이미지 업로드, DOMPurify XSS 방지 |
-| **이용 안내(가이드)** | 서비스·기능 소개, 로그인·갤러리·채팅 등 단계별 스크린샷 이용 안내 |
-| **인증** | NextAuth v4 JWT 전략(24h), Google·Kakao OAuth + 이메일/비밀번호 Credentials, bcryptjs 해싱, 미들웨어 보호 라우팅 |
-| **3D 히어로 섹션** | Three.js WebGL 커스텀 셰이더 기반 은하수 배경, 다크/라이트 테마 대응 |
-| **테마·반응형** | 라벤더·아이보리 커스텀 테마, Tailwind 반응형 브레이크포인트, Framer Motion 페이지 전환 애니메이션 |
+| **향수 갤러리** | 브랜드·이름·이미지로 향수를 탐색하고 등록·관리할 수 있습니다 (커서 기반 무한 스크롤, slug SEO URL) |
+| **AI 이미지 분석 자동 입력** | 향수 사진을 업로드하면 AI가 브랜드·향수명·설명·노트를 분석해 등록 폼을 자동으로 채워 줍니다 (GPT-4o Vision) |
+| **리뷰** | 향수 상세 페이지에서 리뷰를 작성·수정·삭제할 수 있으며, 무한 스크롤로 이어서 볼 수 있습니다 (커서 기반 Infinite Query, Socket.IO 실시간 반영) |
+| **실시간 채팅** | 1:1·그룹 채팅으로 다른 사용자와 실시간 대화할 수 있으며, 오프라인 시 메시지를 보관했다가 재접속 시 자동으로 전달합니다 (Socket.IO, 읽음 상태 동기화) |
+| **AI 어시스턴트** | AI에게 향수 추천이나 궁금한 점을 물어볼 수 있으며, 답변이 실시간 스트리밍으로 출력됩니다 (GPT-4 SSE, 분당 10회 레이트 리미팅) |
+| **공지사항** | 이미지와 텍스트 스타일이 포함된 공지를 작성·수정·삭제할 수 있으며, 댓글을 남길 수 있습니다 (Quill 에디터, Cloudinary CDN, DOMPurify XSS 방지) |
+| **이용 안내(가이드)** | 서비스·기능 소개와 로그인·갤러리·채팅 등 단계별 스크린샷으로 이용 방법을 안내합니다 |
+| **인증** | Google·카카오 소셜 로그인과 이메일/비밀번호 로그인을 지원하며, 데모 계정으로 바로 체험할 수 있습니다 (NextAuth v4 JWT 24h, bcryptjs 해싱) |
+| **3D 히어로 섹션** | 메인 화면에 인터랙티브 3D 은하수 배경이 표시되며, 스크롤 시 확대 효과가 적용됩니다 (Three.js WebGL 커스텀 셰이더) |
+| **테마·반응형** | 다크/라이트 모드를 지원하며, 데스크탑·태블릿·모바일 환경에 최적화된 반응형 레이아웃을 제공합니다 (Tailwind CSS, Framer Motion 전환 애니메이션) |
 
 ---
 
-## 기술 집약 요약
+## 핵심 기술 구성
 
-| 영역 | 기술·패턴 |
+| 영역 | 적용 기술 |
 |------|-----------|
 | **풀스택** | Next.js 15 App Router, Route Groups, Server/Client Component 설계 |
 | **타입 안정성** | TypeScript strict mode, Prisma 생성 타입 전파 |
@@ -70,28 +70,26 @@
                │
 ┌──────────────▼──────────────┐  ┌───────────────────────┐
 │   PostgreSQL (Prisma)       │  │  Cloudinary CDN       │
-│   복합 인덱스 · 트랜잭션         │  │  이미지 업로드·리사이즈     │
+│   복합 인덱스 · 트랜잭션         │  │  이미지 업로드·CDN 제공    │
 └─────────────────────────────┘  └───────────────────────┘
 ```
 
 **핵심 설계 결정:**
-- Next.js API Routes와 Socket.IO 서버를 **별도 프로세스로 분리** → 각각 독립 배포·스케일링
-- **WebSocket-only 전송** (polling fallback 제거) → 레이턴시 최소화, 불필요한 HTTP 오버헤드 제거
+- Next.js API Routes와 Socket.IO 서버를 **별도 프로세스로 분리** → 각각 독립 배포
+- **WebSocket-only 전송** (polling fallback 제거) → 불필요한 HTTP 오버헤드 없이 즉시 메시지 전달
 - 서비스 간 통신에 **웹훅 + Secret 검증** 적용 (신규 유저 생성 시 Socket 서버로 브로드캐스트)
 
 ---
 
 ## 기술 선택 이유
 
-기술을 나열하는 것보다 **왜 이 조합인지**가 더 중요합니다.
-
 | 기술 | 선택 이유 | 장점 |
 |------|----------|----------|
 | **Next.js 15 App Router** | 서버/클라이언트 컴포넌트 설계로 초기 렌더링 최적화, 파일 기반 라우팅으로 구조 명확화 | Pages Router 대비 레이아웃 중첩·서버 컴포넌트 지원 우세 |
 | **TanStack Query v5** | 서버 상태와 클라이언트 상태를 명확히 분리, Infinite Query·Optimistic Update 내장으로 UX 향상 | SWR 대비 Mutation 핸들링·캐시 제어 세분화 가능 |
 | **Zustand** | Context API 리렌더 문제 없이 경량 전역 상태 관리, 보일러플레이트 최소 | Redux 대비 설정 간소, Recoil 대비 번들 크기 작음 |
-| **Socket.IO + 별도 서버** | Vercel Serverless는 WebSocket 지속 연결 불가 → Express 서버를 Fly.io에 분리 배포, 독립 스케일링 가능 | 외부 매니지드 서비스 대비 오프라인 큐·이벤트 커스텀 자유도 높음 |
-| **Prisma + PostgreSQL** | 타입 안전 쿼리로 런타임 에러 사전 차단, 자동 생성 타입을 프론트까지 전파 | TypeORM 대비 마이그레이션 워크플로우 명확, 쿼리 가독성 높음 |
+| **Socket.IO + 별도 서버** | Vercel Serverless는 WebSocket 지속 연결 불가 → Express 서버를 Fly.io에 분리 배포 | 외부 매니지드 서비스 대비 오프라인 큐·이벤트 커스텀 자유도 높음 |
+| **Prisma + PostgreSQL** | 안전한 타입 쿼리로 런타임 에러 사전 차단, 자동 생성 타입을 프론트까지 전파 | TypeORM 대비 스키마 파일 하나로 자동 마이그레이션, 쿼리 가독성 높음 |
 | **NextAuth v4** | OAuth + Credentials 복합 전략, Prisma 어댑터로 DB 세션 통합 관리 | Clerk 대비 커스터마이징 자유도, Auth.js 대비 Next.js 호환 안정성 |
 | **SSE (Server-Sent Events)** | GPT-4 스트리밍 응답을 토큰 단위로 실시간 전달 → 첫 응답 체감 속도 개선 | WebSocket 대비 단방향 스트림에 적합, 구현 단순 |
 
@@ -99,13 +97,11 @@
 
 ## 해결한 기술적 과제
 
-기능 구현을 하면서, 마주치는 문제들을 직접 해결했습니다.
-
 | 과제 | 문제 | 해결 |
 |------|------|------|
 | **Vercel + WebSocket** | Serverless 환경에서 WebSocket 지속 연결 불가 | Socket.IO 서버를 Fly.io Docker로 분리, webhook으로 서비스 간 동기화 |
 | **오프라인 메시지 유실** | 수신자가 오프라인일 때 Socket 이벤트 소실 | 서버 메모리 큐(Map) + 24h TTL, 재연결 시 일괄 전달 |
-| **캐시 일관성** | 향수 생성 직후 목록에 즉시 반영 안 되는 UX | Optimistic Update로 API 응답 전 캐시 선반영, 실패 시 rollback |
+| **캐시 일관성** | 채팅 메시지 전송 직후 목록에 즉시 반영 안 되는 UX | Optimistic Update로 API 응답 전 캐시 선반영, 실패 시 rollback |
 | **채팅 메시지 중복** | 낙관적 업데이트로 임시 메시지를 표시한 뒤, 서버 응답 추가 시 화면에 2번 표시되는 현상 | 두 메시지의 ID를 비교해 같은 메시지인지 확인하고 교체하여 해결 |
 | **무한 스크롤 일관성** | offset 방식에서 새 항목 추가 시 페이지 경계 중복·누락 | 커서(createdAt + id) 기반 페이지네이션으로 교체 |
 | **타입 안전성** | API 응답 타입 불일치로 런타임 에러 발생 | Prisma 생성 타입을 API 레이어부터 컴포넌트까지 전파 |
@@ -126,14 +122,13 @@ layout.tsx (Server Component)
     └── ClientComponent  ← 'use client' (인터랙션 필요 시점)
 ```
 
-서버 컴포넌트에서 초기 데이터를 fetch해 번들 크기를 줄이고, 인터랙션이 필요한 최소 범위만 `'use client'`로 분리합니다.
 
 ### 2. TanStack Query 캐시 전략
 
 **커서 기반 Infinite Query** — offset 방식 대비 삭제·삽입 시 중복·누락 없음
 
 ```typescript
-// 향수 목록: 신규 항목을 캐시 첫 페이지에 낙관적으로 prepend (fragranceCache.ts)
+// 향수 목록: 신규 항목을 캐시 첫 페이지에 prepend (fragranceCache.ts)
 export const prependFragranceCard = (queryClient, newFragrance) => {
   queryClient.setQueryData(fragranceListKey, (old) => {
     if (!old?.pages?.length)
@@ -148,7 +143,7 @@ export const prependFragranceCard = (queryClient, newFragrance) => {
 
 ```
 
-**채팅 메시지 중복 렌더링 방지** — 실시간 채팅 전송 시 낙관적 업데이트로 임시 메시지를 먼저 반영한 후, 서버 응답 데이터가 한 번 더 추가되면서 화면에 두 번 표시되는 문제가 있었습니다. 이를 해결하기 위해 두 메시지의 고유 ID를 비교하여 같은 메시지인지 확인하고 기존 임시 메시지를 서버 응답으로 자연스럽게 교체하는 방식으로 해결했습니다.
+**채팅 메시지 중복 렌더링 방지** — 낙관적 업데이트로 먼저 표시한 임시 메시지와 서버에서 응답 받은 메시지가 중복되지 않도록, 고유 ID를 비교하여 같은 메시지면 교체합니다.
 
 **도메인별 캐시 분리**: `fragranceCache`, `reviewsCache`, `chatCache`, `noticeCache` — 관심사 분리 + 선택적 무효화
 
@@ -169,7 +164,7 @@ const io = new Server(httpServer, {
 });
 ```
 
-**실시간 이벤트 목록**: `online:user`, `leave:user`, `get:onlineUsers`, `send:message`, `receive:message`, `receive:conversation`, `read:state`, `conversation:new`, `join:room`/`leave:room`, `fragrance:review:new|updated|deleted`, `notice:new|updated|deleted`
+**실시간 이벤트 목록**: `online:user`, `leave:user`, `get:onlineUsers`, `send:message`, `receive:message`, `receive:conversation`, `read:state`, `conversation:new`, `join:room`/`leave:room`, `fragrance:review:new|updated|deleted`, `notice:new|updated|deleted`, `notice:comment:new|updated|deleted`, `room.event`, `registered:user`
 
 ### 4. GPT-4 SSE 스트리밍
 
@@ -178,7 +173,6 @@ const io = new Server(httpServer, {
 // - 슬라이딩 윈도우 레이트 리미팅: 분당 10회/유저
 // - 대화 컨텍스트: 최근 8개 메시지 포함 (buildConversationContext)
 // - 30초 타임아웃 보호 (AbortController)
-// - 모바일 Safari 스트림 버퍼 핸들링 (X-Accel-Buffering: no)
 // - 스트리밍 완료 후 DB 저장 (메시지 유실 방지)
 
 // OpenAI SDK 대신 fetch 직접 호출
@@ -215,7 +209,6 @@ Middleware: JWT 검증 → 미인증 시 /auth/signin + callbackUrl 리다이렉
 ```prisma
 model Message {
   @@index([conversationId, createdAt(sort: Desc)])       // 채팅 목록 조회
-  @@index([conversationId, senderId, createdAt])         // 발신자별 필터링
   @@index([conversationId, isAIResponse, createdAt])     // AI 메시지 조회
 }
 
@@ -239,16 +232,12 @@ model Fragrance {
   └── 캐시 MISS → Next.js API Route → Prisma → PostgreSQL
                   → 결과 캐시 저장 → 렌더링
 
-[향수 등록 (낙관적 업데이트)]
-사용자 제출 → fragranceCache.prependFragranceCard() 즉시 UI 반영
-           → POST /api/fragrance → Prisma INSERT
-           → 성공: 캐시 유지 / 실패: rollback
-
-[실시간 채팅 메시지]
-클라이언트 send:message → socket-server
-  → 온라인 수신자: socket.to(room).emit('receive:message') 즉시 전달
-  → 오프라인 수신자: 큐 적재 → 재연결 시 일괄 전달
-  → next-server: POST /api/messages → Prisma 저장 (트랜잭션)
+[채팅 메시지 전송]
+발신자: 임시 메시지를 캐시에 즉시 삽입 (낙관적 업데이트) → POST /api/messages → Prisma 저장
+      → 성공: 임시 메시지를 서버 응답으로 교체 / 실패: 에러 표시, 재전송 가능
+수신자: socket-server → send:message
+      → 온라인: receive:message 즉시 전달
+      → 오프라인: 큐 적재 → 재연결 시 일괄 전달
 
 [GPT-4 AI 응답]
 POST /api/ai/stream
@@ -275,15 +264,15 @@ POST /api/ai/stream
 |------|------|------|----------------|
 | **프레임워크** | Next.js | 15.5.14 | App Router, Route Groups `(main)/(chat)`, 동적 메타데이터 |
 | | React | 19.1.2 | Server/Client Components 설계, `use client` 최소화 전략 |
-| | TypeScript | 5.9.3 | strict mode, Prisma 생성 타입 활용, 제네릭 기반 캐시 유틸 |
+| | TypeScript | 5.9.3 | strict mode, Prisma 생성 타입 활용 |
 | **서버 상태** | TanStack Query | 5.59.19 | 커서 기반 Infinite Query, Optimistic Update, 도메인별 캐시 |
 | **클라이언트 상태** | Zustand | 4.5.6 | UI 전역 상태 및 사용자 정보 관리, Context API와의 역할 분리 |
 | **스타일/UI** | Tailwind CSS | 3.4.17 | 커스텀 테마(lavender·ivory), 반응형 브레이크포인트 |
 | | HeroUI | 2.7.5 | 공통 컴포넌트(버튼·모달·폼) |
 | | Framer Motion | 12.5.0 | 페이지 전환·컴포넌트 인터랙션 애니메이션 |
-| **폼** | react-hook-form | 7.51.4 | 비제어 컴포넌트, 리렌더 최소화, 유효성 검사 |
+| **폼** | react-hook-form | 7.51.4 | 비제어 컴포넌트 기반 폼 관리, 유효성 검사 |
 | | react-select | 5.8.0 | 커스텀 Select 컴포넌트 (채팅 멤버 다중 선택) |
-| **실시간** | Socket.IO Client | 4.8.1 | 싱글턴 패턴, 지수 백오프 재연결, 이벤트 타입 안전성 |
+| **실시간** | Socket.IO Client | 4.8.1 | 싱글턴 패턴, 자동 재연결 |
 | **인증** | NextAuth | 4.24.7 | JWT(OAuth + Credentials) |
 | **보안** | bcryptjs | 3.0.3 | 비밀번호 해싱 |
 | | DOMPurify | 3.3.3 | 사용자 입력 HTML 새니타이징, XSS 방지 |
@@ -313,7 +302,7 @@ POST /api/ai/stream
 | **Vercel** | next-server 배포 | GitHub 자동 배포, 환경 변수 관리 |
 | **Fly.io** | socket-server 배포 | Docker 컨테이너, fly.toml 설정 |
 | **Supabase** | PostgreSQL 호스팅 | Managed PostgreSQL, Supavisor 커넥션 풀러(PgBouncer) |
-| **Cloudinary** | 이미지 호스팅 | CDN, 리사이즈 |
+| **Cloudinary** | 이미지 호스팅 | CDN 제공 |
 
 ---
 
@@ -322,7 +311,7 @@ POST /api/ai/stream
 | 모델 | 설명 |
 |------|------|
 | `User` | 이메일·닉네임·프로필 이미지·역할·소셜 연동 |
-| `Account / Session` | NextAuth OAuth 계정·JWT 세션 |
+| `Account / Session / VerificationToken` | NextAuth OAuth 계정·JWT 세션·이메일 인증 토큰 |
 | `Fragrance` | 브랜드·이름·slug(unique)·이미지배열·노트 |
 | `FragranceReview` | 향수별 리뷰, fragranceSlug 인덱스 |
 | `Conversation` | 1:1·그룹 채팅 룸, `isAIChat` 플래그, `lastMessageAt` |
@@ -351,18 +340,23 @@ Scent-Memories/
 │           │   ├── guide/           # 소개·이용 안내
 │           │   └── profile/
 │           ├── (chat)/              # 채팅 전용 레이아웃
-│           │   └── conversations/
+│           │   ├── conversations/
+│           │   └── chatMember/      # 채팅 멤버 관리
 │           ├── auth/                # signin, register 페이지
 │           ├── api/
 │           │   ├── ai/stream/       # GPT-4 SSE 스트리밍
 │           │   ├── fragrance/       # 향수·리뷰·브랜드·이미지 분석
 │           │   ├── auth/[...nextauth]/  # NextAuth 핸들러
 │           │   ├── messages/        # 채팅 메시지 (트랜잭션)
-│           │   └── conversations/   # 채팅 룸 관리
+│           │   ├── conversations/   # 채팅 룸 관리
+│           │   ├── notice/          # 공지사항 API
+│           │   └── register/        # 회원가입 API
 │           ├── components/
 │           │   ├── main/            # ProductFragrance, ScentMemoriesHero
 │           │   ├── fragrance/       # FragranceDetail, FormFragrance 등
-│           │   └── chat/
+│           │   ├── chat/
+│           │   ├── navigation/      # 헤더·네비게이션 컴포넌트
+│           │   └── sidebar/         # 사이드바 컴포넌트
 │           ├── context/             # NextAuthProvider, RQProvider, SocketProvider, ThemeProvider 등
 │           ├── lib/
 │           │   ├── auth.ts          # NextAuth 설정
@@ -414,5 +408,5 @@ npm install
 npm start
 ```
 
-**필요 환경 변수**: `DATABASE_URL`, `NEXTAUTH_SECRET`, `OPENAI_API_KEY`, `GOOGLE_CLIENT_ID/SECRET`, `KAKAO_CLIENT_ID/SECRET`, `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `NEXT_PUBLIC_SOCKET_URL`, `WEBHOOK_SECRET`
+**필요 환경 변수**: `DATABASE_URL`, `DIRECT_URL`, `NEXTAUTH_SECRET`, `OPENAI_API_KEY`, `GOOGLE_CLIENT_ID/SECRET`, `KAKAO_CLIENT_ID/SECRET`, `CLOUDINARY_CLOUD_NAME`, `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `NEXT_PUBLIC_SOCKET_SERVER_URL`, `WEBHOOK_SECRET`
 socket-server: `CLIENT_ORIGIN`(CORS 허용 도메인, 쉼표 구분), `WEBHOOK_SECRET`
