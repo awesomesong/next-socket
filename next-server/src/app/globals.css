@@ -417,6 +417,7 @@ h6 {
   padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: 0.5rem;
   background: var(--notice-card-body-bg);
   border-top: 1px solid var(--notice-card-divider);
