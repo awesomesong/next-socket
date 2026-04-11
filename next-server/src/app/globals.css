@@ -745,18 +745,21 @@ h6 {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
   gap: 0.5rem;
 }
 .product-fragrance-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 9999px;
-  padding-top: 0.35rem;
-  padding-bottom: 0.35rem;
+  padding-top: 0.3rem;
+  padding-bottom: 0.2rem;
   padding-left: 1rem;
   padding-right: 1rem;
   flex-shrink: 0;
   font-size: 0.72rem;
   letter-spacing: 0.08em;
-  line-height: 1;
 }
 
 /* 상세 페이지 레이아웃 — FragranceDetailClient와 FragranceDetailSkeleton에서 동일 클래스로 공유 */
@@ -1966,6 +1969,10 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
 }
 
 .footer-stack-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   font-size: 0.63rem;
   font-weight: 500;
   letter-spacing: 0.04em;
