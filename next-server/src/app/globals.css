@@ -1239,7 +1239,7 @@ div[data-slot="input-wrapper"].textfield-textarea-wrapper {
 }
 
 .profile-info__label {
-  @apply text-[10px] uppercase tracking-widest font-bold opacity-60 shrink-0;
+  @apply text-[11px] uppercase tracking-widest font-bold opacity-60 shrink-0;
   color: var(--color-lavender-muted);
 }
 

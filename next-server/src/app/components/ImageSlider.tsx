@@ -192,7 +192,7 @@ const ImageSlider = ({
         <div className={clsx('mt-2 flex items-center justify-between', isCompact ? 'px-1' : 'px-0')}>
           {imagesLen > 1 ? (
             <div className="flex items-center gap-2">
-              <span className="text-[11px] tracking-widest text-[var(--color-text-secondary)]">
+              <span className="text-[12px] tracking-widest text-[var(--color-text-secondary)]">
                 {safeIndex + 1}/{imagesLen}
               </span>
             </div>
@@ -206,7 +206,7 @@ const ImageSlider = ({
               onClick={() => onAnalyze(getImageSrc(images[safeIndex]))}
               disabled={analyzeDisabled}
               aria-label="AI 이미지 분석"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 dark:bg-black/50 text-[#5c4a7a] dark:text-[#c8b4ff] shadow-md text-[10px] uppercase tracking-widest font-medium hover:bg-[#f1ecfe] dark:hover:bg-[#2d2040] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 dark:bg-black/50 text-[#5c4a7a] dark:text-[#c8b4ff] shadow-md text-[11px] uppercase tracking-widest font-medium hover:bg-[#f1ecfe] dark:hover:bg-[#2d2040] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <HiSparkles className="w-3.5 h-3.5" />
               {isAnalyzing ? '분석 중...' : 'AI 분석'}

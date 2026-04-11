@@ -97,7 +97,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onCloseModal }) => 
             <div className="profile-info-wrap">
               <div className="profile-identity">
                 <h3 className="text-xl font-bold text-default">{userInfo.name}</h3>
-                <span className="text-[10px] text-lavender-muted uppercase tracking-widest bg-lavender-pale/10 px-2 py-0.5 rounded-full border border-lavender-border/20">
+                <span className="text-[11px] text-lavender-muted uppercase tracking-widest bg-lavender-pale/10 px-2 py-0.5 rounded-full border border-lavender-border/20">
                   {userInfo.role === "admin" ? "Admin" : "User"}
                 </span>
               </div>

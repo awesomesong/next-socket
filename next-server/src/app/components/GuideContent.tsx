@@ -320,7 +320,7 @@ function StepGuideSection({
                 <div className="shrink-0 pt-[2px]">
                   <span
                     className={clsx(
-                      'w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold',
+                      'w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold',
                       'text-[var(--color-ivory)] [background:var(--bg-gradient-scent)]',
                       'dark:text-[var(--color-lavender-light)] dark:[background:var(--color-lavender-pale)] dark:border dark:border-[var(--color-lavender-border)]',
                     )}
@@ -756,7 +756,7 @@ export default function GuideContent({
           {techStack.map(({ category, items }) => (
             <div key={category} className="flex gap-3 items-start">
               <span
-                className="inline-flex items-center min-h-[1.625rem] text-[10px] font-semibold uppercase tracking-wider w-24 shrink-0 leading-none text-[var(--color-lavender-muted)] dark:text-[var(--color-lavender-light)]"
+                className="inline-flex items-center min-h-[1.625rem] text-[11px] font-semibold uppercase tracking-wider w-24 shrink-0 leading-none text-[var(--color-lavender-muted)] dark:text-[var(--color-lavender-light)]"
               >
                 {category}
               </span>
@@ -764,7 +764,7 @@ export default function GuideContent({
                 {items.map((item) => (
                   <span
                     key={item}
-                    className="inline-flex items-center justify-center min-h-[1.625rem] text-[11px] leading-none px-2.5 py-1 rounded-full bg-[var(--color-lavender-pale)] text-[var(--color-text-primary)] border border-transparent dark:border-[var(--color-lavender-border)] dark:border-opacity-60"
+                    className="inline-flex items-center justify-center min-h-[1.625rem] text-[12px] leading-none px-2.5 py-1 rounded-full bg-[var(--color-lavender-pale)] text-[var(--color-text-primary)] border border-transparent dark:border-[var(--color-lavender-border)] dark:border-opacity-60"
                   >
                     {item}
                   </span>
@@ -873,7 +873,7 @@ export default function GuideContent({
                     <div className="flex flex-col items-center shrink-0">
                       <span
                         className={clsx(
-                          'w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold z-10 shrink-0',
+                          'w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold z-10 shrink-0',
                           'text-[var(--color-ivory)] [background:var(--bg-gradient-scent)]',
                           'dark:text-[var(--color-lavender-light)] dark:[background:var(--color-lavender-pale)] dark:border dark:border-[var(--color-lavender-border)]',
                         )}
@@ -1069,7 +1069,7 @@ export default function GuideContent({
                       />
                     </button>
                   </div>
-                  <p className="mt-2 text-[11px] text-[var(--color-text-secondary)] text-center">
+                  <p className="mt-2 text-[12px] text-[var(--color-text-secondary)] text-center">
                     ☀️ 해 아이콘 클릭 → 라이트 모드로 전환
                   </p>
                 </div>
@@ -1092,7 +1092,7 @@ export default function GuideContent({
                       />
                     </button>
                   </div>
-                  <p className="mt-2 text-[11px] text-[var(--color-text-secondary)] text-center">
+                  <p className="mt-2 text-[12px] text-[var(--color-text-secondary)] text-center">
                     🌙 달 아이콘 클릭 → 다크 모드로 전환
                   </p>
                 </div>
@@ -1123,7 +1123,7 @@ export default function GuideContent({
               <p
                 className={clsx(
                   'transition-all duration-300 ease-in-out',
-                  'font-semibold uppercase text-[var(--color-lavender)] text-[10px] tracking-[0.08em] lg:shrink-0 lg:text-[11px] lg:tracking-[0.16em] lg:mb-4',
+                  'font-semibold uppercase text-[var(--color-lavender)] text-[11px] tracking-[0.08em] lg:shrink-0 lg:text-[12px] lg:tracking-[0.16em] lg:mb-4',
                   isOnThisPageSticky ? 'max-lg:mb-1' : 'max-lg:mb-1.5',
                 )}
               >

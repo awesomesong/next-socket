@@ -16,7 +16,7 @@ const ChatUnReadCount = ({ size, className }: Props) => {
     return (
         <span className={clsx(
             "unread-badge",
-            size === 'mobile-small' && "max-md:text-[11px]",
+            size === 'mobile-small' && "max-md:text-[12px]",
             className,
         )}>
             {formatMessageCount(unReadCount)}

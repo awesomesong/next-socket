@@ -179,7 +179,7 @@ const ImageModal: React.FC<ImageModalProps> = ({
                     <button
                         type="button"
                         onClick={resetZoom}
-                        className="min-w-[1.875rem] px-1.5 py-0.5 text-[11px] text-white/90 font-medium"
+                        className="min-w-[1.875rem] px-1.5 py-0.5 text-[12px] text-white/90 font-medium"
                         aria-label="원래 크기"
                     >
                         {Math.round(scale * 100)}%

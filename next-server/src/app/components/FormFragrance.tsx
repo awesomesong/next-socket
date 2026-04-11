@@ -322,7 +322,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                                 </div>
                                 <div className="text-center px-4">
                                     <p className="text-sm md:text-base font-light tracking-wide mb-1 dark:text-[#c8b4ff]">향수 이미지 업로드</p>
-                                    <p className="text-[10px] opacity-70 dark:opacity-70 text-[#5c4a7a] dark:text-[#c8b4ff]">
+                                    <p className="text-[11px] opacity-70 dark:opacity-70 text-[#5c4a7a] dark:text-[#c8b4ff]">
                                         클릭하거나 이미지를 드래그하세요
                                         {!isEdit && <><br />첫 이미지는 AI가 자동으로 분석합니다</>}
                                     </p>
@@ -356,7 +356,7 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                                     setImageError(null);
                                     fileInputRef.current?.click();
                                 }}
-                                className="text-[10px] uppercase tracking-widest text-[#5c4a7a] dark:text-[#c8b4ff] hover:text-[#b094e0] transition-colors font-medium"
+                                className="text-[11px] uppercase tracking-widest text-[#5c4a7a] dark:text-[#c8b4ff] hover:text-[#b094e0] transition-colors font-medium"
                             >
                                 {isUploading ? "이미지 업로드 중" : "+ 이미지 추가"}
                             </button>
