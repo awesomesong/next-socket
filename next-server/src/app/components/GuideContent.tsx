@@ -1157,8 +1157,8 @@ export default function GuideContent({
                               ? [
                                   // 모바일: 사이드바 상태 배경(디자인 시스템) + 기본 텍스트
                                   "max-lg:bg-[var(--color-sidebar-state-bg)] max-lg:text-[var(--color-text-primary)] max-lg:font-medium",
-                                  // 데스크톱: lavender 텍스트 + 세미볼드
-                                  "lg:text-[var(--color-lavender)] lg:font-semibold",
+                                  // 데스크톱: 진한 라벤더 + 볼드
+                                  "lg:text-[#7c5cc5] lg:font-bold",
                                 ]
                               : [
                                   // 모바일: 매우 연한 배경 + 보조 텍스트
@@ -1169,10 +1169,10 @@ export default function GuideContent({
                           )}
                         >
                           <span className={clsx(
-                            "w-1 h-1 rounded-full shrink-0 lg:inline",
+                            "rounded-full shrink-0 lg:inline transition-all",
                             isActive
-                              ? "bg-[var(--color-lavender)]"
-                              : "bg-[var(--color-text-secondary)] opacity-40 lg:opacity-70"
+                              ? "w-1.5 h-1.5 bg-[#7c5cc5]"
+                              : "w-1 h-1 bg-[var(--color-text-secondary)]"
                           )} />
                           <span className="max-lg:translate-y-px">{label}</span>
                         </a>
