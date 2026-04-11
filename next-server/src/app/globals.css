@@ -384,7 +384,8 @@ h6 {
 
 /* 공지사항 카드 — 글자 그라데이션(scent) 색상 기반, 라이트 파스텔 / 다크 연하게 */
 .notice-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
   background: var(--notice-card-bg);
   border: 1px solid var(--notice-card-border);
   border-radius: 16px;
@@ -412,6 +413,7 @@ h6 {
   height: 100%;
 }
 .notice-card__body {
+  flex: 1;
   padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
