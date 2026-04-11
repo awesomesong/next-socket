@@ -219,12 +219,12 @@ h4 {
 
 /* Global Placeholder Styling */
 ::placeholder {
-  color: #9384b3 !important; /* var(--color-lavender-muted) */
+  color: #8a7a9e !important; /* Desaturated darker lavender */
   opacity: 0.6;
 }
 
 .dark ::placeholder {
-  color: #b8aad0 !important; /* var(--color-text-secondary) */
+  color: #c8b4ff !important; /* var(--color-lavender) */
   opacity: 0.5;
 }
 
