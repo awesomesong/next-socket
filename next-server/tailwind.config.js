@@ -9,6 +9,9 @@ module.exports = {
     ],
     theme: {
         extend: {
+            fontSize: {
+                xs: ['0.8125rem', { lineHeight: '1.125rem' }],
+            },
             screens: {
                 'xs': '320px', // min-width
             },
