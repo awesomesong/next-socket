@@ -163,10 +163,10 @@ const ConfirmModal: React.FC<ModalProps> = ({ isOpen, onCloseModal, name }) => {
       <div className="max-sm:px-1">
         <div className="flex flex-col space-y-1 ml-0 text-left sm:text-center sm:items-center">
           <p className="modal-description">
-            나가시면 모든 대화 기록이 삭제되며 복구할 수 없습니다.
+            나가시면 모든 대화 기록이 삭제되고 복구할 수 없어요.
           </p>
           <p className="modal-description">
-            그래도 정말 나가시겠어요?
+            그래도 나가시겠어요?
           </p>
         </div>
       </div>
