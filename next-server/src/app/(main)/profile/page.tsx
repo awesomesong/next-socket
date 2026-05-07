@@ -1,6 +1,9 @@
 import AvatarProfile from "@/src/app/components/AvatarProfile";
 import { getCurrentUser } from "@/src/app/lib/session";
 
+// 사용자별 세션 데이터를 매 요청마다 조회해야 하므로 SSR로 고정
+export const dynamic = 'force-dynamic';
+
 const Profile = async () => {
     const user = await getCurrentUser();
 
