@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, skipToken } from '@tanstack/react-query';
 
 import FragranceMotionWrapper from '@/src/app/components/FragranceMotionWrapper';
 import FragranceReviewSection from '@/src/app/components/FragranceReviewSection';
@@ -23,8 +23,8 @@ export default function FragranceDetail({ slug, fragrance: initialFragrance }: P
   // 자체적으로 fetch 하지 않으므로 queryFn 없이 enabled: false 로 캐시 리더 역할만 수행.
   const { data } = useQuery<{ fragrance: FragranceWithAuthor }>({
     queryKey: fragranceDetailKey(slug),
+    queryFn: skipToken,
     initialData: { fragrance: initialFragrance },
-    enabled: false,
     staleTime: Infinity,
   });
 
