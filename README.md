@@ -2,7 +2,7 @@
 
 > **Scent Memories**는 향수를 사랑하는 사람들이 모여 시향 기록을 남기고 자유롭게 소통하는 커뮤니티입니다. 향수 사진을 업로드하면 AI가 제품 정보를 분석해 등록 폼을 자동으로 채워 주며, 실시간 채팅으로 다른 사용자와 소통하고, AI 어시스턴트에게 향수 추천이나 궁금한 점을 물어볼 수 있는 풀스택 웹 애플리케이션입니다.
 
-![Next.js](https://img.shields.io/badge/Next.js-15.4.8-black?logo=next.js)
+![Next.js](https://img.shields.io/badge/Next.js-15.5.14-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19.1.2-61DAFB?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?logo=typescript)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma_5.22-4169E1?logo=postgresql)
@@ -274,15 +274,15 @@ POST /api/ai/stream
 | | react-select | 5.8.0 | 커스텀 Select 컴포넌트 (채팅 멤버 다중 선택) |
 | **실시간** | Socket.IO Client | 4.8.1 | 싱글턴 패턴, 자동 재연결 |
 | **인증** | NextAuth | 4.24.7 | JWT(OAuth + Credentials) |
-| **보안** | bcryptjs | 3.0.3 | 비밀번호 해싱 |
+| **보안** | bcryptjs | 3.0.2 | 비밀번호 해싱 |
 | | DOMPurify | 3.3.3 | 사용자 입력 HTML 새니타이징, XSS 방지 |
 | **미디어** | next-cloudinary | 6.6.2 | 이미지 업로드·CDN |
 | **에디터** | react-quill-new | 3.4.6 | WYSIWYG 에디터(공지·게시글) |
 | **3D** | Three.js | 0.183.0 | 히어로 섹션 은하수 배경(WebGL·커스텀 셰이더, 다크/라이트 테마 대응) |
 | **기타** | react-icons | 5.0.1 | 아이콘 라이브러리 |
 | | dayjs | 1.11.13 | 날짜 포맷 |
-| | react-intersection-observer | 9.16.0 | 뷰포트 감지, Infinite Query 트리거 |
-| | react-hot-toast | 2.6.0 | 토스트 알림 |
+| | react-intersection-observer | 9.13.1 | 뷰포트 감지, Infinite Query 트리거 |
+| | react-hot-toast | 2.4.1 | 토스트 알림 |
 
 ### 백엔드
 
