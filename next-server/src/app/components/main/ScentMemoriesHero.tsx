@@ -434,11 +434,12 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
         io.observe(mount);
 
         // ── 애니메이션 ──────────────────────────────────────────
-        const clock = new THREE.Clock();
+        const timer = new THREE.Timer();
         const animate = () => {
             rafId = requestAnimationFrame(animate);
             if (!visible) return;
-            const t = clock.getElapsedTime();
+            timer.update();
+            const t = timer.getElapsed();
 
             (milkyBand.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
             (sparkles.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
