@@ -24,7 +24,7 @@ export default function NotFound() {
               src="/image/404_not_found.png"
               alt=""
               fill
-              unoptimized={true}
+              sizes="(max-width: 640px) 100vw, 320px"
               priority={true}
               className="object-contain"
             />
