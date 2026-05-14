@@ -29,8 +29,9 @@ const ChatMenu = () => {
                     <Image
                         src='/image/scent_memories_chat.png'
                         alt=''
-                        fill
-                        unoptimized={true}
+                        width={60}
+                        height={60}
+                        sizes="60px"
                         priority={true}
                         className="object-cover"
                     />
