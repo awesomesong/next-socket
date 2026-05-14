@@ -527,12 +527,10 @@ const ScentMemoriesHero = memo(function ScentMemoriesHero() {
 
     const isLightMode = resolvedTheme !== 'dark';
 
-    if (!mounted) return <ScentMemoriesHeroSkeleton />;
-
     return (
         <section className="scent-hero">
             <div className="scent-hero-bg" />
-            <MilkyWayCanvas isLightMode={isLightMode} />
+            {mounted && <MilkyWayCanvas isLightMode={isLightMode} />}
 
             <div className="scent-hero-content">
                 <motion.div
@@ -552,6 +550,7 @@ const ScentMemoriesHero = memo(function ScentMemoriesHero() {
                             width={320}
                             height={320}
                             priority
+                            fetchPriority="high"
                             className="scent-bottle-img"
                         />
                     </motion.div>
