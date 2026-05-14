@@ -24,7 +24,7 @@ const nanumGothic = Nanum_Gothic({
 
 const josefinSans = Josefin_Sans({
   subsets: ['latin'],
-  weight: ['100', '300', '400', '500', '600'],
+  weight: ['300', '400', '600'],
   style: ['normal', 'italic'],
   preload: false,
   display: 'swap',
