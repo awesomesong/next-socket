@@ -11,11 +11,6 @@ function getImageSrc(item: ImageSliderItem): string {
   if ('url' in item) return item.url;
   return item.src;
 }
-perf: Cloudinary 이미지 CDN 직접 로딩으로 전환
-
-- Cloudinary URL에 f_auto,q_auto 변환 파라미터 자동 삽입
-- unoptimized 적용으로 Next.js 서버 이중 처리 제거
-- next.config.js에 AVIF/WebP 포맷 및 이미지 캐시 TTL 30일 설정
 
 /** Cloudinary URL이면 f_auto,q_auto 변환을 삽입해 CDN에서 직접 최적화 */
 function optimizeCloudinarySrc(src: string): { src: string; unoptimized: boolean } {
