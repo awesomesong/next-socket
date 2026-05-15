@@ -11,6 +11,18 @@ function getImageSrc(item: ImageSliderItem): string {
   if ('url' in item) return item.url;
   return item.src;
 }
+perf: Cloudinary 이미지 CDN 직접 로딩으로 전환
+
+- Cloudinary URL에 f_auto,q_auto 변환 파라미터 자동 삽입
+- unoptimized 적용으로 Next.js 서버 이중 처리 제거
+- next.config.js에 AVIF/WebP 포맷 및 이미지 캐시 TTL 30일 설정
+
+/** Cloudinary URL이면 f_auto,q_auto 변환을 삽입해 CDN에서 직접 최적화 */
+function optimizeCloudinarySrc(src: string): { src: string; unoptimized: boolean } {
+  if (!src.includes('res.cloudinary.com')) return { src, unoptimized: false };
+  if (/\/upload\/[a-z]_/.test(src)) return { src, unoptimized: true };
+  return { src: src.replace('/upload/', '/upload/f_auto,q_auto/'), unoptimized: true };
+}
 
 export type ImageSliderProps = {
   images: ImageSliderItem[];
@@ -117,20 +129,24 @@ const ImageSlider = ({
               animate={{ x: trackX }}
               transition={{ type: 'spring', stiffness: 260, damping: 34 }}
             >
-              {images.map((item, i) => (
-                <div key={i} className="w-full h-full flex-[0_0_100%] flex items-center justify-center">
-                  <Image
-                    src={getImageSrc(item)}
-                    alt={alt}
-                    width={1200}
-                    height={1200}
-                    sizes={sizes}
-                    priority={i === 0}
-                    className={imgClassName}
-                    style={imgStyle}
-                  />
-                </div>
-              ))}
+              {images.map((item, i) => {
+                const opt = optimizeCloudinarySrc(getImageSrc(item));
+                return (
+                  <div key={i} className="w-full h-full flex-[0_0_100%] flex items-center justify-center">
+                    <Image
+                      src={opt.src}
+                      alt={alt}
+                      width={1200}
+                      height={1200}
+                      sizes={sizes}
+                      priority={i === 0}
+                      unoptimized={opt.unoptimized}
+                      className={imgClassName}
+                      style={imgStyle}
+                    />
+                  </div>
+                );
+              })}
             </motion.div>
           </button>
         ) : (
@@ -139,20 +155,24 @@ const ImageSlider = ({
             animate={{ x: trackX }}
             transition={{ type: 'spring', stiffness: 260, damping: 34 }}
           >
-            {images.map((item, i) => (
-              <div key={i} className="w-full h-full flex-[0_0_100%] flex items-center justify-center">
-                <Image
-                  src={getImageSrc(item)}
-                  alt={alt}
-                  width={1200}
-                  height={1200}
-                  sizes={sizes}
-                  priority={i === 0}
-                  className={imgClassName}
-                  style={imgStyle}
-                />
-              </div>
-            ))}
+            {images.map((item, i) => {
+              const opt = optimizeCloudinarySrc(getImageSrc(item));
+              return (
+                <div key={i} className="w-full h-full flex-[0_0_100%] flex items-center justify-center">
+                  <Image
+                    src={opt.src}
+                    alt={alt}
+                    width={1200}
+                    height={1200}
+                    sizes={sizes}
+                    priority={i === 0}
+                    unoptimized={opt.unoptimized}
+                    className={imgClassName}
+                    style={imgStyle}
+                  />
+                </div>
+              );
+            })}
           </motion.div>
         )}
 
