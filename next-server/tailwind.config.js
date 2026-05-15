@@ -1,14 +1,16 @@
 const { heroui } = require("@heroui/react");
+const defaultTheme = require("tailwindcss/defaultTheme");
 
 module.exports = {
     content: [
-        "./pages/**/*.{js,ts,jsx,tsx}",
-        "./components/**/*.{js,ts,jsx,tsx}",
         "./src/**/*.{js,ts,jsx,tsx}",
-        "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
+        "./node_modules/@heroui/theme/dist/components/(button|card|input|skeleton|popover|dropdown|menu|tooltip).js",
     ],
     theme: {
         extend: {
+            fontFamily: {
+                sans: ['var(--font-nanum-gothic)', ...defaultTheme.fontFamily.sans],
+            },
             fontSize: {
                 xs: ['0.8125rem', { lineHeight: '1.125rem' }],
             },

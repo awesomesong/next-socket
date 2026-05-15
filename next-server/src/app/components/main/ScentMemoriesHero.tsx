@@ -4,8 +4,19 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useEffect, useRef, memo, useState } from 'react';
 import { useTheme } from 'next-themes';
-import { ScentMemoriesHeroSkeleton } from '@/src/app/components/FragranceSkeleton';
-import * as THREE from 'three';
+import {
+    WebGLRenderer,
+    Scene,
+    PerspectiveCamera,
+    Color,
+    BufferGeometry,
+    BufferAttribute,
+    ShaderMaterial,
+    Points,
+    Timer,
+    NormalBlending,
+    AdditiveBlending,
+} from 'three';
 
 // ─── Three.js 은하수 별 캔버스 ────────────────────────────────────
 type MilkyWayCanvasProps = { isLightMode: boolean };
@@ -15,9 +26,9 @@ const SCROLL_ZOOM_PX = 320;
 const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
     const mountRef = useRef<HTMLDivElement>(null);
     const sceneDataRef = useRef<{
-        milkyBand: THREE.Points;
-        sparkles: THREE.Points;
-        deepStars: THREE.Points;
+        milkyBand: Points;
+        sparkles: Points;
+        deepStars: Points;
     } | null>(null);
 
     // ── 씬/지오메트리: 마운트 시 한 번만 생성 (테마와 무관)
@@ -47,7 +58,7 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
         };
 
         // ── 렌더러: 리사이즈 시 크기 갱신 ─────────────────────────────────────────────────────────────
-        const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+        const renderer = new WebGLRenderer({ antialias: false, alpha: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         renderer.setSize(refW, refH);
         renderer.setClearColor(0x000000, 0);
@@ -60,8 +71,8 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
         canvas.style.height = `${refH}px`;
         mount.appendChild(canvas);
 
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(getBaseFov(refH), refW / refH, 0.1, 300);
+        const scene = new Scene();
+        const camera = new PerspectiveCamera(getBaseFov(refH), refW / refH, 0.1, 300);
         camera.position.set(0, 4, 12);
         camera.lookAt(0, 0, 0);
 
@@ -86,33 +97,33 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
 
         // ── 색상 팔레트 (라이트/다크 공통, 버텍스별로 두 테마 색 모두 저장)
         const MILKY = [
-            new THREE.Color(0xfff5f8),
-            new THREE.Color(0xffe8f0),
-            new THREE.Color(0xfff0f5),
-            new THREE.Color(0xffffff),
-            new THREE.Color(0xe8d8ff),
-            new THREE.Color(0xd4c0ff),
-            new THREE.Color(0xc8b4ff),
-            new THREE.Color(0xddd0ff),
-            new THREE.Color(0xfff0cc),
-            new THREE.Color(0xffe8b4),
-            new THREE.Color(0xfdecd0),
-            new THREE.Color(0xf5e8c8),
+            new Color(0xfff5f8),
+            new Color(0xffe8f0),
+            new Color(0xfff0f5),
+            new Color(0xffffff),
+            new Color(0xe8d8ff),
+            new Color(0xd4c0ff),
+            new Color(0xc8b4ff),
+            new Color(0xddd0ff),
+            new Color(0xfff0cc),
+            new Color(0xffe8b4),
+            new Color(0xfdecd0),
+            new Color(0xf5e8c8),
         ];
         const MILKY_GOLD_LIGHT = [
-            new THREE.Color(0xfff2e8),
-            new THREE.Color(0xfff5ee),
-            new THREE.Color(0xffefe5),
-            new THREE.Color(0xfff0e8),
+            new Color(0xfff2e8),
+            new Color(0xfff5ee),
+            new Color(0xffefe5),
+            new Color(0xfff0e8),
         ];
 
-        const pickColorLight = (): THREE.Color => {
+        const pickColorLight = (): Color => {
             const r = Math.random();
             if (r < 0.40) return MILKY[Math.floor(Math.random() * 4)];
             if (r < 0.70) return MILKY[4 + Math.floor(Math.random() * 4)];
             return MILKY_GOLD_LIGHT[Math.floor(Math.random() * 4)];
         };
-        const pickColorDark = (): THREE.Color => {
+        const pickColorDark = (): Color => {
             const r = Math.random();
             if (r < 0.40) return MILKY[Math.floor(Math.random() * 4)];
             if (r < 0.70) return MILKY[4 + Math.floor(Math.random() * 4)];
@@ -164,16 +175,16 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
                     : Math.random() * 0.6 + 0.2;
             }
 
-            const geo = new THREE.BufferGeometry();
-            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-            geo.setAttribute('colorLight', new THREE.BufferAttribute(colLight, 3));
-            geo.setAttribute('colorDark', new THREE.BufferAttribute(colDark, 3));
-            geo.setAttribute('size', new THREE.BufferAttribute(sz, 1));
+            const geo = new BufferGeometry();
+            geo.setAttribute('position', new BufferAttribute(pos, 3));
+            geo.setAttribute('colorLight', new BufferAttribute(colLight, 3));
+            geo.setAttribute('colorDark', new BufferAttribute(colDark, 3));
+            geo.setAttribute('size', new BufferAttribute(sz, 1));
 
-            const mat = new THREE.ShaderMaterial({
+            const mat = new ShaderMaterial({
                 transparent: true,
                 depthWrite: false,
-                blending: initialLightMode ? THREE.NormalBlending : THREE.AdditiveBlending,
+                blending: initialLightMode ? NormalBlending : AdditiveBlending,
                 uniforms: {
                     uTime: { value: 0 },
                     uLightMode: { value: initialLightMode ? 1 : 0 },
@@ -217,7 +228,7 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
                     }
                 `,
             });
-            return new THREE.Points(geo, mat);
+            return new Points(geo, mat);
         };
 
         // ────────────────────────────────────────────────────────
@@ -252,18 +263,18 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
                 phase[i] = Math.random() * Math.PI * 2;
             }
 
-            const geo = new THREE.BufferGeometry();
-            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-            geo.setAttribute('colorLight', new THREE.BufferAttribute(colLight, 3));
-            geo.setAttribute('colorDark', new THREE.BufferAttribute(colDark, 3));
-            geo.setAttribute('size', new THREE.BufferAttribute(sz, 1));
-            geo.setAttribute('speed', new THREE.BufferAttribute(speed, 1));
-            geo.setAttribute('phase', new THREE.BufferAttribute(phase, 1));
+            const geo = new BufferGeometry();
+            geo.setAttribute('position', new BufferAttribute(pos, 3));
+            geo.setAttribute('colorLight', new BufferAttribute(colLight, 3));
+            geo.setAttribute('colorDark', new BufferAttribute(colDark, 3));
+            geo.setAttribute('size', new BufferAttribute(sz, 1));
+            geo.setAttribute('speed', new BufferAttribute(speed, 1));
+            geo.setAttribute('phase', new BufferAttribute(phase, 1));
 
-            const mat = new THREE.ShaderMaterial({
+            const mat = new ShaderMaterial({
                 transparent: true,
                 depthWrite: false,
-                blending: initialLightMode ? THREE.NormalBlending : THREE.AdditiveBlending,
+                blending: initialLightMode ? NormalBlending : AdditiveBlending,
                 uniforms: {
                     uTime: { value: 0 },
                     uLightMode: { value: initialLightMode ? 1 : 0 },
@@ -310,7 +321,7 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
                     }
                 `,
             });
-            return new THREE.Points(geo, mat);
+            return new Points(geo, mat);
         };
 
         // ────────────────────────────────────────────────────────
@@ -356,16 +367,16 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
                 sz[i] = Math.random() * 0.6 + 0.1;
             }
 
-            const geo = new THREE.BufferGeometry();
-            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-            geo.setAttribute('colorLight', new THREE.BufferAttribute(colLight, 3));
-            geo.setAttribute('colorDark', new THREE.BufferAttribute(colDark, 3));
-            geo.setAttribute('size', new THREE.BufferAttribute(sz, 1));
+            const geo = new BufferGeometry();
+            geo.setAttribute('position', new BufferAttribute(pos, 3));
+            geo.setAttribute('colorLight', new BufferAttribute(colLight, 3));
+            geo.setAttribute('colorDark', new BufferAttribute(colDark, 3));
+            geo.setAttribute('size', new BufferAttribute(sz, 1));
 
-            const mat = new THREE.ShaderMaterial({
+            const mat = new ShaderMaterial({
                 transparent: true,
                 depthWrite: false,
-                blending: initialLightMode ? THREE.NormalBlending : THREE.AdditiveBlending,
+                blending: initialLightMode ? NormalBlending : AdditiveBlending,
                 uniforms: {
                     uTime: { value: 0 },
                     uLightMode: { value: initialLightMode ? 1 : 0 },
@@ -406,7 +417,7 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
                     }
                 `,
             });
-            return new THREE.Points(geo, mat);
+            return new Points(geo, mat);
         };
 
         // ── 씬 조립 ──────────────────────────────────────────────
@@ -434,16 +445,16 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
         io.observe(mount);
 
         // ── 애니메이션 ──────────────────────────────────────────
-        const timer = new THREE.Timer();
+        const timer = new Timer();
         const animate = () => {
             rafId = requestAnimationFrame(animate);
             if (!visible) return;
             timer.update();
             const t = timer.getElapsed();
 
-            (milkyBand.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
-            (sparkles.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
-            (deepStars.material as THREE.ShaderMaterial).uniforms.uTime.value = t;
+            (milkyBand.material as ShaderMaterial).uniforms.uTime.value = t;
+            (sparkles.material as ShaderMaterial).uniforms.uTime.value = t;
+            (deepStars.material as ShaderMaterial).uniforms.uTime.value = t;
 
             // ★ 회전 없음 — milkyBand.rotation.y 고정 (코드 없음)
             // 배경 별들만 극도로 느리게 (+시차)
@@ -478,7 +489,7 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
             renderer.dispose();
             [milkyBand, sparkles, deepStars].forEach(p => {
                 p.geometry.dispose();
-                (p.material as THREE.ShaderMaterial).dispose();
+                (p.material as ShaderMaterial).dispose();
             });
             if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
         };
@@ -491,9 +502,9 @@ const MilkyWayCanvas = memo(({ isLightMode }: MilkyWayCanvasProps) => {
         const data = sceneDataRef.current;
         if (!data) return;
         const light = isLightMode ? 1 : 0;
-        const blending = isLightMode ? THREE.NormalBlending : THREE.AdditiveBlending;
+        const blending = isLightMode ? NormalBlending : AdditiveBlending;
         [data.milkyBand, data.sparkles, data.deepStars].forEach((points) => {
-            const mat = points.material as THREE.ShaderMaterial;
+            const mat = points.material as ShaderMaterial;
             if (mat.uniforms?.uLightMode) mat.uniforms.uLightMode.value = light;
             mat.blending = blending;
         });
@@ -556,17 +567,22 @@ const ScentMemoriesHero = memo(function ScentMemoriesHero() {
                     </motion.div>
                 </motion.div>
 
-                <motion.div
-                    className="scent-brand-bottom"
-                    initial={{ opacity: 0, y: 28 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1.2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                >
-                    <div className="scent-deco-line" />
+                <div className="scent-brand-bottom">
+                    <motion.div
+                        className="scent-deco-line"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 1.2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                    />
                     <h1 className="scent-brand-title">Scent Memories</h1>
                     <p className="scent-brand-desc">향수를 수집하고 기록하는 공간</p>
-                    <div className="scent-deco-line" />
-                </motion.div>
+                    <motion.div
+                        className="scent-deco-line"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 1.2, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                    />
+                </div>
             </div>
         </section>
     );

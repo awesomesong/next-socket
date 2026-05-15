@@ -1,31 +1,32 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Nanum_Gothic, Josefin_Sans } from 'next/font/google';
+import localFont from 'next/font/local';
+import { Josefin_Sans } from 'next/font/google';
 import NextAuthProvider from "@/src/app/context/NextAuthProvider";
 import ToasterContext from "@/src/app/context/ToasterContext";
 import ToastFromUrl from "@/src/app/components/ToastFromUrl";
 import ThemeProvider from "@/src/app/context/ThemeProvider";
 import { HeroUIProvider } from "@heroui/react";
 import RQProviders from "@/src/app/context/RQProvider";
-import SocketComponents from "@/src/app/components/SocketComponents";
-import UserActiveStatus from "@/src/app/components/ActiveStatus";
-import SocketState from "@/src/app/components/SocketState";
+import SocketLazy from "@/src/app/components/SocketLazy";
 import { SocketProvider } from "./context/socketContext";
 
 
-const nanumGothic = Nanum_Gothic({
-  weight: ['400', '700', '800'],
-  subsets: ['latin'],
+const nanumGothic = localFont({
+  src: [
+    { path: '../../public/fonts/NanumGothic-Regular-subset.woff2', weight: '400', style: 'normal' },
+    { path: '../../public/fonts/NanumGothic-Bold-subset.woff2', weight: '700', style: 'normal' },
+  ],
   variable: '--font-nanum-gothic',
-  preload: false,
+  preload: true,
   display: 'swap',
 });
 
 const josefinSans = Josefin_Sans({
   subsets: ['latin'],
   weight: ['300', '400', '600'],
-  style: ['normal', 'italic'],
+  style: ['normal'],
   preload: false,
   display: 'swap',
   variable: '--font-josefin-sans',
@@ -104,9 +105,7 @@ export default async function RootLayout({
             <HeroUIProvider className="flex flex-col flex-1">
               <ThemeProvider>
                 <SocketProvider>
-                  <SocketComponents />
-                  <SocketState />
-                  <UserActiveStatus />
+                  <SocketLazy />
                   {children}
                 </SocketProvider>
               </ThemeProvider>
