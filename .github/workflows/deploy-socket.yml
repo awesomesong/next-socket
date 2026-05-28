@@ -1,0 +1,23 @@
+name: Deploy Socket Server → Fly.io
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'socket-server/**'
+
+jobs:
+  deploy:
+    name: Deploy to Fly.io
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy
+        run: flyctl deploy --remote-only
+        working-directory: socket-server
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

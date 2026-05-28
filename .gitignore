@@ -27,3 +27,4 @@ logs/
 Thumbs.db
 
 tsconfig.tsbuildinfo
+.vercel
