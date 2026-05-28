@@ -52,16 +52,16 @@ model User {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   accounts          Account[]
+  notice            Notice[]
   comments          Comment[]
   conversationReads ConversationRead[]
-  fragrances        Fragrance[]
   fragranceReviews  FragranceReview[]
+  fragrances        Fragrance[]
   messages          Message[]
-  notice            Notice[]
-  QuizSession       QuizSession[]
-  ScanResult        ScanResult[]
   sessions          Session[]
   conversations     Conversation[]     @relation("ConversationToUser")
+  scanResults       ScanResult[]
+  quizSessions      QuizSession[]
 }
 
 model Conversation {
@@ -73,8 +73,8 @@ model Conversation {
   isAIChat          Boolean?           @default(false)
   aiAgentType       String?
   lastMessageId     String?
-  userIds           String[]           @default([])
   memberKey         String?            @unique
+  userIds           String[]           @default([])
   conversationReads ConversationRead[]
   messages          Message[]
   users             User[]             @relation("ConversationToUser")
@@ -126,13 +126,13 @@ model Notice {
   id          String    @id @default(cuid())
   title       String
   content     String
+  image       String[]
   authorEmail String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   viewCount   Int       @default(0)
-  image       String[]
-  comments    Comment[]
   author      User?     @relation(fields: [authorEmail], references: [email])
+  comments    Comment[]
 }
 
 model Comment {
@@ -159,41 +159,31 @@ model FragranceReview {
 }
 
 model Fragrance {
-  id          String                 @id @default(cuid())
+  id          String                       @id @default(cuid())
   brand       String
   name        String
-  slug        String                 @unique
+  slug        String                       @unique
+  images      String[]
   description String
   notes       String?
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime               @updatedAt
-  images      String[]
   authorEmail String?
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt
   scoreA      Float?
   scoreB      Float?
   scoreC      Float?
   scoreD      Float?
   scoreE      Float?
-  embedding   Unsupported("vector")?
+  // pgvector는 Prisma 1급 지원 타입이 아니라 Unsupported로 표시만 — 실제 사용은 $queryRaw
+  embedding   Unsupported("vector(1536)")?
   embeddedAt  DateTime?
+  // 네이버 쇼핑 판매 여부 캐시 (7일 TTL) — { available, item, fetchedAt, koreanName }
   naverCache  Json?
-  author      User?                  @relation(fields: [authorEmail], references: [email])
+  author      User?                        @relation(fields: [authorEmail], references: [email])
 }
 
-model FragranceKoreanName {
-  id        String   @id
-  brand     String
-  name      String
-  korean    String
-  createdAt DateTime @default(now())
-
-  @@unique([brand, name])
-  @@index([brand, name])
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model QuizSession {
-  id               String   @id
+  id               String   @id @default(cuid())
   shareCode        String   @unique
   userEmail        String?
   vectorA          Float
@@ -205,33 +195,45 @@ model QuizSession {
   recommendedSlugs String[] @default([])
   answersJson      Json
   createdAt        DateTime @default(now())
-  User             User?    @relation(fields: [userEmail], references: [email])
+  user             User?    @relation(fields: [userEmail], references: [email])
 
-  @@index([createdAt(sort: Desc)])
-  @@index([shareCode])
   @@index([userEmail])
+  @@index([shareCode])
+  @@index([createdAt(sort: Desc)])
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model FragranceKoreanName {
+  id        String   @id @default(cuid())
+  brand     String
+  name      String
+  korean    String
+  createdAt DateTime @default(now())
+
+  @@unique([brand, name])
+  @@index([brand, name])
+}
+
 model ScanResult {
-  id             String   @id
+  id             String   @id @default(cuid())
   brand          String
   name           String
   notes          String?
   description    String?
   imageUrl       String
+  imageWidth     Int?
+  imageHeight    Int?
   matchedSlug    String?
   prices         Json?
+  // 갤러리 유사 향수 캐시 (7일 TTL) — { items: SimilarFragrance[], fetchedAt }
+  galleryCache   Json?
+  // 네이버 구매 추천 캐시 (24h TTL) — { items: VerifiedSimilarFragrance[], fetchedAt }
+  naverRecoCache Json?
   userEmail      String?
   tokensUsed     Int?
   createdAt      DateTime @default(now())
-  imageHeight    Int?
-  imageWidth     Int?
-  galleryCache   Json?
-  naverRecoCache Json?
-  User           User?    @relation(fields: [userEmail], references: [email])
+  user           User?    @relation(fields: [userEmail], references: [email])
 
   @@index([brand, name])
-  @@index([createdAt(sort: Desc)])
   @@index([userEmail])
+  @@index([createdAt(sort: Desc)])
 }
