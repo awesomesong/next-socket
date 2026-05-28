@@ -957,6 +957,24 @@ h6 {
   border-color: var(--color-lavender-border);
 }
 
+/*
+  가격 비교 스켈레톤 바 — var(--color-lavender) 기반.
+  라이트(#b094e0): 85% / 60% opacity
+  다크  (#c8b4ff): 52% / 38% opacity — 어두운 배경에서 대비 확보
+*/
+.skeleton-price-bar {
+  background-color: color-mix(in srgb, var(--color-lavender) 85%, transparent);
+}
+.dark .skeleton-price-bar {
+  background-color: color-mix(in srgb, var(--color-lavender) 52%, transparent);
+}
+.skeleton-price-bar-muted {
+  background-color: color-mix(in srgb, var(--color-lavender) 60%, transparent);
+}
+.dark .skeleton-price-bar-muted {
+  background-color: color-mix(in srgb, var(--color-lavender) 38%, transparent);
+}
+
 /* 폼 입력 필드용 공통 스켈레톤 스타일 */
 .form-input-skeleton {
   @apply w-full space-y-2 skeleton-pulse;
