@@ -1,5 +1,5 @@
 'use client';
-import { useQueryClient } from "@tanstack/react-query";
+import { CancelledError, useQueryClient } from "@tanstack/react-query";
 import useUnreadStore from "@/src/app/hooks/useUnReadStore";
 import { useEffect, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -264,6 +264,8 @@ const SocketState = () => {
         staleTime: 30_000,
         gcTime: 5 * 60_000,
       }).catch(err => {
+        // CancelledError는 의도된 query 취소 (cleanup·navigation·strict mode) — silent
+        if (err instanceof CancelledError) return;
         console.error('[SocketState] conversationList 로드 실패:', err);
       });
     }
@@ -436,6 +438,8 @@ const SocketState = () => {
         staleTime: 30_000,
         gcTime: 5 * 60_000,
       }).catch(err => {
+        // CancelledError는 의도된 query 취소 (cleanup·navigation·strict mode) — silent
+        if (err instanceof CancelledError) return;
         console.error('[SocketState] conversationList 로드 실패:', err);
       });
     }
