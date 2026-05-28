@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 
 import { createFragrance } from "@/src/app/lib/createFragrance";
 import { updateFragrance } from "@/src/app/lib/updateFragrance";
+import { useScanPrefillStore } from "@/src/app/store/scanPrefillStore";
 import { withToastParams } from "@/src/app/lib/withToastParams";
 import { fragranceDetailKey, prependFragranceCard, upsertFragranceCardById } from "@/src/app/lib/react-query/fragranceCache";
 import { useImageUpload, type PreviewImage } from "@/src/app/lib/useImageUpload";
@@ -69,6 +70,10 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
 
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
+    const [scanPrefilled, setScanPrefilled] = useState(false);
+
+    const scanPrefill = useScanPrefillStore((s) => s.prefill);
+    const clearScanPrefill = useScanPrefillStore((s) => s.clear);
 
     const triggerBrand = useCallback(() => trigger("brand"), [trigger]);
     const triggerName = useCallback(() => trigger("name"), [trigger]);
@@ -187,6 +192,21 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
             initImages(initialData.images);
         }
     }, [initialData, initImages, reset]);
+
+    useEffect(() => {
+        if (isEdit || !scanPrefill) return;
+
+        const { brand, name, description, notes, imageUrl } = scanPrefill;
+        setValue('brand', brand.toUpperCase());
+        setValue('name', name);
+        setValue('description', description);
+        setValue('notes', notes);
+        setFormData((prev) => ({ ...prev, brand, name, description, notes, images: [imageUrl] }));
+        initImages([imageUrl]);
+        setScanPrefilled(true);
+        clearScanPrefill();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleFileInputChange = useCallback(
         (e: ChangeEvent<HTMLInputElement>) => {
@@ -396,6 +416,14 @@ const FormFragrance = ({ id, isEdit, initialData }: FormFragranceProps) => {
                 </div>
 
                 <div className="fragrance-form-right gap-12">
+                    {scanPrefilled && !isAnalyzing && (
+                        <div className="flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-[#f1ecfe] dark:bg-[#2d2040]/60 border border-[#c8b4ff40]">
+                            <HiSparkles className="text-[#b094e0] w-4 h-4 shrink-0" />
+                            <p className="text-[0.75rem] tracking-[0.15em] uppercase text-[#5c4a7a] dark:text-[#c8b4ff] font-medium">
+                                스캔 결과에서 자동 입력됐습니다.
+                            </p>
+                        </div>
+                    )}
                     {isAnalyzing && (
                         <div className="flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-[#f1ecfe] dark:bg-[#2d2040]/60 border border-[#c8b4ff40]">
                             <HiSparkles className="text-[#b094e0] w-4 h-4 shrink-0 animate-pulse" />
