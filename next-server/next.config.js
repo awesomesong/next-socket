@@ -70,6 +70,10 @@ const nextConfig = {
           },
           {
             protocol: 'https',
+            hostname: 'shopping-phinf.pstatic.net',
+          },
+          {
+            protocol: 'https',
             hostname: 'mjcong.co.kr',
           },
           {

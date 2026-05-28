@@ -1,96 +1,94 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/src/app/lib/session";
+import { analyzeFragranceFromUrl } from "@/src/app/lib/scan/visionAnalyze";
+import { enrichFragranceInfo } from "@/src/app/lib/scan/enrichInfo";
 
-export async function POST(req: NextRequest) {
-    try {
-        const user = await getCurrentUser();
-        if (!user?.id || !user?.email) {
-            return NextResponse.json({ message: '로그인이 필요합니다.' }, { status: 401 });
-        }
+/**
+ * 등록용 향수 이미지 분석 (FormFragrance 에서 호출).
+ *
+ * 옵션 B 패턴 — 스캔 흐름과 통일된 2-stage pipeline:
+ *   1) Vision OCR (gpt-4o → gpt-4o-mini fallback): brand + name 만 추출
+ *      - max_tokens 400 (이전 800) — 응답 토큰 절반, 비용 ↓
+ *      - "identify" 대신 OCR 톤 → refusal 감소
+ *   2) LLM 보강 (gpt-4o-mini, 텍스트만): description + notes
+ *      - 향수 지식 활용 → 정확도 ↑, hallucination 방지 프롬프트
+ *      - 비용 $0.0001 (Vision의 1/50)
+ *   3) slug 자동 생성 (코드, LLM 토큰 0)
+ *
+ * 응답 형식 유지: FragranceAnalysis { isFragrance, brand, name, slug, description, notes }
+ */
 
-        const { imageUrl } = await req.json();
-        if (!imageUrl) {
-            return NextResponse.json({ message: '이미지 URL이 필요합니다.' }, { status: 400 });
-        }
-
-        const apiKey = process.env.OPENAI_API_KEY!;
-
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                model: "gpt-4o",
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            {
-                                type: "image_url",
-                                image_url: { url: imageUrl },
-                            },
-                            {
-                                type: "text",
-                                text: `You are a perfume expert. Analyze this image and extract fragrance product information.
-
-First, determine if this image is related to a fragrance/perfume product (bottle, package, advertisement, etc.).
-
-Return ONLY a valid JSON object with these exact fields:
-{
-  "isFragrance": true or false (boolean — true only if the image is clearly a fragrance/perfume product),
-  "brand": "Brand/house name visible in the image (empty string if not visible)",
-  "name": "Fragrance name visible in the image (empty string if not visible)",
-  "slug": "URL identifier: combine brand and name in lowercase with underscores, e.g. 'diptyque_philosykos' (empty string if brand or name not visible)",
-  "description": "Write a poetic Korean description of the scent's story and essence based on the bottle design, brand identity, and any visible text. 2-3 sentences. (empty string if nothing can be inferred)",
-  "notes": "Olfactory notes in Korean format: 'TOP: ... HEART: ... BASE: ...' based on brand knowledge. (empty string if not determinable)"
+function makeSlug(brand: string, name: string): string {
+  return `${brand}_${name}`
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 }
 
-If isFragrance is false, set all other fields to empty strings.
-Do NOT include any text or markdown outside the JSON object.`,
-                            },
-                        ],
-                    },
-                ],
-                response_format: { type: "json_object" },
-                max_tokens: 800,
-                temperature: 0.3,
-            }),
-        });
+const EMPTY_RESULT = {
+  isFragrance: false,
+  brand: "",
+  name: "",
+  slug: "",
+  description: "",
+  notes: "",
+};
 
-        if (!response.ok) {
-            const error = await response.json();
-            console.error('[OpenAI Analyze Error]', error);
-
-            if (error?.error?.code === 'invalid_image_format') {
-                return NextResponse.json(
-                    { message: '지원하지 않는 이미지 형식입니다. png, jpeg, gif, webp 형식의 이미지를 업로드해주세요.', code: 'invalid_image_format' },
-                    { status: 400 }
-                );
-            }
-
-            return NextResponse.json({ message: 'AI 분석에 실패했습니다.' }, { status: 500 });
-        }
-
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content;
-
-        if (!content) {
-            console.error('[OpenAI Analyze Empty Content Data]', JSON.stringify(data, null, 2));
-            return NextResponse.json({ message: 'AI 응답이 비어있습니다.' }, { status: 500 });
-        }
-
-        try {
-            const parsed = JSON.parse(content);
-            return NextResponse.json({ result: parsed }, { status: 200 });
-        } catch (parseError) {
-            console.error('[OpenAI JSON Parse Error]', parseError);
-            console.error('[OpenAI Raw Content]', content);
-            return NextResponse.json({ message: 'AI 응답 형식 오류입니다.' }, { status: 500 });
-        }
-    } catch (error) {
-        console.error('[Fragrance Analyze Error]', error);
-        return NextResponse.json({ message: 'AI 분석 중 오류가 발생했습니다.' }, { status: 500 });
+export async function POST(req: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user?.id || !user?.email) {
+      return NextResponse.json(
+        { message: "로그인이 필요합니다." },
+        { status: 401 },
+      );
     }
+
+    const body = await req.json().catch(() => null);
+    const imageUrl: unknown = body?.imageUrl;
+    if (typeof imageUrl !== "string" || !imageUrl) {
+      return NextResponse.json(
+        { message: "이미지 URL이 필요합니다." },
+        { status: 400 },
+      );
+    }
+
+    // 1단계: Vision OCR (brand + name)
+    const vision = await analyzeFragranceFromUrl(imageUrl);
+
+    if (!vision.isFragrance || !vision.brand || !vision.name) {
+      return NextResponse.json({
+        result: { ...EMPTY_RESULT, isFragrance: vision.isFragrance },
+      });
+    }
+
+    // 2단계: LLM 보강 (description + notes + 영문 slug)
+    const enriched = await enrichFragranceInfo(vision.brand, vision.name);
+
+    // 3단계: slug 결정 — LLM 영문 slug 우선, 없으면 코드 fallback (한글 포함 가능)
+    const slug = enriched.englishSlug || makeSlug(vision.brand, vision.name);
+
+    return NextResponse.json({
+      result: {
+        isFragrance: true,
+        brand: vision.brand,
+        name: vision.name,
+        slug,
+        description: enriched.description,
+        notes: enriched.notes,
+      },
+      _meta: {
+        tokensUsed: vision.tokensUsed + enriched.tokensUsed,
+        enrichConfident: enriched.confident,
+      },
+    });
+  } catch (err) {
+    console.error("[Fragrance analyze] error:", err);
+    const message =
+      err instanceof Error ? err.message : "AI 분석 중 오류가 발생했습니다.";
+    return NextResponse.json(
+      { message, code: "AI_ANALYSIS_FAILED" },
+      { status: 500 },
+    );
+  }
 }
