@@ -52,12 +52,14 @@ model User {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   accounts          Account[]
-  notice            Notice[]
   comments          Comment[]
   conversationReads ConversationRead[]
-  fragranceReviews  FragranceReview[]
   fragrances        Fragrance[]
+  fragranceReviews  FragranceReview[]
   messages          Message[]
+  notice            Notice[]
+  QuizSession       QuizSession[]
+  ScanResult        ScanResult[]
   sessions          Session[]
   conversations     Conversation[]     @relation("ConversationToUser")
 }
@@ -71,8 +73,8 @@ model Conversation {
   isAIChat          Boolean?           @default(false)
   aiAgentType       String?
   lastMessageId     String?
-  memberKey         String?            @unique
   userIds           String[]           @default([])
+  memberKey         String?            @unique
   conversationReads ConversationRead[]
   messages          Message[]
   users             User[]             @relation("ConversationToUser")
@@ -124,13 +126,13 @@ model Notice {
   id          String    @id @default(cuid())
   title       String
   content     String
-  image       String[]
   authorEmail String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   viewCount   Int       @default(0)
-  author      User?     @relation(fields: [authorEmail], references: [email])
+  image       String[]
   comments    Comment[]
+  author      User?     @relation(fields: [authorEmail], references: [email])
 }
 
 model Comment {
@@ -157,15 +159,79 @@ model FragranceReview {
 }
 
 model Fragrance {
-  id          String   @id @default(cuid())
+  id          String                 @id @default(cuid())
   brand       String
   name        String
-  slug        String   @unique
-  images      String[]
+  slug        String                 @unique
   description String
   notes       String?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  images      String[]
   authorEmail String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  author      User?    @relation(fields: [authorEmail], references: [email])
+  scoreA      Float?
+  scoreB      Float?
+  scoreC      Float?
+  scoreD      Float?
+  scoreE      Float?
+  embedding   Unsupported("vector")?
+  embeddedAt  DateTime?
+  naverCache  Json?
+  author      User?                  @relation(fields: [authorEmail], references: [email])
+}
+
+model FragranceKoreanName {
+  id        String   @id
+  brand     String
+  name      String
+  korean    String
+  createdAt DateTime @default(now())
+
+  @@unique([brand, name])
+  @@index([brand, name])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model QuizSession {
+  id               String   @id
+  shareCode        String   @unique
+  userEmail        String?
+  vectorA          Float
+  vectorB          Float
+  vectorC          Float
+  vectorD          Float
+  vectorE          Float
+  characterId      String
+  recommendedSlugs String[] @default([])
+  answersJson      Json
+  createdAt        DateTime @default(now())
+  User             User?    @relation(fields: [userEmail], references: [email])
+
+  @@index([createdAt(sort: Desc)])
+  @@index([shareCode])
+  @@index([userEmail])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ScanResult {
+  id             String   @id
+  brand          String
+  name           String
+  notes          String?
+  description    String?
+  imageUrl       String
+  matchedSlug    String?
+  prices         Json?
+  userEmail      String?
+  tokensUsed     Int?
+  createdAt      DateTime @default(now())
+  imageHeight    Int?
+  imageWidth     Int?
+  galleryCache   Json?
+  naverRecoCache Json?
+  User           User?    @relation(fields: [userEmail], references: [email])
+
+  @@index([brand, name])
+  @@index([createdAt(sort: Desc)])
+  @@index([userEmail])
 }
