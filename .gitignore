@@ -22,6 +22,9 @@ logs/
 *.log
 *.sql
 
+# Claude Code
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db
